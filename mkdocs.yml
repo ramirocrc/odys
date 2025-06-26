@@ -1,0 +1,52 @@
+site_name: optimes
+repo_url: https://github.com/ramirorcr/optimes
+site_url: https://ramirorcr.github.io/optimes
+site_description: Python framework for optimizing multi-energy systems
+site_author: Ramiro Criach
+edit_uri: edit/main/docs/
+repo_name: ramirorcr/optimes
+copyright: Maintained by <a href="https://ramirorcr.com">ramirorcr</a>.
+
+nav:
+  - Home: index.md
+  - Modules: modules.md
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["src/optimes"]
+theme:
+  name: material
+  feature:
+    tabs: true
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ramirorcr/optimes
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/optimes
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
