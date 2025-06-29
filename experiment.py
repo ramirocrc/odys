@@ -3,7 +3,8 @@ import pyomo.environ as pyo
 from optimes.assets.generator import PowerGenerator
 from optimes.assets.portfolio import AssetPortfolio
 from optimes.assets.storage import Battery
-from optimes.math_model.builder import MathModelBuilder
+from optimes.math_model.energy_model import EnergyModelSet, EnergyModelVariable
+from optimes.math_model.energy_model_builder import EnergyModelBuilder
 from optimes.system.load import LoadProfile
 from optimes.utils.logging import get_logger
 
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     portfolio.add_asset(generator_2)
     portfolio.add_asset(battery_1)
 
-    model = MathModelBuilder(
+    model = EnergyModelBuilder(
         portfolio=portfolio,
         load_profile=load_profile,
     ).build_model()
@@ -50,15 +51,22 @@ if __name__ == "__main__":
     logger.info(f"Total Variable Cost: {total_cost:.2f} €")
 
     # Generators
-    for t in model.time:
-        for i in model.generators:
-            logger.info(f"t={t}, gen={i}, power={model.generator_power[t, i].value:.2f} MW")
-    # Batteries
-    for t in model.time:
-        for j in model.batteries:
-            charge = model.battery_charge[t, j].value
-            discharge = model.battery_discharge[t, j].value
-            soc = model.battery_soc[t, j].value
-            logger.info(f"t={t}, bat={j}, chg={charge:.2f}, dis={discharge:.2f}, soc={soc:.2f}")
+    generator_power = model.get_variable(EnergyModelVariable.GENERATOR_POWER)
+    time = model.get_set(EnergyModelSet.TIME)
+    generators = model.get_set(EnergyModelSet.GENERATORS)
+    batteries = model.get_set(EnergyModelSet.BATTERIES)
+    battery_charge = model.get_variable(EnergyModelVariable.BATTERY_CHARGE)
+    battery_discharge = model.get_variable(EnergyModelVariable.BATTERY_DISCHARGE)
+    battery_soc = model.get_variable(EnergyModelVariable.BATTERY_SOC)
 
+    for t in time:
+        for i in generators:
+            logger.info(f"t={t}, gen={i}, power={generator_power[t, i].value:.2f} MW")
+    # # Batteries
+    for t in time:
+        for j in batteries:
+            charge = battery_charge[t, j].value
+            discharge = battery_discharge[t, j].value
+            soc = battery_soc[t, j].value
+            logger.info(f"t={t}, bat={j}, chg={charge:.2f}, dis={discharge:.2f}, soc={soc:.2f}")
     model.display()  # Display the model for debugging purposes

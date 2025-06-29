@@ -59,7 +59,7 @@ testpaths = ["tests"]
 exclude = [
     # "src/optimes/math_model/"
 ]
-line-length = 120
+line-length = 140
 target-version = "py313"
 
 [tool.ruff.lint]
@@ -90,6 +90,8 @@ ignore = [
     "src/optimes/option.py"
 ]
 
+[tool.deptry.per_rule_ignores]
+DEP002 = [ "highspy"]
 [tool.coverage.report]
 skip_empty = true
 
