@@ -103,11 +103,15 @@ class MathModelBuilder:
 
         return (
             m.battery_soc[t, j]
-            == previous_soc + battery.efficiency * m.battery_charge[t, j] - (1 / battery.efficiency) * m.battery_discharge[t, j]
+            == previous_soc
+            + battery.efficiency * m.battery_charge[t, j]
+            - (1 / battery.efficiency) * m.battery_discharge[t, j]
         )
 
     def battery_soc_bounds_rule(self, m: pyo.ConcreteModel, t: int, j: int) -> pyo.Expression:
         return pyo.inequality(0, m.battery_soc[t, j], self._portfolio.batteries[j].capacity)
 
     def objective_operational_cost(self, m: pyo.ConcreteModel) -> pyo.Expression:
-        return sum(m.generator_power[t, i] * self._portfolio.generators[i].variable_cost for t in m.time for i in m.generators)
+        return sum(
+            m.generator_power[t, i] * self._portfolio.generators[i].variable_cost for t in m.time for i in m.generators
+        )
