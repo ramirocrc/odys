@@ -3,7 +3,13 @@
 import pyomo.environ as pyo
 
 from optimes.assets.portfolio import AssetPortfolio
-from optimes.math_model.energy_model import EnergyModel, EnergyModelConstraint, EnergyModelObjective, EnergyModelSet, EnergyModelVariable
+from optimes.math_model.energy_model import (
+    EnergyModel,
+    EnergyModelConstraint,
+    EnergyModelObjective,
+    EnergyModelSet,
+    EnergyModelVariable,
+)
 from optimes.system.load import LoadProfile
 
 
@@ -11,120 +17,140 @@ class EnergyModelBuilder:
     def __init__(self, portfolio: AssetPortfolio, load_profile: LoadProfile) -> None:
         self._portfolio = portfolio
         self._load_profile = load_profile
+        self._model = EnergyModel()
 
-    def build_model(self) -> EnergyModel:
-        model = EnergyModel()
-        if not isinstance(model, EnergyModel):
-            msg = f"Model {model} is not a valid EnergyModel."
-            raise TypeError(msg)
-        self._add_model_sets(model)
-        self._add_model_variables(model)
-        self._add_model_constraints(model)
-        self._add_model_objective(model)
+    def build(self) -> EnergyModel:
+        self._add_model_sets()
+        self._add_model_variables()
+        self._add_model_constraints()
+        self._add_model_objective()
 
-        return model
+        return self._model
 
-    def _add_model_sets(self, model: EnergyModel) -> None:
+    def _add_model_sets(self) -> None:
         time_indices = list(range(len(self._load_profile.profile)))
         generator_indices = list(range(len(self._portfolio.generators)))
         battery_indices = list(range(len(self._portfolio.batteries)))
 
-        model.add_set(EnergyModelSet.TIME, pyo.Set(initialize=time_indices))
-        model.add_set(EnergyModelSet.GENERATORS, pyo.Set(initialize=generator_indices))
-        model.add_set(EnergyModelSet.BATTERIES, pyo.Set(initialize=battery_indices))
+        self._model.add_set(EnergyModelSet.TIME, pyo.Set(initialize=time_indices))
+        self._model.add_set(EnergyModelSet.GENERATORS, pyo.Set(initialize=generator_indices))
+        self._model.add_set(EnergyModelSet.BATTERIES, pyo.Set(initialize=battery_indices))
 
-    def _add_model_variables(self, model: EnergyModel) -> None:
-        self._add_power_generator_variables(model)
-        self._add_battery_variables(model)
+    def _add_model_variables(self) -> None:
+        self._add_power_generator_variables()
+        self._add_battery_variables()
 
-    def _add_power_generator_variables(self, model: EnergyModel) -> None:
-        model.add_variable(
+    def _add_power_generator_variables(self) -> None:
+        self._model.add_variable(
             EnergyModelVariable.GENERATOR_POWER,
-            pyo.Var(model.get_set(EnergyModelSet.TIME), model.get_set(EnergyModelSet.GENERATORS), domain=pyo.NonNegativeReals),
+            pyo.Var(
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.GENERATORS),
+                domain=pyo.NonNegativeReals,
+            ),
         )
 
-    def _add_battery_variables(self, model: EnergyModel) -> None:
-        model.add_variable(
+    def _add_battery_variables(self) -> None:
+        self._model.add_variable(
             EnergyModelVariable.BATTERY_CHARGE,
-            pyo.Var(model.get_set(EnergyModelSet.TIME), model.get_set(EnergyModelSet.BATTERIES), domain=pyo.NonNegativeReals),
+            pyo.Var(
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.BATTERIES),
+                domain=pyo.NonNegativeReals,
+                name=EnergyModelVariable.BATTERY_CHARGE.value,
+            ),
         )
-        model.add_variable(
+        self._model.add_variable(
             EnergyModelVariable.BATTERY_DISCHARGE,
-            pyo.Var(model.get_set(EnergyModelSet.TIME), model.get_set(EnergyModelSet.BATTERIES), domain=pyo.NonNegativeReals),
+            pyo.Var(
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.BATTERIES),
+                domain=pyo.NonNegativeReals,
+                name=EnergyModelVariable.BATTERY_DISCHARGE.value,
+            ),
         )
-        model.add_variable(
+        self._model.add_variable(
             EnergyModelVariable.BATTERY_SOC,
-            pyo.Var(model.get_set(EnergyModelSet.TIME), model.get_set(EnergyModelSet.BATTERIES), domain=pyo.NonNegativeReals),
+            pyo.Var(
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.BATTERIES),
+                domain=pyo.NonNegativeReals,
+                name=EnergyModelVariable.BATTERY_SOC.value,
+            ),
         )
-        model.add_variable(
+        self._model.add_variable(
             EnergyModelVariable.BATTERY_CHARGE_MODE,
-            pyo.Var(model.get_set(EnergyModelSet.TIME), model.get_set(EnergyModelSet.BATTERIES), within=pyo.Binary),
+            pyo.Var(
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.BATTERIES),
+                within=pyo.Binary,
+            ),
         )
 
-    def _add_model_constraints(self, model: EnergyModel) -> None:
-        self._add_power_balance_constraint(model)
-        self._add_power_generator_constraints(model)
-        self._add_model_battery_constraints(model)
+    def _add_model_constraints(self) -> None:
+        self._add_power_balance_constraint()
+        self._add_power_generator_constraints()
+        self._add_model_battery_constraints()
 
-    def _add_power_balance_constraint(self, model: EnergyModel) -> None:
-        model.add_constraint(
+    def _add_power_balance_constraint(self) -> None:
+        self._model.add_constraint(
             EnergyModelConstraint.POWER_BALANCE,
-            pyo.Constraint(model.get_set(EnergyModelSet.GENERATORS), rule=self.power_balance_rule),
+            pyo.Constraint(self._model.get_set(EnergyModelSet.TIME), rule=self.power_balance_rule),
         )
 
-    def _add_power_generator_constraints(self, model: EnergyModel) -> None:
-        model.add_constraint(
+    def _add_power_generator_constraints(self) -> None:
+        self._model.add_constraint(
             EnergyModelConstraint.GENERATOR_LIMIT,
             pyo.Constraint(
-                model.get_set(EnergyModelSet.TIME),
-                model.get_set(EnergyModelSet.GENERATORS),
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.GENERATORS),
                 rule=self.generator_limit_rule,
             ),
         )
 
-    def _add_model_battery_constraints(self, model: EnergyModel) -> None:
-        model.add_constraint(
+    def _add_model_battery_constraints(self) -> None:
+        self._model.add_constraint(
             EnergyModelConstraint.BATTERY_CHARGE_LIMIT,
             pyo.Constraint(
-                model.get_set(EnergyModelSet.TIME),
-                model.get_set(EnergyModelSet.BATTERIES),
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.BATTERIES),
                 rule=self.battery_charge_limit_rule,
             ),
         )
-        model.add_constraint(
+        self._model.add_constraint(
             EnergyModelConstraint.BATTERY_DISCHARGE_LIMIT,
             pyo.Constraint(
-                model.get_set(EnergyModelSet.TIME),
-                model.get_set(EnergyModelSet.BATTERIES),
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.BATTERIES),
                 rule=self.battery_discharge_limit_rule,
             ),
         )
-        model.add_constraint(
+        self._model.add_constraint(
             EnergyModelConstraint.BATTERY_SOC_DYNAMICS,
             pyo.Constraint(
-                model.get_set(EnergyModelSet.TIME),
-                model.get_set(EnergyModelSet.BATTERIES),
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.BATTERIES),
                 rule=self.battery_soc_dynamics_rule,
             ),
         )
-        model.add_constraint(
+        self._model.add_constraint(
             EnergyModelConstraint.BATTERY_SOC_BOUNDS,
             pyo.Constraint(
-                model.get_set(EnergyModelSet.TIME),
-                model.get_set(EnergyModelSet.BATTERIES),
+                self._model.get_set(EnergyModelSet.TIME),
+                self._model.get_set(EnergyModelSet.BATTERIES),
                 rule=self.battery_soc_bounds_rule,
             ),
         )
-        model.add_constraint(
+        self._model.add_constraint(
             EnergyModelConstraint.BATTERY_SOC_TERMINAL,
             pyo.Constraint(
-                model.get_set(EnergyModelSet.BATTERIES),
+                self._model.get_set(EnergyModelSet.BATTERIES),
                 rule=self.battery_soc_terminal_rule,
             ),
         )
 
-    def _add_model_objective(self, model: EnergyModel) -> None:
-        model.add_objective(
+    def _add_model_objective(self) -> None:
+        self._model.add_objective(
             EnergyModelObjective.TOTAL_VARIABLE_COST,
             pyo.Objective(rule=self.objective_operational_cost, sense=pyo.minimize),
         )
@@ -140,18 +166,20 @@ class EnergyModelBuilder:
         return generation_total + discharge_total == self._load_profile.profile[t] + charge_total
 
     def generator_limit_rule(self, m: EnergyModel, t: int, i: int):  # noqa: ANN201
-        generator_power = getattr(m, EnergyModelVariable.GENERATOR_POWER.value)
+        generator_power = m.get_variable(EnergyModelVariable.GENERATOR_POWER)
+
         return generator_power[t, i] <= self._portfolio.generators[i].nominal_power
 
     def battery_charge_limit_rule(self, m: EnergyModel, t: int, j: int):  # noqa: ANN201
-        battery_charge = getattr(m, EnergyModelVariable.BATTERY_CHARGE.value)
-        battery_charge_mode = getattr(m, EnergyModelVariable.BATTERY_CHARGE_MODE.value)
+        battery_charge = m.get_variable(EnergyModelVariable.BATTERY_CHARGE)
+        battery_charge_mode = m.get_variable(EnergyModelVariable.BATTERY_CHARGE_MODE)
+
         max_power = self._portfolio.batteries[j].max_power
         return battery_charge[t, j] <= max_power * battery_charge_mode[t, j]
 
     def battery_discharge_limit_rule(self, m: EnergyModel, t: int, j: int):  # noqa: ANN201
-        battery_discharge = getattr(m, EnergyModelVariable.BATTERY_DISCHARGE.value)
-        battery_charge_mode = getattr(m, EnergyModelVariable.BATTERY_CHARGE_MODE.value)
+        battery_discharge = m.get_variable(EnergyModelVariable.BATTERY_DISCHARGE)
+        battery_charge_mode = m.get_variable(EnergyModelVariable.BATTERY_CHARGE_MODE)
 
         max_power = self._portfolio.batteries[j].max_power
         return battery_discharge[t, j] <= max_power * (1 - battery_charge_mode[t, j])
@@ -167,8 +195,8 @@ class EnergyModelBuilder:
         return (
             battery_soc[t, j]
             == previous_soc
-            + battery.efficiency_charging * battery_charge[t, j]
-            - (1 / battery.efficiency_discharding) * battery_discharge[t, j]
+            + battery_charge[t, j] * battery.efficiency_charging
+            - battery_discharge[t, j] / battery.efficiency_discharding
         )
 
     def battery_soc_bounds_rule(self, m: EnergyModel, t: int, j: int):  # noqa: ANN201

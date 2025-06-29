@@ -40,11 +40,15 @@ if __name__ == "__main__":
     model = EnergyModelBuilder(
         portfolio=portfolio,
         load_profile=load_profile,
-    ).build_model()
+    ).build()
 
     solver = pyo.SolverFactory("highs")
 
-    result = solver.solve(model, tee=True)
+    result = solver.solve(
+        model,
+        tee=True,
+    )
+    model.write("model.lp")  # Write the model to a file for debugging
     logger.info(result.solver.termination_condition)
 
     total_cost = pyo.value(model.total_variable_cost)  # Print the total variable cost of the solution
