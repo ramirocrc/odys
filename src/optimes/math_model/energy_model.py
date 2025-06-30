@@ -1,6 +1,12 @@
 from enum import Enum
 
 import pyomo.environ as pyo
+from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
+
+from optimes.solvers.highs_solver import HiGHSolver
+from optimes.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class EnergyModelSet(Enum):
@@ -39,6 +45,14 @@ class EnergyModel(pyo.ConcreteModel):
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)
+        self._results: SolverResults | None = None
+
+    @property
+    def solver_results(self) -> SolverResults:
+        if self._results is None:
+            msg = "No solve has been performed yet."
+            raise RuntimeError(msg)
+        return self._results
 
     def add_set(self, name: EnergyModelSet, set_: pyo.Set) -> None:
         if not isinstance(name, EnergyModelSet):
@@ -94,3 +108,44 @@ class EnergyModel(pyo.ConcreteModel):
             msg = f"Set {name.value} does not exist in the model."
             raise AttributeError(msg)
         return getattr(self, name.value)
+
+    def solve(self) -> SolverResults:
+        """
+        Solve the model using the specified solver.
+        """
+
+        self._solver = HiGHSolver()
+        self._results = self._solver.solve(self)
+        return self._results
+
+    def solving_status(self) -> SolverStatus | None:
+        """
+        Returns the solving status of the last solve operation.
+        """
+        if self._results is None:
+            msg = "No solve has been performed yet."
+            logger.warning(msg)
+            return None
+        status = self._results.solver.status
+
+        if not isinstance(status, SolverStatus):
+            msg = "Results are not of type SolverResults."
+            raise TypeError(msg)
+
+        return status
+
+    def termination_condition(self) -> TerminationCondition | None:
+        """
+        Returns the termination condition of the last solve operation.
+        """
+        if self._results is None:
+            msg = "No solve has been performed yet."
+            logger.warning(msg)
+            return None
+
+        termination_condition = self._results.solver.termination_condition
+        if not isinstance(termination_condition, TerminationCondition):
+            msg = "Results are not of type SolverResults."
+            raise TypeError(msg)
+
+        return termination_condition

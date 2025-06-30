@@ -86,7 +86,7 @@ preview = true
 [tool.pyright]
 typeCheckingMode = "standard"
 ignore = [
-    "src/optimes/math_model",
+    "src/optimes/math_model/energy_model_builder.py",
     "src/optimes/option.py"
 ]
 

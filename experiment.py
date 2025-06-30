@@ -41,19 +41,16 @@ if __name__ == "__main__":
         portfolio=portfolio,
         load_profile=load_profile,
     ).build()
+    logger.info(f"Solver Status: {model.solving_status()}")
+    logger.info(f"Termination Status: {model.termination_condition()}")
 
-    solver = pyo.SolverFactory("highs")
+    result = model.solve()
+    logger.info(f"Solver Status: {model.solving_status()}")
+    logger.info(f"Termination Status: {model.termination_condition()}")
 
-    result = solver.solve(
-        model,
-        tee=True,
-    )
     model.write("model.lp")  # Write the model to a file for debugging
-    logger.info(result.solver.termination_condition)
 
     total_cost = pyo.value(model.total_variable_cost)  # Print the total variable cost of the solution
-    logger.info(f"Total Variable Cost: {total_cost:.2f} €")
-
     # Generators
     generator_power = model.get_variable(EnergyModelVariable.GENERATOR_POWER)
     time = model.get_set(EnergyModelSet.TIME)
@@ -73,4 +70,3 @@ if __name__ == "__main__":
             discharge = battery_discharge[t, j].value
             soc = battery_soc[t, j].value
             logger.info(f"t={t}, bat={j}, chg={charge:.2f}, dis={discharge:.2f}, soc={soc:.2f}")
-    model.display()  # Display the model for debugging purposes
