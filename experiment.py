@@ -1,10 +1,7 @@
-import pyomo.environ as pyo
-
 from optimes.assets.generator import PowerGenerator
 from optimes.assets.portfolio import AssetPortfolio
 from optimes.assets.storage import Battery
-from optimes.math_model.energy_model import EnergyModelSet, EnergyModelVariable
-from optimes.math_model.energy_model_builder import EnergyModelBuilder
+from optimes.math_model.energy_model import EnergyModel, EnergyModelSet, EnergyModelVariable
 from optimes.system.load import LoadProfile
 from optimes.utils.logging import get_logger
 
@@ -25,7 +22,7 @@ if __name__ == "__main__":
         max_power=50.0,
         capacity=200.0,
         efficiency_charging=0.95,
-        efficiency_discharding=0.95,
+        efficiency_discharging=0.95,
         soc_start=100.0,
         soc_end=50.0,
     )
@@ -37,20 +34,18 @@ if __name__ == "__main__":
     portfolio.add_asset(generator_2)
     portfolio.add_asset(battery_1)
 
-    model = EnergyModelBuilder(
+    model = EnergyModel(
         portfolio=portfolio,
         load_profile=load_profile,
-    ).build()
+    )
     logger.info(f"Solver Status: {model.solving_status()}")
     logger.info(f"Termination Status: {model.termination_condition()}")
 
-    result = model.solve()
+    result = model.optimize()
+
     logger.info(f"Solver Status: {model.solving_status()}")
     logger.info(f"Termination Status: {model.termination_condition()}")
 
-    model.write("model.lp")  # Write the model to a file for debugging
-
-    total_cost = pyo.value(model.total_variable_cost)  # Print the total variable cost of the solution
     # Generators
     generator_power = model.get_variable(EnergyModelVariable.GENERATOR_POWER)
     time = model.get_set(EnergyModelSet.TIME)
