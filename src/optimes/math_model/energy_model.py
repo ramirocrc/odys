@@ -1,51 +1,215 @@
-from enum import Enum
-
 import pyomo.environ as pyo
 from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
 
+from optimes.assets.portfolio import AssetPortfolio
+from optimes.math_model.constraints import (
+    BatteryChargeModeConstraintParams,
+    BatteryDischargeModeConstraintParams,
+    BatterySocBoundsConstraintParams,
+    BatterySocDynamicsConstraintParams,
+    BatterySocEndConstraintParams,
+    GenerationLimitConstraintParams,
+    PowerBalanceConstraintParams,
+    battery_charge_limit_constraint,
+    battery_discharge_limit_constraint,
+    battery_soc_bounds_constraint,
+    battery_soc_dynamics_constraint,
+    battery_soc_terminal_constraint,
+    generation_limit_constraint,
+    power_balance_constraint,
+)
+from optimes.math_model.model_enums import (
+    EnergyModelConstraint,
+    EnergyModelObjective,
+    EnergyModelSet,
+    EnergyModelVariable,
+)
+from optimes.math_model.objectives import minimize_operational_cost_of
 from optimes.solvers.highs_solver import HiGHSolver
+from optimes.system.load import LoadProfile
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-class EnergyModelSet(Enum):
-    TIME = "time"
-    GENERATORS = "generators"
-    BATTERIES = "batteries"
-
-
-class EnergyModelVariable(Enum):
-    GENERATOR_POWER = "generator_power"
-    BATTERY_CHARGE = "battery_charge"
-    BATTERY_DISCHARGE = "battery_discharge"
-    BATTERY_SOC = "battery_soc"
-    BATTERY_CHARGE_MODE = "battery_charge_mode"
-
-
-class EnergyModelConstraint(Enum):
-    POWER_BALANCE = "power_balance"
-    GENERATOR_LIMIT = "generator_limit"
-    BATTERY_CHARGE_LIMIT = "battery_charge_limit"
-    BATTERY_DISCHARGE_LIMIT = "battery_discharge_limit"
-    BATTERY_SOC_DYNAMICS = "battery_soc_dynamics"
-    BATTERY_SOC_BOUNDS = "battery_soc_bounds"
-    BATTERY_SOC_TERMINAL = "battery_soc_terminal"
-
-
-class EnergyModelObjective(Enum):
-    TOTAL_VARIABLE_COST = "total_variable_cost"
-
-
-class EnergyModel(pyo.ConcreteModel):
-    """
-    Wrapper around Pyomo ConcreteModel that holds all Sets, Vars, Constraints, and the Objective.
-    Does not store portfolio or load_profile internally—just the optimization elements.
-    """
-
-    def __init__(self, *args: object, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)
+class EnergyModel:
+    def __init__(self, portfolio: AssetPortfolio, load_profile: LoadProfile) -> None:
+        self._portfolio = portfolio
+        self._load_profile = load_profile
+        self._pyo_model = pyo.ConcreteModel()
+        self._solver = HiGHSolver()
         self._results: SolverResults | None = None
+
+    def _build(self) -> None:
+        self._add_model_sets()
+        self._add_model_variables()
+        self._add_model_constraints()
+        self._add_model_objective()
+
+    def _add_model_sets(self) -> None:
+        time_indices = list(range(len(self._load_profile.profile)))
+        generator_indices = list(range(len(self._portfolio.generators)))
+        battery_indices = list(range(len(self._portfolio.batteries)))
+        self._add_set(EnergyModelSet.TIME, pyo.Set(initialize=time_indices))
+        self._add_set(EnergyModelSet.GENERATORS, pyo.Set(initialize=generator_indices))
+        self._add_set(EnergyModelSet.BATTERIES, pyo.Set(initialize=battery_indices))
+
+    def _add_model_variables(self) -> None:
+        self._add_power_generator_variables()
+        self._add_battery_variables()
+
+    def _add_power_generator_variables(self) -> None:
+        self._add_variable(
+            EnergyModelVariable.GENERATOR_POWER,
+            pyo.Var(
+                self.get_set(EnergyModelSet.TIME),
+                self.get_set(EnergyModelSet.GENERATORS),
+                domain=pyo.NonNegativeReals,
+            ),
+        )
+
+    def _add_battery_variables(self) -> None:
+        self._add_variable(
+            EnergyModelVariable.BATTERY_CHARGE,
+            pyo.Var(
+                self.get_set(EnergyModelSet.TIME),
+                self.get_set(EnergyModelSet.BATTERIES),
+                domain=pyo.NonNegativeReals,
+                name=EnergyModelVariable.BATTERY_CHARGE.value,
+            ),
+        )
+        self._add_variable(
+            EnergyModelVariable.BATTERY_DISCHARGE,
+            pyo.Var(
+                self.get_set(EnergyModelSet.TIME),
+                self.get_set(EnergyModelSet.BATTERIES),
+                domain=pyo.NonNegativeReals,
+                name=EnergyModelVariable.BATTERY_DISCHARGE.value,
+            ),
+        )
+        self._add_variable(
+            EnergyModelVariable.BATTERY_SOC,
+            pyo.Var(
+                self.get_set(EnergyModelSet.TIME),
+                self.get_set(EnergyModelSet.BATTERIES),
+                domain=pyo.NonNegativeReals,
+                name=EnergyModelVariable.BATTERY_SOC.value,
+            ),
+        )
+        self._add_variable(
+            EnergyModelVariable.BATTERY_CHARGE_MODE,
+            pyo.Var(
+                self.get_set(EnergyModelSet.TIME),
+                self.get_set(EnergyModelSet.BATTERIES),
+                within=pyo.Binary,
+            ),
+        )
+
+    def _add_model_constraints(self) -> None:
+        self._add_power_balance_constraint()
+        self._add_power_generator_constraints()
+        self._add_model_battery_constraints()
+
+    def _add_power_balance_constraint(self) -> None:
+        self._add_constraint(
+            EnergyModelConstraint.POWER_BALANCE,
+            power_balance_constraint(
+                PowerBalanceConstraintParams(
+                    generators_set=self.get_set(EnergyModelSet.GENERATORS),
+                    batteries_set=self.get_set(EnergyModelSet.BATTERIES),
+                    generator_power=self.get_variable(EnergyModelVariable.GENERATOR_POWER),
+                    battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
+                    battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
+                    load_profile=self._load_profile,
+                    time_set=self.get_set(EnergyModelSet.TIME),
+                ),
+            ),
+        )
+
+    def _add_power_generator_constraints(self) -> None:
+        self._add_constraint(
+            EnergyModelConstraint.GENERATOR_LIMIT,
+            generation_limit_constraint(
+                GenerationLimitConstraintParams(
+                    generator_power=self.get_variable(EnergyModelVariable.GENERATOR_POWER),
+                    generators=self._portfolio.generators,
+                    time_set=self.get_set(EnergyModelSet.TIME),
+                    generator_set=self.get_set(EnergyModelSet.GENERATORS),
+                ),
+            ),
+        )
+
+    def _add_model_battery_constraints(self) -> None:
+        self._add_constraint(
+            EnergyModelConstraint.BATTERY_CHARGE_LIMIT,
+            battery_charge_limit_constraint(
+                BatteryChargeModeConstraintParams(
+                    battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
+                    battery_charge_mode=self.get_variable(EnergyModelVariable.BATTERY_CHARGE_MODE),
+                    batteries=self._portfolio.batteries,
+                    time_set=self.get_set(EnergyModelSet.TIME),
+                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
+                ),
+            ),
+        )
+        self._add_constraint(
+            EnergyModelConstraint.BATTERY_DISCHARGE_LIMIT,
+            battery_discharge_limit_constraint(
+                BatteryDischargeModeConstraintParams(
+                    battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
+                    battery_charge_mode=self.get_variable(EnergyModelVariable.BATTERY_CHARGE_MODE),
+                    batteries=self._portfolio.batteries,
+                    time_set=self.get_set(EnergyModelSet.TIME),
+                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
+                ),
+            ),
+        )
+        self._add_constraint(
+            EnergyModelConstraint.BATTERY_SOC_DYNAMICS,
+            battery_soc_dynamics_constraint(
+                BatterySocDynamicsConstraintParams(
+                    battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
+                    battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
+                    battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
+                    batteries=self._portfolio.batteries,
+                    time_set=self.get_set(EnergyModelSet.TIME),
+                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
+                ),
+            ),
+        )
+        self._add_constraint(
+            EnergyModelConstraint.BATTERY_SOC_BOUNDS,
+            battery_soc_bounds_constraint(
+                BatterySocBoundsConstraintParams(
+                    battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
+                    batteries=self._portfolio.batteries,
+                    time_set=self.get_set(EnergyModelSet.TIME),
+                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
+                ),
+            ),
+        )
+        self._add_constraint(
+            EnergyModelConstraint.BATTERY_SOC_TERMINAL,
+            battery_soc_terminal_constraint(
+                BatterySocEndConstraintParams(
+                    battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
+                    batteries=self._portfolio.batteries,
+                    time_set=self.get_set(EnergyModelSet.TIME),
+                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
+                ),
+            ),
+        )
+
+    def _add_model_objective(self) -> None:
+        self._add_objective(
+            name=EnergyModelObjective.MIN_OPERATIONAL_COST,
+            objective=minimize_operational_cost_of(
+                generator_power=self.get_variable(EnergyModelVariable.GENERATOR_POWER),
+                time_set=self.get_set(EnergyModelSet.TIME),
+                generators_set=self.get_set(EnergyModelSet.GENERATORS),
+                generators=self._portfolio.generators,
+            ),
+        )
 
     @property
     def solver_results(self) -> SolverResults:
@@ -54,25 +218,25 @@ class EnergyModel(pyo.ConcreteModel):
             raise RuntimeError(msg)
         return self._results
 
-    def add_set(self, name: EnergyModelSet, set_: pyo.Set) -> None:
+    def _add_set(self, name: EnergyModelSet, set_: pyo.Set) -> None:
         if not isinstance(name, EnergyModelSet):
             msg = f"Name {name} is not a valid EnergyModelSet."
             raise TypeError(msg)
         if not isinstance(set_, pyo.Set):
             msg = f"Set {set_} is not a valid Pyomo Set."
             raise TypeError(msg)
-        setattr(self, name.value, set_)
+        setattr(self._pyo_model, name.value, set_)
 
-    def add_variable(self, name: EnergyModelVariable, variable: pyo.Var) -> None:
+    def _add_variable(self, name: EnergyModelVariable, variable: pyo.Var) -> None:
         if not isinstance(name, EnergyModelVariable):
             msg = f"Name {name} is not a valid EnergyModelVariable."
             raise TypeError(msg)
         if not isinstance(variable, pyo.Var):
             msg = f"Variable {variable} is not a valid Pyomo Var."
             raise TypeError(msg)
-        setattr(self, name.value, variable)
+        setattr(self._pyo_model, name.value, variable)
 
-    def add_constraint(self, name: EnergyModelConstraint, constraint: pyo.Constraint) -> None:
+    def _add_constraint(self, name: EnergyModelConstraint, constraint: pyo.Constraint) -> None:
         if not isinstance(name, EnergyModelConstraint):
             msg = f"Name {name} is not a valid EnergyModelConstraint."
             raise TypeError(msg)
@@ -80,42 +244,52 @@ class EnergyModel(pyo.ConcreteModel):
             msg = f"Constraint {constraint} is not a valid Pyomo Constraint."
             raise TypeError(msg)
 
-        setattr(self, name.value, constraint)
+        setattr(self._pyo_model, name.value, constraint)
 
-    def add_objective(self, name: EnergyModelObjective, objective: pyo.Objective) -> None:
+    def _add_objective(self, name: EnergyModelObjective, objective: pyo.Objective) -> None:
         if not isinstance(name, EnergyModelObjective):
             msg = f"Name {name} is not a valid EnergyModelObjective."
             raise TypeError(msg)
         if not isinstance(objective, pyo.Objective):
             msg = f"Objective {objective} is not a valid Pyomo Objective."
             raise TypeError(msg)
-        setattr(self, name.value, objective)
+        setattr(self._pyo_model, name.value, objective)
 
     def get_variable(self, name: EnergyModelVariable) -> pyo.Var:
         if not isinstance(name, EnergyModelVariable):
             msg = f"Name {name} is not a valid EnergyModelVariable."
             raise TypeError(msg)
-        if not hasattr(self, name.value):
+        if not hasattr(self._pyo_model, name.value):
             msg = f"Variable {name.value} does not exist in the model."
             raise AttributeError(msg)
-        return getattr(self, name.value)
+        return getattr(self._pyo_model, name.value)
 
     def get_set(self, name: EnergyModelSet) -> pyo.Set:
         if not isinstance(name, EnergyModelSet):
             msg = f"Name {name} is not a valid EnergyModelSet."
             raise TypeError(msg)
-        if not hasattr(self, name.value):
+        if not hasattr(self._pyo_model, name.value):
             msg = f"Set {name.value} does not exist in the model."
             raise AttributeError(msg)
-        return getattr(self, name.value)
+        return getattr(self._pyo_model, name.value)
 
-    def solve(self) -> SolverResults:
+    def optimize(self) -> None:
+        """
+        Optimize the model using the specified solver.
+        This method is a wrapper around the `solve` method.
+        """
+        self._build()
+        self._solve()
+
+    def _solve(self) -> SolverResults:
         """
         Solve the model using the specified solver.
         """
 
-        self._solver = HiGHSolver()
-        self._results = self._solver.solve(self)
+        if not isinstance(self._pyo_model, pyo.ConcreteModel):
+            msg = "Model is not a valid Pyomo ConcreteModel."
+            raise TypeError(msg)
+        self._results = self._solver.solve(self._pyo_model)
         return self._results
 
     def solving_status(self) -> SolverStatus | None:
