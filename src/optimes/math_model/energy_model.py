@@ -3,20 +3,13 @@ from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
 
 from optimes.assets.portfolio import AssetPortfolio
 from optimes.math_model.constraints import (
-    BatteryChargeModeConstraintParams,
-    BatteryDischargeModeConstraintParams,
-    BatterySocBoundsConstraintParams,
-    BatterySocDynamicsConstraintParams,
-    BatterySocEndConstraintParams,
-    GenerationLimitConstraintParams,
-    PowerBalanceConstraintParams,
-    battery_charge_limit_constraint,
-    battery_discharge_limit_constraint,
-    battery_soc_bounds_constraint,
-    battery_soc_dynamics_constraint,
-    battery_soc_terminal_constraint,
-    generation_limit_constraint,
-    power_balance_constraint,
+    BatteryChargeModeConstraint,
+    BatteryDischargeModeConstraint,
+    BatterySocBoundsConstraint,
+    BatterySocDynamicsConstraint,
+    BatterySocEndConstraint,
+    GenerationLimitConstraint,
+    PowerBalanceConstraint,
 )
 from optimes.math_model.model_enums import (
     EnergyModelConstraint,
@@ -111,93 +104,90 @@ class EnergyModel:
         self._add_model_battery_constraints()
 
     def _add_power_balance_constraint(self) -> None:
+        power_balance_constraint = PowerBalanceConstraint(
+            generators_set=self.get_set(EnergyModelSet.GENERATORS),
+            batteries_set=self.get_set(EnergyModelSet.BATTERIES),
+            generator_power=self.get_variable(EnergyModelVariable.GENERATOR_POWER),
+            battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
+            battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
+            load_profile=self._load_profile,
+            time_set=self.get_set(EnergyModelSet.TIME),
+        )
         self._add_constraint(
-            EnergyModelConstraint.POWER_BALANCE,
-            power_balance_constraint(
-                PowerBalanceConstraintParams(
-                    generators_set=self.get_set(EnergyModelSet.GENERATORS),
-                    batteries_set=self.get_set(EnergyModelSet.BATTERIES),
-                    generator_power=self.get_variable(EnergyModelVariable.GENERATOR_POWER),
-                    battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
-                    battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
-                    load_profile=self._load_profile,
-                    time_set=self.get_set(EnergyModelSet.TIME),
-                ),
-            ),
+            power_balance_constraint.name,
+            power_balance_constraint.constraint,
         )
 
     def _add_power_generator_constraints(self) -> None:
+        generation_limit_constraint = GenerationLimitConstraint(
+            generator_power=self.get_variable(EnergyModelVariable.GENERATOR_POWER),
+            generators=self._portfolio.generators,
+            time_set=self.get_set(EnergyModelSet.TIME),
+            generator_set=self.get_set(EnergyModelSet.GENERATORS),
+        )
         self._add_constraint(
-            EnergyModelConstraint.GENERATOR_LIMIT,
-            generation_limit_constraint(
-                GenerationLimitConstraintParams(
-                    generator_power=self.get_variable(EnergyModelVariable.GENERATOR_POWER),
-                    generators=self._portfolio.generators,
-                    time_set=self.get_set(EnergyModelSet.TIME),
-                    generator_set=self.get_set(EnergyModelSet.GENERATORS),
-                ),
-            ),
+            generation_limit_constraint.name,
+            generation_limit_constraint.constraint,
         )
 
     def _add_model_battery_constraints(self) -> None:
-        self._add_constraint(
-            EnergyModelConstraint.BATTERY_CHARGE_LIMIT,
-            battery_charge_limit_constraint(
-                BatteryChargeModeConstraintParams(
-                    battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
-                    battery_charge_mode=self.get_variable(EnergyModelVariable.BATTERY_CHARGE_MODE),
-                    batteries=self._portfolio.batteries,
-                    time_set=self.get_set(EnergyModelSet.TIME),
-                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
-                ),
-            ),
+        battery_charge_limit_constraint = BatteryChargeModeConstraint(
+            battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
+            battery_charge_mode=self.get_variable(EnergyModelVariable.BATTERY_CHARGE_MODE),
+            batteries=self._portfolio.batteries,
+            time_set=self.get_set(EnergyModelSet.TIME),
+            battery_set=self.get_set(EnergyModelSet.BATTERIES),
         )
         self._add_constraint(
-            EnergyModelConstraint.BATTERY_DISCHARGE_LIMIT,
-            battery_discharge_limit_constraint(
-                BatteryDischargeModeConstraintParams(
-                    battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
-                    battery_charge_mode=self.get_variable(EnergyModelVariable.BATTERY_CHARGE_MODE),
-                    batteries=self._portfolio.batteries,
-                    time_set=self.get_set(EnergyModelSet.TIME),
-                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
-                ),
-            ),
+            battery_charge_limit_constraint.name,
+            battery_charge_limit_constraint.constraint,
+        )
+
+        battery_discharge_limit_constraint = BatteryDischargeModeConstraint(
+            battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
+            battery_charge_mode=self.get_variable(EnergyModelVariable.BATTERY_CHARGE_MODE),
+            batteries=self._portfolio.batteries,
+            time_set=self.get_set(EnergyModelSet.TIME),
+            battery_set=self.get_set(EnergyModelSet.BATTERIES),
         )
         self._add_constraint(
-            EnergyModelConstraint.BATTERY_SOC_DYNAMICS,
-            battery_soc_dynamics_constraint(
-                BatterySocDynamicsConstraintParams(
-                    battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
-                    battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
-                    battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
-                    batteries=self._portfolio.batteries,
-                    time_set=self.get_set(EnergyModelSet.TIME),
-                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
-                ),
-            ),
+            battery_discharge_limit_constraint.name,
+            battery_discharge_limit_constraint.constraint,
+        )
+
+        battery_soc_dynamics_constraint = BatterySocDynamicsConstraint(
+            battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
+            battery_charge=self.get_variable(EnergyModelVariable.BATTERY_CHARGE),
+            battery_discharge=self.get_variable(EnergyModelVariable.BATTERY_DISCHARGE),
+            batteries=self._portfolio.batteries,
+            time_set=self.get_set(EnergyModelSet.TIME),
+            battery_set=self.get_set(EnergyModelSet.BATTERIES),
         )
         self._add_constraint(
-            EnergyModelConstraint.BATTERY_SOC_BOUNDS,
-            battery_soc_bounds_constraint(
-                BatterySocBoundsConstraintParams(
-                    battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
-                    batteries=self._portfolio.batteries,
-                    time_set=self.get_set(EnergyModelSet.TIME),
-                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
-                ),
-            ),
+            battery_soc_dynamics_constraint.name,
+            battery_soc_dynamics_constraint.constraint,
+        )
+
+        battery_soc_bounds_constraint = BatterySocBoundsConstraint(
+            battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
+            batteries=self._portfolio.batteries,
+            time_set=self.get_set(EnergyModelSet.TIME),
+            battery_set=self.get_set(EnergyModelSet.BATTERIES),
         )
         self._add_constraint(
-            EnergyModelConstraint.BATTERY_SOC_TERMINAL,
-            battery_soc_terminal_constraint(
-                BatterySocEndConstraintParams(
-                    battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
-                    batteries=self._portfolio.batteries,
-                    time_set=self.get_set(EnergyModelSet.TIME),
-                    battery_set=self.get_set(EnergyModelSet.BATTERIES),
-                ),
-            ),
+            battery_discharge_limit_constraint.name,
+            battery_soc_bounds_constraint.constraint,
+        )
+
+        battery_soc_end_constraint = BatterySocEndConstraint(
+            battery_soc=self.get_variable(EnergyModelVariable.BATTERY_SOC),
+            batteries=self._portfolio.batteries,
+            time_set=self.get_set(EnergyModelSet.TIME),
+            battery_set=self.get_set(EnergyModelSet.BATTERIES),
+        )
+        self._add_constraint(
+            battery_soc_end_constraint.name,
+            battery_soc_end_constraint.constraint,
         )
 
     def _add_model_objective(self) -> None:
