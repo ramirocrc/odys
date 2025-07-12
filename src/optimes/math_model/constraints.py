@@ -6,11 +6,11 @@ from pydantic import BaseModel
 
 from optimes.assets.generator import PowerGenerator
 from optimes.assets.storage import Battery
-from optimes.math_model.model_enums import EnergyModelConstraint
+from optimes.math_model.model_enums import EnergyModelConstraint, EnergyModelSet
 from optimes.system.load import LoadProfile
 
 
-class PyomoContraint(ABC):
+class PyomoContraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
     @property
     @abstractmethod
     def constraint(self) -> pyo.Constraint:
@@ -22,14 +22,11 @@ class PyomoContraint(ABC):
         pass
 
 
-class PowerBalanceConstraint(PyomoContraint, BaseModel, arbitrary_types_allowed=True):
-    generators_set: pyo.Set
-    batteries_set: pyo.Set
+class PowerBalanceConstraint(PyomoContraint):
     generator_power: pyo.Var
     battery_discharge: pyo.Var
     battery_charge: pyo.Var
     load_profile: LoadProfile
-    time_set: pyo.Set
 
     @property
     def name(self) -> EnergyModelConstraint:
@@ -38,22 +35,22 @@ class PowerBalanceConstraint(PyomoContraint, BaseModel, arbitrary_types_allowed=
     @property
     def constraint(self) -> pyo.Constraint:
         def rule(m: pyo.ConcreteModel, t: int):
-            generation_total = sum(self.generator_power[t, i] for i in self.generators_set)
-            discharge_total = sum(self.battery_discharge[t, j] for j in self.batteries_set)
-            charge_total = sum(self.battery_charge[t, j] for j in self.batteries_set)
+            generation_total = sum(self.generator_power[t, i] for i in set_generator)
+            discharge_total = sum(self.battery_discharge[t, j] for j in set_batteries)
+            charge_total = sum(self.battery_charge[t, j] for j in set_batteries)
             return generation_total + discharge_total == self.load_profile.profile[t] + charge_total
 
+        set_time, set_generator = self.generator_power.index_set().subsets()
+        _, set_batteries = self.battery_discharge.index_set().subsets()
         return pyo.Constraint(
-            self.time_set,
+            set_time,
             rule=rule,
         )
 
 
-class GenerationLimitConstraint(BaseModel, arbitrary_types_allowed=True):
+class GenerationLimitConstraint(PyomoContraint):
     generator_power: pyo.Var
     generators: list[PowerGenerator]
-    time_set: pyo.Set
-    generator_set: pyo.Set
 
     @property
     def name(self) -> EnergyModelConstraint:
@@ -64,19 +61,18 @@ class GenerationLimitConstraint(BaseModel, arbitrary_types_allowed=True):
         def rule(m: pyo.ConcreteModel, t: int, i: int):
             return self.generator_power[t, i] <= self.generators[i].nominal_power
 
+        set_time, set_generator = self.generator_power.index_set().subsets()
         return pyo.Constraint(
-            self.time_set,
-            self.generator_set,
+            set_time,
+            set_generator,
             rule=rule,
         )
 
 
-class BatteryChargeModeConstraint(BaseModel, arbitrary_types_allowed=True):
+class BatteryChargeModeConstraint(PyomoContraint):
     battery_charge: pyo.Var
     battery_charge_mode: pyo.Var
     batteries: list[Battery]
-    time_set: pyo.Set
-    battery_set: pyo.Set
 
     @property
     def name(self) -> EnergyModelConstraint:
@@ -88,19 +84,18 @@ class BatteryChargeModeConstraint(BaseModel, arbitrary_types_allowed=True):
             max_power = self.batteries[j].max_power
             return self.battery_charge[t, j] <= max_power * self.battery_charge_mode[t, j]
 
+        set_time, set_batteries = self.battery_charge.index_set().subsets()
         return pyo.Constraint(
-            self.time_set,
-            self.battery_set,
+            set_time,
+            set_batteries,
             rule=rule,
         )
 
 
-class BatteryDischargeModeConstraint(BaseModel, arbitrary_types_allowed=True):
+class BatteryDischargeModeConstraint(PyomoContraint):
     battery_discharge: pyo.Var
     battery_charge_mode: pyo.Var
     batteries: list[Battery]
-    time_set: pyo.Set
-    battery_set: pyo.Set
 
     @property
     def name(self) -> EnergyModelConstraint:
@@ -112,20 +107,19 @@ class BatteryDischargeModeConstraint(BaseModel, arbitrary_types_allowed=True):
             max_power = self.batteries[j].max_power
             return self.battery_discharge[t, j] <= max_power * (1 - self.battery_charge_mode[t, j])
 
+        set_time, set_batteries = self.battery_discharge.index_set().subsets()
         return pyo.Constraint(
-            self.time_set,
-            self.battery_set,
+            set_time,
+            set_batteries,
             rule=rule,
         )
 
 
-class BatterySocDynamicsConstraint(BaseModel, arbitrary_types_allowed=True):
+class BatterySocDynamicsConstraint(PyomoContraint):
     battery_soc: pyo.Var
     battery_charge: pyo.Var
     battery_discharge: pyo.Var
     batteries: list[Battery]
-    time_set: pyo.Set
-    battery_set: pyo.Set
 
     @property
     def name(self) -> EnergyModelConstraint:
@@ -143,18 +137,20 @@ class BatterySocDynamicsConstraint(BaseModel, arbitrary_types_allowed=True):
                 - self.battery_discharge[t, j] / battery_j.efficiency_discharging
             )
 
+        set_time, set_batteries = self.battery_soc.index_set().subsets()
+        if EnergyModelSet(set_time.name) != EnergyModelSet.TIME:
+            msg = f"Expected time set, got {set_time.name} instead"
+            raise ValueError(msg)
         return pyo.Constraint(
-            self.time_set,
-            self.battery_set,
+            set_time,
+            set_batteries,
             rule=rule,
         )
 
 
-class BatterySocBoundsConstraint(BaseModel, arbitrary_types_allowed=True):
+class BatterySocBoundsConstraint(PyomoContraint):
     battery_soc: pyo.Var
     batteries: list[Battery]
-    time_set: pyo.Set
-    battery_set: pyo.Set
 
     @property
     def name(self) -> EnergyModelConstraint:
@@ -165,18 +161,17 @@ class BatterySocBoundsConstraint(BaseModel, arbitrary_types_allowed=True):
         def rule(m: pyo.ConcreteModel, t: int, j: int):
             return pyo.inequality(0, self.battery_soc[t, j], self.batteries[j].capacity)
 
+        set_time, set_batteries = self.battery_soc.index_set().subsets()
         return pyo.Constraint(
-            self.time_set,
-            self.battery_set,
+            set_time,
+            set_batteries,
             rule=rule,
         )
 
 
-class BatterySocEndConstraint(BaseModel, arbitrary_types_allowed=True):
+class BatterySocEndConstraint(PyomoContraint):
     battery_soc: pyo.Var
     batteries: list[Battery]
-    time_set: pyo.Set
-    battery_set: pyo.Set
 
     @property
     def name(self) -> EnergyModelConstraint:
@@ -184,13 +179,15 @@ class BatterySocEndConstraint(BaseModel, arbitrary_types_allowed=True):
 
     @property
     def constraint(self) -> pyo.Constraint:
+        set_time, set_batteries = self.battery_soc.index_set().subsets()
+
         def rule(m: pyo.ConcreteModel, j: int):
             if self.batteries[j].soc_end is None:
                 return pyo.Constraint.Skip
 
-            return self.battery_soc[self.time_set.data()[-1], j] == self.batteries[j].soc_end
+            return self.battery_soc[set_time.data()[-1], j] == self.batteries[j].soc_end
 
         return pyo.Constraint(
-            self.battery_set,
+            set_batteries,
             rule=rule,
         )
