@@ -71,8 +71,8 @@ select = [
 ignore = [
     "D", # Docstring style (pydocstyle)
     "G004", # Logging statement uses f-string
-    "ANN",
-    "ARG"
+    # "ANN",
+    # "ARG"
 ]
 
 [tool.ruff.lint.per-file-ignores]
