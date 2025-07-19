@@ -15,6 +15,7 @@ class EnergyModelParameterName(Enum):
     BATTERY_SOC_INITIAL = "param_battery_soc_initial"
     BATTERY_SOC_TERMINAL = "param_battery_soc_terminal"
     BATTERY_CAPACITY = "param_battery_capacity"
+    SCENARIO_TIMESTEP = "param_scenario_timestep"
 
 
 class PyomoParameter(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
