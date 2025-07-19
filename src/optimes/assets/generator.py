@@ -1,14 +1,87 @@
+from datetime import timedelta
+from typing import Annotated
+
+from pydantic import Field
+
 from optimes.assets.base import EnergyAsset
 
 
 class PowerGenerator(EnergyAsset):
-    nominal_power: float  # Max capacity [MW]
-    variable_cost: float  # [€/MWh]
-    availability: list[float] | None = None  # [0-1] per timestep, e.g. for outages
-    ramp_up: float | None = None  # MW per timestep
-    ramp_down: float | None = None
-    min_up_time: int | None = None
-    min_down_time: int | None = None
-    startup_cost: float | None = None
-    shutdown_cost: float | None = None
-    emission_factor: float | None = None
+    nominal_power: Annotated[
+        float,
+        Field(
+            strict=True,
+            gt=0,
+            description="Nominal power of the generator in MW",
+        ),
+    ]
+
+    variable_cost: Annotated[
+        float,
+        Field(
+            strict=True,
+            gt=0,
+            description="Variable cost of the generator in currency per MWh",
+        ),
+    ]
+
+    ramp_up: Annotated[
+        float | None,
+        Field(
+            strict=True,
+            gt=0,
+            description="Ramp-up rate of the generator in MW per hour",
+        ),
+    ] = None
+
+    ramp_down: Annotated[
+        float | None,
+        Field(
+            strict=True,
+            gt=0,
+            description="Ramp-down rate of the generator in MW per hour",
+        ),
+    ] = None
+
+    min_up_time: Annotated[
+        timedelta | None,
+        Field(
+            ge=timedelta(0),
+            description="Minimum up time",
+        ),
+    ] = None
+
+    min_down_time: Annotated[
+        timedelta | None,
+        Field(
+            ge=timedelta(0),
+            description="Minimum down time",
+        ),
+    ] = None
+
+    startup_cost: Annotated[
+        float | None,
+        Field(
+            strict=True,
+            ge=0,
+            description="Startup cost of the generator, in currency per MWh",
+        ),
+    ] = None
+
+    shutdown_cost: Annotated[
+        float | None,
+        Field(
+            strict=True,
+            ge=0,
+            description="Shutdown cost of the generator, in currency per MWh",
+        ),
+    ] = None
+
+    emission_factor: Annotated[
+        float | None,
+        Field(
+            strict=True,
+            ge=0,
+            description="Emission factor of the generator in kg CO2 per MWh",
+        ),
+    ] = None

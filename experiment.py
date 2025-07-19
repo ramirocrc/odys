@@ -3,8 +3,10 @@ from datetime import timedelta
 from optimes.assets.generator import PowerGenerator
 from optimes.assets.portfolio import AssetPortfolio
 from optimes.assets.storage import Battery
-from optimes.math_model.energy_model import EnergyModel, EnergyModelSetName, EnergyModelVariableName
-from optimes.system.load import LoadProfile
+from optimes.math_model.energy_model import EnergyModel
+from optimes.math_model.pyomo_components.sets import EnergyModelSetName
+from optimes.math_model.pyomo_components.variables import EnergyModelVariableName
+from optimes.system.scenario import ScenarioConditions
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -28,9 +30,9 @@ if __name__ == "__main__":
         soc_initial=100.0,
         soc_terminal=50.0,
     )
-    load_profile = LoadProfile(
-        profile=[50, 75, 100, 125, 150],
-        timedelta=timedelta(hours=1),
+    load_profile = ScenarioConditions(
+        demand_profile=[50, 75, 100, 125, 150],
+        timestep=timedelta(minutes=30),
     )
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_1)
@@ -39,7 +41,7 @@ if __name__ == "__main__":
 
     model = EnergyModel(
         portfolio=portfolio,
-        load_profile=load_profile,
+        scenario=load_profile,
     )
     logger.info(f"Solver Status: {model.solving_status()}")
     logger.info(f"Termination Status: {model.termination_condition()}")
@@ -50,13 +52,13 @@ if __name__ == "__main__":
     logger.info(f"Termination Status: {model.termination_condition()}")
 
     # Generators
-    generator_power = model.get_pyomo_component(EnergyModelVariableName.GENERATOR_POWER)
-    time = model.get_pyomo_component(EnergyModelSetName.TIME)
-    generators = model.get_pyomo_component(EnergyModelSetName.GENERATORS)
-    batteries = model.get_pyomo_component(EnergyModelSetName.BATTERIES)
-    battery_charge = model.get_pyomo_component(EnergyModelVariableName.BATTERY_CHARGE)
-    battery_discharge = model.get_pyomo_component(EnergyModelVariableName.BATTERY_DISCHARGE)
-    battery_soc = model.get_pyomo_component(EnergyModelVariableName.BATTERY_SOC)
+    generator_power = model[EnergyModelVariableName.GENERATOR_POWER]
+    time = model[EnergyModelSetName.TIME]
+    generators = model[EnergyModelSetName.GENERATORS]
+    batteries = model[EnergyModelSetName.BATTERIES]
+    battery_charge = model[EnergyModelVariableName.BATTERY_CHARGE]
+    battery_discharge = model[EnergyModelVariableName.BATTERY_DISCHARGE]
+    battery_soc = model[EnergyModelVariableName.BATTERY_SOC]
 
     for t in time:
         for i in generators:
