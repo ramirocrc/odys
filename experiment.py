@@ -23,15 +23,15 @@ if __name__ == "__main__":
     )
     battery_1 = Battery(
         name="battery1",
-        max_power=50.0,
+        max_power=200.0,
         capacity=200.0,
         efficiency_charging=1,
         efficiency_discharging=1,
         soc_initial=100.0,
-        soc_terminal=50.0,
+        soc_terminal=0.0,
     )
     load_profile = ScenarioConditions(
-        demand_profile=[50, 75, 100, 125, 150],
+        demand_profile=[50, 75, 100, 125, 450],
         timestep=timedelta(minutes=30),
     )
     portfolio = AssetPortfolio()
