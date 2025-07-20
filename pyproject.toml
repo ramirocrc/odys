@@ -71,6 +71,9 @@ select = [
 ignore = [
     "D", # Docstring style (pydocstyle)
     "G004", # Logging statement uses f-string
+    "TD",
+    "FIX",
+
     # "ANN",
     # "ARG"
 ]

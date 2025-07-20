@@ -43,6 +43,8 @@ class EnergyModel:
         if self._scenario.available_capacity_profiles is not None:
             self._validate_available_capacity()
 
+        self._validate_demand_can_be_met()
+
     def _validate_available_capacity(self) -> None:
         for asset_name, capacities in self._scenario.available_capacity_profiles.items():
             asset = self._portfolio.get_asset(asset_name)
@@ -57,6 +59,54 @@ class EnergyModel:
                     f"which doesn't  match the length of the load profile ({len(self._scenario.demand_profile)})."
                 )
                 raise ValueError(msg)
+
+    def _validate_demand_can_be_met(self) -> None:
+        self._validate_enough_power_to_meet_demand()
+        self._valiate_enough_energy_to_meet_demand()
+
+    def _validate_enough_power_to_meet_demand(self) -> None:
+        cumulative_generators_power = sum(gen.nominal_power for gen in self._portfolio.generators)
+        # TODO: We assume full capacity can be discharged -> Needs to be limited by max power
+        cumulative_battery_capacities = sum(bat.capacity for bat in self._portfolio.batteries)
+        max_available_power = cumulative_generators_power + cumulative_battery_capacities
+        for t, demand_t in enumerate(self._scenario.demand_profile):
+            if max_available_power < demand_t:
+                msg = (
+                    f"Infeasible problem at time index {t}: "
+                    f"Demand = {demand_t}, but maximum available generation + battery = {max_available_power}."
+                )
+                raise ValueError(msg)
+
+    def _valiate_enough_energy_to_meet_demand(self) -> None:
+        # TODO: Validate that:
+        # sum(demand * deltat) <= sum(generator.nominal_power) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
+        pass
+
+    def _add_pyomo_component(self, component: PyomoComponentProtocol) -> None:
+        if hasattr(self._pyo_model, component.name.value):
+            msg = f"Component {component.name} already exists in the model."
+            raise AttributeError(msg)
+        if not isinstance(component.component, IndexedComponent):
+            msg = f"Expected IndexedComponent, got {type(component.component)}"
+            raise TypeError(msg)
+        setattr(self._pyo_model, component.name.value, component.component)
+
+    def __getitem__(
+        self,
+        name: EnergyModelVariableName | EnergyModelParameterName | EnergyModelSetName,
+    ) -> IndexedComponent:
+        if not hasattr(self._pyo_model, name.value):
+            msg = f"Component {name.value} does not exist in the model."
+            raise AttributeError(msg)
+        return getattr(self._pyo_model, name.value)
+
+    def optimize(self) -> None:
+        """
+        Optimize the model using the specified solver.
+        This method is a wrapper around the `solve` method.
+        """
+        self._build()
+        self._solve()
 
     def _build(self) -> None:
         self._add_model_sets()
@@ -371,32 +421,6 @@ class EnergyModel:
             raise RuntimeError(msg)
         return self._results
 
-    def _add_pyomo_component(self, component: PyomoComponentProtocol) -> None:
-        if hasattr(self._pyo_model, component.name.value):
-            msg = f"Component {component.name} already exists in the model."
-            raise AttributeError(msg)
-        if not isinstance(component.component, IndexedComponent):
-            msg = f"Expected IndexedComponent, got {type(component.component)}"
-            raise TypeError(msg)
-        setattr(self._pyo_model, component.name.value, component.component)
-
-    def __getitem__(
-        self,
-        name: EnergyModelVariableName | EnergyModelParameterName | EnergyModelSetName,
-    ) -> IndexedComponent:
-        if not hasattr(self._pyo_model, name.value):
-            msg = f"Component {name.value} does not exist in the model."
-            raise AttributeError(msg)
-        return getattr(self._pyo_model, name.value)
-
-    def optimize(self) -> None:
-        """
-        Optimize the model using the specified solver.
-        This method is a wrapper around the `solve` method.
-        """
-        self._build()
-        self._solve()
-
     def _solve(self) -> SolverResults:
         """
         Solve the model using the specified solver.
@@ -406,6 +430,7 @@ class EnergyModel:
             msg = "Model is not a valid Pyomo ConcreteModel."
             raise TypeError(msg)
         self._results = self._solver.solve(self._pyo_model)
+
         return self._results
 
     def solving_status(self) -> SolverStatus | None:

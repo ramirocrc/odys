@@ -6,8 +6,8 @@
 
 # Input validation
 
-- [ ] Add pydantic validators to single assets
-- [ ] Add pydantic validators to AssetPortfolio
+- [x] Add pydantic validators to single assets
+- [x] Add pydantic validators to AssetPortfolio
 - [ ] Validate inputs in EnergyModel (e.g. load can be met by generation at all times)
 
 # Test
@@ -29,6 +29,10 @@
 
 # Model extension
 
+- [ ] Review time step implementation
+  - [ ] Review power balance
+  - [ ] Review EnergyModel.\_validate_input
 - [ ] Evaluate other uses cases (e.g. optimze bids based on day-ahead price forecast)
 - [ ] Add additional parameteres for assets (e.g. generator min_up_time, battery degradation_cost)
 - [ ] Support for other assets (e.g. wind, hydro, solar pv)
+- [ ] Implement cusomt Exceptions

@@ -102,7 +102,7 @@ class Battery(EnergyAsset):
         }
 
         for name, battery_soc in limits.items():
-            if battery_soc is not None and battery_soc >= self.capacity:
+            if battery_soc is not None and battery_soc > self.capacity:
                 msg = f"{name} ({battery_soc}) must be less than the battery capacity ({self.capacity})."
                 raise ValueError(msg)
 
