@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from optimes.assets.base import EnergyAsset
+from optimes.energy_system.assets.base import EnergyAsset
 
 
 class PowerGenerator(EnergyAsset):

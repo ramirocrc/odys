@@ -11,6 +11,6 @@ class EnergyModelSetName(Enum):
     BATTERIES = "batteries"
 
 
-class PyomoSet(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
+class SystemSet(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
     name: EnergyModelSetName
     component: pyo.Set

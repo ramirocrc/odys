@@ -1,8 +1,8 @@
 from typing import TypeVar
 
-from optimes.assets.base import EnergyAsset
-from optimes.assets.generator import PowerGenerator
-from optimes.assets.storage import Battery
+from optimes.energy_system.assets.base import EnergyAsset
+from optimes.energy_system.assets.generator import PowerGenerator
+from optimes.energy_system.assets.storage import Battery
 
 T = TypeVar("T", bound=EnergyAsset)
 

@@ -17,7 +17,7 @@ class EnergyModelObjectiveName(Enum):
     MIN_OPERATIONAL_COST = "obj_minimize_operational_cost"
 
 
-class PyomoObjective(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
+class SystemObjective(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
     name: ClassVar
 
     @property
@@ -30,7 +30,7 @@ class PyomoObjective(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid
         pass
 
 
-class MinimizeOperationalCostObjective(PyomoObjective):
+class MinimizeOperationalCostObjective(SystemObjective):
     name: ClassVar = EnergyModelObjectiveName.MIN_OPERATIONAL_COST
     var_generator_power: pyo.Var
     param_generator_variable_cost: pyo.Param
