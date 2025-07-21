@@ -20,6 +20,11 @@ test: ## Test the code with pytest
 	@echo "🚀 Testing code: Running pytest"
 	@uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
 
+.PHONY: test-report
+test-report: ## Generate test report
+	@echo "Generating test report"
+	pytest --cov-report term --cov=src tests/
+
 .PHONY: build
 build: clean-build ## Build wheel file
 	@echo "🚀 Creating wheel file"

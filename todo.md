@@ -8,7 +8,7 @@
 
 - [x] Add pydantic validators to single assets
 - [x] Add pydantic validators to AssetPortfolio
-- [ ] Validate inputs in EnergyModel (e.g. load can be met by generation at all times)
+- [x] Validate inputs in EnergyModel (e.g. load can be met by generation at all times)
 
 # Test
 
@@ -36,3 +36,7 @@
 - [ ] Add additional parameteres for assets (e.g. generator min_up_time, battery degradation_cost)
 - [ ] Support for other assets (e.g. wind, hydro, solar pv)
 - [ ] Implement cusomt Exceptions
+
+# Codebase refactoring
+
+- [ ] Move Scenario specific configuration (e.g. battery soc_initial soc_terminal to EnergySystem class)
