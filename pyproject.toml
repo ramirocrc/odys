@@ -96,8 +96,10 @@ ignore = [
 
 [tool.deptry.per_rule_ignores]
 DEP002 = [ "highspy"]
+
 [tool.coverage.report]
 skip_empty = true
+fail_under= 90
 
 [tool.coverage.run]
 branch = true
