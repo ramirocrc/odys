@@ -18,6 +18,6 @@ class EnergyModelParameterName(Enum):
     SCENARIO_TIMESTEP = "param_scenario_timestep"
 
 
-class PyomoParameter(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
+class SystemParameter(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
     name: EnergyModelParameterName
     component: pyo.Param

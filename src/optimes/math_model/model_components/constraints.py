@@ -6,7 +6,7 @@ from typing import ClassVar
 import pyomo.environ as pyo
 from pydantic import BaseModel
 
-from optimes.math_model.pyomo_components.sets import EnergyModelSetName
+from optimes.math_model.model_components.sets import EnergyModelSetName
 
 
 @unique
@@ -20,7 +20,7 @@ class EnergyModelConstraintName(Enum):
     BATTERY_SOC_TERMINAL = "const_battery_soc_terminal"
 
 
-class PyomoConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
+class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
     name: ClassVar[EnergyModelConstraintName]
 
     @property
@@ -33,7 +33,7 @@ class PyomoConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbi
         pass
 
 
-class PowerBalanceConstraint(PyomoConstraint):
+class PowerBalanceConstraint(SystemConstraint):
     name: ClassVar = EnergyModelConstraintName.POWER_BALANCE
     var_generator_power: pyo.Var
     var_battery_discharge: pyo.Var
@@ -56,7 +56,7 @@ class PowerBalanceConstraint(PyomoConstraint):
         )
 
 
-class GenerationLimitConstraint(PyomoConstraint):
+class GenerationLimitConstraint(SystemConstraint):
     name: ClassVar = EnergyModelConstraintName.GENERATOR_LIMIT
     var_generator_power: pyo.Var
     param_generator_nominal_power: pyo.Param
@@ -74,7 +74,7 @@ class GenerationLimitConstraint(PyomoConstraint):
         )
 
 
-class BatteryChargeModeConstraint(PyomoConstraint):
+class BatteryChargeModeConstraint(SystemConstraint):
     name: ClassVar = EnergyModelConstraintName.BATTERY_CHARGE_LIMIT
     var_battery_charge: pyo.Var
     var_battery_charge_mode: pyo.Var
@@ -93,7 +93,7 @@ class BatteryChargeModeConstraint(PyomoConstraint):
         )
 
 
-class BatteryDischargeModeConstraint(PyomoConstraint):
+class BatteryDischargeModeConstraint(SystemConstraint):
     name: ClassVar = EnergyModelConstraintName.BATTERY_DISCHARGE_LIMIT
     var_battery_discharge: pyo.Var
     var_battery_charge_mode: pyo.Var
@@ -114,7 +114,7 @@ class BatteryDischargeModeConstraint(PyomoConstraint):
         )
 
 
-class BatterySocDynamicsConstraint(PyomoConstraint):
+class BatterySocDynamicsConstraint(SystemConstraint):
     name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_DYNAMICS
     var_battery_soc: pyo.Var
     var_battery_charge: pyo.Var
@@ -145,7 +145,7 @@ class BatterySocDynamicsConstraint(PyomoConstraint):
         )
 
 
-class BatterySocBoundsConstraint(PyomoConstraint):
+class BatterySocBoundsConstraint(SystemConstraint):
     name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_BOUNDS
     var_battery_soc: pyo.Var
     param_battery_capacity: pyo.Param
@@ -163,7 +163,7 @@ class BatterySocBoundsConstraint(PyomoConstraint):
         )
 
 
-class BatterySocEndConstraint(PyomoConstraint):
+class BatterySocEndConstraint(SystemConstraint):
     name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_TERMINAL
     var_battery_soc: pyo.Var
     param_battery_soc_terminal: pyo.Param

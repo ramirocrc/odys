@@ -1,26 +1,20 @@
 import pyomo.environ as pyo
 from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
 
-from optimes.assets.portfolio import AssetPortfolio
-from optimes.math_model.builder import PyomoModelBuilder
-from optimes.math_model.portfolio_scenario_pair import PortfolioScenarioPair
+from optimes.energy_system.energy_system_conditions import EnergySystem
+from optimes.math_model.builder import EnergyAlgebraicModelBuilder
 from optimes.solvers.highs_solver import HiGHSolver
-from optimes.system.scenario import ScenarioConditions
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-class EnergyModel:
+class EnergySystemOptimizer:
     def __init__(
         self,
-        portfolio: AssetPortfolio,
-        scenario: ScenarioConditions,
+        model_data: EnergySystem,
     ) -> None:
-        self._portfolio = portfolio
-        self._scenario = scenario
-        model_data = PortfolioScenarioPair(portfolio=portfolio, scenario=scenario)
-        model_builder = PyomoModelBuilder(model_data)
+        model_builder = EnergyAlgebraicModelBuilder(model_data)
         self.pyo_model = model_builder.build()
         self._solver = HiGHSolver()
         self._results: SolverResults | None = None

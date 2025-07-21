@@ -1,8 +1,8 @@
 import pyomo.environ as pyo
 
-from optimes.math_model.extended_pyomo_model import ExtendedPyomoModel
-from optimes.math_model.portfolio_scenario_pair import PortfolioScenarioPair
-from optimes.math_model.pyomo_components.constraints import (
+from optimes.energy_system.energy_system_conditions import EnergySystem
+from optimes.math_model.algebraic_model import AlgebraicModel
+from optimes.math_model.model_components.constraints import (
     BatteryChargeModeConstraint,
     BatteryDischargeModeConstraint,
     BatterySocBoundsConstraint,
@@ -11,25 +11,24 @@ from optimes.math_model.pyomo_components.constraints import (
     GenerationLimitConstraint,
     PowerBalanceConstraint,
 )
-from optimes.math_model.pyomo_components.objectives import MinimizeOperationalCostObjective
-from optimes.math_model.pyomo_components.parameters import EnergyModelParameterName, PyomoParameter
-from optimes.math_model.pyomo_components.sets import EnergyModelSetName, PyomoSet
-from optimes.math_model.pyomo_components.variables import EnergyModelVariableName, PyomoVariable
+from optimes.math_model.model_components.objectives import MinimizeOperationalCostObjective
+from optimes.math_model.model_components.parameters import EnergyModelParameterName, SystemParameter
+from optimes.math_model.model_components.sets import EnergyModelSetName, SystemSet
+from optimes.math_model.model_components.variables import EnergyModelVariableName, SystemVarible
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-class PyomoModelBuilder:
+class EnergyAlgebraicModelBuilder:
     def __init__(
         self,
-        model_data: PortfolioScenarioPair,
+        model_data: EnergySystem,
     ) -> None:
-        self._portfolio = model_data.portfolio
-        self._scenario = model_data.scenario
-        self._ext_pyo_model = ExtendedPyomoModel()
+        self._model_data = model_data
+        self._ext_pyo_model = AlgebraicModel()
 
-    def build(self) -> ExtendedPyomoModel:
+    def build(self) -> AlgebraicModel:
         self._add_model_sets()
         self._add_model_parameters()
         self._add_model_variables()
@@ -38,23 +37,23 @@ class PyomoModelBuilder:
         return self._ext_pyo_model
 
     def _add_model_sets(self) -> None:
-        time_indices = list(range(len(self._scenario.demand_profile)))
-        generator_indices = [gen.name for gen in self._portfolio.generators]
-        battery_indices = [bat.name for bat in self._portfolio.batteries]
+        time_indices = list(range(len(self._model_data.demand_profile)))
+        generator_indices = [gen.name for gen in self._model_data.portfolio.generators]
+        battery_indices = [bat.name for bat in self._model_data.portfolio.batteries]
         self._ext_pyo_model.new_component(
-            PyomoSet(
+            SystemSet(
                 name=EnergyModelSetName.TIME,
                 component=pyo.Set(initialize=time_indices),
             ),
         )
         self._ext_pyo_model.new_component(
-            PyomoSet(
+            SystemSet(
                 name=EnergyModelSetName.GENERATORS,
                 component=pyo.Set(initialize=generator_indices),
             ),
         )
         self._ext_pyo_model.new_component(
-            PyomoSet(
+            SystemSet(
                 name=EnergyModelSetName.BATTERIES,
                 component=pyo.Set(initialize=battery_indices),
             ),
@@ -71,11 +70,11 @@ class PyomoModelBuilder:
 
     def _add_generator_parameters(self) -> None:
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.GENERATOR_NOMINAL_POWER,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.GENERATORS],
-                    initialize={gen.name: gen.nominal_power for gen in self._portfolio.generators},
+                    initialize={gen.name: gen.nominal_power for gen in self._model_data.portfolio.generators},
                     mutable=False,
                     name=EnergyModelParameterName.GENERATOR_NOMINAL_POWER.value,
                 ),
@@ -83,11 +82,11 @@ class PyomoModelBuilder:
         )
 
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.GENERATOR_VARIABLE_COST,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.GENERATORS],
-                    initialize={gen.name: gen.variable_cost for gen in self._portfolio.generators},
+                    initialize={gen.name: gen.variable_cost for gen in self._model_data.portfolio.generators},
                     mutable=False,
                     name=EnergyModelParameterName.GENERATOR_VARIABLE_COST.value,
                 ),
@@ -96,11 +95,11 @@ class PyomoModelBuilder:
 
     def _add_battery_parameters(self) -> None:
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.BATTERY_MAX_POWER,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.BATTERIES],
-                    initialize={battery.name: battery.max_power for battery in self._portfolio.batteries},
+                    initialize={battery.name: battery.max_power for battery in self._model_data.portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_MAX_POWER.value,
                 ),
@@ -108,11 +107,13 @@ class PyomoModelBuilder:
         )
 
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.BATTERY_EFFICIENCY_CHARGE,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.BATTERIES],
-                    initialize={battery.name: battery.efficiency_charging for battery in self._portfolio.batteries},
+                    initialize={
+                        battery.name: battery.efficiency_charging for battery in self._model_data.portfolio.batteries
+                    },
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_EFFICIENCY_CHARGE.value,
                 ),
@@ -120,11 +121,13 @@ class PyomoModelBuilder:
         )
 
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.BATTERY_EFFICIENCY_DISCHARGE,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.BATTERIES],
-                    initialize={battery.name: battery.efficiency_discharging for battery in self._portfolio.batteries},
+                    initialize={
+                        battery.name: battery.efficiency_discharging for battery in self._model_data.portfolio.batteries
+                    },
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_EFFICIENCY_DISCHARGE.value,
                 ),
@@ -132,11 +135,11 @@ class PyomoModelBuilder:
         )
 
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.BATTERY_SOC_INITIAL,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.BATTERIES],
-                    initialize={battery.name: battery.soc_initial for battery in self._portfolio.batteries},
+                    initialize={battery.name: battery.soc_initial for battery in self._model_data.portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_SOC_INITIAL.value,
                 ),
@@ -144,11 +147,11 @@ class PyomoModelBuilder:
         )
 
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.BATTERY_SOC_TERMINAL,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.BATTERIES],
-                    initialize={battery.name: battery.soc_terminal for battery in self._portfolio.batteries},
+                    initialize={battery.name: battery.soc_terminal for battery in self._model_data.portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_SOC_TERMINAL.value,
                 ),
@@ -156,11 +159,11 @@ class PyomoModelBuilder:
         )
 
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.BATTERY_CAPACITY,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.BATTERIES],
-                    initialize={battery.name: battery.capacity for battery in self._portfolio.batteries},
+                    initialize={battery.name: battery.capacity for battery in self._model_data.portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_CAPACITY.value,
                 ),
@@ -174,10 +177,10 @@ class PyomoModelBuilder:
 
     def _add_timestep_parameter(self) -> None:
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.SCENARIO_TIMESTEP,
                 component=pyo.Param(
-                    initialize=self._scenario.timestep,
+                    initialize=self._model_data.timestep,
                     mutable=False,
                     name=EnergyModelParameterName.SCENARIO_TIMESTEP.value,
                 ),
@@ -186,11 +189,11 @@ class PyomoModelBuilder:
 
     def _add_demand_parameters(self) -> None:
         self._ext_pyo_model.new_component(
-            PyomoParameter(
+            SystemParameter(
                 name=EnergyModelParameterName.DEMAND,
                 component=pyo.Param(
                     self._ext_pyo_model[EnergyModelSetName.TIME],
-                    initialize=self._scenario.demand_profile,
+                    initialize=self._model_data.demand_profile,
                     mutable=False,
                     name=EnergyModelParameterName.DEMAND.value,
                 ),
@@ -198,7 +201,7 @@ class PyomoModelBuilder:
         )
 
     def _add_available_capacity_parameters(self) -> None:
-        if self._scenario.available_capacity_profiles is None:
+        if self._model_data.available_capacity_profiles is None:
             return
         msg = "Available capacity profiles not implemented."
         raise NotImplementedError(msg)
@@ -209,7 +212,7 @@ class PyomoModelBuilder:
 
     def _add_power_generator_variables(self) -> None:
         self._ext_pyo_model.new_component(
-            PyomoVariable(
+            SystemVarible(
                 name=EnergyModelVariableName.GENERATOR_POWER,
                 component=pyo.Var(
                     self._ext_pyo_model[EnergyModelSetName.TIME],
@@ -221,7 +224,7 @@ class PyomoModelBuilder:
 
     def _add_battery_variables(self) -> None:
         self._ext_pyo_model.new_component(
-            PyomoVariable(
+            SystemVarible(
                 name=EnergyModelVariableName.BATTERY_CHARGE,
                 component=pyo.Var(
                     self._ext_pyo_model[EnergyModelSetName.TIME],
@@ -232,7 +235,7 @@ class PyomoModelBuilder:
             ),
         )
         self._ext_pyo_model.new_component(
-            PyomoVariable(
+            SystemVarible(
                 name=EnergyModelVariableName.BATTERY_DISCHARGE,
                 component=pyo.Var(
                     self._ext_pyo_model[EnergyModelSetName.TIME],
@@ -243,7 +246,7 @@ class PyomoModelBuilder:
             ),
         )
         self._ext_pyo_model.new_component(
-            PyomoVariable(
+            SystemVarible(
                 name=EnergyModelVariableName.BATTERY_SOC,
                 component=pyo.Var(
                     self._ext_pyo_model[EnergyModelSetName.TIME],
@@ -254,7 +257,7 @@ class PyomoModelBuilder:
             ),
         )
         self._ext_pyo_model.new_component(
-            PyomoVariable(
+            SystemVarible(
                 name=EnergyModelVariableName.BATTERY_CHARGE_MODE,
                 component=pyo.Var(
                     self._ext_pyo_model[EnergyModelSetName.TIME],
@@ -327,7 +330,7 @@ class PyomoModelBuilder:
         self._ext_pyo_model.new_component(battery_soc_end_constraint)
 
     def _add_scenario_constraints(self) -> None:
-        if self._scenario.available_capacity_profiles is None:
+        if self._model_data.available_capacity_profiles is None:
             return
 
     def _add_model_objective(self) -> None:

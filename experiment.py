@@ -1,12 +1,12 @@
 from datetime import timedelta
 
-from optimes.assets.generator import PowerGenerator
-from optimes.assets.portfolio import AssetPortfolio
-from optimes.assets.storage import Battery
-from optimes.math_model.energy_model import EnergyModel
-from optimes.math_model.pyomo_components.sets import EnergyModelSetName
-from optimes.math_model.pyomo_components.variables import EnergyModelVariableName
-from optimes.system.scenario import ScenarioConditions
+from optimes.energy_system.assets.generator import PowerGenerator
+from optimes.energy_system.assets.portfolio import AssetPortfolio
+from optimes.energy_system.assets.storage import Battery
+from optimes.energy_system.energy_system_conditions import EnergySystem
+from optimes.math_model.model_components.sets import EnergyModelSetName
+from optimes.math_model.model_components.variables import EnergyModelVariableName
+from optimes.math_model.optimizer import EnergySystemOptimizer
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -30,19 +30,17 @@ if __name__ == "__main__":
         soc_initial=100.0,
         soc_terminal=50.0,
     )
-    load_profile = ScenarioConditions(
-        demand_profile=[50, 75, 100, 125, 150],
-        timestep=timedelta(minutes=30),
-    )
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_1)
     portfolio.add_asset(generator_2)
     portfolio.add_asset(battery_1)
 
-    model = EnergyModel(
+    system_data = EnergySystem(
         portfolio=portfolio,
-        scenario=load_profile,
+        demand_profile=[50, 75, 100, 125, 150],
+        timestep=timedelta(minutes=30),
     )
+    model = EnergySystemOptimizer(system_data)
     logger.info(f"Solver Status: {model.solving_status()}")
     logger.info(f"Termination Status: {model.termination_condition()}")
 

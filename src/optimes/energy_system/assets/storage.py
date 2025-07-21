@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from pydantic import Field, model_validator
 
-from optimes.assets.base import EnergyAsset
+from optimes.energy_system.assets.base import EnergyAsset
 
 
 class Battery(EnergyAsset):
