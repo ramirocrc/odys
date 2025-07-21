@@ -1,4 +1,7 @@
+from typing import Self
+
 import pyomo.environ as pyo
+from pydantic import BaseModel, model_validator
 from pyomo.core.base.set import IndexedComponent
 from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
 
@@ -25,38 +28,50 @@ from optimes.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-class EnergyModel:
-    def __init__(
+class ExtendedPyomoModel(pyo.ConcreteModel):
+    def new_component(self, component: PyomoComponentProtocol) -> None:
+        if hasattr(self, component.name.value):
+            msg = f"Component {component.name} already exists in the model."
+            raise AttributeError(msg)
+        if not isinstance(component.component, IndexedComponent):
+            msg = f"Expected IndexedComponent, got {type(component.component)}"
+            raise TypeError(msg)
+        setattr(self, component.name.value, component.component)
+
+    def __getitem__(
         self,
-        portfolio: AssetPortfolio,
-        scenario: ScenarioConditions,
-    ) -> None:
-        self._portfolio = portfolio
-        self._scenario = scenario
-        self._validate_inputs()
+        name: EnergyModelVariableName | EnergyModelParameterName | EnergyModelSetName,
+    ) -> IndexedComponent:
+        if not hasattr(self, name.value):
+            msg = f"Component {name.value} does not exist in the model."
+            raise AttributeError(msg)
+        return getattr(self, name.value)
 
-        self._pyo_model = pyo.ConcreteModel()
-        self._solver = HiGHSolver()
-        self._results: SolverResults | None = None
 
-    def _validate_inputs(self) -> None:
-        if self._scenario.available_capacity_profiles is not None:
+class PyomoModelInputData(BaseModel, arbitrary_types_allowed=True):
+    portfolio: AssetPortfolio
+    scenario: ScenarioConditions
+
+    @model_validator(mode="after")
+    def _validate_inputs(self) -> Self:
+        if self.scenario.available_capacity_profiles is not None:
             self._validate_available_capacity()
 
         self._validate_demand_can_be_met()
+        return self
 
     def _validate_available_capacity(self) -> None:
-        for asset_name, capacities in self._scenario.available_capacity_profiles.items():
+        for asset_name, capacities in self.scenario.available_capacity_profiles.items():
             asset = self._portfolio.get_asset(asset_name)
             if not isinstance(asset, PowerGenerator):
                 msg = (
                     "Available capacity can only be specified for generators, "
                     f"but got '{asset_name}' of type {type(asset)}."
                 )
-            if len(capacities) != len(self._scenario.demand_profile):
+            if len(capacities) != len(self.scenario.demand_profile):
                 msg = (
                     f"Available capacity for '{asset_name}' has a length of {len(capacities)}, "
-                    f"which doesn't  match the length of the load profile ({len(self._scenario.demand_profile)})."
+                    f"which doesn't  match the length of the load profile ({len(self.scenario.demand_profile)})."
                 )
                 raise ValueError(msg)
 
@@ -65,11 +80,11 @@ class EnergyModel:
         self._valiate_enough_energy_to_meet_demand()
 
     def _validate_enough_power_to_meet_demand(self) -> None:
-        cumulative_generators_power = sum(gen.nominal_power for gen in self._portfolio.generators)
+        cumulative_generators_power = sum(gen.nominal_power for gen in self.portfolio.generators)
         # TODO: We assume full capacity can be discharged -> Needs to be limited by max power
-        cumulative_battery_capacities = sum(bat.capacity for bat in self._portfolio.batteries)
+        cumulative_battery_capacities = sum(bat.capacity for bat in self.portfolio.batteries)
         max_available_power = cumulative_generators_power + cumulative_battery_capacities
-        for t, demand_t in enumerate(self._scenario.demand_profile):
+        for t, demand_t in enumerate(self.scenario.demand_profile):
             if max_available_power < demand_t:
                 msg = (
                     f"Infeasible problem at time index {t}: "
@@ -82,56 +97,41 @@ class EnergyModel:
         # sum(demand * deltat) <= sum(generator.nominal_power) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
         pass
 
-    def _add_pyomo_component(self, component: PyomoComponentProtocol) -> None:
-        if hasattr(self._pyo_model, component.name.value):
-            msg = f"Component {component.name} already exists in the model."
-            raise AttributeError(msg)
-        if not isinstance(component.component, IndexedComponent):
-            msg = f"Expected IndexedComponent, got {type(component.component)}"
-            raise TypeError(msg)
-        setattr(self._pyo_model, component.name.value, component.component)
 
-    def __getitem__(
+class PyomoModelBuilder:
+    def __init__(
         self,
-        name: EnergyModelVariableName | EnergyModelParameterName | EnergyModelSetName,
-    ) -> IndexedComponent:
-        if not hasattr(self._pyo_model, name.value):
-            msg = f"Component {name.value} does not exist in the model."
-            raise AttributeError(msg)
-        return getattr(self._pyo_model, name.value)
+        model_data: PyomoModelInputData,
+    ) -> None:
+        self._portfolio = model_data.portfolio
+        self._scenario = model_data.scenario
+        self._ext_pyo_model = ExtendedPyomoModel()
 
-    def optimize(self) -> None:
-        """
-        Optimize the model using the specified solver.
-        This method is a wrapper around the `solve` method.
-        """
-        self._build()
-        self._solve()
-
-    def _build(self) -> None:
+    def build(self) -> ExtendedPyomoModel:
         self._add_model_sets()
         self._add_model_parameters()
         self._add_model_variables()
         self._add_model_constraints()
         self._add_model_objective()
+        return self._ext_pyo_model
 
     def _add_model_sets(self) -> None:
         time_indices = list(range(len(self._scenario.demand_profile)))
         generator_indices = [gen.name for gen in self._portfolio.generators]
         battery_indices = [bat.name for bat in self._portfolio.batteries]
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoSet(
                 name=EnergyModelSetName.TIME,
                 component=pyo.Set(initialize=time_indices),
             ),
         )
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoSet(
                 name=EnergyModelSetName.GENERATORS,
                 component=pyo.Set(initialize=generator_indices),
             ),
         )
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoSet(
                 name=EnergyModelSetName.BATTERIES,
                 component=pyo.Set(initialize=battery_indices),
@@ -148,11 +148,11 @@ class EnergyModel:
         self._add_scenario_parameters()
 
     def _add_generator_parameters(self) -> None:
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.GENERATOR_NOMINAL_POWER,
                 component=pyo.Param(
-                    self[EnergyModelSetName.GENERATORS],
+                    self._ext_pyo_model[EnergyModelSetName.GENERATORS],
                     initialize={gen.name: gen.nominal_power for gen in self._portfolio.generators},
                     mutable=False,
                     name=EnergyModelParameterName.GENERATOR_NOMINAL_POWER.value,
@@ -160,11 +160,11 @@ class EnergyModel:
             ),
         )
 
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.GENERATOR_VARIABLE_COST,
                 component=pyo.Param(
-                    self[EnergyModelSetName.GENERATORS],
+                    self._ext_pyo_model[EnergyModelSetName.GENERATORS],
                     initialize={gen.name: gen.variable_cost for gen in self._portfolio.generators},
                     mutable=False,
                     name=EnergyModelParameterName.GENERATOR_VARIABLE_COST.value,
@@ -173,11 +173,11 @@ class EnergyModel:
         )
 
     def _add_battery_parameters(self) -> None:
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.BATTERY_MAX_POWER,
                 component=pyo.Param(
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     initialize={battery.name: battery.max_power for battery in self._portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_MAX_POWER.value,
@@ -185,11 +185,11 @@ class EnergyModel:
             ),
         )
 
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.BATTERY_EFFICIENCY_CHARGE,
                 component=pyo.Param(
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     initialize={battery.name: battery.efficiency_charging for battery in self._portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_EFFICIENCY_CHARGE.value,
@@ -197,11 +197,11 @@ class EnergyModel:
             ),
         )
 
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.BATTERY_EFFICIENCY_DISCHARGE,
                 component=pyo.Param(
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     initialize={battery.name: battery.efficiency_discharging for battery in self._portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_EFFICIENCY_DISCHARGE.value,
@@ -209,11 +209,11 @@ class EnergyModel:
             ),
         )
 
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.BATTERY_SOC_INITIAL,
                 component=pyo.Param(
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     initialize={battery.name: battery.soc_initial for battery in self._portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_SOC_INITIAL.value,
@@ -221,11 +221,11 @@ class EnergyModel:
             ),
         )
 
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.BATTERY_SOC_TERMINAL,
                 component=pyo.Param(
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     initialize={battery.name: battery.soc_terminal for battery in self._portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_SOC_TERMINAL.value,
@@ -233,11 +233,11 @@ class EnergyModel:
             ),
         )
 
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.BATTERY_CAPACITY,
                 component=pyo.Param(
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     initialize={battery.name: battery.capacity for battery in self._portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_CAPACITY.value,
@@ -251,7 +251,7 @@ class EnergyModel:
         self._add_available_capacity_parameters()
 
     def _add_timestep_parameter(self) -> None:
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.SCENARIO_TIMESTEP,
                 component=pyo.Param(
@@ -263,11 +263,11 @@ class EnergyModel:
         )
 
     def _add_demand_parameters(self) -> None:
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoParameter(
                 name=EnergyModelParameterName.DEMAND,
                 component=pyo.Param(
-                    self[EnergyModelSetName.TIME],
+                    self._ext_pyo_model[EnergyModelSetName.TIME],
                     initialize=self._scenario.demand_profile,
                     mutable=False,
                     name=EnergyModelParameterName.DEMAND.value,
@@ -286,57 +286,57 @@ class EnergyModel:
         self._add_battery_variables()
 
     def _add_power_generator_variables(self) -> None:
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoVariable(
                 name=EnergyModelVariableName.GENERATOR_POWER,
                 component=pyo.Var(
-                    self[EnergyModelSetName.TIME],
-                    self[EnergyModelSetName.GENERATORS],
+                    self._ext_pyo_model[EnergyModelSetName.TIME],
+                    self._ext_pyo_model[EnergyModelSetName.GENERATORS],
                     domain=pyo.NonNegativeReals,
                 ),
             ),
         )
 
     def _add_battery_variables(self) -> None:
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoVariable(
                 name=EnergyModelVariableName.BATTERY_CHARGE,
                 component=pyo.Var(
-                    self[EnergyModelSetName.TIME],
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.TIME],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     domain=pyo.NonNegativeReals,
                     name=EnergyModelVariableName.BATTERY_CHARGE.value,
                 ),
             ),
         )
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoVariable(
                 name=EnergyModelVariableName.BATTERY_DISCHARGE,
                 component=pyo.Var(
-                    self[EnergyModelSetName.TIME],
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.TIME],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     domain=pyo.NonNegativeReals,
                     name=EnergyModelVariableName.BATTERY_DISCHARGE.value,
                 ),
             ),
         )
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoVariable(
                 name=EnergyModelVariableName.BATTERY_SOC,
                 component=pyo.Var(
-                    self[EnergyModelSetName.TIME],
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.TIME],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     domain=pyo.NonNegativeReals,
                     name=EnergyModelVariableName.BATTERY_SOC.value,
                 ),
             ),
         )
-        self._add_pyomo_component(
+        self._ext_pyo_model.new_component(
             PyomoVariable(
                 name=EnergyModelVariableName.BATTERY_CHARGE_MODE,
                 component=pyo.Var(
-                    self[EnergyModelSetName.TIME],
-                    self[EnergyModelSetName.BATTERIES],
+                    self._ext_pyo_model[EnergyModelSetName.TIME],
+                    self._ext_pyo_model[EnergyModelSetName.BATTERIES],
                     within=pyo.Binary,
                 ),
             ),
@@ -350,57 +350,59 @@ class EnergyModel:
 
     def _add_power_balance_constraint(self) -> None:
         power_balance_constraint = PowerBalanceConstraint(
-            var_generator_power=self[EnergyModelVariableName.GENERATOR_POWER],
-            var_battery_discharge=self[EnergyModelVariableName.BATTERY_DISCHARGE],
-            var_battery_charge=self[EnergyModelVariableName.BATTERY_CHARGE],
-            param_demand=self[EnergyModelParameterName.DEMAND],
+            var_generator_power=self._ext_pyo_model[EnergyModelVariableName.GENERATOR_POWER],
+            var_battery_discharge=self._ext_pyo_model[EnergyModelVariableName.BATTERY_DISCHARGE],
+            var_battery_charge=self._ext_pyo_model[EnergyModelVariableName.BATTERY_CHARGE],
+            param_demand=self._ext_pyo_model[EnergyModelParameterName.DEMAND],
         )
-        self._add_pyomo_component(power_balance_constraint)
+        self._ext_pyo_model.new_component(power_balance_constraint)
 
     def _add_power_generator_constraints(self) -> None:
         generation_limit_constraint = GenerationLimitConstraint(
-            var_generator_power=self[EnergyModelVariableName.GENERATOR_POWER],
-            param_generator_nominal_power=self[EnergyModelParameterName.GENERATOR_NOMINAL_POWER],
+            var_generator_power=self._ext_pyo_model[EnergyModelVariableName.GENERATOR_POWER],
+            param_generator_nominal_power=self._ext_pyo_model[EnergyModelParameterName.GENERATOR_NOMINAL_POWER],
         )
-        self._add_pyomo_component(generation_limit_constraint)
+        self._ext_pyo_model.new_component(generation_limit_constraint)
 
     def _add_model_battery_constraints(self) -> None:
         battery_charge_limit_constraint = BatteryChargeModeConstraint(
-            var_battery_charge=self[EnergyModelVariableName.BATTERY_CHARGE],
-            var_battery_charge_mode=self[EnergyModelVariableName.BATTERY_CHARGE_MODE],
-            param_battery_max_power=self[EnergyModelParameterName.BATTERY_MAX_POWER],
+            var_battery_charge=self._ext_pyo_model[EnergyModelVariableName.BATTERY_CHARGE],
+            var_battery_charge_mode=self._ext_pyo_model[EnergyModelVariableName.BATTERY_CHARGE_MODE],
+            param_battery_max_power=self._ext_pyo_model[EnergyModelParameterName.BATTERY_MAX_POWER],
         )
-        self._add_pyomo_component(battery_charge_limit_constraint)
+        self._ext_pyo_model.new_component(battery_charge_limit_constraint)
 
         battery_discharge_limit_constraint = BatteryDischargeModeConstraint(
-            var_battery_discharge=self[EnergyModelVariableName.BATTERY_DISCHARGE],
-            var_battery_charge_mode=self[EnergyModelVariableName.BATTERY_CHARGE_MODE],
-            param_battery_max_power=self[EnergyModelParameterName.BATTERY_MAX_POWER],
+            var_battery_discharge=self._ext_pyo_model[EnergyModelVariableName.BATTERY_DISCHARGE],
+            var_battery_charge_mode=self._ext_pyo_model[EnergyModelVariableName.BATTERY_CHARGE_MODE],
+            param_battery_max_power=self._ext_pyo_model[EnergyModelParameterName.BATTERY_MAX_POWER],
         )
-        self._add_pyomo_component(battery_discharge_limit_constraint)
+        self._ext_pyo_model.new_component(battery_discharge_limit_constraint)
 
         battery_soc_dynamics_constraint = BatterySocDynamicsConstraint(
-            var_battery_soc=self[EnergyModelVariableName.BATTERY_SOC],
-            var_battery_charge=self[EnergyModelVariableName.BATTERY_CHARGE],
-            var_battery_discharge=self[EnergyModelVariableName.BATTERY_DISCHARGE],
-            param_battery_efficiency_charging=self[EnergyModelParameterName.BATTERY_EFFICIENCY_CHARGE],
-            param_battery_efficiency_discharging=self[EnergyModelParameterName.BATTERY_EFFICIENCY_DISCHARGE],
-            param_battery_soc_initial=self[EnergyModelParameterName.BATTERY_SOC_INITIAL],
+            var_battery_soc=self._ext_pyo_model[EnergyModelVariableName.BATTERY_SOC],
+            var_battery_charge=self._ext_pyo_model[EnergyModelVariableName.BATTERY_CHARGE],
+            var_battery_discharge=self._ext_pyo_model[EnergyModelVariableName.BATTERY_DISCHARGE],
+            param_battery_efficiency_charging=self._ext_pyo_model[EnergyModelParameterName.BATTERY_EFFICIENCY_CHARGE],
+            param_battery_efficiency_discharging=self._ext_pyo_model[
+                EnergyModelParameterName.BATTERY_EFFICIENCY_DISCHARGE
+            ],
+            param_battery_soc_initial=self._ext_pyo_model[EnergyModelParameterName.BATTERY_SOC_INITIAL],
         )
-        self._add_pyomo_component(battery_soc_dynamics_constraint)
+        self._ext_pyo_model.new_component(battery_soc_dynamics_constraint)
 
         battery_soc_bounds_constraint = BatterySocBoundsConstraint(
-            var_battery_soc=self[EnergyModelVariableName.BATTERY_SOC],
-            param_battery_capacity=self[EnergyModelParameterName.BATTERY_CAPACITY],
+            var_battery_soc=self._ext_pyo_model[EnergyModelVariableName.BATTERY_SOC],
+            param_battery_capacity=self._ext_pyo_model[EnergyModelParameterName.BATTERY_CAPACITY],
         )
-        self._add_pyomo_component(battery_soc_bounds_constraint)
+        self._ext_pyo_model.new_component(battery_soc_bounds_constraint)
 
         battery_soc_end_constraint = BatterySocEndConstraint(
-            var_battery_soc=self[EnergyModelVariableName.BATTERY_SOC],
-            param_battery_soc_terminal=self[EnergyModelParameterName.BATTERY_SOC_TERMINAL],
+            var_battery_soc=self._ext_pyo_model[EnergyModelVariableName.BATTERY_SOC],
+            param_battery_soc_terminal=self._ext_pyo_model[EnergyModelParameterName.BATTERY_SOC_TERMINAL],
         )
 
-        self._add_pyomo_component(battery_soc_end_constraint)
+        self._ext_pyo_model.new_component(battery_soc_end_constraint)
 
     def _add_scenario_constraints(self) -> None:
         if self._scenario.available_capacity_profiles is None:
@@ -408,16 +410,38 @@ class EnergyModel:
 
     def _add_model_objective(self) -> None:
         objective = MinimizeOperationalCostObjective(
-            var_generator_power=self[EnergyModelVariableName.GENERATOR_POWER],
-            param_generator_variable_cost=self[EnergyModelParameterName.GENERATOR_VARIABLE_COST],
-            param_scenario_timestep=self[EnergyModelParameterName.SCENARIO_TIMESTEP],
+            var_generator_power=self._ext_pyo_model[EnergyModelVariableName.GENERATOR_POWER],
+            param_generator_variable_cost=self._ext_pyo_model[EnergyModelParameterName.GENERATOR_VARIABLE_COST],
+            param_scenario_timestep=self._ext_pyo_model[EnergyModelParameterName.SCENARIO_TIMESTEP],
         )
-        self._add_pyomo_component(objective)
+        self._ext_pyo_model.new_component(objective)
+
+
+class EnergyModel:
+    def __init__(
+        self,
+        portfolio: AssetPortfolio,
+        scenario: ScenarioConditions,
+    ) -> None:
+        self._portfolio = portfolio
+        self._scenario = scenario
+        model_data = PyomoModelInputData(portfolio=portfolio, scenario=scenario)
+        model_builder = PyomoModelBuilder(model_data)
+        self.pyo_model = model_builder.build()
+        self._solver = HiGHSolver()
+        self._results: SolverResults | None = None
+
+    def optimize(self) -> None:
+        """
+        Optimize the model using the specified solver.
+        This method is a wrapper around the `solve` method.
+        """
+        self._solve()
 
     @property
     def solver_results(self) -> SolverResults:
         if self._results is None:
-            msg = "No solve has been performed yet."
+            msg = "No optimization has been performed yet."
             raise RuntimeError(msg)
         return self._results
 
@@ -426,10 +450,10 @@ class EnergyModel:
         Solve the model using the specified solver.
         """
 
-        if not isinstance(self._pyo_model, pyo.ConcreteModel):
+        if not isinstance(self.pyo_model, pyo.ConcreteModel):
             msg = "Model is not a valid Pyomo ConcreteModel."
             raise TypeError(msg)
-        self._results = self._solver.solve(self._pyo_model)
+        self._results = self._solver.solve(self.pyo_model)
 
         return self._results
 

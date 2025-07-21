@@ -24,14 +24,14 @@ if __name__ == "__main__":
     battery_1 = Battery(
         name="battery1",
         max_power=200.0,
-        capacity=200.0,
+        capacity=100.0,
         efficiency_charging=1,
         efficiency_discharging=1,
         soc_initial=100.0,
-        soc_terminal=0.0,
+        soc_terminal=50.0,
     )
     load_profile = ScenarioConditions(
-        demand_profile=[50, 75, 100, 125, 450],
+        demand_profile=[50, 75, 100, 125, 150],
         timestep=timedelta(minutes=30),
     )
     portfolio = AssetPortfolio()
@@ -52,13 +52,13 @@ if __name__ == "__main__":
     logger.info(f"Termination Status: {model.termination_condition()}")
 
     # Generators
-    generator_power = model[EnergyModelVariableName.GENERATOR_POWER]
-    time = model[EnergyModelSetName.TIME]
-    generators = model[EnergyModelSetName.GENERATORS]
-    batteries = model[EnergyModelSetName.BATTERIES]
-    battery_charge = model[EnergyModelVariableName.BATTERY_CHARGE]
-    battery_discharge = model[EnergyModelVariableName.BATTERY_DISCHARGE]
-    battery_soc = model[EnergyModelVariableName.BATTERY_SOC]
+    generator_power = model.pyo_model[EnergyModelVariableName.GENERATOR_POWER]
+    time = model.pyo_model[EnergyModelSetName.TIME]
+    generators = model.pyo_model[EnergyModelSetName.GENERATORS]
+    batteries = model.pyo_model[EnergyModelSetName.BATTERIES]
+    battery_charge = model.pyo_model[EnergyModelVariableName.BATTERY_CHARGE]
+    battery_discharge = model.pyo_model[EnergyModelVariableName.BATTERY_DISCHARGE]
+    battery_soc = model.pyo_model[EnergyModelVariableName.BATTERY_SOC]
 
     for t in time:
         for i in generators:
