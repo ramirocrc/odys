@@ -26,17 +26,17 @@ class AssetPortfolio:
             raise KeyError(msg)
         return self._assets[name]
 
-    def get_assets_by_type(self, asset_type: type[T]) -> list[T]:
-        return [asset for asset in self._assets.values() if isinstance(asset, asset_type)]
+    def get_assets_by_type(self, asset_type: type[T]) -> tuple[T, ...]:
+        return tuple(asset for asset in self._assets.values() if isinstance(asset, asset_type))
 
     @property
-    def assets(self) -> list[EnergyAsset]:
-        return list(self._assets.values())
+    def assets(self) -> tuple[EnergyAsset, ...]:
+        return tuple(self._assets.values())
 
     @property
-    def generators(self) -> list[PowerGenerator]:
+    def generators(self) -> tuple[PowerGenerator, ...]:
         return self.get_assets_by_type(PowerGenerator)
 
     @property
-    def batteries(self) -> list[Battery]:
+    def batteries(self) -> tuple[Battery, ...]:
         return self.get_assets_by_type(Battery)
