@@ -11,6 +11,12 @@ logger = get_logger(__name__)
 
 
 class AlgebraicModel(pyo.ConcreteModel):
+    def __setattr__(self, name: str, value: object) -> None:
+        if isinstance(value, IndexedComponent):
+            msg = "Direct assignment of Pyomo component  is not allowed. Use `new_component(...)` instead."
+            raise AttributeError(msg)  # noqa: TRY004
+        super().__setattr__(name, value)
+
     def new_component(self, component: PyomoComponentProtocol) -> None:
         if hasattr(self, component.name.value):
             msg = f"Component {component.name} already exists in the model."
@@ -18,7 +24,8 @@ class AlgebraicModel(pyo.ConcreteModel):
         if not isinstance(component.component, IndexedComponent):
             msg = f"Expected IndexedComponent, got {type(component.component)}"
             raise TypeError(msg)
-        setattr(self, component.name.value, component.component)
+
+        super().__setattr__(component.name.value, component.component)
 
     # TODO: to implemnet get_param, get_var, get_set instead
     def __getitem__(  # type: ignore reportIncompatibleMethodOverride

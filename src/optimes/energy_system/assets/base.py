@@ -3,5 +3,5 @@ from abc import ABC
 from pydantic import BaseModel
 
 
-class EnergyAsset(BaseModel, ABC):
+class EnergyAsset(BaseModel, ABC, frozen=True):
     name: str

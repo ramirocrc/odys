@@ -37,9 +37,9 @@ class EnergyAlgebraicModelBuilder:
         return self._ext_pyo_model
 
     def _add_model_sets(self) -> None:
-        time_indices = list(range(len(self._model_data.demand_profile)))
-        generator_indices = [gen.name for gen in self._model_data.portfolio.generators]
-        battery_indices = [bat.name for bat in self._model_data.portfolio.batteries]
+        time_indices = range(len(self._model_data.demand_profile))
+        generator_indices = (gen.name for gen in self._model_data.portfolio.generators)
+        battery_indices = (bat.name for bat in self._model_data.portfolio.batteries)
         self._ext_pyo_model.new_component(
             SystemSet(
                 name=EnergyModelSetName.TIME,
@@ -183,6 +183,7 @@ class EnergyAlgebraicModelBuilder:
                     initialize=self._model_data.timestep,
                     mutable=False,
                     name=EnergyModelParameterName.SCENARIO_TIMESTEP.value,
+                    within=pyo.Any,
                 ),
             ),
         )

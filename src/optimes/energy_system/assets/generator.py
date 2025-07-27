@@ -6,7 +6,7 @@ from pydantic import Field
 from optimes.energy_system.assets.base import EnergyAsset
 
 
-class PowerGenerator(EnergyAsset):
+class PowerGenerator(EnergyAsset, frozen=True):
     nominal_power: Annotated[
         float,
         Field(

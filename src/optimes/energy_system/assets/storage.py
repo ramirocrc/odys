@@ -5,7 +5,7 @@ from pydantic import Field, model_validator
 from optimes.energy_system.assets.base import EnergyAsset
 
 
-class Battery(EnergyAsset):
+class Battery(EnergyAsset, frozen=True):
     capacity: Annotated[
         float,
         Field(
@@ -110,7 +110,7 @@ class Battery(EnergyAsset):
 
     @model_validator(mode="after")
     def validate_soc_initial_and_terminal(self) -> Self:
-        for name in ["soc_initial", "soc_terminal"]:
+        for name in ("soc_initial", "soc_terminal"):
             battery_soc = getattr(self, name)
             if battery_soc is None:
                 continue
