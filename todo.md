@@ -22,6 +22,7 @@
 
 - [ ] Remove solver from EnergyModel
 - [ ] Create optimization results class
+- [ ] Once result output is defined, we should make EnergyModelOptimizer.algebraic_model private (don't give access to algebraic_model to user)
 - [ ] Create table with optimization results
 - [ ] Assess if Pandas DataFrame is useful for optimization results
 - [ ] Handle infeasible problems

@@ -31,10 +31,14 @@ class SystemObjective(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbi
 
 
 class MinimizeOperationalCostObjective(SystemObjective):
-    name: ClassVar = EnergyModelObjectiveName.MIN_OPERATIONAL_COST
+    _name: ClassVar = EnergyModelObjectiveName.MIN_OPERATIONAL_COST
     var_generator_power: pyo.Var
     param_generator_variable_cost: pyo.Param
     param_scenario_timestep: pyo.Param
+
+    @property
+    def name(self) -> EnergyModelObjectiveName:
+        return self._name
 
     @property
     def function(self) -> pyo.Objective:

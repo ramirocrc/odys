@@ -40,23 +40,24 @@ if __name__ == "__main__":
         demand_profile=[50, 75, 100, 125, 150],
         timestep=timedelta(minutes=30),
     )
-    model = EnergySystemOptimizer(system_data)
-    logger.info(f"Solver Status: {model.solving_status()}")
-    logger.info(f"Termination Status: {model.termination_condition()}")
 
-    result = model.optimize()
+    optimizer = EnergySystemOptimizer(system_data)
+    logger.info(f"Solver Status: {optimizer.solving_status()}")
+    logger.info(f"Termination Status: {optimizer.termination_condition()}")
 
-    logger.info(f"Solver Status: {model.solving_status()}")
-    logger.info(f"Termination Status: {model.termination_condition()}")
+    result = optimizer.optimize()
+
+    logger.info(f"Solver Status: {optimizer.solving_status()}")
+    logger.info(f"Termination Status: {optimizer.termination_condition()}")
 
     # Generators
-    generator_power = model.pyo_model[EnergyModelVariableName.GENERATOR_POWER]
-    time = model.pyo_model[EnergyModelSetName.TIME]
-    generators = model.pyo_model[EnergyModelSetName.GENERATORS]
-    batteries = model.pyo_model[EnergyModelSetName.BATTERIES]
-    battery_charge = model.pyo_model[EnergyModelVariableName.BATTERY_CHARGE]
-    battery_discharge = model.pyo_model[EnergyModelVariableName.BATTERY_DISCHARGE]
-    battery_soc = model.pyo_model[EnergyModelVariableName.BATTERY_SOC]
+    generator_power = optimizer.algebraic_model.get_var(EnergyModelVariableName.GENERATOR_POWER)
+    time = optimizer.algebraic_model.get_set(EnergyModelSetName.TIME)
+    generators = optimizer.algebraic_model.get_set(EnergyModelSetName.GENERATORS)
+    batteries = optimizer.algebraic_model.get_set(EnergyModelSetName.BATTERIES)
+    battery_charge = optimizer.algebraic_model.get_var(EnergyModelVariableName.BATTERY_CHARGE)
+    battery_discharge = optimizer.algebraic_model.get_var(EnergyModelVariableName.BATTERY_DISCHARGE)
+    battery_soc = optimizer.algebraic_model.get_var(EnergyModelVariableName.BATTERY_SOC)
 
     for t in time:
         for i in generators:

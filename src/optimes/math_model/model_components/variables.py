@@ -13,6 +13,6 @@ class EnergyModelVariableName(Enum):
     BATTERY_CHARGE_MODE = "var_battery_charge_mode"
 
 
-class SystemVarible(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
+class SystemVariable(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
     name: EnergyModelVariableName
     component: pyo.Var

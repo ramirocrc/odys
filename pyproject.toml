@@ -73,9 +73,6 @@ ignore = [
     "G004", # Logging statement uses f-string
     "TD",
     "FIX",
-
-    # "ANN",
-    # "ARG"
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -91,7 +88,7 @@ preview = true
 [tool.pyright]
 typeCheckingMode = "standard"
 ignore = [
-    "src/optimes/math_model/builder.py"
+    # "src/optimes/math_model/builder.py"
 ]
 
 [tool.deptry.per_rule_ignores]

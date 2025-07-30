@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from pyomo.core.base.set import IndexedComponent
 
@@ -9,6 +9,7 @@ from optimes.math_model.model_components.sets import EnergyModelSetName
 from optimes.math_model.model_components.variables import EnergyModelVariableName
 
 
+@runtime_checkable
 class PyomoComponentProtocol(Protocol):
     @property
     def name(
