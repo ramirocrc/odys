@@ -36,7 +36,7 @@ class AlgebraicModel:
 
         return self._pyomo_model
 
-    def new_component(self, component: PyomoComponentProtocol) -> None:
+    def add_component(self, component: PyomoComponentProtocol) -> None:
         if not isinstance(component, PyomoComponentProtocol):
             msg = f"component must implement PyomoComponentProtocol, got {type(component)}"
             raise TypeError(msg)

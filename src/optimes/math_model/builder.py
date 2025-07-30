@@ -40,19 +40,19 @@ class EnergyAlgebraicModelBuilder:
         time_indices = range(len(self._model_data.demand_profile))
         generator_indices = (gen.name for gen in self._model_data.portfolio.generators)
         battery_indices = (bat.name for bat in self._model_data.portfolio.batteries)
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemSet(
                 name=EnergyModelSetName.TIME,
                 component=pyo.Set(initialize=time_indices),
             ),
         )
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemSet(
                 name=EnergyModelSetName.GENERATORS,
                 component=pyo.Set(initialize=generator_indices),
             ),
         )
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemSet(
                 name=EnergyModelSetName.BATTERIES,
                 component=pyo.Set(initialize=battery_indices),
@@ -65,7 +65,7 @@ class EnergyAlgebraicModelBuilder:
         self._add_scenario_parameters()
 
     def _add_generator_parameters(self) -> None:
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.GENERATOR_NOMINAL_POWER,
                 component=pyo.Param(
@@ -77,7 +77,7 @@ class EnergyAlgebraicModelBuilder:
             ),
         )
 
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.GENERATOR_VARIABLE_COST,
                 component=pyo.Param(
@@ -90,7 +90,7 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def _add_battery_parameters(self) -> None:
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.BATTERY_MAX_POWER,
                 component=pyo.Param(
@@ -102,7 +102,7 @@ class EnergyAlgebraicModelBuilder:
             ),
         )
 
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.BATTERY_EFFICIENCY_CHARGE,
                 component=pyo.Param(
@@ -116,7 +116,7 @@ class EnergyAlgebraicModelBuilder:
             ),
         )
 
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.BATTERY_EFFICIENCY_DISCHARGE,
                 component=pyo.Param(
@@ -130,7 +130,7 @@ class EnergyAlgebraicModelBuilder:
             ),
         )
 
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.BATTERY_SOC_INITIAL,
                 component=pyo.Param(
@@ -142,7 +142,7 @@ class EnergyAlgebraicModelBuilder:
             ),
         )
 
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.BATTERY_SOC_TERMINAL,
                 component=pyo.Param(
@@ -154,7 +154,7 @@ class EnergyAlgebraicModelBuilder:
             ),
         )
 
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.BATTERY_CAPACITY,
                 component=pyo.Param(
@@ -172,7 +172,7 @@ class EnergyAlgebraicModelBuilder:
         self._add_available_capacity_parameters()
 
     def _add_timestep_parameter(self) -> None:
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.SCENARIO_TIMESTEP,
                 component=pyo.Param(
@@ -185,7 +185,7 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def _add_demand_parameters(self) -> None:
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemParameter(
                 name=EnergyModelParameterName.DEMAND,
                 component=pyo.Param(
@@ -208,7 +208,7 @@ class EnergyAlgebraicModelBuilder:
         self._add_battery_variables()
 
     def _add_power_generator_variables(self) -> None:
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemVariable(
                 name=EnergyModelVariableName.GENERATOR_POWER,
                 component=pyo.Var(
@@ -220,7 +220,7 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def _add_battery_variables(self) -> None:
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemVariable(
                 name=EnergyModelVariableName.BATTERY_CHARGE,
                 component=pyo.Var(
@@ -231,7 +231,7 @@ class EnergyAlgebraicModelBuilder:
                 ),
             ),
         )
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemVariable(
                 name=EnergyModelVariableName.BATTERY_DISCHARGE,
                 component=pyo.Var(
@@ -242,7 +242,7 @@ class EnergyAlgebraicModelBuilder:
                 ),
             ),
         )
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemVariable(
                 name=EnergyModelVariableName.BATTERY_SOC,
                 component=pyo.Var(
@@ -253,7 +253,7 @@ class EnergyAlgebraicModelBuilder:
                 ),
             ),
         )
-        self._ext_pyo_model.new_component(
+        self._ext_pyo_model.add_component(
             SystemVariable(
                 name=EnergyModelVariableName.BATTERY_CHARGE_MODE,
                 component=pyo.Var(
@@ -277,7 +277,7 @@ class EnergyAlgebraicModelBuilder:
             var_battery_charge=self._ext_pyo_model.get_var(EnergyModelVariableName.BATTERY_CHARGE),
             param_demand=self._ext_pyo_model.get_param(EnergyModelParameterName.DEMAND),
         )
-        self._ext_pyo_model.new_component(power_balance_constraint)
+        self._ext_pyo_model.add_component(power_balance_constraint)
 
     def _add_power_generator_constraints(self) -> None:
         generation_limit_constraint = GenerationLimitConstraint(
@@ -286,7 +286,7 @@ class EnergyAlgebraicModelBuilder:
                 EnergyModelParameterName.GENERATOR_NOMINAL_POWER,
             ),
         )
-        self._ext_pyo_model.new_component(generation_limit_constraint)
+        self._ext_pyo_model.add_component(generation_limit_constraint)
 
     def _add_model_battery_constraints(self) -> None:
         battery_charge_limit_constraint = BatteryChargeModeConstraint(
@@ -294,14 +294,14 @@ class EnergyAlgebraicModelBuilder:
             var_battery_charge_mode=self._ext_pyo_model.get_var(EnergyModelVariableName.BATTERY_CHARGE_MODE),
             param_battery_max_power=self._ext_pyo_model.get_param(EnergyModelParameterName.BATTERY_MAX_POWER),
         )
-        self._ext_pyo_model.new_component(battery_charge_limit_constraint)
+        self._ext_pyo_model.add_component(battery_charge_limit_constraint)
 
         battery_discharge_limit_constraint = BatteryDischargeModeConstraint(
             var_battery_discharge=self._ext_pyo_model.get_var(EnergyModelVariableName.BATTERY_DISCHARGE),
             var_battery_charge_mode=self._ext_pyo_model.get_var(EnergyModelVariableName.BATTERY_CHARGE_MODE),
             param_battery_max_power=self._ext_pyo_model.get_param(EnergyModelParameterName.BATTERY_MAX_POWER),
         )
-        self._ext_pyo_model.new_component(battery_discharge_limit_constraint)
+        self._ext_pyo_model.add_component(battery_discharge_limit_constraint)
 
         battery_soc_dynamics_constraint = BatterySocDynamicsConstraint(
             var_battery_soc=self._ext_pyo_model.get_var(EnergyModelVariableName.BATTERY_SOC),
@@ -315,20 +315,20 @@ class EnergyAlgebraicModelBuilder:
             ),
             param_battery_soc_initial=self._ext_pyo_model.get_param(EnergyModelParameterName.BATTERY_SOC_INITIAL),
         )
-        self._ext_pyo_model.new_component(battery_soc_dynamics_constraint)
+        self._ext_pyo_model.add_component(battery_soc_dynamics_constraint)
 
         battery_soc_bounds_constraint = BatterySocBoundsConstraint(
             var_battery_soc=self._ext_pyo_model.get_var(EnergyModelVariableName.BATTERY_SOC),
             param_battery_capacity=self._ext_pyo_model.get_param(EnergyModelParameterName.BATTERY_CAPACITY),
         )
-        self._ext_pyo_model.new_component(battery_soc_bounds_constraint)
+        self._ext_pyo_model.add_component(battery_soc_bounds_constraint)
 
         battery_soc_end_constraint = BatterySocEndConstraint(
             var_battery_soc=self._ext_pyo_model.get_var(EnergyModelVariableName.BATTERY_SOC),
             param_battery_soc_terminal=self._ext_pyo_model.get_param(EnergyModelParameterName.BATTERY_SOC_TERMINAL),
         )
 
-        self._ext_pyo_model.new_component(battery_soc_end_constraint)
+        self._ext_pyo_model.add_component(battery_soc_end_constraint)
 
     def _add_scenario_constraints(self) -> None:
         if self._model_data.available_capacity_profiles is None:
@@ -342,4 +342,4 @@ class EnergyAlgebraicModelBuilder:
             ),
             param_scenario_timestep=self._ext_pyo_model.get_param(EnergyModelParameterName.SCENARIO_TIMESTEP),
         )
-        self._ext_pyo_model.new_component(objective)
+        self._ext_pyo_model.add_component(objective)
