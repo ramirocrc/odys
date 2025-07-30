@@ -1,3 +1,4 @@
+from types import MappingProxyType
 from typing import TypeVar
 
 from optimes.energy_system.assets.base import EnergyAsset
@@ -30,8 +31,8 @@ class AssetPortfolio:
         return tuple(asset for asset in self._assets.values() if isinstance(asset, asset_type))
 
     @property
-    def assets(self) -> tuple[EnergyAsset, ...]:
-        return tuple(self._assets.values())
+    def assets(self) -> MappingProxyType:
+        return MappingProxyType(self._assets)
 
     @property
     def generators(self) -> tuple[PowerGenerator, ...]:

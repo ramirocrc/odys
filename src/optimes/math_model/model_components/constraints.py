@@ -1,4 +1,3 @@
-# pyright: reportArgumentType=none, reportCallIssue=none, reportOperatorIssue=none, reportAttributeAccessIssue=none
 from abc import ABC, abstractmethod
 from enum import Enum, unique
 from typing import ClassVar
@@ -21,7 +20,11 @@ class EnergyModelConstraintName(Enum):
 
 
 class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
-    name: ClassVar[EnergyModelConstraintName]
+    _name: ClassVar[EnergyModelConstraintName]
+
+    @property
+    def name(self) -> EnergyModelConstraintName:
+        return self._name
 
     @property
     def component(self) -> pyo.Constraint:
@@ -34,7 +37,7 @@ class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forb
 
 
 class PowerBalanceConstraint(SystemConstraint):
-    name: ClassVar = EnergyModelConstraintName.POWER_BALANCE
+    _name: ClassVar = EnergyModelConstraintName.POWER_BALANCE
     var_generator_power: pyo.Var
     var_battery_discharge: pyo.Var
     var_battery_charge: pyo.Var
@@ -43,9 +46,9 @@ class PowerBalanceConstraint(SystemConstraint):
     @property
     def constraint(self) -> pyo.Constraint:
         def rule(m: pyo.ConcreteModel, t: int):  # noqa: ARG001, ANN202
-            generation_total = sum(self.var_generator_power[t, i] for i in set_generator)
-            discharge_total = sum(self.var_battery_discharge[t, j] for j in set_batteries)
-            charge_total = sum(self.var_battery_charge[t, j] for j in set_batteries)
+            generation_total = sum(self.var_generator_power[t, i] for i in set_generator)  # pyright: ignore [reportCallIssue, reportArgumentType]
+            discharge_total = sum(self.var_battery_discharge[t, j] for j in set_batteries)  # pyright: ignore [reportCallIssue, reportArgumentType]
+            charge_total = sum(self.var_battery_charge[t, j] for j in set_batteries)  # pyright: ignore [reportCallIssue, reportArgumentType]
             return generation_total + discharge_total == self.param_demand[t] + charge_total
 
         set_time, set_generator = self.var_generator_power.index_set().subsets()
@@ -57,14 +60,14 @@ class PowerBalanceConstraint(SystemConstraint):
 
 
 class GenerationLimitConstraint(SystemConstraint):
-    name: ClassVar = EnergyModelConstraintName.GENERATOR_LIMIT
+    _name: ClassVar = EnergyModelConstraintName.GENERATOR_LIMIT
     var_generator_power: pyo.Var
     param_generator_nominal_power: pyo.Param
 
     @property
     def constraint(self) -> pyo.Constraint:
         def rule(m: pyo.ConcreteModel, t: int, i: int):  # noqa: ARG001, ANN202
-            return self.var_generator_power[t, i] <= self.param_generator_nominal_power[i]
+            return self.var_generator_power[t, i] <= self.param_generator_nominal_power[i]  # pyright: ignore reportOperatorIssue
 
         set_time, set_generator = self.var_generator_power.index_set().subsets()
         return pyo.Constraint(
@@ -75,7 +78,7 @@ class GenerationLimitConstraint(SystemConstraint):
 
 
 class BatteryChargeModeConstraint(SystemConstraint):
-    name: ClassVar = EnergyModelConstraintName.BATTERY_CHARGE_LIMIT
+    _name: ClassVar = EnergyModelConstraintName.BATTERY_CHARGE_LIMIT
     var_battery_charge: pyo.Var
     var_battery_charge_mode: pyo.Var
     param_battery_max_power: pyo.Param
@@ -83,7 +86,7 @@ class BatteryChargeModeConstraint(SystemConstraint):
     @property
     def constraint(self) -> pyo.Constraint:
         def rule(m: pyo.ConcreteModel, t: int, j: int):  # noqa: ARG001, ANN202
-            return self.var_battery_charge[t, j] <= self.param_battery_max_power[j] * self.var_battery_charge_mode[t, j]
+            return self.var_battery_charge[t, j] <= self.param_battery_max_power[j] * self.var_battery_charge_mode[t, j]  # pyright: ignore reportOperatorIssue
 
         set_time, set_batteries = self.var_battery_charge.index_set().subsets()
         return pyo.Constraint(
@@ -94,7 +97,7 @@ class BatteryChargeModeConstraint(SystemConstraint):
 
 
 class BatteryDischargeModeConstraint(SystemConstraint):
-    name: ClassVar = EnergyModelConstraintName.BATTERY_DISCHARGE_LIMIT
+    _name: ClassVar = EnergyModelConstraintName.BATTERY_DISCHARGE_LIMIT
     var_battery_discharge: pyo.Var
     var_battery_charge_mode: pyo.Var
     param_battery_max_power: pyo.Param
@@ -103,7 +106,7 @@ class BatteryDischargeModeConstraint(SystemConstraint):
     def constraint(self) -> pyo.Constraint:
         def rule(m: pyo.ConcreteModel, t: int, j: int):  # noqa: ARG001, ANN202
             return self.var_battery_discharge[t, j] <= self.param_battery_max_power[j] * (
-                1 - self.var_battery_charge_mode[t, j]
+                1 - self.var_battery_charge_mode[t, j]  # pyright: ignore reportOperatorIssue
             )
 
         set_time, set_batteries = self.var_battery_discharge.index_set().subsets()
@@ -115,7 +118,7 @@ class BatteryDischargeModeConstraint(SystemConstraint):
 
 
 class BatterySocDynamicsConstraint(SystemConstraint):
-    name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_DYNAMICS
+    _name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_DYNAMICS
     var_battery_soc: pyo.Var
     var_battery_charge: pyo.Var
     var_battery_discharge: pyo.Var
@@ -130,8 +133,8 @@ class BatterySocDynamicsConstraint(SystemConstraint):
             return (
                 self.var_battery_soc[t, j]
                 == previous_soc
-                + self.var_battery_charge[t, j] * self.param_battery_efficiency_charging[j]
-                - self.var_battery_discharge[t, j] / self.param_battery_efficiency_discharging[j]
+                + self.var_battery_charge[t, j] * self.param_battery_efficiency_charging[j]  # pyright: ignore reportOperatorIssue
+                - self.var_battery_discharge[t, j] / self.param_battery_efficiency_discharging[j]  # pyright: ignore reportOperatorIssue
             )
 
         set_time, set_batteries = self.var_battery_soc.index_set().subsets()
@@ -146,7 +149,7 @@ class BatterySocDynamicsConstraint(SystemConstraint):
 
 
 class BatterySocBoundsConstraint(SystemConstraint):
-    name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_BOUNDS
+    _name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_BOUNDS
     var_battery_soc: pyo.Var
     param_battery_capacity: pyo.Param
 
@@ -164,7 +167,7 @@ class BatterySocBoundsConstraint(SystemConstraint):
 
 
 class BatterySocEndConstraint(SystemConstraint):
-    name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_TERMINAL
+    _name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_TERMINAL
     var_battery_soc: pyo.Var
     param_battery_soc_terminal: pyo.Param
 

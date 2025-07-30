@@ -1,4 +1,3 @@
-import pyomo.environ as pyo
 from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
 
 from optimes.energy_system.energy_system_conditions import EnergySystem
@@ -15,34 +14,18 @@ class EnergySystemOptimizer:
         model_data: EnergySystem,
     ) -> None:
         model_builder = EnergyAlgebraicModelBuilder(model_data)
-        self.pyo_model = model_builder.build()
+        self.algebraic_model = model_builder.build()
         self._solver = HiGHSolver()
         self._results: SolverResults | None = None
 
     def optimize(self) -> None:
-        """
-        Optimize the model using the specified solver.
-        This method is a wrapper around the `solve` method.
-        """
-        self._solve()
+        self._results = self._solver.solve(self.algebraic_model.pyomo_model)
 
     @property
     def solver_results(self) -> SolverResults:
         if self._results is None:
             msg = "No optimization has been performed yet."
             raise RuntimeError(msg)
-        return self._results
-
-    def _solve(self) -> SolverResults:
-        """
-        Solve the model using the specified solver.
-        """
-
-        if not isinstance(self.pyo_model, pyo.ConcreteModel):
-            msg = "Model is not a valid Pyomo ConcreteModel."
-            raise TypeError(msg)
-        self._results = self._solver.solve(self.pyo_model)
-
         return self._results
 
     def solving_status(self) -> SolverStatus | None:
