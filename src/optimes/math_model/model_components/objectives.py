@@ -1,5 +1,3 @@
-# pyright: reportArgumentType=none, reportCallIssue=none, reportOperatorIssue=none, reportAttributeAccessIssue=none
-
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from enum import Enum, unique
@@ -43,7 +41,8 @@ class MinimizeOperationalCostObjective(SystemObjective):
     @property
     def function(self) -> pyo.Objective:
         set_time, set_generators = self.var_generator_power.index_set().subsets()
-        timestep = self.param_scenario_timestep.value
+        timestep = self.param_scenario_timestep.value  # pyright: ignore reportAttributeAccessIssue
+        # todo: change parameter from timedelta to integer
         if not isinstance(timestep, timedelta):
             msg = "param_scenario_timestep must be a timedelta object"
             raise TypeError(msg)
@@ -52,7 +51,7 @@ class MinimizeOperationalCostObjective(SystemObjective):
 
         def rule(m: pyo.ConcreteModel):  # noqa: ARG001, ANN202
             return sum(
-                self.var_generator_power[t, i] * self.param_generator_variable_cost[i] * timestep_hours
+                self.var_generator_power[t, i] * self.param_generator_variable_cost[i] * timestep_hours  # pyright: ignore reportOperatorIssue
                 for t in set_time
                 for i in set_generators
             )
