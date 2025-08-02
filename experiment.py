@@ -50,4 +50,4 @@ if __name__ == "__main__":
 
     result = optimizer.optimize()
     results_df = result.to_dataframe
-    logger.info(f"Results df:\n{results_df}")
+    logger.info(results_df)
