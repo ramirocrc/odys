@@ -7,6 +7,12 @@ from optimes.energy_system.assets.base import EnergyAsset
 
 
 class PowerGenerator(EnergyAsset, frozen=True):
+    """Represents a power generator in the energy system.
+
+    This class models generators with various operational constraints
+    including nominal power, variable costs, ramp rates, and startup/shutdown costs.
+    """
+
     nominal_power: Annotated[
         float,
         Field(

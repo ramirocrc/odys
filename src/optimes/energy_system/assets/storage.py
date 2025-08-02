@@ -6,6 +6,13 @@ from optimes.energy_system.assets.base import EnergyAsset
 
 
 class Battery(EnergyAsset, frozen=True):
+    """Represents a battery storage system in the energy system.
+
+    This class models batteries with various operational constraints
+    including capacity, power limits, efficiency, state of charge,
+    and degradation characteristics.
+    """
+
     capacity: Annotated[
         float,
         Field(
@@ -94,6 +101,17 @@ class Battery(EnergyAsset, frozen=True):
 
     @model_validator(mode="after")
     def validate_soc_values_remain_within_capacity(self) -> Self:
+        """Validate that all SOC values are within the battery capacity.
+
+        This validator ensures that initial SOC, terminal SOC, and
+        SOC bounds do not exceed the battery's capacity.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ValueError: If any SOC value exceeds the battery capacity.
+        """
         limits = {
             "soc_initial": self.soc_initial,
             "soc_terminal": self.soc_terminal,
@@ -110,6 +128,17 @@ class Battery(EnergyAsset, frozen=True):
 
     @model_validator(mode="after")
     def validate_soc_initial_and_terminal(self) -> Self:
+        """Validate that initial and terminal SOC values respect min/max bounds.
+
+        This validator ensures that initial and terminal SOC values
+        are within the specified SOC bounds if they are set.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ValueError: If SOC values are outside the specified bounds.
+        """
         for name in ("soc_initial", "soc_terminal"):
             battery_soc = getattr(self, name)
             if battery_soc is None:

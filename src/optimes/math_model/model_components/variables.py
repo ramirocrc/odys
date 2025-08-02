@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 @unique
 class EnergyModelVariableName(Enum):
+    """Enumeration of variable names used in the energy model."""
+
     GENERATOR_POWER = "var_generator_power"
     BATTERY_CHARGE = "var_battery_charge"
     BATTERY_DISCHARGE = "var_battery_discharge"
@@ -14,5 +16,11 @@ class EnergyModelVariableName(Enum):
 
 
 class SystemVariable(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
+    """Container for Pyomo variable components in the energy system model.
+
+    This class wraps Pyomo variables with their corresponding names for
+    organized model construction and management.
+    """
+
     name: EnergyModelVariableName
     component: pyo.Var

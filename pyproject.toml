@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "highspy>=1.11.0",
+    "pandas>=2.3.1",
     "pydantic>=2.11.7",
     "pyomo>=6.9.2",
     "rich>=14.0.0",

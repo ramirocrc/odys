@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 @unique
 class EnergyModelParameterName(Enum):
+    """Enumeration of parameter names used in the energy model."""
+
     DEMAND = "param_demand"
     GENERATOR_NOMINAL_POWER = "param_generator_nominal_power"
     GENERATOR_VARIABLE_COST = "param_generator_variable_cost"
@@ -19,5 +21,11 @@ class EnergyModelParameterName(Enum):
 
 
 class SystemParameter(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
+    """Container for Pyomo parameter components in the energy system model.
+
+    This class wraps Pyomo parameters with their corresponding names for
+    organized model construction and management.
+    """
+
     name: EnergyModelParameterName
     component: pyo.Param
