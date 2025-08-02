@@ -1,5 +1,4 @@
-"""
-Optimes - Python framework for optimizing multi-energy systems.
+"""Optimes - Python framework for optimizing multi-energy systems.
 
 This package provides tools for modeling and optimizing energy systems with generators,
 batteries, and other energy assets using mathematical optimization techniques.
@@ -32,6 +31,7 @@ Example:
     >>> optimizer = EnergySystemOptimizer(system)
     >>> results = optimizer.optimize()
     >>> print(results.to_dataframe)
+
 """
 
 from datetime import timedelta

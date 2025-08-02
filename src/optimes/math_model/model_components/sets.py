@@ -1,3 +1,9 @@
+"""Set definitions for energy system optimization models.
+
+This module defines set names and types used in energy system
+optimization models.
+"""
+
 from enum import Enum, unique
 
 import pyomo.environ as pyo

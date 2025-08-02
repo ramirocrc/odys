@@ -1,3 +1,9 @@
+"""Energy system conditions and data structures.
+
+This module provides classes for representing energy system conditions,
+including demand profiles and system configurations.
+"""
+
 from datetime import timedelta
 from typing import Self
 
@@ -35,6 +41,7 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
 
         Raises:
             ValueError: If the system configuration is infeasible.
+
         """
         self._validate_capacity_profile_lengths()
         self._validate_available_capacity()
@@ -46,6 +53,7 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
 
         Raises:
             ValueError: If capacity profile lengths don't match demand profile.
+
         """
         if self.available_capacity_profiles is None:
             return
@@ -64,6 +72,7 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
         Raises:
             TypeError: If available capacity is specified for non-generator assets.
             ValueError: If capacity profile length doesn't match demand profile.
+
         """
         if self.available_capacity_profiles is None:
             return
@@ -99,6 +108,7 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
 
         Raises:
             ValueError: If maximum available power is insufficient for peak demand.
+
         """
         cumulative_generators_power = sum(gen.nominal_power for gen in self.portfolio.generators)
         # TODO: We assume full capacity can be discharged -> Needs to be limited by max power

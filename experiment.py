@@ -1,3 +1,10 @@
+"""Energy system optimization experiment.
+
+This module demonstrates the usage of the optimes library for energy system optimization.
+It creates a simple energy system with generators and batteries, then optimizes
+the system operation to meet demand at minimum cost.
+"""
+
 from datetime import timedelta
 
 from optimes.energy_system.assets.generator import PowerGenerator

@@ -1,3 +1,9 @@
+"""Base classes for energy system assets.
+
+This module defines the base classes and interfaces for energy system assets
+including the EnergyAsset abstract base class.
+"""
+
 from abc import ABC
 
 from pydantic import BaseModel

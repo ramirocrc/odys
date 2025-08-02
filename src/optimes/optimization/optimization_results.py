@@ -1,3 +1,9 @@
+"""Optimization results handling for energy system models.
+
+This module provides classes for handling and analyzing optimization results
+from energy system models.
+"""
+
 from typing import cast
 
 import pandas as pd
@@ -26,6 +32,7 @@ class OptimizationResults:
 
         Raises:
             TypeError: If arguments are not of the expected types.
+
         """
         if not isinstance(pyomo_solver_results, SolverResults):
             msg = f"Expected pyomo_solver_results to be of type SolverResults, got {type(pyomo_solver_results)}"
@@ -44,6 +51,7 @@ class OptimizationResults:
 
         Returns:
             The algebraic model instance.
+
         """
         return self._algebraic_model
 
@@ -53,6 +61,7 @@ class OptimizationResults:
 
         Returns:
             The solver status indicating whether the solve was successful.
+
         """
         status = self._pyomo_solver_results.solver.status
         return cast("SolverStatus", status)
@@ -63,6 +72,7 @@ class OptimizationResults:
 
         Returns:
             The termination condition indicating how the solver finished.
+
         """
         termination_condition = self._pyomo_solver_results.solver.termination_condition
         return cast("TerminationCondition", termination_condition)
@@ -74,5 +84,6 @@ class OptimizationResults:
         Returns:
             DataFrame containing the solution variables with time periods
             as rows and variables as columns.
+
         """
         return self.algebraic_model.to_dataframe

@@ -1,3 +1,9 @@
+"""Simple utility function for testing purposes.
+
+This module contains a basic function used for testing the project setup.
+"""
+
+
 def foo(bar: str) -> str:
     """Summary line.
 
@@ -8,8 +14,8 @@ def foo(bar: str) -> str:
 
     Returns:
         Description of return value
-    """
 
+    """
     return bar
 
 

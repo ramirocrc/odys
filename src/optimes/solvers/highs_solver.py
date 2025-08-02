@@ -1,3 +1,9 @@
+"""HiGHS solver implementation for energy system optimization.
+
+This module provides the HiGHSolver class for solving energy system
+optimization problems using the HiGHS linear programming solver.
+"""
+
 from typing import TYPE_CHECKING, cast
 
 import pyomo.environ as pyo
@@ -18,7 +24,7 @@ class HiGHSolver(AlgebraicModelSolver):
     """
 
     def __init__(self) -> None:
-        """Initialize the HiGHS solver."""
+        """Initialize the HiGHS solver with Pyomo solver factory."""
         self._solver = pyo.SolverFactory("highs")
 
     def solve(self, model: AlgebraicModel, *args: object, **kwargs: object) -> OptimizationResults:
@@ -31,6 +37,7 @@ class HiGHSolver(AlgebraicModelSolver):
 
         Returns:
             OptimizationResults containing the solution and metadata.
+
         """
         solver_results = self._solver.solve(
             model.pyomo_model,

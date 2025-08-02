@@ -1,3 +1,9 @@
+"""Power generator asset implementation.
+
+This module provides the PowerGenerator class for modeling electrical generators
+in energy system optimization problems.
+"""
+
 from datetime import timedelta
 from typing import Annotated
 
