@@ -11,6 +11,13 @@ logger = get_logger(__name__)
 
 
 class EnergySystem(BaseModel, arbitrary_types_allowed=True):
+    """Represents the complete energy system configuration.
+
+    This class defines the energy system including the asset portfolio,
+    demand profile, time discretization, and available capacity profiles.
+    It performs validation to ensure the system is feasible.
+    """
+
     portfolio: AssetPortfolio
     demand_profile: list[float]
     timestep: timedelta
@@ -18,12 +25,28 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:
+        """Validate all system inputs after model creation.
+
+        This validator ensures that the energy system configuration
+        is feasible and consistent.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ValueError: If the system configuration is infeasible.
+        """
         self._validate_capacity_profile_lengths()
         self._validate_available_capacity()
         self._validate_demand_can_be_met()
         return self
 
     def _validate_capacity_profile_lengths(self) -> None:
+        """Validate that available capacity profiles match demand profile length.
+
+        Raises:
+            ValueError: If capacity profile lengths don't match demand profile.
+        """
         if self.available_capacity_profiles is None:
             return
         demand_profile_length = len(self.demand_profile)
@@ -36,6 +59,12 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
                 raise ValueError(msg)
 
     def _validate_available_capacity(self) -> None:
+        """Validate that available capacity profiles are only for generators.
+
+        Raises:
+            TypeError: If available capacity is specified for non-generator assets.
+            ValueError: If capacity profile length doesn't match demand profile.
+        """
         if self.available_capacity_profiles is None:
             return
         for asset_name, capacities in self.available_capacity_profiles.items():
@@ -45,18 +74,32 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
                     "Available capacity can only be specified for generators, "
                     f"but got '{asset_name}' of type {type(asset)}."
                 )
+                raise TypeError(msg)
             if len(capacities) != len(self.demand_profile):
                 msg = (
                     f"Available capacity for '{asset_name}' has a length of {len(capacities)}, "
-                    f"which doesn't  match the length of the load profile ({len(self.demand_profile)})."
+                    f"which doesn't match the length of the load profile ({len(self.demand_profile)})."
                 )
                 raise ValueError(msg)
 
     def _validate_demand_can_be_met(self) -> None:
+        """Validate that the system can meet the demand profile.
+
+        This method checks both power and energy balance constraints
+        to ensure the system is feasible.
+        """
         self._validate_enough_power_to_meet_demand()
         self._valiate_enough_energy_to_meet_demand()
 
     def _validate_enough_power_to_meet_demand(self) -> None:
+        """Validate that maximum available power can meet peak demand.
+
+        This method checks that the sum of generator nominal power and
+        battery capacity can meet the maximum demand at any time period.
+
+        Raises:
+            ValueError: If maximum available power is insufficient for peak demand.
+        """
         cumulative_generators_power = sum(gen.nominal_power for gen in self.portfolio.generators)
         # TODO: We assume full capacity can be discharged -> Needs to be limited by max power
         cumulative_battery_capacities = sum(bat.capacity for bat in self.portfolio.batteries)
@@ -70,6 +113,13 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
                 raise ValueError(msg)
 
     def _valiate_enough_energy_to_meet_demand(self) -> None:
+        """Validate that the system has enough energy to meet total demand.
+
+        This method checks that the total energy available from generators
+        and batteries can meet the total energy demand over the time horizon.
+
+        TODO: Implement energy balance validation:
+        sum(demand * deltat) <= sum(generator.nominal_power) + sum(battery.soc_initial - battery.soc_terminal)
+        """
         # TODO: Validate that:
         # sum(demand * deltat) <= sum(generator.nominal_power) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
-        pass

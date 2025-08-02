@@ -21,14 +21,33 @@ logger = get_logger(__name__)
 
 
 class EnergyAlgebraicModelBuilder:
+    """Builder for creating algebraic models from energy system configurations.
+
+    This class constructs Pyomo-based algebraic models from energy system
+    data, including sets, parameters, variables, constraints, and objectives.
+    """
+
     def __init__(
         self,
         model_data: EnergySystem,
     ) -> None:
+        """Initialize the model builder.
+
+        Args:
+            model_data: The energy system configuration to build a model from.
+        """
         self._model_data = model_data
         self._ext_pyo_model = AlgebraicModel()
 
     def build(self) -> AlgebraicModel:
+        """Build the complete algebraic model.
+
+        This method constructs all components of the algebraic model:
+        sets, parameters, variables, constraints, and objectives.
+
+        Returns:
+            The complete algebraic model ready for optimization.
+        """
         self._add_model_sets()
         self._add_model_parameters()
         self._add_model_variables()
