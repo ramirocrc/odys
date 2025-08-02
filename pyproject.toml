@@ -70,7 +70,7 @@ select = [
 ]
 
 ignore = [
-    "D", # Docstring style (pydocstyle)
+    # "D", # Docstring style (pydocstyle)
     "G004", # Logging statement uses f-string
     "TD",
     "FIX",
@@ -85,6 +85,8 @@ ignore = [
 [tool.ruff.format]
 preview = true
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.pyright]
 typeCheckingMode = "standard"

@@ -1,3 +1,9 @@
+"""Base solver interface for energy system optimization.
+
+This module provides the base solver interface and abstract classes
+for implementing different optimization solvers.
+"""
+
 from abc import ABC, abstractmethod
 
 from optimes.math_model.algebraic_model import AlgebraicModel
@@ -22,4 +28,5 @@ class AlgebraicModelSolver(ABC):
 
         Returns:
             OptimizationResults containing the solution and metadata
+
         """

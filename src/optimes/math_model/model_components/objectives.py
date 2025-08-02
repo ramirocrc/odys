@@ -1,3 +1,9 @@
+"""Objective function definitions for energy system optimization models.
+
+This module defines objective function names and types used in energy system
+optimization models.
+"""
+
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from enum import Enum, unique
@@ -32,6 +38,7 @@ class SystemObjective(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbi
 
         Returns:
             The Pyomo objective object.
+
         """
         return self.function
 
@@ -45,6 +52,7 @@ class SystemObjective(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbi
 
         Returns:
             The Pyomo objective object.
+
         """
 
 
@@ -66,6 +74,7 @@ class MinimizeOperationalCostObjective(SystemObjective):
 
         Returns:
             The objective name enum value.
+
         """
         return self._name
 
@@ -78,6 +87,7 @@ class MinimizeOperationalCostObjective(SystemObjective):
 
         Raises:
             TypeError: If the timestep parameter is not a timedelta object.
+
         """
         set_time, set_generators = self.var_generator_power.index_set().subsets()
         timestep = self.param_scenario_timestep.value  # pyright: ignore reportAttributeAccessIssue

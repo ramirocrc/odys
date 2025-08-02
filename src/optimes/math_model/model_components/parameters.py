@@ -1,3 +1,9 @@
+"""Parameter definitions for energy system optimization models.
+
+This module defines parameter names and types used in energy system
+optimization models.
+"""
+
 from enum import Enum, unique
 
 import pyomo.environ as pyo

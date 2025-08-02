@@ -1,3 +1,9 @@
+"""Algebraic model implementation for energy system optimization.
+
+This module provides the AlgebraicModel class for building and managing
+Pyomo models with proper component organization and validation.
+"""
+
 from typing import TYPE_CHECKING, TypeVar, cast
 
 import pandas as pd
@@ -36,7 +42,7 @@ class AlgebraicModel:
     """
 
     def __init__(self) -> None:
-        """Initialize an empty algebraic model."""
+        """Initialize an empty algebraic model with a Pyomo concrete model."""
         self._pyomo_model = pyo.ConcreteModel()
 
     @property
@@ -48,6 +54,7 @@ class AlgebraicModel:
 
         Raises:
             TypeError: If the model is not a Pyomo concrete model.
+
         """
         if not isinstance(self._pyomo_model, pyo.ConcreteModel):
             msg = f"Expected .pyomo_model to be pyo.ConcreteModel, got {type(self._pyomo_model)}"
@@ -66,6 +73,7 @@ class AlgebraicModel:
                 or if the component is not an IndexedComponent.
             AttributeError: If a component with the same name already exists.
             ValueError: If time-indexed components don't have time as the first index.
+
         """
         pyomo_component = component.component
         if not isinstance(component, PyomoComponentProtocol):
@@ -111,6 +119,7 @@ class AlgebraicModel:
         Raises:
             AttributeError: If the set doesn't exist in the model.
             TypeError: If the component is not a Pyomo set.
+
         """
         return self._get_component(name.value, pyo.Set)
 
@@ -126,6 +135,7 @@ class AlgebraicModel:
         Raises:
             AttributeError: If the parameter doesn't exist in the model.
             TypeError: If the component is not a Pyomo parameter.
+
         """
         return self._get_component(name.value, pyo.Param)
 
@@ -141,6 +151,7 @@ class AlgebraicModel:
         Raises:
             AttributeError: If the variable doesn't exist in the model.
             TypeError: If the component is not a Pyomo variable.
+
         """
         return self._get_component(name.value, pyo.Var)
 
@@ -157,6 +168,7 @@ class AlgebraicModel:
         Raises:
             AttributeError: If the component doesn't exist in the model.
             TypeError: If the component is not of the expected type.
+
         """
         if not hasattr(self._pyomo_model, name):
             msg = f"Component {name} does not exist in the model."
@@ -180,6 +192,7 @@ class AlgebraicModel:
 
         Raises:
             ValueError: If variables are not properly indexed over time.
+
         """
         aggregated_variables_data = {}
         for variable in self.pyomo_model.component_objects(pyo.Var, active=True):

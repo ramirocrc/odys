@@ -1,3 +1,9 @@
+"""Logging utilities for the optimes project.
+
+This module provides logging utilities including rich formatting
+and traceback handling for better debugging experience.
+"""
+
 import logging
 from logging import Handler
 
@@ -6,6 +12,11 @@ from rich.logging import RichHandler
 
 
 def get_handler() -> Handler:
+    """Get a rich logging handler with traceback formatting.
+
+    Returns:
+        A configured RichHandler instance with traceback formatting.
+    """
     rich_handler = RichHandler(rich_tracebacks=True, tracebacks_show_locals=False)
     traceback.install(width=200)
     return rich_handler

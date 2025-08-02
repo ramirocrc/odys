@@ -1,3 +1,9 @@
+"""Model builder for energy system optimization.
+
+This module provides utilities for building mathematical models of energy systems
+from energy system conditions and asset portfolios.
+"""
+
 import pyomo.environ as pyo
 
 from optimes.energy_system.energy_system_conditions import EnergySystem
@@ -35,6 +41,7 @@ class EnergyAlgebraicModelBuilder:
 
         Args:
             model_data: The energy system configuration to build a model from.
+
         """
         self._model_data = model_data
         self._ext_pyo_model = AlgebraicModel()
@@ -47,6 +54,7 @@ class EnergyAlgebraicModelBuilder:
 
         Returns:
             The complete algebraic model ready for optimization.
+
         """
         self._add_model_sets()
         self._add_model_parameters()

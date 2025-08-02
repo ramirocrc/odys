@@ -1,3 +1,9 @@
+"""Model optimizer for energy system optimization.
+
+This module provides the EnergySystemOptimizer class for solving
+energy system optimization problems.
+"""
+
 from optimes.energy_system.energy_system_conditions import EnergySystem
 from optimes.math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.optimization.optimization_results import OptimizationResults
@@ -25,6 +31,7 @@ class EnergySystemOptimizer:
         Args:
             model_data: The energy system configuration to optimize.
             solver: The solver to use for optimization. Defaults to HiGHSolver.
+
         """
         self._model_data = model_data
         self._solver = solver if solver is not None else HiGHSolver()
@@ -37,6 +44,7 @@ class EnergySystemOptimizer:
 
         Returns:
             OptimizationResults containing the solution and metadata.
+
         """
         model_builder = EnergyAlgebraicModelBuilder(self._model_data)
         algebraic_model = model_builder.build()

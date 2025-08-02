@@ -1,3 +1,9 @@
+"""Constraint definitions for energy system optimization models.
+
+This module defines constraint names and types used in energy system
+optimization models.
+"""
+
 from abc import ABC, abstractmethod
 from enum import Enum, unique
 from typing import ClassVar
@@ -36,6 +42,7 @@ class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forb
 
         Returns:
             The constraint name enum value.
+
         """
         return self._name
 
@@ -45,6 +52,7 @@ class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forb
 
         Returns:
             The Pyomo constraint object.
+
         """
         return self.constraint
 
@@ -58,6 +66,7 @@ class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forb
 
         Returns:
             The Pyomo constraint object.
+
         """
 
 
@@ -80,6 +89,7 @@ class PowerBalanceConstraint(SystemConstraint):
 
         Returns:
             Pyomo constraint ensuring power balance at each time period.
+
         """
 
         def rule(m: pyo.ConcreteModel, t: int):  # noqa: ARG001, ANN202
@@ -113,6 +123,7 @@ class GenerationLimitConstraint(SystemConstraint):
 
         Returns:
             Pyomo constraint limiting generator power to nominal capacity.
+
         """
 
         def rule(m: pyo.ConcreteModel, t: int, i: int):  # noqa: ARG001, ANN202
@@ -144,6 +155,7 @@ class BatteryChargeModeConstraint(SystemConstraint):
 
         Returns:
             Pyomo constraint limiting battery charging power based on charge mode.
+
         """
 
         def rule(m: pyo.ConcreteModel, t: int, j: int):  # noqa: ARG001, ANN202
@@ -175,6 +187,7 @@ class BatteryDischargeModeConstraint(SystemConstraint):
 
         Returns:
             Pyomo constraint limiting battery discharging power based on charge mode.
+
         """
 
         def rule(m: pyo.ConcreteModel, t: int, j: int):  # noqa: ARG001, ANN202
@@ -211,6 +224,7 @@ class BatterySocDynamicsConstraint(SystemConstraint):
 
         Returns:
             Pyomo constraint modeling SOC evolution over time.
+
         """
 
         def rule(m: pyo.ConcreteModel, t: int, j: int):  # noqa: ARG001, ANN202
@@ -250,6 +264,7 @@ class BatterySocBoundsConstraint(SystemConstraint):
 
         Returns:
             Pyomo constraint ensuring SOC stays within capacity limits.
+
         """
 
         def rule(m: pyo.ConcreteModel, t: int, j: int):  # noqa: ARG001, ANN202
@@ -280,6 +295,7 @@ class BatterySocEndConstraint(SystemConstraint):
 
         Returns:
             Pyomo constraint ensuring battery reaches terminal SOC.
+
         """
 
         def rule(m: pyo.ConcreteModel, j: int):  # noqa: ARG001, ANN202

@@ -1,3 +1,9 @@
+"""Energy storage asset implementation.
+
+This module provides the Battery class for modeling energy storage devices
+in energy system optimization problems.
+"""
+
 from typing import Annotated, Self
 
 from pydantic import Field, model_validator
@@ -111,6 +117,7 @@ class Battery(EnergyAsset, frozen=True):
 
         Raises:
             ValueError: If any SOC value exceeds the battery capacity.
+
         """
         limits = {
             "soc_initial": self.soc_initial,
@@ -138,6 +145,7 @@ class Battery(EnergyAsset, frozen=True):
 
         Raises:
             ValueError: If SOC values are outside the specified bounds.
+
         """
         for name in ("soc_initial", "soc_terminal"):
             battery_soc = getattr(self, name)

@@ -1,3 +1,9 @@
+"""Asset portfolio management for energy systems.
+
+This module provides the AssetPortfolio class for managing collections
+of energy system assets including generators, batteries, and other components.
+"""
+
 from types import MappingProxyType
 from typing import TypeVar
 
@@ -29,6 +35,7 @@ class AssetPortfolio:
         Raises:
             ValueError: If an asset with the same name already exists.
             TypeError: If the asset is not an instance of EnergyAsset.
+
         """
         if asset.name in self._assets:
             msg = f"Asset with name '{asset.name}' already exists."
@@ -49,6 +56,7 @@ class AssetPortfolio:
 
         Raises:
             KeyError: If no asset with the specified name exists.
+
         """
         if name not in self._assets:
             msg = f"Asset with name '{name}' does not exist."
@@ -63,6 +71,7 @@ class AssetPortfolio:
 
         Returns:
             A tuple containing all assets of the specified type.
+
         """
         return tuple(asset for asset in self._assets.values() if isinstance(asset, asset_type))
 
@@ -72,6 +81,7 @@ class AssetPortfolio:
 
         Returns:
             A mapping proxy containing all assets indexed by name.
+
         """
         return MappingProxyType(self._assets)
 
@@ -81,6 +91,7 @@ class AssetPortfolio:
 
         Returns:
             A tuple containing all PowerGenerator assets.
+
         """
         return self.get_assets_by_type(PowerGenerator)
 
@@ -90,5 +101,6 @@ class AssetPortfolio:
 
         Returns:
             A tuple containing all Battery assets.
+
         """
         return self.get_assets_by_type(Battery)
