@@ -71,11 +71,13 @@ markdown_extensions:
       title: Page contents
   - admonition
 
+  # Python Markdown Extensions
   - pymdownx.details
   - pymdownx.superfences
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
   - pymdownx.highlight:
       pygments_lang_class: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.tabbed:
       alternate_style: true
