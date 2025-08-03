@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 site_name: optimes
 repo_url: https://github.com/ramirorcr/optimes
 site_url: https://ramirorcr.github.io/optimes

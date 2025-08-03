@@ -33,15 +33,18 @@ Documentation = "https://ramirorcr.github.io/optimes/"
 [dependency-groups]
 dev = [
     "deptry>=0.23.0",
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.6.14",
-    "mkdocstrings-python>=1.16.12",
     "nox>=2025.5.1",
     "pre-commit>=4.2.0",
     "pyright>=1.1.402",
     "pytest>=8.4.0",
     "pytest-cov>=6.2.1",
     "ruff>=0.11.13",
+]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.16",
+    "mkdocstrings-python>=1.16.12",
+    "pyupgrade>=3.20.0",
 ]
 
 [build-system]
@@ -65,9 +68,7 @@ target-version = "py313"
 
 [tool.ruff.lint]
 
-select = [
-     "ALL"
-]
+select = ["ALL"]
 
 ignore = [
     "TD",
