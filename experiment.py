@@ -14,9 +14,9 @@ from optimes.energy_system.energy_system_conditions import EnergySystem
 from optimes.optimization.model_optimizer import EnergySystemOptimizer
 from optimes.utils.logging import get_logger
 
-x = dict(a=2)
-a = {a: b for a, b in y}
 logger = get_logger(__name__)
+
+
 if __name__ == "__main__":
     generator_1 = PowerGenerator(
         name="gen1",
