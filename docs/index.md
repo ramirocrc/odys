@@ -85,5 +85,3 @@ Criach, R. (2024). optimes (Version 0.0.1) [Computer software]. https://doi.org/
 # License
 
 **Optimes software**: [MIT License](https://github.com/ramirorcr/optimes/blob/main/LICENSE)
-
-**Optimes documentation**: [MIT License](https://github.com/ramirorcr/optimes/blob/main/LICENSE)
