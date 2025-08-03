@@ -9,35 +9,44 @@ repo_name: ramirorcr/optimes
 copyright: Maintained by <a href="https://ramirorcr.com">ramirorcr</a>.
 
 nav:
-  - Home: index.md
-  - Modules: modules.md
-plugins:
-  - search
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: ["src/optimes"]
+  - Home:
+      - Welcome to OptimMES: index.md
+  - Getting Started:
+      - Installation: getting_started/installation.md
+      - Minimal Example: getting_started/minimal_example.md
+  - Concepts:
+      - Assets: concepts/assets.md
+      - Portfolio: concepts/portfolio.md
+      - Energy System: concepts/energy_system.md
+      - Optimizer: concepts/optimizer.md
+  - API Reference:
+      - Overview: api/main.md
+      - Energy System: api/energy_system.md
+      - Optimization: api/optimization.md
+      - Solvers: api/solvers.md
 theme:
   name: material
-  feature:
-    tabs: true
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: white
-      accent: deep orange
+    # Dark Mode
+    - scheme: slate
       toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: black
-      accent: deep orange
+        icon: material/weather-sunny
+        name: Dark mode
+      primary: green
+      accent: deep purple
+
+    # Light Mode
+    - scheme: default
       toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  icon:
-    repo: fontawesome/brands/github
+        icon: material/weather-night
+        name: Light mode
+      primary: blue
+      accent: deep orange
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.tabs
 
 extra:
   social:
@@ -46,8 +55,27 @@ extra:
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/optimes
 
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["src/optimes"]
+  - exclude:
+      glob:
+        - __pycache__/*
 markdown_extensions:
+  - tables
   - toc:
       permalink: true
-  - pymdownx.arithmatex:
-      generic: true
+      title: Page contents
+  - admonition
+
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.highlight:
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true

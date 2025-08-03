@@ -77,8 +77,7 @@ class OptimizationResults:
         termination_condition = self._pyomo_solver_results.solver.termination_condition
         return cast("TerminationCondition", termination_condition)
 
-    @property
-    def to_dataframe(self) -> pd.DataFrame:
+    def to_dataframe(self, direction: str = "vertical") -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
 
         Returns:
@@ -86,4 +85,4 @@ class OptimizationResults:
             as rows and variables as columns.
 
         """
-        return self.algebraic_model.to_dataframe
+        return self.algebraic_model.to_dataframe(direction)

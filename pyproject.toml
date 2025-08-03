@@ -42,6 +42,7 @@ dev = [
 ]
 docs = [
     "mkdocs>=1.6.1",
+    "mkdocs-exclude>=1.0.2",
     "mkdocs-material>=9.6.16",
     "mkdocstrings-python>=1.16.12",
     "pyupgrade>=3.20.0",
