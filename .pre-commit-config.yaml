@@ -5,7 +5,8 @@ repos:
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-toml
-      # - id: check-yaml
+      - id: check-yaml
+        args: [--unsafe]
       - id: check-json
         exclude: ^.devcontainer/devcontainer.json
       - id: pretty-format-json
@@ -13,6 +14,7 @@ repos:
         args: [--autofix, --no-sort-keys]
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: detect-private-key
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
