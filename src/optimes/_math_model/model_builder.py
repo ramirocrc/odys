@@ -1,14 +1,7 @@
-"""Model builder for energy system optimization.
-
-This module provides utilities for building mathematical models of energy systems
-from energy system conditions and asset portfolios.
-"""
-
 import pyomo.environ as pyo
 
-from optimes.energy_system.energy_system_conditions import EnergySystem
-from optimes.math_model.algebraic_model import AlgebraicModel
-from optimes.math_model.model_components.constraints import (
+from optimes._math_model.algebraic_model import AlgebraicModel
+from optimes._math_model.model_components.constraints import (
     BatteryChargeModeConstraint,
     BatteryDischargeModeConstraint,
     BatterySocBoundsConstraint,
@@ -17,45 +10,25 @@ from optimes.math_model.model_components.constraints import (
     GenerationLimitConstraint,
     PowerBalanceConstraint,
 )
-from optimes.math_model.model_components.objectives import MinimizeOperationalCostObjective
-from optimes.math_model.model_components.parameters import EnergyModelParameterName, SystemParameter
-from optimes.math_model.model_components.sets import EnergyModelSetName, SystemSet
-from optimes.math_model.model_components.variables import EnergyModelVariableName, SystemVariable
+from optimes._math_model.model_components.objectives import MinimizeOperationalCostObjective
+from optimes._math_model.model_components.parameters import EnergyModelParameterName, SystemParameter
+from optimes._math_model.model_components.sets import EnergyModelSetName, SystemSet
+from optimes._math_model.model_components.variables import EnergyModelVariableName, SystemVariable
+from optimes.energy_system.energy_system_conditions import EnergySystem
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 class EnergyAlgebraicModelBuilder:
-    """Builder for creating algebraic models from energy system configurations.
-
-    This class constructs Pyomo-based algebraic models from energy system
-    data, including sets, parameters, variables, constraints, and objectives.
-    """
-
     def __init__(
         self,
         model_data: EnergySystem,
     ) -> None:
-        """Initialize the model builder.
-
-        Args:
-            model_data: The energy system configuration to build a model from.
-
-        """
         self._model_data = model_data
         self._ext_pyo_model = AlgebraicModel()
 
     def build(self) -> AlgebraicModel:
-        """Build the complete algebraic model.
-
-        This method constructs all components of the algebraic model:
-        sets, parameters, variables, constraints, and objectives.
-
-        Returns:
-            The complete algebraic model ready for optimization.
-
-        """
         self._add_model_sets()
         self._add_model_parameters()
         self._add_model_variables()

@@ -6,7 +6,7 @@ for implementing different optimization solvers.
 
 from abc import ABC, abstractmethod
 
-from optimes.math_model.algebraic_model import AlgebraicModel
+from optimes._math_model.algebraic_model import AlgebraicModel
 from optimes.optimization.optimization_results import OptimizationResults
 
 

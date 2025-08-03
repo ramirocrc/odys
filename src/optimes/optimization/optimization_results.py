@@ -9,7 +9,7 @@ from typing import cast
 import pandas as pd
 from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
 
-from optimes.math_model.algebraic_model import AlgebraicModel
+from optimes._math_model.algebraic_model import AlgebraicModel
 
 
 class OptimizationResults:

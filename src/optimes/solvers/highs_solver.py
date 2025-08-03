@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, cast
 
 import pyomo.environ as pyo
 
-from optimes.math_model.algebraic_model import AlgebraicModel
+from optimes._math_model.algebraic_model import AlgebraicModel
 from optimes.optimization.optimization_results import OptimizationResults
 from optimes.solvers.base_solver import AlgebraicModelSolver
 

@@ -4,8 +4,8 @@ This module provides the EnergySystemOptimizer class for solving
 energy system optimization problems.
 """
 
+from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.energy_system.energy_system_conditions import EnergySystem
-from optimes.math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.optimization.optimization_results import OptimizationResults
 from optimes.solvers.base_solver import AlgebraicModelSolver
 from optimes.solvers.highs_solver import HiGHSolver
