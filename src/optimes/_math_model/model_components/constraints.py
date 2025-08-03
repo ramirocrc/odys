@@ -11,7 +11,7 @@ from typing import ClassVar
 import pyomo.environ as pyo
 from pydantic import BaseModel
 
-from optimes.math_model.model_components.sets import EnergyModelSetName
+from optimes._math_model.model_components.sets import EnergyModelSetName
 
 
 @unique
