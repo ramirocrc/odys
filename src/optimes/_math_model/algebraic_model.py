@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import TYPE_CHECKING, TypeVar, cast
 
 import pandas as pd
@@ -26,6 +27,11 @@ ALLOWED_COMPONENT_NAME_TYPES = (
 )
 
 T = TypeVar("T", bound=IndexedComponent)
+
+
+class ResultDfDirection(Enum):
+    HORIZONTAL = "horizontal"
+    VERTICAL = "vertical"
 
 
 class AlgebraicModel:
@@ -94,8 +100,14 @@ class AlgebraicModel:
 
         return comp
 
+    def to_dataframe(self, direction: str) -> pd.DataFrame:
+        parsed_direction = ResultDfDirection(direction)
+        if parsed_direction == ResultDfDirection.HORIZONTAL:
+            return self._get_horizonal_dataframe
+        return self._get_vertical_dataframe
+
     @property
-    def to_dataframe(self) -> pd.DataFrame:
+    def _get_horizonal_dataframe(self) -> pd.DataFrame:
         aggregated_variables_data = {}
         for variable in self.pyomo_model.component_objects(pyo.Var, active=True):
             variable = cast("IndexedVar", variable)
@@ -104,7 +116,6 @@ class AlgebraicModel:
                 msg = f"Expected first index set of variable to be 'time', got {first_index_set.name} instead"
                 raise ValueError(msg)
             var_name = variable.name
-            # collect (time, unit, value) for each indexed entry
             data = []
             for idx in variable:
                 if idx is None:
@@ -120,5 +131,24 @@ class AlgebraicModel:
                 columns="unit",
                 values="value",
             )
-
         return pd.concat(aggregated_variables_data, axis=1)
+
+    @property
+    def _get_vertical_dataframe(self) -> pd.DataFrame:
+        records = []
+        for variable in self.pyomo_model.component_objects(pyo.Var, active=True):
+            variable = cast("IndexedVar", variable)
+            first_index_set, _ = variable.index_set().subsets()
+            if first_index_set.name != "time":
+                msg = f"Expected first index set to be 'time', got {first_index_set.name}"
+                raise ValueError(msg)
+            var_name = variable.name
+            for idx in variable:
+                if idx is None:
+                    msg = "Index cannot be None"
+                    raise ValueError(msg)
+                time, unit = idx
+                val = variable[idx].value
+                records.append({"unit": unit, "variable": var_name, "time": time, "value": val})
+        df = pd.DataFrame.from_records(records)
+        return df.sort_values(["unit", "variable", "time"]).reset_index(drop=True)
