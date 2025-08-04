@@ -121,8 +121,7 @@ class GenerationLimitConstraint(SystemConstraint):
     def constraint(self) -> pyo.Constraint:
         """Get the generation limit constraint.
 
-        Returns:
-            Pyomo constraint limiting generator power to nominal capacity.
+        Returns: Pyomo constraint limiting generator power to nominal capacity.
 
         """
 
