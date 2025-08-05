@@ -40,11 +40,7 @@ class AlgebraicModel:
 
     @property
     def pyomo_model(self) -> pyo.ConcreteModel:
-        if not isinstance(self._pyomo_model, pyo.ConcreteModel):
-            msg = f"Expected .pyomo_model to be pyo.ConcreteModel, got {type(self._pyomo_model)}"
-            raise TypeError(msg)
-
-        return self._pyomo_model
+        return cast("pyo.ConcreteModel", self._pyomo_model)
 
     def add_component(self, component: PyomoComponentProtocol) -> None:
         pyomo_component = component.component
