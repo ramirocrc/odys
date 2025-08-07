@@ -45,7 +45,7 @@ If you are proposing a new feature:
 # Get Started!
 
 Ready to contribute? Here's how to set up `optimes` for local development.
-Please note this documentation assumes you already have `uv` and `Git` installed and ready to go.
+Please note this documentation assumes you already have `[uv](https://docs.astral.sh/uv/)`, `[just](https://github.com/casey/just?tab=readme-ov-file)`, and `[Git](https://git-scm.com/)` installed and ready to go.
 
 1. Fork the `optimes` repo on GitHub.
 
