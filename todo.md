@@ -41,3 +41,4 @@
 # Codebase refactoring
 
 - [ ] Move Scenario specific configuration (e.g. battery soc_initial soc_terminal to EnergySystem class)
+- [ ] Check how other libraries implement logging

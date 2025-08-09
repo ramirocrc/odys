@@ -27,13 +27,19 @@ class EnergyAlgebraicModelBuilder:
     ) -> None:
         self._model_data = model_data
         self._ext_pyo_model = AlgebraicModel()
+        self._model_is_built: bool = False
 
     def build(self) -> AlgebraicModel:
+        if self._model_is_built:
+            msg = "Model has already been built."
+            raise AttributeError(msg)
         self._add_model_sets()
         self._add_model_parameters()
         self._add_model_variables()
         self._add_model_constraints()
         self._add_model_objective()
+        self._model_is_built = True
+
         return self._ext_pyo_model
 
     def _add_model_sets(self) -> None:

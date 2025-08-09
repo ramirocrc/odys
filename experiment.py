@@ -14,6 +14,7 @@ from optimes.energy_system.energy_system_conditions import EnergySystem
 from optimes.optimization.model_optimizer import EnergySystemOptimizer
 
 if __name__ == "__main__":
+    y = 1
     generator_1 = PowerGenerator(
         name="gen1",
         nominal_power=100.0,
