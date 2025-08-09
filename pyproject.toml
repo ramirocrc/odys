@@ -76,6 +76,7 @@ ignore = [
 "tests/**" = [
     "INP001",# Checks for packages that are missing an __init__.py
     "S101", # Use of 'assert' detected
+    "D", # Check for missing docstrings
 ]
 
 [tool.ruff.format]

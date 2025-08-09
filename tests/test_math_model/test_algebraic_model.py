@@ -4,16 +4,33 @@ This module contains tests for the AlgebraicModel class which manages
 Pyomo model components and provides data extraction capabilities.
 """
 
-from unittest.mock import Mock
-
 import pyomo.environ as pyo
 import pytest
 
 from optimes._math_model.algebraic_model import AlgebraicModel
-from optimes._math_model.model_components.component_protocol import PyomoComponentProtocol
 from optimes._math_model.model_components.parameters import EnergyModelParameterName, SystemParameter
 from optimes._math_model.model_components.sets import EnergyModelSetName, SystemSet
 from optimes._math_model.model_components.variables import EnergyModelVariableName, SystemVariable
+
+
+class MockComponent:
+    """Simple mock component for testing."""
+
+    def __init__(
+        self,
+        name: str,
+        component: int,
+    ) -> None:
+        self._name = name
+        self._component = component
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def component(self) -> int:
+        return self._component
 
 
 class TestAlgebraicModel:
@@ -50,9 +67,10 @@ class TestAlgebraicModel:
     def test_add_component_invalid_component_type(self) -> None:
         """Test that add_component raises TypeError for invalid component.component type."""
         model = AlgebraicModel()
-        invalid_component = Mock(spec=PyomoComponentProtocol)
-        invalid_component.component = "not_an_indexed_component"
-        invalid_component.name = EnergyModelSetName.TIME
+        invalid_component = MockComponent(
+            name=EnergyModelSetName.TIME,
+            component="not_an_indexed_component",
+        )
 
         with pytest.raises(TypeError, match="Invalid .component: not_an_indexed_component"):
             model.add_component(invalid_component)
@@ -60,9 +78,10 @@ class TestAlgebraicModel:
     def test_add_component_invalid_name_type(self) -> None:
         """Test that add_component raises TypeError for invalid component name type."""
         model = AlgebraicModel()
-        invalid_component = Mock(spec=PyomoComponentProtocol)
-        invalid_component.component = pyo.Set()
-        invalid_component.name = "invalid_name"
+        invalid_component = MockComponent(
+            name="invalid_name",
+            component=pyo.Set(),
+        )
 
         with pytest.raises(TypeError, match="Invalid .name: invalid_name"):
             model.add_component(invalid_component)

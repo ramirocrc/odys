@@ -26,7 +26,7 @@ test:
 # Generate test report
 test-report:
     @echo "🚀 Generating test report"
-    pytest --cov-report term --cov=src tests/
+    uv run python -m pytest --cov-report term --cov=src tests/
 
 # Clean build artifacts
 clean-build:
