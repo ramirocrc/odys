@@ -63,16 +63,7 @@ class AssetPortfolio:
             raise KeyError(msg)
         return self._assets[name]
 
-    def get_assets_by_type(self, asset_type: type[T]) -> tuple[T, ...]:
-        """Get all assets of a specific type.
-
-        Args:
-            asset_type: The type of assets to retrieve.
-
-        Returns:
-            A tuple containing all assets of the specified type.
-
-        """
+    def _get_assets_by_type(self, asset_type: type[T]) -> tuple[T, ...]:
         return tuple(asset for asset in self._assets.values() if isinstance(asset, asset_type))
 
     @property
@@ -93,7 +84,7 @@ class AssetPortfolio:
             A tuple containing all PowerGenerator assets.
 
         """
-        return self.get_assets_by_type(PowerGenerator)
+        return self._get_assets_by_type(PowerGenerator)
 
     @property
     def batteries(self) -> tuple[Battery, ...]:
@@ -103,4 +94,4 @@ class AssetPortfolio:
             A tuple containing all Battery assets.
 
         """
-        return self.get_assets_by_type(Battery)
+        return self._get_assets_by_type(Battery)

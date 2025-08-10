@@ -140,6 +140,6 @@ class Battery(EnergyAsset, frozen=True):
         if self.soc_min is None or self.soc_max is None:
             return self
         if self.soc_min >= self.soc_max:
-            msg = f"soc_min ({self.soc_min}) must be <= soc_max ({self.soc_max})."
+            msg = f"soc_min ({self.soc_min}) must be < soc_max ({self.soc_max})."
             raise ValueError(msg)
         return self
