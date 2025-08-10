@@ -34,6 +34,7 @@ Documentation = "https://ramirorcr.github.io/optimes/"
 dev = [
     "deptry>=0.23.0",
     "nox>=2025.5.1",
+    "pre-commit>=4.3.0",
     "pyright>=1.1.403",
     "pytest>=8.4.0",
     "pytest-cov>=6.2.1",
@@ -60,6 +61,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 include = ["src/**/*.py", "tests/**/*.py"]
+exclude = ["experiments"]
 line-length = 120
 target-version = "py313"
 

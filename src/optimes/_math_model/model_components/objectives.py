@@ -91,7 +91,7 @@ class MinimizeOperationalCostObjective(SystemObjective):
         """
         set_time, set_generators = self.var_generator_power.index_set().subsets()
         timestep = self.param_scenario_timestep.value  # pyright: ignore reportAttributeAccessIssue
-        # todo: change parameter from timedelta to integer
+        # TODO: change parameter from timedelta to integer
         if not isinstance(timestep, timedelta):
             msg = "param_scenario_timestep must be a timedelta object"
             raise TypeError(msg)
