@@ -1,8 +1,0 @@
-,var_generator_power,var_generator_power,var_battery_charge,var_battery_discharge,var_battery_soc,var_battery_charge_mode
-unit,gen1,gen2,battery1,battery1,battery1,battery1
-time,,,,,,
-0,50.0,0.0,0.0,0.0,100.0,0.0
-1,75.0,0.0,0.0,0.0,100.0,0.0
-2,100.0,0.0,0.0,0.0,100.0,0.0
-3,100.0,0.0,0.0,25.0,75.0,0.0
-4,100.0,25.0,0.0,25.0,50.0,0.0

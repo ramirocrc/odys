@@ -18,18 +18,18 @@ class MockComponent:
 
     def __init__(
         self,
-        name: str,
-        component: int,
+        name: EnergyModelSetName,
+        component: pyo.Set,
     ) -> None:
         self._name = name
         self._component = component
 
     @property
-    def name(self) -> str:
+    def name(self) -> EnergyModelSetName:
         return self._name
 
     @property
-    def component(self) -> int:
+    def component(self) -> pyo.Set:
         return self._component
 
 
@@ -69,7 +69,7 @@ class TestAlgebraicModel:
         model = AlgebraicModel()
         invalid_component = MockComponent(
             name=EnergyModelSetName.TIME,
-            component="not_an_indexed_component",
+            component="not_an_indexed_component",  # pyright: ignore reportArgumentType
         )
 
         with pytest.raises(TypeError, match="Invalid .component: not_an_indexed_component"):
@@ -79,7 +79,7 @@ class TestAlgebraicModel:
         """Test that add_component raises TypeError for invalid component name type."""
         model = AlgebraicModel()
         invalid_component = MockComponent(
-            name="invalid_name",
+            name="invalid_name",  # pyright: ignore reportArgumentType
             component=pyo.Set(),
         )
 
