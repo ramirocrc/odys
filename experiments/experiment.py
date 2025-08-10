@@ -49,4 +49,4 @@ if __name__ == "__main__":
 
     result = optimizer.optimize()
     results_df = result.to_dataframe("horizontal")
-    results_df.to_csv("final_results.csv")
+    results_df.to_csv("./data/final_results.csv")

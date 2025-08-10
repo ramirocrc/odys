@@ -1,34 +1,63 @@
-# Ignore everything by default
-*
-
-# But not these files and directories
-!*/
-
-# Source code
-!src/
-
-# Tests
-!tests/
-
-# Documentation
-!docs/
-
-# Configuration and project files
-!.gitignore
-!README.md
-!LICENSE
-!CONTRIBUTING.md
-!pyproject.toml
-!uv.lock
-!mkdocs.yml
-!noxfile.py
-!justfile
-!Dockerfile
-!codecov.yaml
-!experiment.py
-!todo.md
-!experiment.py
-
-
-# Keep empty __init__.py files but ignore other Python cache
 __pycache__/
+*.py[cod]
+*$py.class
+
+# === Distribution / packaging ===
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+
+# === Docker ===
+*.log
+*.pid
+*.bak
+*.swp
+*.tmp
+*.orig
+.DS_Store
+
+# === Testing & Coverage ===
+htmlcov/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+
+# === Jupyter Notebooks ===
+.ipynb_checkpoints
+
+
+# === Data ===
+/data/
+# === Environment ===
+.venv
+
+
+# === mkdocs & Docs ===
+/site
+docs/source
+docs/_build/
