@@ -33,6 +33,7 @@ MANIFEST
 .DS_Store
 
 # === Testing & Coverage ===
+.ruff_cache/
 htmlcov/
 .nox/
 .coverage
