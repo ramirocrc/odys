@@ -74,8 +74,7 @@ class Battery(EnergyAsset, frozen=True):
         Field(
             strict=True,
             ge=0,
-            le=1,
-            description="Minimum state of charge (0-1)",
+            description="Minimum state of charge should be greater than 0",
         ),
     ] = None
     soc_max: Annotated[
@@ -83,8 +82,7 @@ class Battery(EnergyAsset, frozen=True):
         Field(
             strict=True,
             ge=0,
-            le=1,
-            description="Maximum state of charge (0-1)",
+            description="Maximum state of charge shouldbe greater than 0",
         ),
     ] = None
     degradation_cost: Annotated[
@@ -106,19 +104,7 @@ class Battery(EnergyAsset, frozen=True):
     ] = None
 
     @model_validator(mode="after")
-    def validate_soc_values_remain_within_capacity(self) -> Self:
-        """Validate that all SOC values are within the battery capacity.
-
-        This validator ensures that initial SOC, terminal SOC, and
-        SOC bounds do not exceed the battery's capacity.
-
-        Returns:
-            Self if validation passes.
-
-        Raises:
-            ValueError: If any SOC value exceeds the battery capacity.
-
-        """
+    def _validate_soc_values_remain_within_capacity(self) -> Self:
         limits = {
             "soc_initial": self.soc_initial,
             "soc_terminal": self.soc_terminal,
@@ -134,19 +120,7 @@ class Battery(EnergyAsset, frozen=True):
         return self
 
     @model_validator(mode="after")
-    def validate_soc_initial_and_terminal(self) -> Self:
-        """Validate that initial and terminal SOC values respect min/max bounds.
-
-        This validator ensures that initial and terminal SOC values
-        are within the specified SOC bounds if they are set.
-
-        Returns:
-            Self if validation passes.
-
-        Raises:
-            ValueError: If SOC values are outside the specified bounds.
-
-        """
+    def _validate_soc_initial_and_terminal(self) -> Self:
         for name in ("soc_initial", "soc_terminal"):
             battery_soc = getattr(self, name)
             if battery_soc is None:
@@ -159,4 +133,13 @@ class Battery(EnergyAsset, frozen=True):
                 msg = f"{name} ({battery_soc}) must be ≤ soc_max ({self.soc_max})."
                 raise ValueError(msg)
 
+        return self
+
+    @model_validator(mode="after")
+    def _validate_soc_min_less_than_max(self) -> Self:
+        if self.soc_min is None or self.soc_max is None:
+            return self
+        if self.soc_min >= self.soc_max:
+            msg = f"soc_min ({self.soc_min}) must be <= soc_max ({self.soc_max})."
+            raise ValueError(msg)
         return self
