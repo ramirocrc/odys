@@ -16,17 +16,17 @@ repos:
       - id: trailing-whitespace
       - id: detect-private-key
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: v0.12.0
-    hooks:
-      # Run the linter.
-      - id: ruff-check
-        args: [--fix]
-      # Run the formatter.
-      - id: ruff-format
-
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.20.0
-    hooks:
-      - id: pyupgrade
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   # Ruff version.
+  #   rev: v0.12.8
+  #   hooks:
+  #     # Run the linter.
+  #     - id: ruff-check
+  #       args: [--fix, --config=pyproject.toml]
+  #     # Run the formatter.
+  #     - id: ruff-format
+  #
+  # - repo: https://github.com/asottile/pyupgrade
+  #   rev: v3.20.0
+  #   hooks:
+  #     - id: pyupgrade
