@@ -14,7 +14,7 @@ from optimes._math_model.model_components.objectives import MinimizeOperationalC
 from optimes._math_model.model_components.parameters import EnergyModelParameterName, SystemParameter
 from optimes._math_model.model_components.sets import EnergyModelSetName, SystemSet
 from optimes._math_model.model_components.variables import EnergyModelVariableName, SystemVariable
-from optimes.energy_system.energy_system_conditions import EnergySystem
+from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 class EnergyAlgebraicModelBuilder:
     def __init__(
         self,
-        model_data: EnergySystem,
+        model_data: ValidatedEnergySystem,
     ) -> None:
         self._model_data = model_data
         self._ext_pyo_model = AlgebraicModel()

@@ -7,11 +7,10 @@ the system operation to meet demand at minimum cost.
 
 from datetime import timedelta
 
-from optimes.energy_system.assets.generator import PowerGenerator
-from optimes.energy_system.assets.portfolio import AssetPortfolio
-from optimes.energy_system.assets.storage import Battery
-from optimes.energy_system.energy_system_conditions import EnergySystem
-from optimes.optimization.model_optimizer import EnergySystemOptimizer
+from optimes.energy_system import EnergySystem
+from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.assets.storage import Battery
 
 if __name__ == "__main__":
     y = 1
@@ -39,14 +38,12 @@ if __name__ == "__main__":
     portfolio.add_asset(generator_2)
     portfolio.add_asset(battery_1)
 
-    system_data = EnergySystem(
+    energy_system = EnergySystem(
         portfolio=portfolio,
         demand_profile=[50, 75, 100, 125, 150],
         timestep=timedelta(minutes=30),
     )
 
-    optimizer = EnergySystemOptimizer(system_data)
-
-    result = optimizer.optimize()
+    result = energy_system.optimize()
     results_df = result.to_dataframe("horizontal")
     results_df.to_csv("./data/final_results.csv")

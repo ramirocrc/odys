@@ -5,10 +5,10 @@ import pytest
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes._math_model.model_components.parameters import EnergyModelParameterName
-from optimes.energy_system.assets.generator import PowerGenerator
-from optimes.energy_system.assets.portfolio import AssetPortfolio
-from optimes.energy_system.assets.storage import Battery
-from optimes.energy_system.energy_system_conditions import EnergySystem
+from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +45,15 @@ def asset_portfolio_sample() -> AssetPortfolio:
 
 
 @pytest.fixture
-def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> EnergySystem:
-    return EnergySystem(
+def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> ValidatedEnergySystem:
+    return ValidatedEnergySystem(
         portfolio=asset_portfolio_sample,
         demand_profile=[150, 200, 150],
         timestep=timedelta(hours=1),
     )
 
 
-def test_model_build_components(energy_system_sample: EnergySystem) -> None:
+def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> None:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_sample)
     algebraic_model = model_builder.build()
     pyomo_model = algebraic_model.pyomo_model
@@ -106,7 +106,7 @@ def test_model_build_components(energy_system_sample: EnergySystem) -> None:
     ],
 )
 def test_set_and_parameter_values(
-    energy_system_sample: EnergySystem,
+    energy_system_sample: ValidatedEnergySystem,
     param_name: EnergyModelParameterName,
     expected_index_value_pairs: dict[str, float | str],
 ) -> None:
@@ -119,7 +119,7 @@ def test_set_and_parameter_values(
     )
 
 
-def test_model_already_built(energy_system_sample: EnergySystem) -> None:
+def test_model_already_built(energy_system_sample: ValidatedEnergySystem) -> None:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_sample)
     model_builder.build()
     with pytest.raises(AttributeError, match="Model has already been built."):
