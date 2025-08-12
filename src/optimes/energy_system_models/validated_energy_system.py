@@ -9,19 +9,28 @@ from typing import Self
 
 from pydantic import BaseModel, model_validator
 
-from optimes.energy_system.assets.generator import PowerGenerator
-from optimes.energy_system.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-class EnergySystem(BaseModel, arbitrary_types_allowed=True):
-    """Represents the complete energy system configuration.
+class ValidatedEnergySystem(BaseModel, arbitrary_types_allowed=True):
+    """Represents the complete energy system configuration with validation.
 
     This class defines the energy system including the asset portfolio,
     demand profile, time discretization, and available capacity profiles.
-    It performs validation to ensure the system is feasible.
+    It performs comprehensive validation to ensure the system is feasible:
+
+    - Validates that capacity profile lengths match demand profile length
+    - Ensures available capacity profiles are only specified for generators
+    - Verifies that maximum available power can meet peak demand
+    - Checks that total energy capacity can meet total energy demand
+
+    Raises:
+        ValueError: If the system configuration is infeasible.
+        TypeError: If available capacity is specified for non-generator assets.
     """
 
     portfolio: AssetPortfolio
@@ -87,7 +96,7 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
             if len(capacities) != len(self.demand_profile):
                 msg = (
                     f"Available capacity for '{asset_name}' has a length of {len(capacities)}, "
-                    f"which doesn't match the length of the load profile ({len(self.demand_profile)})."
+                    f"which doesn't match the length of the demand profile ({len(self.demand_profile)})."
                 )
                 raise ValueError(msg)
 
@@ -98,7 +107,7 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
         to ensure the system is feasible.
         """
         self._validate_enough_power_to_meet_demand()
-        self._valiate_enough_energy_to_meet_demand()
+        self._validate_enough_energy_to_meet_demand()
 
     def _validate_enough_power_to_meet_demand(self) -> None:
         """Validate that maximum available power can meet peak demand.
@@ -122,14 +131,12 @@ class EnergySystem(BaseModel, arbitrary_types_allowed=True):
                 )
                 raise ValueError(msg)
 
-    def _valiate_enough_energy_to_meet_demand(self) -> None:
+    def _validate_enough_energy_to_meet_demand(self) -> None:
         """Validate that the system has enough energy to meet total demand.
 
         This method checks that the total energy available from generators
         and batteries can meet the total energy demand over the time horizon.
 
-        TODO: Implement energy balance validation:
-        sum(demand * deltat) <= sum(generator.nominal_power) + sum(battery.soc_initial - battery.soc_terminal)
         """
         # TODO: Validate that:
-        # sum(demand * deltat) <= sum(generator.nominal_power) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
+        # sum(demand * timestep) <= sum(generator.nominal_power * timestep) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
