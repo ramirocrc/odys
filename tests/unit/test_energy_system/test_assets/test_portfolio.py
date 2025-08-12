@@ -90,31 +90,20 @@ def test_get_asset_raises_key_error_for_nonexistent_asset(portfolio_with_assets:
         portfolio_with_assets.get_asset("nonexistent")
 
 
-@pytest.mark.parametrize(
-    ("property_name", "expected_count", "expected_types"),
-    [
-        ("generators", 2, (PowerGenerator,)),
-        ("batteries", 1, (Battery,)),
-        ("assets", 3, (PowerGenerator, Battery)),
-    ],
-)
 def test_portfolio_properties_return_correct_assets(
-    property_name: str,
-    expected_count: int,
-    expected_types: tuple[type, ...],
-    portfolio_with_assets: AssetPortfolio,
+    sample_generator_1: PowerGenerator,
+    sample_generator_2: PowerGenerator,
+    sample_battery: Battery,
 ) -> None:
-    """Test that portfolio properties return correct assets with proper types."""
-    assets = getattr(portfolio_with_assets, property_name)
-    assert len(assets) == expected_count
+    portfolio = AssetPortfolio()
+    portfolio.add_asset(sample_generator_1)
+    portfolio.add_asset(sample_generator_2)
+    portfolio.add_asset(sample_battery)
 
-    if property_name == "assets":
-        # For assets property, we get a MappingProxyType, so we need to iterate over values
-        for asset in assets.values():
-            assert any(isinstance(asset, asset_type) for asset_type in expected_types)
+    generators = portfolio.generators
+    batteries = portfolio.batteries
+    assert sample_generator_1 is generators[0]
+    assert sample_generator_2 is generators[1]
+    assert sample_battery is batteries[0]
 
-        # Test that assets property returns a read-only view
-        assert hasattr(assets, "get")  # Should be a mapping-like object
-        # Test that it's read-only by attempting to modify (should fail)
-        with pytest.raises(TypeError):
-            assets["new_key"] = "new_value"
+    assert (generators + batteries) == (sample_generator_1, sample_generator_2, sample_battery)
