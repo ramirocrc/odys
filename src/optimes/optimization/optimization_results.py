@@ -76,10 +76,9 @@ class OptimizationResults:
             as rows and variables as columns.
         """
         if ResultDfDetail(detail) == ResultDfDetail.BASIC:
-            return self._get_basic_dataframe
-        return self._get_detailed_dataframe
+            return self._get_basic_dataframe()
+        return self._get_detailed_dataframe()
 
-    @property
     def _get_basic_dataframe(self) -> pd.DataFrame:
         results = pd.DataFrame()
         for asset_set in [EnergyModelSetName.BATTERIES, EnergyModelSetName.GENERATORS]:
@@ -98,7 +97,6 @@ class OptimizationResults:
                 results.loc[time, unit] = linked_independent_variable[(time, unit)].value
         return results
 
-    @property
     def _get_detailed_dataframe(self) -> pd.DataFrame:
         aggregated_variables_data = {}
         for variable in self._algebraic_model.pyomo_model.component_objects(pyo.Var, active=True):
