@@ -9,6 +9,8 @@ from enum import Enum, unique
 import pyomo.environ as pyo
 from pydantic import BaseModel
 
+from optimes._math_model.model_components.variables import EnergyModelVariableName
+
 
 @unique
 class EnergyModelSetName(Enum):
@@ -17,6 +19,16 @@ class EnergyModelSetName(Enum):
     TIME = "time"
     GENERATORS = "generators"
     BATTERIES = "batteries"
+
+    @property
+    def independent_variable(self) -> EnergyModelVariableName:
+        if self == self.TIME:
+            msg = f"Set {self} does not have an associated variable"
+            raise ValueError(msg)
+        return {
+            self.BATTERIES: EnergyModelVariableName.BATTERY_SOC,
+            self.GENERATORS: EnergyModelVariableName.GENERATOR_POWER,
+        }[self]
 
 
 class SystemSet(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
