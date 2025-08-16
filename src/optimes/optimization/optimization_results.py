@@ -99,27 +99,23 @@ class OptimizationResults:
         return results
 
     def _get_detailed_dataframe(self) -> pd.DataFrame:
-        aggregated_variables_data = {}
+        records = []
         for variable in self._algebraic_model.pyomo_model.component_objects(pyo.Var, active=True):
             variable = cast("IndexedVar", variable)
             first_index_set, _ = variable.index_set().subsets()
             if first_index_set.name != "time":
                 msg = f"Expected first index set of variable to be 'time', got {first_index_set.name} instead"
                 raise ValueError(msg)
-            var_name = variable.name
-            data = []
+            variable_name = variable.name
             for idx in variable:
                 if idx is None:
                     msg = "Index cannot be None"
                     raise ValueError(msg)
                 time, unit = idx
-                val = variable[idx].value
-                data.append((time, unit, val))
+                variable_value = variable[idx].value
+                records.append((unit, variable_name, variable_value, time))
 
-            variable_data = pd.DataFrame(data, columns=["time", "unit", "value"])  # pyright: ignore reportArgumentType
-            aggregated_variables_data[var_name] = variable_data.pivot_table(
-                index="time",
-                columns="unit",
-                values="value",
-            )
-        return pd.concat(aggregated_variables_data, axis=1)
+        df = pd.DataFrame(records, columns=pd.Index(["unit", "variable", "value", "time"]))
+        return df.pivot_table(
+            index=["unit", "variable", "time"],
+        )
