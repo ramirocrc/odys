@@ -95,6 +95,7 @@ class OptimizationResults:
                     raise ValueError(msg)
                 time, unit = idx
                 results.loc[time, unit] = linked_independent_variable[(time, unit)].value
+        results.index.name = "time"
         return results
 
     def _get_detailed_dataframe(self) -> pd.DataFrame:

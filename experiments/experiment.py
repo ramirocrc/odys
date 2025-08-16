@@ -13,7 +13,6 @@ from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
 
 if __name__ == "__main__":
-    y = 1
     generator_1 = PowerGenerator(
         name="gen1",
         nominal_power=100.0,
