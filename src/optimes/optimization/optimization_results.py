@@ -80,7 +80,7 @@ class OptimizationResults:
         return self._get_detailed_dataframe()
 
     def _get_basic_dataframe(self) -> pd.DataFrame:
-        results = pd.DataFrame()
+        records = []
         for asset_set in [EnergyModelSetName.BATTERIES, EnergyModelSetName.GENERATORS]:
             linked_independent_variable = self._algebraic_model.get_var(asset_set.independent_variable)
             linked_independent_variable = cast("IndexedVar", linked_independent_variable)
@@ -94,9 +94,13 @@ class OptimizationResults:
                     msg = "Index cannot be None"
                     raise ValueError(msg)
                 time, unit = idx
-                results.loc[time, unit] = linked_independent_variable[(time, unit)].value
-        results.index.name = "time"
-        return results
+                value = linked_independent_variable[(time, unit)].value
+                records.append((time, unit, value))
+
+        df = pd.DataFrame.from_records(records, columns=["time", "unit", "value"])
+        result = df.pivot_table(index="time", columns="unit", values="value")
+        result.index.name = "time"
+        return result
 
     def _get_detailed_dataframe(self) -> pd.DataFrame:
         records = []
