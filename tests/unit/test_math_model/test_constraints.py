@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=none
 import logging
 from datetime import timedelta
 
@@ -89,11 +90,11 @@ def test_constraint_power_balance(
 ) -> None:
     constraint = algebraic_model.get_constraint(EnergyModelConstraintName.POWER_BALANCE)
     for t in range(3):
-        upper_bound = constraint[t].ub  # pyright: ignore reportAttribureAccessIssue
-        lower_bound = constraint[t].lb  # pyright: ignore reportAttribureAccessIssue
+        upper_bound = constraint[t].ub
+        lower_bound = constraint[t].lb
         assert lower_bound == demand_profile_sample[t] == upper_bound
 
-        body = constraint[t].body  # pyright: ignore reportAttribureAccessIssue
+        body = constraint[t].body
         generators_power = f"var_generator_power[{t},{generator1.name}] + var_generator_power[{t},{generator2.name}]"
         battery_net_power = f"var_battery_discharge[{t},{battery1.name}] - var_battery_charge[{t},{battery1.name}]"
         expected_body = f"{generators_power} + {battery_net_power}"
@@ -109,18 +110,18 @@ def test_constraint_generator_limit(
 
     for t in range(3):
         gen1_constraint = constraint[t, generator1.name]
-        assert gen1_constraint.ub == generator1.nominal_power  # pyright: ignore reportAttribureAccessIssue
+        assert gen1_constraint.ub == generator1.nominal_power
         # Lower bound is set by variable's domain (NonNegativeReals)
-        assert gen1_constraint.lb is None  # pyright: ignore reportAttribureAccessIssue
-        body = gen1_constraint.body  # pyright: ignore reportAttribureAccessIssue
+        assert gen1_constraint.lb is None
+        body = gen1_constraint.body
         expected_body = f"var_generator_power[{t},{generator1.name}]"
         assert str(body) == expected_body
 
         gen2_constraint = constraint[t, generator2.name]
-        assert gen2_constraint.ub == generator2.nominal_power  # pyright: ignore reportAttribureAccessIssue
+        assert gen2_constraint.ub == generator2.nominal_power
         # Lower bound is set by variable's domain (NonNegativeReals)
-        assert gen2_constraint.lb is None  # pyright: ignore reportAttribureAccessIssue
-        body = gen2_constraint.body  # pyright: ignore reportAttribureAccessIssue
+        assert gen2_constraint.lb is None
+        body = gen2_constraint.body
         expected_body = f"var_generator_power[{t},{generator2.name}]"
         assert str(body) == expected_body
 
@@ -133,10 +134,10 @@ def test_constraint_battery_charge_limit(
 
     for t in range(3):
         battery_constraint = constraint[t, battery1.name]
-        assert battery_constraint.ub == 0  # pyright: ignore reportAttribureAccessIssue
-        assert battery_constraint.lb is None  # pyright: ignore reportAttribureAccessIssue
+        assert battery_constraint.ub == 0
+        assert battery_constraint.lb is None
 
-        body = battery_constraint.body  # pyright: ignore reportAttribureAccessIssue
+        body = battery_constraint.body
         lhs = f"var_battery_charge[{t},{battery1.name}]"
         rhs = f"{battery1.max_power}*var_battery_charge_mode[{t},{battery1.name}]"
         expected_body = f"{lhs} - {rhs}"
@@ -151,11 +152,11 @@ def test_constraint_battery_discharge_limit(
 
     for t in range(3):
         battery_constraint = constraint[t, "battery1"]
-        assert battery_constraint.ub == 0  # pyright: ignore reportAttribureAccessIssue
-        assert battery_constraint.lb is None  # pyright: ignore reportAttribureAccessIssue
+        assert battery_constraint.ub == 0
+        assert battery_constraint.lb is None
         # Lower bound defined by variable domain (NonNegativeReals)
 
-        body = battery_constraint.body  # pyright: ignore reportAttribureAccessIssue
+        body = battery_constraint.body
         lhs = f"var_battery_discharge[{t},{battery1.name}]"
         rhs = f"{battery1.max_power}*(1 - var_battery_charge_mode[{t},{battery1.name}])"
         expected_body = f"{lhs} - {rhs}"
@@ -170,10 +171,10 @@ def test_constraint_battery_soc_dynamics(
 
     # Test time period 0 (initial SOC)
     t0_constraint = constraint[0, battery1.name]
-    assert t0_constraint.ub == 0  # pyright: ignore reportAttribureAccessIssue
-    assert t0_constraint.lb == 0  # pyright: ignore reportAttribureAccessIssue
+    assert t0_constraint.ub == 0
+    assert t0_constraint.lb == 0
 
-    body = t0_constraint.body  # pyright: ignore reportAttribureAccessIssue
+    body = t0_constraint.body
     lhs = f"var_battery_soc[0,{battery1.name}]"
 
     soc_initial = battery1.soc_initial
@@ -185,10 +186,10 @@ def test_constraint_battery_soc_dynamics(
 
     for t in (1, 2):
         t1_constraint = constraint[t, battery1.name]
-        assert t1_constraint.ub == 0  # pyright: ignore reportAttribureAccessIssue
-        assert t1_constraint.lb == 0  # pyright: ignore reportAttribureAccessIssue
+        assert t1_constraint.ub == 0
+        assert t1_constraint.lb == 0
 
-        body = t1_constraint.body  # pyright: ignore reportAttribureAccessIssue
+        body = t1_constraint.body
         lhs = f"var_battery_soc[{t},{battery1.name}]"
         rhs = f"(var_battery_soc[{t - 1},{battery1.name}] + {eff_ch}*var_battery_charge[{t},{battery1.name}] - {1 / eff_disch}*var_battery_discharge[{t},{battery1.name}])"  # noqa: E501
         expected_body = f"{lhs} - {rhs}"
@@ -203,10 +204,10 @@ def test_constraint_battery_soc_bounds(
 
     for t in range(3):  # 3 time periods
         battery_constraint = constraint[t, battery1.name]
-        assert battery_constraint.ub == battery1.capacity  # pyright: ignore reportAttribureAccessIssue
-        assert battery_constraint.lb is None  # pyright: ignore reportAttribureAccessIssue
+        assert battery_constraint.ub == battery1.capacity
+        assert battery_constraint.lb is None
 
-        body = battery_constraint.body  # pyright: ignore reportAttribureAccessIssue
+        body = battery_constraint.body
         expected_body = f"var_battery_soc[{t},{battery1.name}]"
         assert str(body) == expected_body
 
@@ -218,9 +219,9 @@ def test_constraint_battery_soc_terminal(
     constraint = algebraic_model.get_constraint(EnergyModelConstraintName.BATTERY_SOC_TERMINAL)
 
     battery_constraint = constraint[battery1.name]
-    assert battery_constraint.ub == battery1.soc_terminal  # pyright: ignore reportAttribureAccessIssue
-    assert battery_constraint.lb == battery1.soc_terminal  # pyright: ignore reportAttribureAccessIssue
+    assert battery_constraint.ub == battery1.soc_terminal
+    assert battery_constraint.lb == battery1.soc_terminal
 
-    body = battery_constraint.body  # pyright: ignore reportAttribureAccessIssue
+    body = battery_constraint.body
     expected_body = f"var_battery_soc[2,{battery1.name}]"
     assert str(body) == expected_body
