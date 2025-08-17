@@ -44,5 +44,5 @@ if __name__ == "__main__":
     )
 
     result = energy_system.optimize()
-    results_df = result.to_dataframe("detailed")
+    results_df = result.to_dataframe("basic")
     results_df.to_csv("final_results.csv")

@@ -96,7 +96,7 @@ class PowerBalanceConstraint(SystemConstraint):
             generation_total = sum(self.var_generator_power[t, i] for i in set_generator)  # pyright: ignore [reportCallIssue, reportArgumentType]
             discharge_total = sum(self.var_battery_discharge[t, j] for j in set_batteries)  # pyright: ignore [reportCallIssue, reportArgumentType]
             charge_total = sum(self.var_battery_charge[t, j] for j in set_batteries)  # pyright: ignore [reportCallIssue, reportArgumentType]
-            return generation_total + discharge_total == self.param_demand[t] + charge_total
+            return generation_total + discharge_total - charge_total == self.param_demand[t]
 
         set_time, set_generator = self.var_generator_power.index_set().subsets()
         _, set_batteries = self.var_battery_discharge.index_set().subsets()
