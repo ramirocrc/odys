@@ -74,6 +74,9 @@ class AlgebraicModel:
     def get_var(self, name: EnergyModelVariableName) -> pyo.Var:
         return self._get_component(name.value, pyo.Var)
 
+    def get_constraint(self, name: EnergyModelConstraintName) -> pyo.Constraint:
+        return self._get_component(name.value, pyo.Constraint)
+
     def _get_component(self, name: str, expected_type: type[T]) -> T:
         if not hasattr(self._pyomo_model, name):
             msg = f"Component {name} does not exist in the model."
