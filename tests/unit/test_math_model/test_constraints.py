@@ -15,6 +15,16 @@ from optimes.energy_system_models.validated_energy_system import ValidatedEnergy
 logger = logging.getLogger(__name__)
 
 
+def v(name: str, *indices: str | int) -> str:
+    """Helper function to generate pyomo expression for an indexed variable.
+    e.g. v('generator_power', 0  'gen1') will return:
+    'var_generator_power[0,gen1]'
+
+    """
+    index_str = ",".join(str(index) for index in indices)
+    return f"var_{name}[{index_str}]"
+
+
 @pytest.fixture
 def generator1() -> PowerGenerator:
     return PowerGenerator(
@@ -106,8 +116,8 @@ def test_constraint_power_balance(  # noqa: PLR0913
         assert constraint_t.lb == demand_profile_sample[t] == constraint_t.ub
 
         body = constraint_t.body
-        generators_power = f"var_generator_power[{t},{generator1.name}] + var_generator_power[{t},{generator2.name}]"
-        battery_net_power = f"var_battery_discharge[{t},{battery1.name}] - var_battery_charge[{t},{battery1.name}]"
+        generators_power = f"{v('generator_power', t, generator1.name)} + {v('generator_power', t, generator2.name)}"
+        battery_net_power = f"{v('battery_discharge', t, battery1.name)} - {v('battery_charge', t, battery1.name)}"
         expected_body = f"{generators_power} + {battery_net_power}"
         assert str(body) == expected_body
 
@@ -118,13 +128,13 @@ def test_constraint_generator_limit(
     time_index: list[int],
 ) -> None:
     constraint = algebraic_model.get_constraint(ConName.GENERATOR_LIMIT)
-
+    i = generator.name
     for t in time_index:
-        constraint_t_i = constraint[t, generator.name]
+        constraint_t_i = constraint[t, i]
         assert constraint_t_i.ub == generator.nominal_power
         # Lower bound is set by variable's domain (NonNegativeReals)
         assert constraint_t_i.lb is None
-        expected_body = f"var_generator_power[{t},{generator.name}]"
+        expected_body = v("generator_power", t, i)
         assert str(constraint_t_i.body) == expected_body
 
 
@@ -134,14 +144,14 @@ def test_constraint_battery_charge_limit(
     time_index: list[int],
 ) -> None:
     constraint = algebraic_model.get_constraint(ConName.BATTERY_CHARGE_LIMIT)
-
+    j = battery1.name
     for t in time_index:
-        constraint_t_j = constraint[t, battery1.name]
+        constraint_t_j = constraint[t, j]
         assert constraint_t_j.ub == 0
         assert constraint_t_j.lb is None
 
-        lhs = f"var_battery_charge[{t},{battery1.name}]"
-        rhs = f"{battery1.max_power}*var_battery_charge_mode[{t},{battery1.name}]"
+        lhs = v("battery_charge", t, j)
+        rhs = f"{battery1.max_power}*{v('battery_charge_mode', t, j)}"
         expected_body = f"{lhs} - {rhs}"
         assert str(constraint_t_j.body) == expected_body
 
@@ -152,15 +162,15 @@ def test_constraint_battery_discharge_limit(
     time_index: list[int],
 ) -> None:
     constraint = algebraic_model.get_constraint(ConName.BATTERY_DISCHARGE_LIMIT)
-
+    j = battery1.name
     for t in time_index:
-        constraint_t_j = constraint[t, battery1.name]
+        constraint_t_j = constraint[t, j]
         assert constraint_t_j.ub == 0
         assert constraint_t_j.lb is None
         # Lower bound defined by variable domain (NonNegativeReals)
 
-        lhs = f"var_battery_discharge[{t},{battery1.name}]"
-        rhs = f"{battery1.max_power}*(1 - var_battery_charge_mode[{t},{battery1.name}])"
+        lhs = v("battery_discharge", t, j)
+        rhs = f"{battery1.max_power}*(1 - {v('battery_charge_mode', t, j)})"
         expected_body = f"{lhs} - {rhs}"
         assert str(constraint_t_j.body) == expected_body
 
@@ -170,28 +180,28 @@ def test_constraint_battery_soc_dynamics(
     battery1: Battery,
     time_index: list[int],
 ) -> None:
+    j = battery1.name
     constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_DYNAMICS)
 
-    # Test time period 0 (initial SOC)
-    constraint_t0 = constraint[0, battery1.name]
+    constraint_t0 = constraint[0, j]
     assert constraint_t0.ub == constraint_t0.lb == 0
 
-    lhs = f"var_battery_soc[0,{battery1.name}]"
+    lhs = v("battery_soc", 0, j)
 
     soc_initial = battery1.soc_initial
     eff_ch = battery1.efficiency_charging
     eff_disch = battery1.efficiency_discharging
-    rhs = f"({soc_initial} + {eff_ch}*var_battery_charge[0,{battery1.name}] - {1 / eff_disch}*var_battery_discharge[0,{battery1.name}])"  # noqa: E501
+    rhs = f"({soc_initial} + {eff_ch}*{v('battery_charge', 0, j)} - {1 / eff_disch}*{v('battery_discharge', 0, j)})"
     expected_body = f"{lhs} - {rhs}"
     assert str(constraint_t0.body) == expected_body
 
     for t in time_index[1:]:
-        constraint_t_j = constraint[t, battery1.name]
+        constraint_t_j = constraint[t, j]
         assert constraint_t_j.ub == constraint_t_j.lb == 0
 
         body = constraint_t_j.body
-        lhs = f"var_battery_soc[{t},{battery1.name}]"
-        rhs = f"(var_battery_soc[{t - 1},{battery1.name}] + {eff_ch}*var_battery_charge[{t},{battery1.name}] - {1 / eff_disch}*var_battery_discharge[{t},{battery1.name}])"  # noqa: E501
+        lhs = v("battery_soc", t, j)
+        rhs = f"({v('battery_soc', t - 1, j)} + {eff_ch}*{v('battery_charge', t, j)} - {1 / eff_disch}*{v('battery_discharge', t, j)})"  # noqa: E501
         expected_body = f"{lhs} - {rhs}"
         assert str(body) == expected_body
 
@@ -202,13 +212,13 @@ def test_constraint_battery_soc_bounds(
     time_index: list[int],
 ) -> None:
     constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_BOUNDS)
-
+    j = battery1.name
     for t in time_index:  # 3 time periods
-        constraint_t_j = constraint[t, battery1.name]
+        constraint_t_j = constraint[t, j]
         assert constraint_t_j.ub == battery1.capacity
         assert constraint_t_j.lb is None
 
-        expected_body = f"var_battery_soc[{t},{battery1.name}]"
+        expected_body = v("battery_soc", t, j)
         assert str(constraint_t_j.body) == expected_body
 
 
@@ -218,11 +228,11 @@ def test_constraint_battery_soc_terminal(
     time_index: list[int],
 ) -> None:
     constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_TERMINAL)
-
-    constraint_j = constraint[battery1.name]
+    j = battery1.name
+    constraint_j = constraint[j]
     assert constraint_j.ub == battery1.soc_terminal
     assert constraint_j.lb == battery1.soc_terminal
 
     body = constraint_j.body
-    expected_body = f"var_battery_soc[{time_index[-1]},{battery1.name}]"
+    expected_body = v("battery_soc", time_index[-1], j)
     assert str(body) == expected_body
