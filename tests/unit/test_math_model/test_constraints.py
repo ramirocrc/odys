@@ -6,7 +6,7 @@ import pytest
 
 from optimes._math_model.algebraic_model import AlgebraicModel
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
-from optimes._math_model.model_components.constraints import EnergyModelConstraintName
+from optimes._math_model.model_components.constraints import EnergyModelConstraintName as ConName
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
@@ -65,6 +65,11 @@ def demand_profile_sample() -> list[float]:
 
 
 @pytest.fixture
+def time_index(demand_profile_sample: list[float]) -> list[int]:
+    return list(range(len(demand_profile_sample)))
+
+
+@pytest.fixture
 def energy_system_sample(
     asset_portfolio_sample: AssetPortfolio,
     demand_profile_sample: list[float],
@@ -87,9 +92,10 @@ def test_constraint_power_balance(
     demand_profile_sample: list[float],
     generator1: PowerGenerator,
     generator2: PowerGenerator,
+    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(EnergyModelConstraintName.POWER_BALANCE)
-    for t in range(3):
+    constraint = algebraic_model.get_constraint(ConName.POWER_BALANCE)
+    for t in time_index:
         upper_bound = constraint[t].ub
         lower_bound = constraint[t].lb
         assert lower_bound == demand_profile_sample[t] == upper_bound
@@ -105,10 +111,11 @@ def test_constraint_generator_limit(
     algebraic_model: AlgebraicModel,
     generator1: PowerGenerator,
     generator2: PowerGenerator,
+    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(EnergyModelConstraintName.GENERATOR_LIMIT)
+    constraint = algebraic_model.get_constraint(ConName.GENERATOR_LIMIT)
 
-    for t in range(3):
+    for t in time_index:
         gen1_constraint = constraint[t, generator1.name]
         assert gen1_constraint.ub == generator1.nominal_power
         # Lower bound is set by variable's domain (NonNegativeReals)
@@ -129,10 +136,11 @@ def test_constraint_generator_limit(
 def test_constraint_battery_charge_limit(
     algebraic_model: AlgebraicModel,
     battery1: Battery,
+    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(EnergyModelConstraintName.BATTERY_CHARGE_LIMIT)
+    constraint = algebraic_model.get_constraint(ConName.BATTERY_CHARGE_LIMIT)
 
-    for t in range(3):
+    for t in time_index:
         battery_constraint = constraint[t, battery1.name]
         assert battery_constraint.ub == 0
         assert battery_constraint.lb is None
@@ -147,10 +155,11 @@ def test_constraint_battery_charge_limit(
 def test_constraint_battery_discharge_limit(
     algebraic_model: AlgebraicModel,
     battery1: Battery,
+    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(EnergyModelConstraintName.BATTERY_DISCHARGE_LIMIT)
+    constraint = algebraic_model.get_constraint(ConName.BATTERY_DISCHARGE_LIMIT)
 
-    for t in range(3):
+    for t in time_index:
         battery_constraint = constraint[t, "battery1"]
         assert battery_constraint.ub == 0
         assert battery_constraint.lb is None
@@ -166,8 +175,9 @@ def test_constraint_battery_discharge_limit(
 def test_constraint_battery_soc_dynamics(
     algebraic_model: AlgebraicModel,
     battery1: Battery,
+    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(EnergyModelConstraintName.BATTERY_SOC_DYNAMICS)
+    constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_DYNAMICS)
 
     # Test time period 0 (initial SOC)
     t0_constraint = constraint[0, battery1.name]
@@ -184,7 +194,7 @@ def test_constraint_battery_soc_dynamics(
     expected_body = f"{lhs} - {rhs}"
     assert str(body) == expected_body
 
-    for t in (1, 2):
+    for t in time_index[1:]:
         t1_constraint = constraint[t, battery1.name]
         assert t1_constraint.ub == 0
         assert t1_constraint.lb == 0
@@ -199,10 +209,11 @@ def test_constraint_battery_soc_dynamics(
 def test_constraint_battery_soc_bounds(
     algebraic_model: AlgebraicModel,
     battery1: Battery,
+    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(EnergyModelConstraintName.BATTERY_SOC_BOUNDS)
+    constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_BOUNDS)
 
-    for t in range(3):  # 3 time periods
+    for t in time_index:  # 3 time periods
         battery_constraint = constraint[t, battery1.name]
         assert battery_constraint.ub == battery1.capacity
         assert battery_constraint.lb is None
@@ -216,7 +227,7 @@ def test_constraint_battery_soc_terminal(
     algebraic_model: AlgebraicModel,
     battery1: Battery,
 ) -> None:
-    constraint = algebraic_model.get_constraint(EnergyModelConstraintName.BATTERY_SOC_TERMINAL)
+    constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_TERMINAL)
 
     battery_constraint = constraint[battery1.name]
     assert battery_constraint.ub == battery1.soc_terminal
