@@ -1,6 +1,6 @@
 # Documentation
 
-- [ ] Create documentation page
+- [x] Create documentation page
 - [ ] Add user manual
 - [ ] Add examples
 
@@ -12,11 +12,11 @@
 
 # Test
 
-- [ ] Test pydantic validators (check that they raise errors for invalid inputs)
-- [ ] Test constraints
-- [ ] Add tests for ValidatedEnergySystem and EnergySystem
-  - [ ] Test for invalid inputs
-  - [ ] Perform optimization with different inputs (e.g. only battery, only generation, combined) and validate optimal results
+- [x] Test pydantic validators (check that they raise errors for invalid inputs)
+- [x] Test constraints
+- [x] Add tests for ValidatedEnergySystem and EnergySystem
+  - [x] Test for invalid inputs
+  - [x] Perform optimization with different inputs (e.g. only battery, only generation, combined) and validate optimal results
 
 # Optimization
 

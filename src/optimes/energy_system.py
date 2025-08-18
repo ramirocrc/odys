@@ -10,8 +10,7 @@ from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from optimes.optimization.optimization_results import OptimizationResults
-from optimes.solvers.base_solver import AlgebraicModelSolver
-from optimes.solvers.highs_solver import HiGHSolver
+from optimes.solvers.highs_solver import optimize_algebraic_model
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -42,18 +41,15 @@ class EnergySystem:
                 their available capacity profiles over time.
 
         """
-        validated_model = ValidatedEnergySystem(
+        self._validated_model = ValidatedEnergySystem(
             portfolio=portfolio,
             demand_profile=demand_profile,
             timestep=timestep,
             available_capacity_profiles=available_capacity_profiles,
         )
-        model_builder = EnergyAlgebraicModelBuilder(validated_model)
-        self._algebraic_model = model_builder.build()
 
     def optimize(
         self,
-        solver: AlgebraicModelSolver | None = None,
     ) -> OptimizationResults:
         """Optimize the energy system.
 
@@ -67,5 +63,6 @@ class EnergySystem:
             OptimizationResults containing the solution and metadata.
 
         """
-        solver = solver if solver is not None else HiGHSolver()
-        return solver.solve(self._algebraic_model)
+        model_builder = EnergyAlgebraicModelBuilder(self._validated_model)
+        algebraic_model = model_builder.build()
+        return optimize_algebraic_model(algebraic_model)
