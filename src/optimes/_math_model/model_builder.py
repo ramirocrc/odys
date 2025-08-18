@@ -23,9 +23,9 @@ logger = get_logger(__name__)
 class EnergyAlgebraicModelBuilder:
     def __init__(
         self,
-        model_data: ValidatedEnergySystem,
+        validated_energy_system: ValidatedEnergySystem,
     ) -> None:
-        self._model_data = model_data
+        self._energy_system = validated_energy_system
         self._ext_pyo_model = AlgebraicModel()
         self._model_is_built: bool = False
 
@@ -43,9 +43,9 @@ class EnergyAlgebraicModelBuilder:
         return self._ext_pyo_model
 
     def _add_model_sets(self) -> None:
-        time_indices = range(len(self._model_data.demand_profile))
-        generator_indices = (gen.name for gen in self._model_data.portfolio.generators)
-        battery_indices = (bat.name for bat in self._model_data.portfolio.batteries)
+        time_indices = range(len(self._energy_system.demand_profile))
+        generator_indices = (gen.name for gen in self._energy_system.portfolio.generators)
+        battery_indices = (bat.name for bat in self._energy_system.portfolio.batteries)
         self._ext_pyo_model.add_component(
             SystemSet(
                 name=EnergyModelSetName.TIME,
@@ -76,7 +76,7 @@ class EnergyAlgebraicModelBuilder:
                 name=EnergyModelParameterName.GENERATOR_NOMINAL_POWER,
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.GENERATORS),
-                    initialize={gen.name: gen.nominal_power for gen in self._model_data.portfolio.generators},
+                    initialize={gen.name: gen.nominal_power for gen in self._energy_system.portfolio.generators},
                     mutable=False,
                     name=EnergyModelParameterName.GENERATOR_NOMINAL_POWER.value,
                 ),
@@ -88,7 +88,7 @@ class EnergyAlgebraicModelBuilder:
                 name=EnergyModelParameterName.GENERATOR_VARIABLE_COST,
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.GENERATORS),
-                    initialize={gen.name: gen.variable_cost for gen in self._model_data.portfolio.generators},
+                    initialize={gen.name: gen.variable_cost for gen in self._energy_system.portfolio.generators},
                     mutable=False,
                     name=EnergyModelParameterName.GENERATOR_VARIABLE_COST.value,
                 ),
@@ -101,7 +101,7 @@ class EnergyAlgebraicModelBuilder:
                 name=EnergyModelParameterName.BATTERY_MAX_POWER,
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.BATTERIES),
-                    initialize={battery.name: battery.max_power for battery in self._model_data.portfolio.batteries},
+                    initialize={battery.name: battery.max_power for battery in self._energy_system.portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_MAX_POWER.value,
                 ),
@@ -114,7 +114,7 @@ class EnergyAlgebraicModelBuilder:
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.BATTERIES),
                     initialize={
-                        battery.name: battery.efficiency_charging for battery in self._model_data.portfolio.batteries
+                        battery.name: battery.efficiency_charging for battery in self._energy_system.portfolio.batteries
                     },
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_EFFICIENCY_CHARGE.value,
@@ -128,7 +128,8 @@ class EnergyAlgebraicModelBuilder:
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.BATTERIES),
                     initialize={
-                        battery.name: battery.efficiency_discharging for battery in self._model_data.portfolio.batteries
+                        battery.name: battery.efficiency_discharging
+                        for battery in self._energy_system.portfolio.batteries
                     },
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_EFFICIENCY_DISCHARGE.value,
@@ -141,7 +142,9 @@ class EnergyAlgebraicModelBuilder:
                 name=EnergyModelParameterName.BATTERY_SOC_INITIAL,
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.BATTERIES),
-                    initialize={battery.name: battery.soc_initial for battery in self._model_data.portfolio.batteries},
+                    initialize={
+                        battery.name: battery.soc_initial for battery in self._energy_system.portfolio.batteries
+                    },
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_SOC_INITIAL.value,
                 ),
@@ -153,7 +156,9 @@ class EnergyAlgebraicModelBuilder:
                 name=EnergyModelParameterName.BATTERY_SOC_TERMINAL,
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.BATTERIES),
-                    initialize={battery.name: battery.soc_terminal for battery in self._model_data.portfolio.batteries},
+                    initialize={
+                        battery.name: battery.soc_terminal for battery in self._energy_system.portfolio.batteries
+                    },
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_SOC_TERMINAL.value,
                 ),
@@ -165,7 +170,7 @@ class EnergyAlgebraicModelBuilder:
                 name=EnergyModelParameterName.BATTERY_CAPACITY,
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.BATTERIES),
-                    initialize={battery.name: battery.capacity for battery in self._model_data.portfolio.batteries},
+                    initialize={battery.name: battery.capacity for battery in self._energy_system.portfolio.batteries},
                     mutable=False,
                     name=EnergyModelParameterName.BATTERY_CAPACITY.value,
                 ),
@@ -182,7 +187,7 @@ class EnergyAlgebraicModelBuilder:
             SystemParameter(
                 name=EnergyModelParameterName.SCENARIO_TIMESTEP,
                 component=pyo.Param(
-                    initialize=self._model_data.timestep,
+                    initialize=self._energy_system.timestep,
                     mutable=False,
                     name=EnergyModelParameterName.SCENARIO_TIMESTEP.value,
                     within=pyo.Any,
@@ -196,7 +201,7 @@ class EnergyAlgebraicModelBuilder:
                 name=EnergyModelParameterName.DEMAND,
                 component=pyo.Param(
                     self._ext_pyo_model.get_set(EnergyModelSetName.TIME),
-                    initialize=self._model_data.demand_profile,
+                    initialize=self._energy_system.demand_profile,
                     mutable=False,
                     name=EnergyModelParameterName.DEMAND.value,
                 ),
@@ -204,7 +209,7 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def _add_available_capacity_parameters(self) -> None:
-        if self._model_data.available_capacity_profiles is None:
+        if self._energy_system.available_capacity_profiles is None:
             return
         msg = "Available capacity profiles not implemented."
         raise NotImplementedError(msg)
@@ -337,7 +342,7 @@ class EnergyAlgebraicModelBuilder:
         self._ext_pyo_model.add_component(battery_soc_end_constraint)
 
     def _add_scenario_constraints(self) -> None:
-        if self._model_data.available_capacity_profiles is None:
+        if self._energy_system.available_capacity_profiles is None:
             return
 
     def _add_model_objective(self) -> None:
