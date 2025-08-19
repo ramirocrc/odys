@@ -34,7 +34,6 @@ def optimize_algebraic_model(model: AlgebraicModel, **kwargs: object) -> Optimiz
     """
     solver = pyo.SolverFactory("highs")
 
-    # First solve without loading solutions to check status
     solver_results = solver.solve(
         model=model.pyomo_model,
         load_solutions=False,
