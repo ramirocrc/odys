@@ -20,11 +20,11 @@
 
 # Optimization
 
-- [ ] Remove solver from EnergySystem
-- [ ] Create optimization results class
-- [ ] Once result output is defined, we should make EnergySystem.algebraic_model private (don't give access to algebraic_model to user)
-- [ ] Create table with optimization results
-- [ ] Assess if Pandas DataFrame is useful for optimization results
+- [x] Remove solver from EnergySystem
+- [x] Create optimization results class
+- [x] Once result output is defined, we should make EnergySystem.algebraic_model private (don't give access to algebraic_model to user)
+- [x] Create table with optimization results
+- [x] Assess if Pandas DataFrame is useful for optimization results
 - [ ] Handle infeasible problems
 - [ ] Provide detailed information on infeasible problems
 
@@ -33,6 +33,7 @@
 - [ ] Review time step implementation
   - [ ] Review power balance
   - [ ] Review ValidatedEnergySystem.\_validate_inputs
+- [ ] Add "GridConnection" asset
 - [ ] Evaluate other uses cases (e.g. optimze bids based on day-ahead price forecast)
 - [ ] Add additional parameteres for assets (e.g. generator min_up_time, battery degradation_cost)
 - [ ] Support for other assets (e.g. wind, hydro, solar pv)
@@ -40,5 +41,5 @@
 
 # Codebase refactoring
 
-- [ ] Move Scenario specific configuration (e.g. battery soc_initial soc_terminal to EnergySystem class)
+- [x] Move Scenario specific configuration (e.g. battery soc_initial soc_terminal to EnergySystem class)
 - [ ] Check how other libraries implement logging

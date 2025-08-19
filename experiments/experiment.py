@@ -11,6 +11,9 @@ from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 if __name__ == "__main__":
     generator_1 = PowerGenerator(
@@ -27,8 +30,8 @@ if __name__ == "__main__":
         name="battery1",
         max_power=200.0,
         capacity=100.0,
-        efficiency_charging=1,
-        efficiency_discharging=1,
+        efficiency_charging=0.9,
+        efficiency_discharging=0.8,
         soc_initial=100.0,
         soc_terminal=50.0,
     )
@@ -45,4 +48,4 @@ if __name__ == "__main__":
 
     result = energy_system.optimize()
     results_df = result.to_dataframe("basic")
-    results_df.to_csv("final_results.csv")
+    logger.info(results_df)
