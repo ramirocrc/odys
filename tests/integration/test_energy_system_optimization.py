@@ -26,6 +26,7 @@ def test_single_generator_meets_demand() -> None:
         portfolio=portfolio,
         demand_profile=demand_profile,
         timestep=timestep,
+        power_unit="MW",
     )
 
     result = energy_system.optimize()
@@ -70,6 +71,7 @@ def test_three_generators_meet_demand() -> None:
         portfolio=portfolio,
         demand_profile=demand_profile,
         timestep=timestep,
+        power_unit="MW",
     )
 
     result = energy_system.optimize()
@@ -122,6 +124,7 @@ def test_generator_and_battery_optimization() -> None:
         portfolio=portfolio,
         demand_profile=demand_profile,
         timestep=timestep,
+        power_unit="MW",
     )
     result = energy_system.optimize()
     results_df = result.to_dataframe("basic")
@@ -155,6 +158,7 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
         portfolio=portfolio,
         demand_profile=demand_profile,
         timestep=timestep,
+        power_unit="MW",
     )
     result = energy_system.optimize()
     results_df = result.to_dataframe("basic")

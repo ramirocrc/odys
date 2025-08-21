@@ -44,6 +44,7 @@ if __name__ == "__main__":
         portfolio=portfolio,
         demand_profile=[50, 75, 100, 125, 150],
         timestep=timedelta(minutes=30),
+        power_unit="MW",
     )
 
     result = energy_system.optimize()

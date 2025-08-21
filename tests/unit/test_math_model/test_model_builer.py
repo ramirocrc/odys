@@ -8,6 +8,7 @@ from optimes._math_model.model_components.parameters import EnergyModelParameter
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,7 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> ValidatedEne
         portfolio=asset_portfolio_sample,
         demand_profile=[150, 200, 150],
         timestep=timedelta(hours=1),
+        power_unit=PowerUnit.MegaWatt,
     )
 
 

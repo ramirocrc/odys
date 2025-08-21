@@ -40,6 +40,7 @@ def energy_system_sample() -> EnergySystem:
         portfolio=portfolio,
         demand_profile=[50, 75, 100, 125, 150],
         timestep=timedelta(minutes=30),
+        power_unit="MW",
     )
 
 

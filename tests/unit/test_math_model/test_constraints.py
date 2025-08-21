@@ -10,6 +10,7 @@ from optimes._math_model.model_components.constraints import EnergyModelConstrai
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
 logger = logging.getLogger(__name__)
@@ -88,6 +89,7 @@ def energy_system_sample(
         portfolio=asset_portfolio_sample,
         demand_profile=demand_profile_sample,
         timestep=timedelta(hours=1),
+        power_unit=PowerUnit.MegaWatt,
     )
 
 

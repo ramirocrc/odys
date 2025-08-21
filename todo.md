@@ -25,14 +25,14 @@
 - [x] Once result output is defined, we should make EnergySystem.algebraic_model private (don't give access to algebraic_model to user)
 - [x] Create table with optimization results
 - [x] Assess if Pandas DataFrame is useful for optimization results
-- [ ] Handle infeasible problems
-- [ ] Provide detailed information on infeasible problems
+- [x] Handle infeasible problems
+- [x] Provide detailed information on infeasible problems
 
 # Model extension
 
 - [ ] Review time step implementation
   - [ ] Review power balance
-  - [ ] Review ValidatedEnergySystem.\_validate_inputs
+  - [x] Review ValidatedEnergySystem.\_validate_inputs
 - [ ] Add "GridConnection" asset
 - [ ] Evaluate other uses cases (e.g. optimze bids based on day-ahead price forecast)
 - [ ] Add additional parameteres for assets (e.g. generator min_up_time, battery degradation_cost)
