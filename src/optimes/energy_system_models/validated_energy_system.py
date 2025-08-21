@@ -11,6 +11,7 @@ from pydantic import BaseModel, model_validator
 
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.units import PowerUnit
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -36,6 +37,7 @@ class ValidatedEnergySystem(BaseModel, arbitrary_types_allowed=True):
     portfolio: AssetPortfolio
     demand_profile: list[float]
     timestep: timedelta
+    power_unit: PowerUnit
     available_capacity_profiles: dict[str, list[float]] | None = None
 
     @model_validator(mode="after")

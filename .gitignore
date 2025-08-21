@@ -62,3 +62,8 @@ cover/
 /site
 docs/source
 docs/_build/
+
+
+
+# === Other ===
+experiments_ignored/

@@ -12,6 +12,7 @@ import pytest
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
 
@@ -64,6 +65,7 @@ def test_energy_system_creation_with_valid_inputs(
         portfolio=testing_portfolio,
         demand_profile=valid_demand_profile,
         timestep=valid_timestep,
+        power_unit=PowerUnit.MegaWatt,
     )
 
 
@@ -83,6 +85,7 @@ def test_validation_of_capacity_profile_lengths(
         demand_profile=valid_demand_profile,
         timestep=valid_timestep,
         available_capacity_profiles=valid_capacity_profiles,
+        power_unit=PowerUnit.MegaWatt,
     )
 
     assert energy_system.available_capacity_profiles == valid_capacity_profiles
@@ -97,6 +100,7 @@ def test_validation_of_capacity_profile_lengths(
             demand_profile=valid_demand_profile,
             timestep=valid_timestep,
             available_capacity_profiles=invalid_capacity_profiles,
+            power_unit=PowerUnit.MegaWatt,
         )
 
 
@@ -116,6 +120,7 @@ def test_validation_that_capacity_profiles_only_for_generators(
             demand_profile=valid_demand_profile,
             timestep=valid_timestep,
             available_capacity_profiles=invalid_capacity_profiles,
+            power_unit=PowerUnit.MegaWatt,
         )
 
 
@@ -132,4 +137,5 @@ def test_validation_that_system_can_meet_power_demand(
             portfolio=testing_portfolio,
             demand_profile=excessive_demand,
             timestep=valid_timestep,
+            power_unit=PowerUnit.MegaWatt,
         )
