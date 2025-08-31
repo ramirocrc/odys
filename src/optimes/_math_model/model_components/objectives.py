@@ -77,4 +77,4 @@ class LinopyMinimizeOperationalCostObjective(SystemObjective):
             TypeError: If the timestep parameter is not a timedelta object.
 
         """
-        return self.var_generator_power * self.param_generator_variable_cost
+        return self.var_generator_power * self.param_generator_variable_cost  # pyright: ignore reportOperatorIssue
