@@ -2,7 +2,6 @@ from datetime import timedelta
 
 import pandas as pd
 import pytest
-from pyomo.opt import SolverStatus, TerminationCondition
 
 from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
@@ -46,8 +45,8 @@ def energy_system_sample() -> EnergySystem:
 
 def test_solving_and_termination_condition(energy_system_sample: EnergySystem) -> None:
     result = energy_system_sample.optimize()
-    assert result.solving_status == SolverStatus.ok
-    assert result.termination_condition == TerminationCondition.optimal
+    assert result.solving_status == "ok"
+    assert result.termination_condition == "optimal"
 
 
 def test_detailed_results_format(energy_system_sample: EnergySystem) -> None:

@@ -174,7 +174,7 @@ class BatterySocEndtConstraint(SystemConstraint):
     def constraint(self) -> linopy.Constraint:
         time_coords = self.var_battery_soc.coords["time"]
 
-        constr_expression = self.var_battery_soc.loc[time_coords[-1]] - self.param_battery_soc_end
+        constr_expression = self.var_battery_soc.loc[time_coords.values[-1]] - self.param_battery_soc_end
         return constr_expression == 0
 
 

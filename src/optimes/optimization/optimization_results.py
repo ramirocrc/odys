@@ -82,7 +82,7 @@ class OptimizationResults:
     def _get_detailed_dataframe(self) -> pd.DataFrame:
         ds = self._linopy_model.solution
         dfs = []
-        for var in [v for v in ds.data_vars if v.startswith("var_generator")]:
+        for var in [v for v in ds.data_vars if str(v).startswith("var_generator")]:
             df = ds[var].to_dataframe().reset_index()
             df = df.rename(columns={"generators": "unit", var: "value"})
             df = df[["unit", "time", "value"]]
@@ -90,7 +90,7 @@ class OptimizationResults:
             dfs.append(df)
 
         # battery variables
-        for var in [v for v in ds.data_vars if v.startswith("var_battery")]:
+        for var in [v for v in ds.data_vars if str(v).startswith("var_battery")]:
             df = ds[var].to_dataframe().reset_index()
             df = df.rename(columns={"batteries": "unit", var: "value"})
             df = df[["unit", "time", "value"]]

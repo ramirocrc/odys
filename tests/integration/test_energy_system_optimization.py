@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 import pandas as pd
-from pyomo.opt import SolverStatus, TerminationCondition
 
 from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
@@ -37,8 +36,8 @@ def test_single_generator_meets_demand() -> None:
         index=pd.Index((0, 1, 2, 3, 4), name="time"),
     )
     expected_results.columns.name = "unit"
-    assert result.solving_status == SolverStatus.ok
-    assert result.termination_condition == TerminationCondition.optimal
+    assert result.solving_status == "ok"
+    assert result.termination_condition == "optimal"
     pd.testing.assert_frame_equal(results_df, expected_results)
 
 
