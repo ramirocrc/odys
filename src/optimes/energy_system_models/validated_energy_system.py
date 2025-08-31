@@ -5,10 +5,13 @@ including demand profiles and system configurations.
 """
 
 from datetime import timedelta
+from functools import cached_property
 from typing import Self
 
+import xarray as xr
 from pydantic import BaseModel, model_validator
 
+from optimes._math_model.model_components.parameters import EnergyModelParameters
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.units import PowerUnit
@@ -17,7 +20,27 @@ from optimes.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-class ValidatedEnergySystem(BaseModel, arbitrary_types_allowed=True):
+class EnergyModelSet(BaseModel, frozen=True):
+    """Energy Model Set."""
+
+    dimension: str
+    values: list[str]
+
+    @property
+    def coordinates(self) -> dict[str, list[str]]:
+        """Get's coordinates for xarray objects."""
+        return {f"{self.dimension}": self.values}
+
+
+class EnergyModelSets(BaseModel, frozen=True):
+    """Energy Model Sets."""
+
+    time: EnergyModelSet
+    generators: EnergyModelSet
+    batteries: EnergyModelSet
+
+
+class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True):
     """Represents the complete energy system configuration with validation.
 
     This class defines the energy system including the asset portfolio,
@@ -39,6 +62,39 @@ class ValidatedEnergySystem(BaseModel, arbitrary_types_allowed=True):
     timestep: timedelta
     power_unit: PowerUnit
     available_capacity_profiles: dict[str, list[float]] | None = None
+
+    @cached_property
+    def sets(self) -> EnergyModelSets:
+        """Energy Model Sets."""
+        return EnergyModelSets(
+            time=EnergyModelSet(
+                dimension="time",
+                values=[str(time_step) for time_step in range(len(self.demand_profile))],
+            ),
+            generators=EnergyModelSet(
+                dimension="generators",
+                values=[gen.name for gen in self.portfolio.generators],
+            ),
+            batteries=EnergyModelSet(
+                dimension="batteries",
+                values=[battery.name for battery in self.portfolio.batteries],
+            ),
+        )
+
+    @cached_property
+    def parameters(self) -> EnergyModelParameters:
+        """Returns energy model parameters."""
+        return EnergyModelParameters(
+            generators_nomianl_power=self._generators_nominal_power,
+            generators_variable_cost=self._generators_variable_cost,
+            batteries_capacity=self._batteries_capacity,
+            batteries_max_power=self._batteries_max_power,
+            batteries_efficiency_charging=self._batteries_efficiency_charging,
+            batteries_efficiency_discharging=self._batteries_efficiency_discharging,
+            batteries_soc_initial=self._batteries_soc_initial,
+            batteries_soc_terminal=self._batteries_soc_terminal,
+            demand_profile=self._demand_profile,
+        )
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:
@@ -142,3 +198,67 @@ class ValidatedEnergySystem(BaseModel, arbitrary_types_allowed=True):
         """
         # TODO: Validate that:
         # sum(demand * timestep) <= sum(generator.nominal_power * timestep) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
+
+    @property
+    def _generators_nominal_power(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[gen.nominal_power for gen in self.portfolio.generators],
+            coords=self.sets.generators.coordinates,
+        )
+
+    @property
+    def _generators_variable_cost(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[gen.variable_cost for gen in self.portfolio.generators],
+            coords=self.sets.generators.coordinates,
+        )
+
+    @property
+    def _batteries_capacity(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[battery.capacity for battery in self.portfolio.batteries],
+            coords=self.sets.batteries.coordinates,
+        )
+
+    @property
+    def _batteries_max_power(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[battery.max_power for battery in self.portfolio.batteries],
+            coords=self.sets.batteries.coordinates,
+        )
+
+    @property
+    def _batteries_efficiency_charging(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[battery.efficiency_charging for battery in self.portfolio.batteries],
+            coords=self.sets.batteries.coordinates,
+        )
+
+    @property
+    def _batteries_efficiency_discharging(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[battery.efficiency_discharging for battery in self.portfolio.batteries],
+            coords=self.sets.batteries.coordinates,
+        )
+
+    @property
+    def _batteries_soc_initial(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[battery.soc_initial for battery in self.portfolio.batteries],
+            coords=self.sets.batteries.coordinates,
+            name="asdf",
+        )
+
+    @property
+    def _batteries_soc_terminal(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[battery.soc_terminal for battery in self.portfolio.batteries],
+            coords=self.sets.batteries.coordinates,
+        )
+
+    @property
+    def _demand_profile(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=self.demand_profile,
+            coords=self.sets.time.coordinates,
+        )

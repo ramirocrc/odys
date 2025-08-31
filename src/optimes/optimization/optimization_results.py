@@ -5,17 +5,9 @@ from energy system models.
 """
 
 from enum import Enum
-from typing import TYPE_CHECKING, cast
 
 import pandas as pd
-import pyomo.environ as pyo
-from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
-
-from optimes._math_model.algebraic_model import AlgebraicModel
-from optimes._math_model.model_components.sets import EnergyModelSetName
-
-if TYPE_CHECKING:
-    from pyomo.core.base.var import IndexedVar
+from linopy import Model
 
 
 class ResultDfDetail(Enum):
@@ -32,37 +24,42 @@ class OptimizationResults:
     to solution data, solver status, and termination conditions.
     """
 
-    def __init__(self, pyomo_solver_results: SolverResults, algebraic_model: AlgebraicModel) -> None:
+    def __init__(
+        self,
+        solving_status: str,
+        termination_condition: str,
+        linopy_model: Model,
+    ) -> None:
         """Initialize the optimization results object.
 
         Args:
-            pyomo_solver_results: pyomo solver results
-            algebraic_model: Solved AlgebraicModel
+            solving_status: Solving status
+            termination_condition: Termination condition
+            linopy_model: Solved Linopy Model
         """
-        self._pyomo_solver_results = pyomo_solver_results
-        self._algebraic_model = algebraic_model
+        self._solving_status = solving_status
+        self._termination_condition = termination_condition
+        self._linopy_model = linopy_model
 
     @property
-    def solving_status(self) -> SolverStatus:
+    def solving_status(self) -> str:
         """Get the solver status.
 
         Returns:
             The solver status indicating whether the solve was successful.
 
         """
-        status = self._pyomo_solver_results.solver.status
-        return cast("SolverStatus", status)
+        return self._solving_status
 
     @property
-    def termination_condition(self) -> TerminationCondition:
+    def termination_condition(self) -> str:
         """Get the termination condition.
 
         Returns:
             The termination condition indicating how the solver finished.
 
         """
-        termination_condition = self._pyomo_solver_results.solver.termination_condition
-        return cast("TerminationCondition", termination_condition)
+        return self._termination_condition
 
     def to_dataframe(self, detail: str) -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
@@ -80,46 +77,29 @@ class OptimizationResults:
         return self._get_detailed_dataframe()
 
     def _get_basic_dataframe(self) -> pd.DataFrame:
-        records = []
-        for asset_set in [EnergyModelSetName.BATTERIES, EnergyModelSetName.GENERATORS]:
-            linked_independent_variable = self._algebraic_model.get_var(asset_set.independent_variable)
-            linked_independent_variable = cast("IndexedVar", linked_independent_variable)
-            first_index_set, _ = linked_independent_variable.index_set().subsets()
-            if first_index_set.name != "time":
-                msg = f"Expected first index set of variable to be 'time', got {first_index_set.name} instead"
-                raise ValueError(msg)
-
-            for idx in linked_independent_variable:
-                if idx is None:
-                    msg = "Index cannot be None"
-                    raise ValueError(msg)
-                time, unit = idx
-                value = linked_independent_variable[(time, unit)].value
-                records.append((time, unit, value))
-
-        df = pd.DataFrame.from_records(records, columns=["time", "unit", "value"])
-        result = df.pivot_table(index="time", columns="unit", values="value")
-        result.index.name = "time"
-        return result
+        return pd.DataFrame()
 
     def _get_detailed_dataframe(self) -> pd.DataFrame:
-        records = []
-        for variable in self._algebraic_model.pyomo_model.component_objects(pyo.Var, active=True):
-            variable = cast("IndexedVar", variable)
-            first_index_set, _ = variable.index_set().subsets()
-            if first_index_set.name != "time":
-                msg = f"Expected first index set of variable to be 'time', got {first_index_set.name} instead"
-                raise ValueError(msg)
-            variable_name = variable.name
-            for idx in variable:
-                if idx is None:
-                    msg = "Index cannot be None"
-                    raise ValueError(msg)
-                time, unit = idx
-                variable_value = variable[idx].value
-                records.append((unit, variable_name, variable_value, time))
+        ds = self._linopy_model.solution
+        dfs = []
+        for var in [v for v in ds.data_vars if v.startswith("var_generator")]:
+            df = ds[var].to_dataframe().reset_index()
+            df = df.rename(columns={"generators": "unit", var: "value"})
+            df = df[["unit", "time", "value"]]
+            df["variable"] = var
+            dfs.append(df)
 
-        df = pd.DataFrame(records, columns=pd.Index(["unit", "variable", "value", "time"]))
-        return df.pivot_table(
-            index=["unit", "variable", "time"],
-        )
+        # battery variables
+        for var in [v for v in ds.data_vars if v.startswith("var_battery")]:
+            df = ds[var].to_dataframe().reset_index()
+            df = df.rename(columns={"batteries": "unit", var: "value"})
+            df = df[["unit", "time", "value"]]
+            df["variable"] = var
+            dfs.append(df)
+
+        # combine everything
+        df_final = pd.concat(dfs, ignore_index=True)
+
+        # reorder and set index
+        df_final = df_final[["unit", "variable", "time", "value"]]
+        return df_final.set_index(["unit", "variable", "time"]).sort_index()

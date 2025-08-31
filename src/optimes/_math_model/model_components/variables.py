@@ -6,9 +6,6 @@ optimization models.
 
 from enum import Enum, unique
 
-import pyomo.environ as pyo
-from pydantic import BaseModel
-
 
 @unique
 class EnergyModelVariableName(Enum):
@@ -19,14 +16,3 @@ class EnergyModelVariableName(Enum):
     BATTERY_CHARGE = "var_battery_charge"
     BATTERY_DISCHARGE = "var_battery_discharge"
     BATTERY_CHARGE_MODE = "var_battery_charge_mode"
-
-
-class SystemVariable(BaseModel, arbitrary_types_allowed=True, extra="forbid"):
-    """Container for Pyomo variable components in the energy system model.
-
-    This class wraps Pyomo variables with their corresponding names for
-    organized model construction and management.
-    """
-
-    name: EnergyModelVariableName
-    component: pyo.Var
