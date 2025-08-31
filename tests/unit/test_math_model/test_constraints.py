@@ -1,10 +1,11 @@
-# pyright: reportAttributeAccessIssue=none
 import logging
 from datetime import timedelta
 
+import linopy
 import pytest
+import xarray as xr
+from linopy.testing import assert_conequal
 
-from optimes._math_model.algebraic_model import AlgebraicModel
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes._math_model.model_components.constraints import EnergyModelConstraintName as ConName
 from optimes.energy_system_models.assets.generator import PowerGenerator
@@ -14,16 +15,6 @@ from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
 logger = logging.getLogger(__name__)
-
-
-def v(name: str, *indices: str | int) -> str:
-    """Helper function to generate pyomo expression for an indexed variable.
-    e.g. v('generator_power', 0  'gen1') will return:
-    'var_generator_power[0,gen1]'
-
-    """
-    index_str = ",".join(str(index) for index in indices)
-    return f"var_{name}[{index_str}]"
 
 
 @pytest.fixture
@@ -94,7 +85,7 @@ def energy_system_sample(
 
 
 @pytest.fixture
-def algebraic_model(energy_system_sample: ValidatedEnergySystem) -> AlgebraicModel:
+def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_sample)
     return model_builder.build()
 
@@ -104,137 +95,119 @@ def generator(request) -> PowerGenerator:  # noqa: ANN001
     return request.getfixturevalue(request.param)
 
 
-def test_constraint_power_balance(  # noqa: PLR0913
-    algebraic_model: AlgebraicModel,
+def test_constraint_power_balance(
+    linopy_model: linopy.Model,
     demand_profile_sample: list[float],
-    generator1: PowerGenerator,
-    generator2: PowerGenerator,
-    battery1: Battery,
     time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(ConName.POWER_BALANCE)
-    for t in time_index:
-        constraint_t = constraint[t]
-        assert constraint_t.lb == demand_profile_sample[t] == constraint_t.ub
+    actual_constraint = linopy_model.constraints[ConName.POWER_BALANCE.value]
 
-        body = constraint_t.body
-        generators_power = f"{v('generator_power', t, generator1.name)} + {v('generator_power', t, generator2.name)}"
-        battery_net_power = f"{v('battery_discharge', t, battery1.name)} - {v('battery_charge', t, battery1.name)}"
-        expected_body = f"{generators_power} + {battery_net_power}"
-        assert str(body) == expected_body
+    generation_total = linopy_model.variables["var_generator_power"].sum("generators")
+    discharge_total = linopy_model.variables["var_battery_discharge"].sum("batteries")
+    charge_total = linopy_model.variables["var_battery_charge"].sum("batteries")
+
+    demand_array = xr.DataArray(demand_profile_sample, coords=[time_index], dims=["time"])
+    expected_expr = generation_total + discharge_total - charge_total == demand_array
+
+    assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
 
 
 def test_constraint_generator_limit(
-    algebraic_model: AlgebraicModel,
-    generator: PowerGenerator,
+    linopy_model: linopy.Model,
+    generator1: PowerGenerator,
+    generator2: PowerGenerator,
     time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(ConName.GENERATOR_LIMIT)
-    i = generator.name
-    for t in time_index:
-        constraint_t_i = constraint[t, i]
-        assert constraint_t_i.ub == generator.nominal_power
-        # Lower bound is set by variable's domain (NonNegativeReals)
-        assert constraint_t_i.lb is None
-        expected_body = v("generator_power", t, i)
-        assert str(constraint_t_i.body) == expected_body
+    actual_constraint = linopy_model.constraints[ConName.GENERATOR_LIMIT.value]
+
+    generator_power = linopy_model.variables["var_generator_power"]
+
+    nominal_powers = [[generator1.nominal_power, generator2.nominal_power]] * len(time_index)
+    nominal_power_array = xr.DataArray(
+        nominal_powers,
+        coords=[time_index, [generator1.name, generator2.name]],
+        dims=["time", "generators"],
+    )
+
+    expected_expr = generator_power <= nominal_power_array
+    assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
 
 def test_constraint_battery_charge_limit(
-    algebraic_model: AlgebraicModel,
+    linopy_model: linopy.Model,
     battery1: Battery,
-    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(ConName.BATTERY_CHARGE_LIMIT)
-    j = battery1.name
-    for t in time_index:
-        constraint_t_j = constraint[t, j]
-        assert constraint_t_j.ub == 0
-        assert constraint_t_j.lb is None
+    actual_constraint = linopy_model.constraints[ConName.BATTERY_CHARGE_LIMIT.value]
 
-        lhs = v("battery_charge", t, j)
-        rhs = f"{battery1.max_power}*{v('battery_charge_mode', t, j)}"
-        expected_body = f"{lhs} - {rhs}"
-        assert str(constraint_t_j.body) == expected_body
+    battery_charge = linopy_model.variables["var_battery_charge"]
+    battery_charge_mode = linopy_model.variables["var_battery_charge_mode"]
+
+    expected_expr = battery_charge <= battery_charge_mode * battery1.max_power
+
+    assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
 
 def test_constraint_battery_discharge_limit(
-    algebraic_model: AlgebraicModel,
+    linopy_model: linopy.Model,
     battery1: Battery,
-    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(ConName.BATTERY_DISCHARGE_LIMIT)
-    j = battery1.name
-    for t in time_index:
-        constraint_t_j = constraint[t, j]
-        assert constraint_t_j.ub == 0
-        assert constraint_t_j.lb is None
-        # Lower bound defined by variable domain (NonNegativeReals)
+    actual_constraint = linopy_model.constraints[ConName.BATTERY_DISCHARGE_LIMIT.value]
 
-        lhs = v("battery_discharge", t, j)
-        rhs = f"{battery1.max_power}*(1 - {v('battery_charge_mode', t, j)})"
-        expected_body = f"{lhs} - {rhs}"
-        assert str(constraint_t_j.body) == expected_body
+    battery_discharge = linopy_model.variables["var_battery_discharge"]
+    battery_charge_mode = linopy_model.variables["var_battery_charge_mode"]
+
+    expected_expr = battery_discharge + battery_charge_mode * battery1.max_power <= battery1.max_power
+
+    assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
 
 def test_constraint_battery_soc_dynamics(
-    algebraic_model: AlgebraicModel,
+    linopy_model: linopy.Model,
     battery1: Battery,
     time_index: list[int],
 ) -> None:
-    j = battery1.name
-    constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_DYNAMICS)
+    actual_constraint = linopy_model.constraints[ConName.BATTERY_SOC_DYNAMICS.value]
 
-    constraint_t0 = constraint[0, j]
-    assert constraint_t0.ub == constraint_t0.lb == 0
+    battery_soc = linopy_model.variables["var_battery_soc"]
+    battery_charge = linopy_model.variables["var_battery_charge"]
+    battery_discharge = linopy_model.variables["var_battery_discharge"]
 
-    lhs = v("battery_soc", 0, j)
-
-    soc_initial = battery1.soc_initial
     eff_ch = battery1.efficiency_charging
     eff_disch = battery1.efficiency_discharging
-    rhs = f"({soc_initial} + {eff_ch}*{v('battery_charge', 0, j)} - {1 / eff_disch}*{v('battery_discharge', 0, j)})"
-    expected_body = f"{lhs} - {rhs}"
-    assert str(constraint_t0.body) == expected_body
 
-    for t in time_index[1:]:
-        constraint_t_j = constraint[t, j]
-        assert constraint_t_j.ub == constraint_t_j.lb == 0
+    for t in time_index[1:]:  # Skip t=0
+        actual_t = actual_constraint.sel(time=str(t), batteries="batt1")
 
-        body = constraint_t_j.body
-        lhs = v("battery_soc", t, j)
-        rhs = f"({v('battery_soc', t - 1, j)} + {eff_ch}*{v('battery_charge', t, j)} - {1 / eff_disch}*{v('battery_discharge', t, j)})"  # noqa: E501
-        expected_body = f"{lhs} - {rhs}"
-        assert str(body) == expected_body
+        bat_soc_t = battery_soc.sel(time=str(t), batteries="batt1")
+        bat_soc_t_minus_1 = battery_soc.sel(time=str(t - 1), batteries="batt1")
+        battery_charge_t = battery_charge.sel(time=str(t), batteries="batt1")
+        battery_discharge_t = battery_discharge.sel(time=str(t), batteries="batt1")
+        expected_expr = bat_soc_t == bat_soc_t_minus_1 + eff_ch * battery_charge_t - 1 / eff_disch * battery_discharge_t
+
+        assert_conequal(expected_expr, actual_t.lhs == actual_t.rhs)
 
 
 def test_constraint_battery_soc_bounds(
-    algebraic_model: AlgebraicModel,
+    linopy_model: linopy.Model,
     battery1: Battery,
-    time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_BOUNDS)
-    j = battery1.name
-    for t in time_index:  # 3 time periods
-        constraint_t_j = constraint[t, j]
-        assert constraint_t_j.ub == battery1.capacity
-        assert constraint_t_j.lb is None
+    actual_constraint = linopy_model.constraints[ConName.BATTERY_SOC_BOUNDS.value]
 
-        expected_body = v("battery_soc", t, j)
-        assert str(constraint_t_j.body) == expected_body
+    battery_soc = linopy_model.variables["var_battery_soc"]
+    expected_expr = battery_soc <= battery1.capacity
+
+    assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
 
 def test_constraint_battery_soc_terminal(
-    algebraic_model: AlgebraicModel,
+    linopy_model: linopy.Model,
     battery1: Battery,
     time_index: list[int],
 ) -> None:
-    constraint = algebraic_model.get_constraint(ConName.BATTERY_SOC_TERMINAL)
-    j = battery1.name
-    constraint_j = constraint[j]
-    assert constraint_j.ub == battery1.soc_terminal
-    assert constraint_j.lb == battery1.soc_terminal
+    actual_constraint = linopy_model.constraints[ConName.BATTERY_SOC_END.value]
 
-    body = constraint_j.body
-    expected_body = v("battery_soc", time_index[-1], j)
-    assert str(body) == expected_body
+    battery_soc = linopy_model.variables["var_battery_soc"]
+    final_soc = battery_soc.sel(time=str(time_index[-1]))
+    expected_expr = final_soc == battery1.soc_terminal
+
+    assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)

@@ -47,7 +47,7 @@ class EnergySystem:
             portfolio=portfolio,
             demand_profile=demand_profile,
             timestep=timestep,
-            power_unit=power_unit,
+            power_unit=power_unit,  # pyright: ignore reportArgumentType
             available_capacity_profiles=available_capacity_profiles,
         )
 
@@ -67,5 +67,5 @@ class EnergySystem:
 
         """
         model_builder = EnergyAlgebraicModelBuilder(self._validated_model)
-        algebraic_model = model_builder.build()
-        return optimize_algebraic_model(algebraic_model)
+        linopy_model = model_builder.build()
+        return optimize_algebraic_model(linopy_model)

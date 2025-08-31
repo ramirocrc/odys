@@ -5,13 +5,12 @@ optimization models.
 """
 
 from abc import ABC, abstractmethod
-from datetime import timedelta
 from enum import Enum, unique
 from typing import ClassVar
 
-import pyomo.environ as pyo
+import linopy
+import xarray as xr
 from pydantic import BaseModel
-from pyomo.common.enums import ObjectiveSense
 
 SECONDS_IN_HOUR = 3600
 
@@ -33,18 +32,8 @@ class SystemObjective(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbi
     name: ClassVar
 
     @property
-    def component(self) -> pyo.Objective:
-        """Get the Pyomo objective component.
-
-        Returns:
-            The Pyomo objective object.
-
-        """
-        return self.function
-
-    @property
     @abstractmethod
-    def function(self) -> pyo.Objective:
+    def function(self) -> linopy.LinearExpression:
         """Get the Pyomo objective function.
 
         This abstract method must be implemented by subclasses to
@@ -56,7 +45,7 @@ class SystemObjective(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbi
         """
 
 
-class MinimizeOperationalCostObjective(SystemObjective):
+class LinopyMinimizeOperationalCostObjective(SystemObjective):
     """Objective function to minimize operational costs.
 
     This objective minimizes the total operational cost of the energy system,
@@ -64,9 +53,8 @@ class MinimizeOperationalCostObjective(SystemObjective):
     """
 
     _name: ClassVar = EnergyModelObjectiveName.MIN_OPERATIONAL_COST
-    var_generator_power: pyo.Var
-    param_generator_variable_cost: pyo.Param
-    param_scenario_timestep: pyo.Param
+    var_generator_power: linopy.Variable
+    param_generator_variable_cost: xr.DataArray
 
     @property
     def name(self) -> EnergyModelObjectiveName:
@@ -79,7 +67,7 @@ class MinimizeOperationalCostObjective(SystemObjective):
         return self._name
 
     @property
-    def function(self) -> pyo.Objective:
+    def function(self) -> linopy.LinearExpression:
         """Get the operational cost minimization objective.
 
         Returns:
@@ -89,23 +77,4 @@ class MinimizeOperationalCostObjective(SystemObjective):
             TypeError: If the timestep parameter is not a timedelta object.
 
         """
-        set_time, set_generators = self.var_generator_power.index_set().subsets()
-        timestep = self.param_scenario_timestep.value  # pyright: ignore reportAttributeAccessIssue
-        # TODO: change parameter from timedelta to integer
-        if not isinstance(timestep, timedelta):
-            msg = "param_scenario_timestep must be a timedelta object"
-            raise TypeError(msg)
-
-        timestep_hours = timestep.total_seconds() / SECONDS_IN_HOUR
-
-        def rule(m: pyo.ConcreteModel):  # noqa: ARG001, ANN202
-            return sum(
-                self.var_generator_power[t, i] * self.param_generator_variable_cost[i] * timestep_hours  # pyright: ignore reportOperatorIssue
-                for t in set_time
-                for i in set_generators
-            )
-
-        return pyo.Objective(
-            rule=rule,
-            sense=ObjectiveSense.minimize,
-        )
+        return self.var_generator_power * self.param_generator_variable_cost
