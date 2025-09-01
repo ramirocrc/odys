@@ -45,7 +45,7 @@ def energy_system_sample() -> EnergySystem:
 
 def test_solving_and_termination_condition(energy_system_sample: EnergySystem) -> None:
     result = energy_system_sample.optimize()
-    assert result.solving_status == "ok"
+    assert result.solver_status == "ok"
     assert result.termination_condition == "optimal"
 
 

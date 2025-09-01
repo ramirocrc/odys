@@ -6,6 +6,7 @@ from energy system models.
 
 import pandas as pd
 from linopy import Model
+from linopy.constants import SolverStatus, TerminationCondition
 
 
 class OptimizationResults:
@@ -17,30 +18,30 @@ class OptimizationResults:
 
     def __init__(
         self,
-        solving_status: str,
-        termination_condition: str,
+        solver_status: SolverStatus,
+        termination_condition: TerminationCondition,
         linopy_model: Model,
     ) -> None:
         """Initialize the optimization results object.
 
         Args:
-            solving_status: Solving status
+            solver_status: Solving status
             termination_condition: Termination condition
             linopy_model: Solved Linopy Model
         """
-        self._solving_status = solving_status
+        self._solver_status = solver_status
         self._termination_condition = termination_condition
         self._linopy_model = linopy_model
 
     @property
-    def solving_status(self) -> str:
+    def solver_status(self) -> str:
         """Get the solver status.
 
         Returns:
             The solver status indicating whether the solve was successful.
 
         """
-        return self._solving_status
+        return self._solver_status.value
 
     @property
     def termination_condition(self) -> str:
@@ -50,7 +51,7 @@ class OptimizationResults:
             The termination condition indicating how the solver finished.
 
         """
-        return self._termination_condition
+        return self._termination_condition.value
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
@@ -63,6 +64,9 @@ class OptimizationResults:
             DataFrame containing the solution variables with time periods
             as rows and variables as columns.
         """
+        if self._solver_status != SolverStatus.ok:
+            msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."
+            raise ValueError(msg)
         return self._get_detailed_dataframe()
 
     def _get_detailed_dataframe(self) -> pd.DataFrame:
