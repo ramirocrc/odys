@@ -13,6 +13,7 @@ class EnergyModelVariableName(Enum):
 
     GENERATOR_POWER = "generator_power"
     BATTERY_SOC = "battery_soc"
+    BATTERY_POWER_NET = "battery_net_power"
     BATTERY_POWER_IN = "battery_power_in"
     BATTERY_POWER_OUT = "battery_power_out"
     BATTERY_CHARGE_MODE = "battery_charge_mode"

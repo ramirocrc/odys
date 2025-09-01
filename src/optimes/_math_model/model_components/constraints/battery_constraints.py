@@ -97,7 +97,7 @@ class BatterySocStartConstraint(SystemConstraint):
         return constraint_expr == 0
 
 
-class BatterySocEndtConstraint(SystemConstraint):
+class BatterySocEndConstraint(SystemConstraint):
     """Battery state of charge dynamics constraint.
 
     This constraint models the evolution of battery state of charge over time,
@@ -116,7 +116,7 @@ class BatterySocEndtConstraint(SystemConstraint):
         return constr_expression == 0
 
 
-class BatterySocEndConstraint(SystemConstraint):
+class BatterySocBoundsConstraint(SystemConstraint):
     """Battery terminal state of charge constraint.
 
     This constraint ensures that the battery reaches the specified
@@ -130,3 +130,14 @@ class BatterySocEndConstraint(SystemConstraint):
     @property
     def constraint(self) -> linopy.Constraint:
         return self.var_battery_soc <= self.param_battery_capacity
+
+
+class BatteryNetPowerConstraint(SystemConstraint):
+    _name: ClassVar = EnergyModelConstraintName.BATTERY_NET_POWER
+    var_battery_net_power: linopy.Variable
+    var_battery_charge: linopy.Variable
+    var_battery_discharge: linopy.Variable
+
+    @property
+    def constraint(self) -> linopy.Constraint:
+        return self.var_battery_net_power == self.var_battery_charge - self.var_battery_discharge
