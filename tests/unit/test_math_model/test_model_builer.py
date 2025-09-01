@@ -60,8 +60,8 @@ def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> 
 
     # Variables
     assert "generator_power" in linopy_model.variables
-    assert "battery_charge" in linopy_model.variables
-    assert "battery_discharge" in linopy_model.variables
+    assert "battery_power_in" in linopy_model.variables
+    assert "battery_power_out" in linopy_model.variables
     assert "battery_soc" in linopy_model.variables
     assert "battery_charge_mode" in linopy_model.variables
 
