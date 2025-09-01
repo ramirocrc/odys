@@ -50,5 +50,5 @@ if __name__ == "__main__":
     result = energy_system.optimize()
     logger.info(result.termination_condition)
     logger.info(result.solving_status)
-    results_df = result.to_dataframe("detailed")
+    results_df = result.to_dataframe()
     logger.info(results_df)

@@ -12,32 +12,13 @@ import xarray as xr
 from pydantic import BaseModel, model_validator
 
 from optimes._math_model.model_components.parameters import EnergyModelParameters
+from optimes._math_model.model_components.sets import EnergyModelSet, EnergyModelSets
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.units import PowerUnit
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
-
-
-class EnergyModelSet(BaseModel, frozen=True):
-    """Energy Model Set."""
-
-    dimension: str
-    values: list[str]
-
-    @property
-    def coordinates(self) -> dict[str, list[str]]:
-        """Get's coordinates for xarray objects."""
-        return {f"{self.dimension}": self.values}
-
-
-class EnergyModelSets(BaseModel, frozen=True):
-    """Energy Model Sets."""
-
-    time: EnergyModelSet
-    generators: EnergyModelSet
-    batteries: EnergyModelSet
 
 
 class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True):
@@ -246,7 +227,6 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         return xr.DataArray(
             data=[battery.soc_initial for battery in self.portfolio.batteries],
             coords=self.sets.batteries.coordinates,
-            name="asdf",
         )
 
     @property
