@@ -76,7 +76,6 @@ class EnergyAlgebraicModelBuilder:
         )
 
         self._linopy_model.add_variables(
-            lower=lower_bounds,
             name=EnergyModelVariableName.BATTERY_POWER_NET.value,
             coords=time_set.coordinates | batteries_set.coordinates,
             dims=[time_set.dimension, batteries_set.dimension],
