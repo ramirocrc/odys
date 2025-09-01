@@ -22,8 +22,8 @@ def optimize_algebraic_model(linopy_model: Model) -> OptimizationResults:
         OptimizationResults containing the solution and metadata.
 
     """
-    solving_status, termination_condition = linopy_model.solve()
-    # i = linopy_model.to_file("linear_model.lp", explicit_coordinate_names=True) # noqa: ERA001
+    solving_status, termination_condition = linopy_model.solve(solver_name="highs")
+    linopy_model.to_file("linear_model.lp", explicit_coordinate_names=True)
 
     return OptimizationResults(
         solving_status=solving_status,

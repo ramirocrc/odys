@@ -4,17 +4,8 @@ This module provides classes for handling and analyzing optimization results
 from energy system models.
 """
 
-from enum import Enum
-
 import pandas as pd
 from linopy import Model
-
-
-class ResultDfDetail(Enum):
-    """Level of detail of results dataframe."""
-
-    BASIC = "basic"
-    DETAILED = "detailed"
 
 
 class OptimizationResults:
@@ -61,7 +52,7 @@ class OptimizationResults:
         """
         return self._termination_condition
 
-    def to_dataframe(self, detail: str) -> pd.DataFrame:
+    def to_dataframe(self) -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
 
         Args:
@@ -72,12 +63,7 @@ class OptimizationResults:
             DataFrame containing the solution variables with time periods
             as rows and variables as columns.
         """
-        if ResultDfDetail(detail) == ResultDfDetail.BASIC:
-            return self._get_basic_dataframe()
         return self._get_detailed_dataframe()
-
-    def _get_basic_dataframe(self) -> pd.DataFrame:
-        return pd.DataFrame()
 
     def _get_detailed_dataframe(self) -> pd.DataFrame:
         ds = self._linopy_model.solution

@@ -7,7 +7,7 @@ import xarray as xr
 from linopy.testing import assert_conequal
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
-from optimes._math_model.model_components.constraints import EnergyModelConstraintName as ConName
+from optimes._math_model.model_components.constraints.constraint_names import EnergyModelConstraintName as ConName
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery

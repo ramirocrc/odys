@@ -92,14 +92,3 @@ def test_detailed_results_format(energy_system_sample: EnergySystem) -> None:
 
     pd.testing.assert_index_equal(expected_index, detailed_results.index)
     pd.testing.assert_index_equal(expected_columns, detailed_results.columns)
-
-
-def test_basic_results_format(energy_system_sample: EnergySystem) -> None:
-    result = energy_system_sample.optimize()
-
-    basic_results = result.to_dataframe("basic")
-    expected_index = pd.Index((0, 1, 2, 3, 4), name="time")
-    expected_columns = pd.Index(["battery_1", "generator_1", "generator_2"], name="unit")
-
-    pd.testing.assert_index_equal(expected_index, basic_results.index)
-    pd.testing.assert_index_equal(expected_columns, basic_results.columns)
