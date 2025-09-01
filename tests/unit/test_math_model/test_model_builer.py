@@ -59,20 +59,21 @@ def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> 
     linopy_model = model_builder.build()
 
     # Variables
-    assert "var_generator_power" in linopy_model.variables
-    assert "var_battery_charge" in linopy_model.variables
-    assert "var_battery_discharge" in linopy_model.variables
-    assert "var_battery_soc" in linopy_model.variables
-    assert "var_battery_charge_mode" in linopy_model.variables
+    assert "generator_power" in linopy_model.variables
+    assert "battery_charge" in linopy_model.variables
+    assert "battery_discharge" in linopy_model.variables
+    assert "battery_soc" in linopy_model.variables
+    assert "battery_charge_mode" in linopy_model.variables
 
     # Constraints
-    assert "const_power_balance" in linopy_model.constraints
-    assert "const_generator_limit" in linopy_model.constraints
-    assert "const_battery_charge_limit" in linopy_model.constraints
-    assert "const_battery_discharge_limit" in linopy_model.constraints
-    assert "const_battery_soc_dynamics" in linopy_model.constraints
-    assert "const_battery_soc_bounds" in linopy_model.constraints
-    assert "const_battery_soc_end" in linopy_model.constraints
+    assert "power_balance_constraint" in linopy_model.constraints
+    assert "generator_max_power_constraint" in linopy_model.constraints
+    assert "battery_max_charge_constraint" in linopy_model.constraints
+    assert "battery_max_discharge_constraint" in linopy_model.constraints
+    assert "battery_soc_dynamics_constraint" in linopy_model.constraints
+    assert "battery_soc_bounds_constraint" in linopy_model.constraints
+    assert "battery_soc_end_constraint" in linopy_model.constraints
+    assert "battery_soc_start_constraint" in linopy_model.constraints
 
     # Objective
     assert linopy_model.objective is not None

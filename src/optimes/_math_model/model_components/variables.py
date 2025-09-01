@@ -11,8 +11,8 @@ from enum import Enum, unique
 class EnergyModelVariableName(Enum):
     """Enumeration of variable names used in the energy model."""
 
-    GENERATOR_POWER = "var_generator_power"
-    BATTERY_SOC = "var_battery_soc"
-    BATTERY_CHARGE = "var_battery_charge"
-    BATTERY_DISCHARGE = "var_battery_discharge"
-    BATTERY_CHARGE_MODE = "var_battery_charge_mode"
+    GENERATOR_POWER = "generator_power"
+    BATTERY_SOC = "battery_soc"
+    BATTERY_CHARGE = "battery_charge"
+    BATTERY_DISCHARGE = "battery_discharge"
+    BATTERY_CHARGE_MODE = "battery_charge_mode"

@@ -102,9 +102,9 @@ def test_constraint_power_balance(
 ) -> None:
     actual_constraint = linopy_model.constraints[ConName.POWER_BALANCE.value]
 
-    generation_total = linopy_model.variables["var_generator_power"].sum("generators")
-    discharge_total = linopy_model.variables["var_battery_discharge"].sum("batteries")
-    charge_total = linopy_model.variables["var_battery_charge"].sum("batteries")
+    generation_total = linopy_model.variables["generator_power"].sum("generators")
+    discharge_total = linopy_model.variables["battery_discharge"].sum("batteries")
+    charge_total = linopy_model.variables["battery_charge"].sum("batteries")
 
     demand_array = xr.DataArray(demand_profile_sample, coords=[time_index], dims=["time"])
     expected_expr = generation_total + discharge_total - charge_total == demand_array
@@ -120,7 +120,7 @@ def test_constraint_generator_limit(
 ) -> None:
     actual_constraint = linopy_model.constraints[ConName.GENERATOR_LIMIT.value]
 
-    generator_power = linopy_model.variables["var_generator_power"]
+    generator_power = linopy_model.variables["generator_power"]
 
     nominal_powers = [[generator1.nominal_power, generator2.nominal_power]] * len(time_index)
     nominal_power_array = xr.DataArray(
@@ -139,8 +139,8 @@ def test_constraint_battery_charge_limit(
 ) -> None:
     actual_constraint = linopy_model.constraints[ConName.BATTERY_CHARGE_LIMIT.value]
 
-    battery_charge = linopy_model.variables["var_battery_charge"]
-    battery_charge_mode = linopy_model.variables["var_battery_charge_mode"]
+    battery_charge = linopy_model.variables["battery_charge"]
+    battery_charge_mode = linopy_model.variables["battery_charge_mode"]
 
     expected_expr = battery_charge <= battery_charge_mode * battery1.max_power
 
@@ -153,8 +153,8 @@ def test_constraint_battery_discharge_limit(
 ) -> None:
     actual_constraint = linopy_model.constraints[ConName.BATTERY_DISCHARGE_LIMIT.value]
 
-    battery_discharge = linopy_model.variables["var_battery_discharge"]
-    battery_charge_mode = linopy_model.variables["var_battery_charge_mode"]
+    battery_discharge = linopy_model.variables["battery_discharge"]
+    battery_charge_mode = linopy_model.variables["battery_charge_mode"]
 
     expected_expr = battery_discharge + battery_charge_mode * battery1.max_power <= battery1.max_power
 
@@ -168,9 +168,9 @@ def test_constraint_battery_soc_dynamics(
 ) -> None:
     actual_constraint = linopy_model.constraints[ConName.BATTERY_SOC_DYNAMICS.value]
 
-    battery_soc = linopy_model.variables["var_battery_soc"]
-    battery_charge = linopy_model.variables["var_battery_charge"]
-    battery_discharge = linopy_model.variables["var_battery_discharge"]
+    battery_soc = linopy_model.variables["battery_soc"]
+    battery_charge = linopy_model.variables["battery_charge"]
+    battery_discharge = linopy_model.variables["battery_discharge"]
 
     eff_ch = battery1.efficiency_charging
     eff_disch = battery1.efficiency_discharging
@@ -193,7 +193,7 @@ def test_constraint_battery_soc_bounds(
 ) -> None:
     actual_constraint = linopy_model.constraints[ConName.BATTERY_SOC_BOUNDS.value]
 
-    battery_soc = linopy_model.variables["var_battery_soc"]
+    battery_soc = linopy_model.variables["battery_soc"]
     expected_expr = battery_soc <= battery1.capacity
 
     assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
@@ -206,7 +206,7 @@ def test_constraint_battery_soc_terminal(
 ) -> None:
     actual_constraint = linopy_model.constraints[ConName.BATTERY_SOC_END.value]
 
-    battery_soc = linopy_model.variables["var_battery_soc"]
+    battery_soc = linopy_model.variables["battery_soc"]
     final_soc = battery_soc.sel(time=str(time_index[-1]))
     expected_expr = final_soc == battery1.soc_end
 
