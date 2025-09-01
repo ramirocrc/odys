@@ -5,6 +5,7 @@ optimization problems using the HiGHS linear programming solver.
 """
 
 from linopy import Model
+from linopy.constants import SolverStatus, TerminationCondition
 
 from optimes.optimization.optimization_results import OptimizationResults
 from optimes.utils.logging import get_logger
@@ -31,7 +32,7 @@ def optimize_algebraic_model(linopy_model: Model) -> OptimizationResults:
         log_to_console=False,
     )
     return OptimizationResults(
-        solving_status=solving_status,
-        termination_condition=termination_condition,
+        solver_status=SolverStatus(solving_status),
+        termination_condition=TerminationCondition(termination_condition),
         linopy_model=linopy_model,
     )

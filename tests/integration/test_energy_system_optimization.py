@@ -36,7 +36,7 @@ def test_single_generator_meets_demand() -> None:
         index=pd.Index((0, 1, 2, 3, 4), name="time"),
     )
     expected_results.columns.name = "unit"
-    assert result.solving_status == "ok"
+    assert result.solver_status == "ok"
     assert result.termination_condition == "optimal"
     pd.testing.assert_frame_equal(results_df, expected_results)
 
