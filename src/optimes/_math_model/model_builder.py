@@ -69,14 +69,14 @@ class EnergyAlgebraicModelBuilder:
 
         self._linopy_model.add_variables(
             lower=lower_bounds,
-            name=EnergyModelVariableName.BATTERY_CHARGE.value,
+            name=EnergyModelVariableName.BATTERY_POWER_IN.value,
             coords=time_set.coordinates | batteries_set.coordinates,
             dims=[time_set.dimension, batteries_set.dimension],
         )
 
         self._linopy_model.add_variables(
             lower=lower_bounds,
-            name=EnergyModelVariableName.BATTERY_DISCHARGE.value,
+            name=EnergyModelVariableName.BATTERY_POWER_OUT.value,
             coords=time_set.coordinates | batteries_set.coordinates,
             dims=[time_set.dimension, batteries_set.dimension],
         )
@@ -103,8 +103,8 @@ class EnergyAlgebraicModelBuilder:
         # Add linopy power balance constraint
         power_balance_constraint = PowerBalanceConstraint(
             var_generator_power=self._linopy_model.variables[EnergyModelVariableName.GENERATOR_POWER.value],
-            var_battery_discharge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_DISCHARGE.value],
-            var_battery_charge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_CHARGE.value],
+            var_battery_discharge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_POWER_OUT.value],
+            var_battery_charge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_POWER_IN.value],
             demand_profile=self._energy_system.parameters.demand_profile,
         )
         self._linopy_model.add_constraints(
@@ -124,7 +124,7 @@ class EnergyAlgebraicModelBuilder:
 
     def _add_model_battery_constraints(self) -> None:
         linopy_battery_charge_limit_constraint = BatteryChargeModeConstraint(
-            var_battery_charge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_CHARGE.value],
+            var_battery_charge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_POWER_IN.value],
             var_battery_charge_mode=self._linopy_model.variables[EnergyModelVariableName.BATTERY_CHARGE_MODE.value],
             param_battery_max_power=self._energy_system.parameters.batteries_max_power,
         )
@@ -134,7 +134,7 @@ class EnergyAlgebraicModelBuilder:
         )
 
         linopy_battery_discharge_limit_constraint = BatteryDischargeModeConstraint(
-            var_battery_discharge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_DISCHARGE.value],
+            var_battery_discharge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_POWER_OUT.value],
             var_battery_charge_mode=self._linopy_model.variables[EnergyModelVariableName.BATTERY_CHARGE_MODE.value],
             param_battery_max_power=self._energy_system.parameters.batteries_max_power,
         )
@@ -143,8 +143,8 @@ class EnergyAlgebraicModelBuilder:
             name=linopy_battery_discharge_limit_constraint.name.value,
         )
         linopy_soc_dynamics_constraint = BatterySocDynamicsConstraint(
-            var_battery_charge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_CHARGE.value],
-            var_battery_discharge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_DISCHARGE.value],
+            var_battery_charge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_POWER_IN.value],
+            var_battery_discharge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_POWER_OUT.value],
             var_battery_soc=self._linopy_model.variables[EnergyModelVariableName.BATTERY_SOC.value],
             param_battery_efficiency_charging=self._energy_system.parameters.batteries_efficiency_charging,
             param_battery_efficiency_discharging=self._energy_system.parameters.batteries_efficiency_discharging,
@@ -155,8 +155,8 @@ class EnergyAlgebraicModelBuilder:
             name=linopy_soc_dynamics_constraint.name.value,
         )
         linopy_soc_start_constraint = BatterySocStartConstraint(
-            var_battery_charge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_CHARGE.value],
-            var_battery_discharge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_DISCHARGE.value],
+            var_battery_charge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_POWER_IN.value],
+            var_battery_discharge=self._linopy_model.variables[EnergyModelVariableName.BATTERY_POWER_OUT.value],
             var_battery_soc=self._linopy_model.variables[EnergyModelVariableName.BATTERY_SOC.value],
             param_battery_efficiency_charging=self._energy_system.parameters.batteries_efficiency_charging,
             param_battery_efficiency_discharging=self._energy_system.parameters.batteries_efficiency_discharging,
