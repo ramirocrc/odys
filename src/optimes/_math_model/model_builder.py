@@ -160,7 +160,7 @@ class EnergyAlgebraicModelBuilder:
             var_battery_soc=self._linopy_model.variables[EnergyModelVariableName.BATTERY_SOC.value],
             param_battery_efficiency_charging=self._energy_system.parameters.batteries_efficiency_charging,
             param_battery_efficiency_discharging=self._energy_system.parameters.batteries_efficiency_discharging,
-            param_battery_soc_initial=self._energy_system.parameters.batteries_soc_initial,
+            param_battery_soc_initial=self._energy_system.parameters.batteries_soc_start,
         )
 
         self._linopy_model.add_constraints(
@@ -179,7 +179,7 @@ class EnergyAlgebraicModelBuilder:
 
         linopy_soc_end_dynamics_constraints = BatterySocEndtConstraint(
             var_battery_soc=self._linopy_model.variables[EnergyModelVariableName.BATTERY_SOC.value],
-            param_battery_soc_end=self._energy_system.parameters.batteries_soc_terminal,
+            param_battery_soc_end=self._energy_system.parameters.batteries_soc_end,
         )
         self._linopy_model.add_constraints(
             linopy_soc_end_dynamics_constraints.constraint,

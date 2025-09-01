@@ -30,7 +30,6 @@ def optimize_algebraic_model(linopy_model: Model) -> OptimizationResults:
         keep_files=True,
         log_to_console=False,
     )
-
     return OptimizationResults(
         solving_status=solving_status,
         termination_condition=termination_condition,

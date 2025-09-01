@@ -100,8 +100,8 @@ def test_generator_and_battery_optimization() -> None:
         max_power=100.0,
         efficiency_charging=1.0,
         efficiency_discharging=1.0,
-        soc_initial=0.0,
-        soc_terminal=50.0,
+        soc_start=0.0,
+        soc_end=50.0,
     )
 
     portfolio = AssetPortfolio()
@@ -142,8 +142,8 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
         max_power=100.0,
         efficiency_charging=0.5,
         efficiency_discharging=0.5,
-        soc_initial=0.0,
-        soc_terminal=50.0,
+        soc_start=0.0,
+        soc_end=50.0,
     )
 
     portfolio = AssetPortfolio()

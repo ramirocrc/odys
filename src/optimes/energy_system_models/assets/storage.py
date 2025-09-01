@@ -53,7 +53,7 @@ class Battery(EnergyAsset, frozen=True):
             description="Discharging efficiency (0-1)",
         ),
     ]
-    soc_initial: Annotated[
+    soc_start: Annotated[
         float,
         Field(
             strict=True,
@@ -61,7 +61,7 @@ class Battery(EnergyAsset, frozen=True):
             description="Initial state of charge in MWh",
         ),
     ]
-    soc_terminal: Annotated[
+    soc_end: Annotated[
         float | None,
         Field(
             strict=True,
@@ -106,8 +106,8 @@ class Battery(EnergyAsset, frozen=True):
     @model_validator(mode="after")
     def _validate_soc_values_remain_within_capacity(self) -> Self:
         limits = {
-            "soc_initial": self.soc_initial,
-            "soc_terminal": self.soc_terminal,
+            "soc_start": self.soc_start,
+            "soc_end": self.soc_end,
             "soc_min": self.soc_min,
             "soc_max": self.soc_max,
         }
@@ -120,8 +120,8 @@ class Battery(EnergyAsset, frozen=True):
         return self
 
     @model_validator(mode="after")
-    def _validate_soc_initial_and_terminal(self) -> Self:
-        for name in ("soc_initial", "soc_terminal"):
+    def _validate_soc_start_and_terminal(self) -> Self:
+        for name in ("soc_start", "soc_end"):
             battery_soc = getattr(self, name)
             if battery_soc is None:
                 continue
