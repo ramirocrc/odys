@@ -33,7 +33,7 @@ def testing_battery() -> Battery:
         max_power=25.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.9,
-        soc_initial=25.0,
+        soc_start=25.0,
     )
 
 

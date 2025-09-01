@@ -15,6 +15,6 @@ class EnergyModelParameters(BaseModel, frozen=True, arbitrary_types_allowed=True
     batteries_max_power: xr.DataArray
     batteries_efficiency_charging: xr.DataArray
     batteries_efficiency_discharging: xr.DataArray
-    batteries_soc_initial: xr.DataArray
-    batteries_soc_terminal: xr.DataArray
+    batteries_soc_start: xr.DataArray
+    batteries_soc_end: xr.DataArray
     demand_profile: xr.DataArray

@@ -43,8 +43,8 @@ def battery1() -> Battery:
         capacity=100.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.8,
-        soc_initial=25.0,
-        soc_terminal=50.0,
+        soc_start=25.0,
+        soc_end=50.0,
     )
 
 
@@ -208,6 +208,6 @@ def test_constraint_battery_soc_terminal(
 
     battery_soc = linopy_model.variables["var_battery_soc"]
     final_soc = battery_soc.sel(time=str(time_index[-1]))
-    expected_expr = final_soc == battery1.soc_terminal
+    expected_expr = final_soc == battery1.soc_end
 
     assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)

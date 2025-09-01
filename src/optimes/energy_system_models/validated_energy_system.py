@@ -72,8 +72,8 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             batteries_max_power=self._batteries_max_power,
             batteries_efficiency_charging=self._batteries_efficiency_charging,
             batteries_efficiency_discharging=self._batteries_efficiency_discharging,
-            batteries_soc_initial=self._batteries_soc_initial,
-            batteries_soc_terminal=self._batteries_soc_terminal,
+            batteries_soc_start=self._batteries_soc_initial,
+            batteries_soc_end=self._batteries_soc_terminal,
             demand_profile=self._demand_profile,
         )
 
@@ -225,14 +225,14 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     @property
     def _batteries_soc_initial(self) -> xr.DataArray:
         return xr.DataArray(
-            data=[battery.soc_initial for battery in self.portfolio.batteries],
+            data=[battery.soc_start for battery in self.portfolio.batteries],
             coords=self.sets.batteries.coordinates,
         )
 
     @property
     def _batteries_soc_terminal(self) -> xr.DataArray:
         return xr.DataArray(
-            data=[battery.soc_terminal for battery in self.portfolio.batteries],
+            data=[battery.soc_end for battery in self.portfolio.batteries],
             coords=self.sets.batteries.coordinates,
         )
 
