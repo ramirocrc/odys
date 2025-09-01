@@ -9,6 +9,7 @@ class EnergyModelConstraintName(Enum):
     GENERATOR_LIMIT = "generator_max_power_constraint"
     BATTERY_CHARGE_LIMIT = "battery_max_charge_constraint"
     BATTERY_DISCHARGE_LIMIT = "battery_max_discharge_constraint"
+    BATTERY_NET_POWER = "battery_net_power_constraint"
     BATTERY_SOC_DYNAMICS = "battery_soc_dynamics_constraint"
     BATTERY_SOC_BOUNDS = "battery_soc_bounds_constraint"
     BATTERY_SOC_START = "battery_soc_start_constraint"
