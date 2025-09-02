@@ -14,7 +14,16 @@ from optimes._math_model.model_components.constraints.power_balance_constraints 
 from optimes._math_model.model_components.objectives import (
     LinopyMinimizeOperationalCostObjective,
 )
-from optimes._math_model.model_components.variables import EnergyModelVariableName
+from optimes._math_model.model_components.variable_names import EnergyModelVariableName
+from optimes._math_model.model_components.variables.base_variable import SystemVariable
+from optimes._math_model.model_components.variables.battery_variables import (
+    BatteryChargeModeVariable,
+    BatteryPowerInVariable,
+    BatteryPowerNetVariable,
+    BatteryPowerOutVariable,
+    BatterySocVariable,
+)
+from optimes._math_model.model_components.variables.generator_variables import GeneratorPowerVariable
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from optimes.utils.logging import get_logger
 
@@ -41,6 +50,15 @@ class EnergyAlgebraicModelBuilder:
 
         return self._linopy_model
 
+    def add_variable_to_model(self, variable: SystemVariable) -> None:
+        self._linopy_model.add_variables(
+            name=variable.name,
+            coords=variable.coords,
+            dims=variable.dims,
+            lower=variable.lower,
+            binary=variable.binary,
+        )
+
     def _add_model_variables(self) -> None:
         self._add_power_generator_variables()
         self._add_battery_variables()
@@ -49,55 +67,17 @@ class EnergyAlgebraicModelBuilder:
         time_set = self._energy_system.sets.time
         generators_set = self._energy_system.sets.generators
 
-        num_time_steps = len(time_set.values)
-        num_generators = len(generators_set.values)
-        lower_bounds = [[0] * num_generators] * num_time_steps
-
-        self._linopy_model.add_variables(
-            lower=lower_bounds,
-            name=EnergyModelVariableName.GENERATOR_POWER.value,
-            coords=time_set.coordinates | generators_set.coordinates,
-            dims=[time_set.dimension, generators_set.dimension],
-        )
+        self.add_variable_to_model(GeneratorPowerVariable(time_set=time_set, asset_set=generators_set))
 
     def _add_battery_variables(self) -> None:
         time_set = self._energy_system.sets.time
         batteries_set = self._energy_system.sets.batteries
 
-        num_time_steps = len(time_set.values)
-        num_batteries = len(batteries_set.values)
-        lower_bounds = [[0] * num_batteries] * num_time_steps
-
-        self._linopy_model.add_variables(
-            lower=lower_bounds,
-            name=EnergyModelVariableName.BATTERY_POWER_IN.value,
-            coords=time_set.coordinates | batteries_set.coordinates,
-            dims=[time_set.dimension, batteries_set.dimension],
-        )
-
-        self._linopy_model.add_variables(
-            name=EnergyModelVariableName.BATTERY_POWER_NET.value,
-            coords=time_set.coordinates | batteries_set.coordinates,
-            dims=[time_set.dimension, batteries_set.dimension],
-        )
-        self._linopy_model.add_variables(
-            lower=lower_bounds,
-            name=EnergyModelVariableName.BATTERY_POWER_OUT.value,
-            coords=time_set.coordinates | batteries_set.coordinates,
-            dims=[time_set.dimension, batteries_set.dimension],
-        )
-        self._linopy_model.add_variables(
-            lower=lower_bounds,
-            name=EnergyModelVariableName.BATTERY_SOC.value,
-            coords=time_set.coordinates | batteries_set.coordinates,
-            dims=[time_set.dimension, batteries_set.dimension],
-        )
-        self._linopy_model.add_variables(
-            name=EnergyModelVariableName.BATTERY_CHARGE_MODE.value,
-            coords=time_set.coordinates | batteries_set.coordinates,
-            dims=[time_set.dimension, batteries_set.dimension],
-            binary=True,
-        )
+        self.add_variable_to_model(BatteryPowerInVariable(time_set=time_set, asset_set=batteries_set))
+        self.add_variable_to_model(BatteryPowerNetVariable(time_set=time_set, asset_set=batteries_set))
+        self.add_variable_to_model(BatteryPowerOutVariable(time_set=time_set, asset_set=batteries_set))
+        self.add_variable_to_model(BatterySocVariable(time_set=time_set, asset_set=batteries_set))
+        self.add_variable_to_model(BatteryChargeModeVariable(time_set=time_set, asset_set=batteries_set))
 
     def _add_model_constraints(self) -> None:
         self._add_power_balance_constraint()
