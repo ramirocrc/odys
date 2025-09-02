@@ -12,7 +12,12 @@ import xarray as xr
 from pydantic import BaseModel, model_validator
 
 from optimes._math_model.model_components.parameters import EnergyModelParameters
-from optimes._math_model.model_components.sets import EnergyModelSet, EnergyModelSets
+from optimes._math_model.model_components.sets import (
+    BatteriesSet,
+    EnergyModelSets,
+    GeneratorsSet,
+    TimeSet,
+)
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.units import PowerUnit
@@ -48,16 +53,13 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     def sets(self) -> EnergyModelSets:
         """Energy Model Sets."""
         return EnergyModelSets(
-            time=EnergyModelSet(
-                dimension="time",
+            time=TimeSet(
                 values=[str(time_step) for time_step in range(len(self.demand_profile))],
             ),
-            generators=EnergyModelSet(
-                dimension="generators",
+            generators=GeneratorsSet(
                 values=[gen.name for gen in self.portfolio.generators],
             ),
-            batteries=EnergyModelSet(
-                dimension="batteries",
+            batteries=BatteriesSet(
                 values=[battery.name for battery in self.portfolio.batteries],
             ),
         )
