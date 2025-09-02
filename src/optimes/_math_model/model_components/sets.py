@@ -1,6 +1,4 @@
-from abc import ABC
 from enum import Enum
-from typing import ClassVar
 
 from pydantic import BaseModel
 
@@ -11,10 +9,10 @@ class EnergyModelDimension(str, Enum):
     Batteries = "batteries"
 
 
-class EnergyModelSet(ABC, BaseModel):
+class EnergyModelSet(BaseModel):
     """Energy Model Set."""
 
-    dimension: ClassVar[EnergyModelDimension]
+    dimension: EnergyModelDimension
     values: list[str]
 
     @property
@@ -23,21 +21,9 @@ class EnergyModelSet(ABC, BaseModel):
         return {f"{self.dimension.value}": self.values}
 
 
-class TimeSet(EnergyModelSet):
-    dimension: ClassVar = EnergyModelDimension.Time
-
-
-class GeneratorsSet(EnergyModelSet):
-    dimension: ClassVar = EnergyModelDimension.Generators
-
-
-class BatteriesSet(EnergyModelSet):
-    dimension: ClassVar = EnergyModelDimension.Batteries
-
-
 class EnergyModelSets(BaseModel, frozen=True):
     """Energy Model Sets."""
 
-    time: TimeSet
-    generators: GeneratorsSet
-    batteries: BatteriesSet
+    time: EnergyModelSet
+    generators: EnergyModelSet
+    batteries: EnergyModelSet

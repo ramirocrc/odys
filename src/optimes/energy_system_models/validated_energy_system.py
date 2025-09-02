@@ -13,10 +13,9 @@ from pydantic import BaseModel, model_validator
 
 from optimes._math_model.model_components.parameters import EnergyModelParameters
 from optimes._math_model.model_components.sets import (
-    BatteriesSet,
+    EnergyModelDimension,
+    EnergyModelSet,
     EnergyModelSets,
-    GeneratorsSet,
-    TimeSet,
 )
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
@@ -53,13 +52,16 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     def sets(self) -> EnergyModelSets:
         """Energy Model Sets."""
         return EnergyModelSets(
-            time=TimeSet(
+            time=EnergyModelSet(
+                dimension=EnergyModelDimension.Time,
                 values=[str(time_step) for time_step in range(len(self.demand_profile))],
             ),
-            generators=GeneratorsSet(
+            generators=EnergyModelSet(
+                dimension=EnergyModelDimension.Generators,
                 values=[gen.name for gen in self.portfolio.generators],
             ),
-            batteries=BatteriesSet(
+            batteries=EnergyModelSet(
+                dimension=EnergyModelDimension.Batteries,
                 values=[battery.name for battery in self.portfolio.batteries],
             ),
         )
