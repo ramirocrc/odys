@@ -3,7 +3,7 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-class EnergyModelDimension(str, Enum):
+class EnergyModelDimension(Enum):
     Time = "time"
     Generators = "generators"
     Batteries = "batteries"
