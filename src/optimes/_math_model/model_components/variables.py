@@ -17,3 +17,11 @@ class EnergyModelVariableName(Enum):
     BATTERY_POWER_IN = "battery_power_in"
     BATTERY_POWER_OUT = "battery_power_out"
     BATTERY_CHARGE_MODE = "battery_charge_mode"
+
+    @staticmethod
+    def for_report() -> tuple["EnergyModelVariableName", ...]:
+        return (
+            EnergyModelVariableName.GENERATOR_POWER,
+            EnergyModelVariableName.BATTERY_POWER_NET,
+            EnergyModelVariableName.BATTERY_SOC,
+        )
