@@ -98,7 +98,7 @@ class SystemVariable(Enum):
         time_set: EnergyModelSet,
         asset_set: EnergyModelSet,
     ) -> LinopyVariableParameters:
-        if time_set.dimension != time_set.dimension:
+        if time_set.dimension != EnergyModelDimension.Time:
             msg = f"time_set should have time dimension, got {time_set.dimension}"
             raise ValueError(msg)
 
