@@ -1,34 +1,28 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar, Self
+from typing import ClassVar
 
 import numpy as np
-from pydantic import BaseModel, field_validator, model_validator
 
 from optimes._math_model.model_components.sets import EnergyModelDimension, EnergyModelSet
 from optimes._math_model.model_components.variable_names import EnergyModelVariableName
 
 
-class SystemVariable(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
+class SystemVariable(ABC):
     name: ClassVar[EnergyModelVariableName]
     asset_dimension: ClassVar[EnergyModelDimension]
-    time_set: EnergyModelSet
-    asset_set: EnergyModelSet
     binary: ClassVar[bool]
 
-    @field_validator("time_set", mode="before")
-    @classmethod
-    def validate_time_dimension(cls, v: EnergyModelSet) -> EnergyModelSet:
-        if v.dimension != EnergyModelDimension.Time:
-            msg = f"time_set should have time dimension, got {v.dimension}"
+    def __init__(self, time_set: EnergyModelSet, asset_set: EnergyModelSet) -> None:
+        if time_set.dimension != EnergyModelDimension.Time:
+            msg = f"time_set should have time dimension, got {time_set.dimension}"
             raise ValueError(msg)
-        return v
 
-    @model_validator(mode="after")
-    def validate_asset_dimension(self) -> Self:
-        if self.asset_set.dimension != self.asset_dimension:
-            msg = f"asset_set should have dimension {self.asset_dimension}, got {self.asset_set.dimension}"
+        if asset_set.dimension != self.asset_dimension:
+            msg = f"asset_set should have dimension {self.asset_dimension}, got {asset_set.dimension}"
             raise ValueError(msg)
-        return self
+
+        self.time_set = time_set
+        self.asset_set = asset_set
 
     @property
     def coords(self) -> dict:
