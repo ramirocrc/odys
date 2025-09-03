@@ -1,13 +1,19 @@
+from abc import ABC
 from typing import ClassVar
 
 import numpy as np
 
+from optimes._math_model.model_components.sets import EnergyModelDimension
 from optimes._math_model.model_components.variable_names import EnergyModelVariableName
 from optimes._math_model.model_components.variables.base_variable import SystemVariable
 
 
-class BatteryPowerInVariable(SystemVariable):
-    _name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_IN
+class BatteryVariable(SystemVariable, ABC):
+    asset_dimension: ClassVar[EnergyModelDimension] = EnergyModelDimension.Batteries
+
+
+class BatteryPowerInVariable(BatteryVariable):
+    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_IN
     binary: ClassVar[bool] = False
 
     @property
@@ -15,8 +21,8 @@ class BatteryPowerInVariable(SystemVariable):
         return self._create_zero_bounds()
 
 
-class BatteryPowerNetVariable(SystemVariable):
-    _name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_NET
+class BatteryPowerNetVariable(BatteryVariable):
+    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_NET
     binary: ClassVar[bool] = False
 
     @property
@@ -24,8 +30,8 @@ class BatteryPowerNetVariable(SystemVariable):
         return self._create_infinite_lower_bound()
 
 
-class BatteryPowerOutVariable(SystemVariable):
-    _name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_OUT
+class BatteryPowerOutVariable(BatteryVariable):
+    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_OUT
     binary: ClassVar[bool] = False
 
     @property
@@ -33,8 +39,8 @@ class BatteryPowerOutVariable(SystemVariable):
         return self._create_zero_bounds()
 
 
-class BatterySocVariable(SystemVariable):
-    _name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_SOC
+class BatterySocVariable(BatteryVariable):
+    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_SOC
     binary: ClassVar[bool] = False
 
     @property
@@ -42,8 +48,8 @@ class BatterySocVariable(SystemVariable):
         return self._create_zero_bounds()
 
 
-class BatteryChargeModeVariable(SystemVariable):
-    _name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_CHARGE_MODE
+class BatteryChargeModeVariable(BatteryVariable):
+    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_CHARGE_MODE
     binary: ClassVar[bool] = True
 
     @property

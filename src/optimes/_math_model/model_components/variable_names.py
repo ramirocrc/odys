@@ -8,7 +8,7 @@ from enum import Enum, unique
 
 
 @unique
-class EnergyModelVariableName(Enum):
+class EnergyModelVariableName(str, Enum):
     """Enumeration of variable names used in the energy model."""
 
     GENERATOR_POWER = "generator_power"
@@ -18,10 +18,5 @@ class EnergyModelVariableName(Enum):
     BATTERY_POWER_OUT = "battery_power_out"
     BATTERY_CHARGE_MODE = "battery_charge_mode"
 
-    @staticmethod
-    def for_report() -> tuple["EnergyModelVariableName", ...]:
-        return (
-            EnergyModelVariableName.GENERATOR_POWER,
-            EnergyModelVariableName.BATTERY_POWER_NET,
-            EnergyModelVariableName.BATTERY_SOC,
-        )
+    def __str__(self) -> str:
+        return self.value
