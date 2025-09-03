@@ -119,19 +119,10 @@ class SystemVariable(Enum):
         time_set: EnergyModelSet,
         asset_set: EnergyModelSet,
     ) -> np.ndarray | float:
-        if self.value.binary:  # Required by linopy.add_variable when variable is binary
-            return -np.inf
+        if self.value.binary:
+            return -np.inf  # Required by linopy.add_variable when variable is binary
+
         shape = len(time_set.values), len(asset_set.values)
         if self.value.bounds == VariableLowerBoundType.UNBOUNDED:
-            return self._create_infinite_lower_bound(shape)
-        return self._create_zero_bounds(shape)
-
-    @staticmethod
-    def _create_zero_bounds(shape: tuple[int, int]) -> np.ndarray:
-        """Create a zero bounds matrix."""
-        return np.zeros(shape, dtype=float)
-
-    @staticmethod
-    def _create_infinite_lower_bound(shape: tuple[int, int]) -> np.ndarray:
-        """Create unbounded bounds matrix."""
-        return np.full(shape, -np.inf, dtype=float)
+            return np.full(shape, -np.inf, dtype=float)
+        return np.full(shape, 0, dtype=float)
