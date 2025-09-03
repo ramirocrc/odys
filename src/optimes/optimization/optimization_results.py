@@ -8,15 +8,6 @@ import pandas as pd
 from linopy import Model
 from linopy.constants import SolverStatus, TerminationCondition
 
-from optimes._math_model.model_components.variables.battery_variables import BatteryPowerNetVariable, BatterySocVariable
-from optimes._math_model.model_components.variables.generator_variables import GeneratorPowerVariable
-
-VARIABLES_TO_REPORT = [
-    GeneratorPowerVariable,
-    BatteryPowerNetVariable,
-    BatterySocVariable,
-]
-
 
 class OptimizationResults:
     """Container for optimization results and metadata.
@@ -76,17 +67,7 @@ class OptimizationResults:
         if self._solver_status != SolverStatus.ok:
             msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."
             raise ValueError(msg)
-        self._get_results_dataframe()
         return self._get_detailed_dataframe()
-
-    def _get_results_dataframe(self) -> pd.DataFrame:
-        model_solution = self._linopy_model.solution
-        for var_class in VARIABLES_TO_REPORT:
-            var = model_solution[var_class.name.value]
-            df = var.to_dataframe()
-            df.iloc[0]
-
-        return pd.DataFrame()
 
     def _get_detailed_dataframe(self) -> pd.DataFrame:
         ds = self._linopy_model.solution
