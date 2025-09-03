@@ -17,7 +17,7 @@ from optimes._math_model.model_components.objectives import (
 from optimes._math_model.model_components.variables import (
     EnergyModelVariableName,
     LinopyVariableParameters,
-    SystemVariable2,
+    SystemVariable,
 )
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from optimes.utils.logging import get_logger
@@ -55,14 +55,14 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def _add_model_variables(self) -> None:
-        for generator_variable_i in SystemVariable2.generator_variables():
+        for generator_variable_i in SystemVariable.generator_variables():
             linopy_variable_parameters = generator_variable_i.get_linopy_variable_parameters(
                 time_set=self._energy_system.sets.time,
                 asset_set=self._energy_system.sets.generators,
             )
             self.add_variable_to_model(linopy_variable_parameters)
 
-        for battery_variable_i in SystemVariable2.battery_variables():
+        for battery_variable_i in SystemVariable.battery_variables():
             linopy_variable_parameters = battery_variable_i.get_linopy_variable_parameters(
                 time_set=self._energy_system.sets.time,
                 asset_set=self._energy_system.sets.batteries,

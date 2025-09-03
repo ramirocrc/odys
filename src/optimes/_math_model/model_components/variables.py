@@ -47,7 +47,7 @@ class SystemVariableMetadata(BaseModel):
     bounds: VariableLowerBoundType
 
 
-class SystemVariable2(Enum):
+class SystemVariable(Enum):
     GENERATOR_POWER = SystemVariableMetadata(
         name=EnergyModelVariableName.GENERATOR_POWER,
         binary=False,
@@ -86,12 +86,12 @@ class SystemVariable2(Enum):
     )
 
     @classmethod
-    def generator_variables(cls) -> list["SystemVariable2"]:
-        return [var for var in SystemVariable2 if var.value.asset_dimension == EnergyModelDimension.Generators]
+    def generator_variables(cls) -> list["SystemVariable"]:
+        return [var for var in SystemVariable if var.value.asset_dimension == EnergyModelDimension.Generators]
 
     @classmethod
-    def battery_variables(cls) -> list["SystemVariable2"]:
-        return [var for var in SystemVariable2 if var.value.asset_dimension == EnergyModelDimension.Batteries]
+    def battery_variables(cls) -> list["SystemVariable"]:
+        return [var for var in SystemVariable if var.value.asset_dimension == EnergyModelDimension.Batteries]
 
     def get_linopy_variable_parameters(
         self,
