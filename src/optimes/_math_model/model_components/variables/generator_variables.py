@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import ClassVar
 
 import numpy as np
 
@@ -9,12 +8,12 @@ from optimes._math_model.model_components.variables.base_variable import SystemV
 
 
 class GeneratorVariable(SystemVariable, ABC):
-    asset_dimension: ClassVar[EnergyModelDimension] = EnergyModelDimension.Generators
+    asset_dimension = EnergyModelDimension.Generators
 
 
 class GeneratorPowerVariable(GeneratorVariable):
-    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.GENERATOR_POWER
-    binary: ClassVar[bool] = False
+    name = EnergyModelVariableName.GENERATOR_POWER
+    binary = False
 
     @property
     def lower(self) -> np.ndarray:

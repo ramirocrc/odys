@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import ClassVar
 
 import numpy as np
 
@@ -9,12 +8,12 @@ from optimes._math_model.model_components.variables.base_variable import SystemV
 
 
 class BatteryVariable(SystemVariable, ABC):
-    asset_dimension: ClassVar[EnergyModelDimension] = EnergyModelDimension.Batteries
+    asset_dimension = EnergyModelDimension.Batteries
 
 
 class BatteryPowerInVariable(BatteryVariable):
-    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_IN
-    binary: ClassVar[bool] = False
+    name = EnergyModelVariableName.BATTERY_POWER_IN
+    binary = False
 
     @property
     def lower(self) -> np.ndarray:
@@ -22,8 +21,8 @@ class BatteryPowerInVariable(BatteryVariable):
 
 
 class BatteryPowerNetVariable(BatteryVariable):
-    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_NET
-    binary: ClassVar[bool] = False
+    name = EnergyModelVariableName.BATTERY_POWER_NET
+    binary = False
 
     @property
     def lower(self) -> np.ndarray:
@@ -31,8 +30,8 @@ class BatteryPowerNetVariable(BatteryVariable):
 
 
 class BatteryPowerOutVariable(BatteryVariable):
-    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_POWER_OUT
-    binary: ClassVar[bool] = False
+    name = EnergyModelVariableName.BATTERY_POWER_OUT
+    binary = False
 
     @property
     def lower(self) -> np.ndarray:
@@ -40,8 +39,8 @@ class BatteryPowerOutVariable(BatteryVariable):
 
 
 class BatterySocVariable(BatteryVariable):
-    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_SOC
-    binary: ClassVar[bool] = False
+    name = EnergyModelVariableName.BATTERY_SOC
+    binary = False
 
     @property
     def lower(self) -> np.ndarray:
@@ -49,8 +48,8 @@ class BatterySocVariable(BatteryVariable):
 
 
 class BatteryChargeModeVariable(BatteryVariable):
-    name: ClassVar[EnergyModelVariableName] = EnergyModelVariableName.BATTERY_CHARGE_MODE
-    binary: ClassVar[bool] = True
+    name = EnergyModelVariableName.BATTERY_CHARGE_MODE
+    binary = True
 
     @property
     def lower(self) -> float:
