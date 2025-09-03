@@ -36,8 +36,8 @@ class LinopyVariableParameters(BaseModel, arbitrary_types_allowed=True):
 
 
 class VariableLowerBoundType(Enum):
-    Zero = 0
-    Unbounded = 1
+    NON_NEGATIVE = "non_negative"
+    UNBOUNDED = "unbounded"
 
 
 class SystemVariableMetadata(BaseModel):
@@ -52,37 +52,37 @@ class SystemVariable(Enum):
         name=EnergyModelVariableName.GENERATOR_POWER,
         binary=False,
         asset_dimension=EnergyModelDimension.Generators,
-        bounds=VariableLowerBoundType.Zero,
+        bounds=VariableLowerBoundType.NON_NEGATIVE,
     )
     BATTERY_POWER_IN = SystemVariableMetadata(
         name=EnergyModelVariableName.BATTERY_POWER_IN,
         binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.Zero,
+        bounds=VariableLowerBoundType.NON_NEGATIVE,
     )
     BATTERY_POWER_NET = SystemVariableMetadata(
         name=EnergyModelVariableName.BATTERY_POWER_NET,
         binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.Unbounded,
+        bounds=VariableLowerBoundType.UNBOUNDED,
     )
     BATTERY_POWER_OUT = SystemVariableMetadata(
         name=EnergyModelVariableName.BATTERY_POWER_OUT,
         binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.Zero,
+        bounds=VariableLowerBoundType.NON_NEGATIVE,
     )
     BATTERY_SOC = SystemVariableMetadata(
         name=EnergyModelVariableName.BATTERY_SOC,
         binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.Zero,
+        bounds=VariableLowerBoundType.NON_NEGATIVE,
     )
     BATTERY_CHARGE_MODE = SystemVariableMetadata(
         name=EnergyModelVariableName.BATTERY_CHARGE_MODE,
         binary=True,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.Unbounded,
+        bounds=VariableLowerBoundType.UNBOUNDED,
     )
 
     @classmethod
@@ -119,10 +119,10 @@ class SystemVariable(Enum):
         time_set: EnergyModelSet,
         asset_set: EnergyModelSet,
     ) -> np.ndarray | float:
-        if self.value.binary:
+        if self.value.binary:  # Required by linopy.add_variable when variable is binary
             return -np.inf
         shape = len(time_set.values), len(asset_set.values)
-        if self.value.bounds == VariableLowerBoundType.Unbounded:
+        if self.value.bounds == VariableLowerBoundType.UNBOUNDED:
             return self._create_infinite_lower_bound(shape)
         return self._create_zero_bounds(shape)
 

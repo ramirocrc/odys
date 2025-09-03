@@ -45,15 +45,6 @@ class EnergyAlgebraicModelBuilder:
 
         return self._linopy_model
 
-    def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
-        self._linopy_model.add_variables(
-            name=variable.name,
-            coords=variable.coords,
-            dims=variable.dims,
-            lower=variable.lower,
-            binary=variable.binary,
-        )
-
     def _add_model_variables(self) -> None:
         for generator_variable_i in SystemVariable.generator_variables():
             linopy_variable_parameters = generator_variable_i.get_linopy_variable_parameters(
@@ -68,6 +59,15 @@ class EnergyAlgebraicModelBuilder:
                 asset_set=self._energy_system.sets.batteries,
             )
             self.add_variable_to_model(linopy_variable_parameters)
+
+    def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
+        self._linopy_model.add_variables(
+            name=variable.name,
+            coords=variable.coords,
+            dims=variable.dims,
+            lower=variable.lower,
+            binary=variable.binary,
+        )
 
     def _add_model_constraints(self) -> None:
         self._add_power_balance_constraint()
