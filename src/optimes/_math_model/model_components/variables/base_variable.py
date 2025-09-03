@@ -1,15 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import ClassVar, Self
 
 import numpy as np
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from optimes._math_model.model_components.sets import EnergyModelDimension, EnergyModelSet
 from optimes._math_model.model_components.variable_names import EnergyModelVariableName
 
 
 class SystemVariable(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
-    _name: ClassVar[EnergyModelVariableName]
+    name: ClassVar[EnergyModelVariableName]
+    asset_dimension: ClassVar[EnergyModelDimension]
     time_set: EnergyModelSet
     asset_set: EnergyModelSet
     binary: ClassVar[bool]
@@ -22,9 +23,12 @@ class SystemVariable(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid
             raise ValueError(msg)
         return v
 
-    @property
-    def name(self) -> str:
-        return self._name.value
+    @model_validator(mode="after")
+    def validate_asset_dimension(self) -> Self:
+        if self.asset_set.dimension != self.asset_dimension:
+            msg = f"asset_set should have dimension {self.asset_dimension}, got {self.asset_set.dimension}"
+            raise ValueError(msg)
+        return self
 
     @property
     def coords(self) -> dict:

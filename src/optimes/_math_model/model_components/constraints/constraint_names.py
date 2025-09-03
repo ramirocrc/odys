@@ -2,7 +2,7 @@ from enum import Enum, unique
 
 
 @unique
-class EnergyModelConstraintName(Enum):
+class EnergyModelConstraintName(str, Enum):
     """Enumeration of constraint names used in the energy model."""
 
     POWER_BALANCE = "power_balance_constraint"
@@ -14,3 +14,6 @@ class EnergyModelConstraintName(Enum):
     BATTERY_SOC_BOUNDS = "battery_soc_bounds_constraint"
     BATTERY_SOC_START = "battery_soc_start_constraint"
     BATTERY_SOC_END = "battery_soc_end_constraint"
+
+    def __str__(self) -> str:
+        return self.value
