@@ -9,6 +9,7 @@ from linopy import Model
 from linopy.constants import SolverStatus, TerminationCondition
 
 from optimes._math_model.model_components.variables import ModelVariable
+from optimes.optimization.result_containers import BatteryResults, GeneratorResults
 
 
 class OptimizationResults:
@@ -69,40 +70,35 @@ class OptimizationResults:
         if self._solver_status != SolverStatus.ok:
             msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."
             raise ValueError(msg)
-        self._get_results_dataframe()
-        return self._get_detailed_dataframe()
 
-    def _get_results_dataframe(self) -> pd.DataFrame:
         ds = self._linopy_model.solution
         dfs = []
-        for var in ModelVariable.variables_to_report():
-            df = ds[var.var_name].to_dataframe().reset_index()
-            df = df.rename(columns={var.asset_dimension.value: "unit", var.var_name: "value"})
+        for variable in ModelVariable:
+            variable_name = variable.var_name
+            df = ds[variable_name].to_series().reset_index()
+            df = df.rename(columns={variable.asset_dimension.value: "unit", variable_name: "value"})
             df = df[["unit", "time", "value"]]
-            df["variable"] = var
+            df["variable"] = variable_name
             dfs.append(df)
 
-    def _get_detailed_dataframe(self) -> pd.DataFrame:
-        ds = self._linopy_model.solution
-        dfs = []
-        for var in [v for v in ds.data_vars if str(v).startswith("generator")]:
-            df = ds[var].to_dataframe().reset_index()
-            df = df.rename(columns={"generators": "unit", var: "value"})
-            df = df[["unit", "time", "value"]]
-            df["variable"] = var
-            dfs.append(df)
-
-        # battery variables
-        for var in [v for v in ds.data_vars if str(v).startswith("battery")]:
-            df = ds[var].to_dataframe().reset_index()
-            df = df.rename(columns={"batteries": "unit", var: "value"})
-            df = df[["unit", "time", "value"]]
-            df["variable"] = var
-            dfs.append(df)
-
-        # combine everything
         df_final = pd.concat(dfs, ignore_index=True)
-
-        # reorder and set index
         df_final = df_final[["unit", "variable", "time", "value"]]
         return df_final.set_index(["unit", "variable", "time"]).sort_index()
+
+    @property
+    def batteries(self) -> BatteryResults:
+        """Get battery results."""
+        return BatteryResults(
+            net_power=self._get_variable_results(ModelVariable.BATTERY_POWER_NET),
+            state_of_charge=self._get_variable_results(ModelVariable.BATTERY_SOC),
+        )
+
+    @property
+    def generators(self) -> GeneratorResults:
+        """Get generator results."""
+        return GeneratorResults(
+            power=self._get_variable_results(ModelVariable.GENERATOR_POWER),
+        )
+
+    def _get_variable_results(self, variable: ModelVariable) -> pd.DataFrame:
+        return self._linopy_model.solution[variable.var_name].to_series().unstack()  # noqa: PD010
