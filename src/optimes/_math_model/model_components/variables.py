@@ -85,10 +85,3 @@ class ModelVariable(Enum):
     @classmethod
     def battery_variables(cls) -> list["ModelVariable"]:
         return [var for var in ModelVariable if var.asset_dimension == EnergyModelDimension.Batteries]
-
-    @classmethod
-    def variables_to_report(cls) -> list["ModelVariable"]:
-        return [
-            cls.GENERATOR_POWER,
-            cls.BATTERY_POWER_NET,
-        ]
