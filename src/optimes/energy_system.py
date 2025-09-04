@@ -56,11 +56,8 @@ class EnergySystem:
     ) -> OptimizationResults:
         """Optimize the energy system.
 
-        This method solves the pre-built algebraic model using the specified solver.
-        The model is built during initialization from the energy system configuration.
-
-        Args:
-            solver: The solver to use for optimization. Defaults to HiGHSolver.
+        This method solves the pre-built algebraic model using HiGHS solver.
+        The model is built during optimization from the energy system configuration.
 
         Returns:
             OptimizationResults containing the solution and metadata.

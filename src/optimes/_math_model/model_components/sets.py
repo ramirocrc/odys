@@ -17,7 +17,7 @@ class ModelSet(BaseModel):
 
     @property
     def coordinates(self) -> dict[str, list[str]]:
-        """Get's coordinates for xarray objects."""
+        """Gets coordinates for xarray objects."""
         return {f"{self.dimension.value}": self.values}
 
 

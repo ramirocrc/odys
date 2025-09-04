@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 
 class EnergyModelParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
-    generators_nomianl_power: xr.DataArray
+    generators_nominal_power: xr.DataArray
     generators_variable_cost: xr.DataArray
     batteries_capacity: xr.DataArray
     batteries_max_power: xr.DataArray

@@ -59,13 +59,9 @@ class OptimizationResults:
     def to_dataframe(self) -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
 
-        Args:
-            detail: Specifies the level of detail to include in the dataframe. A "basic" dataframe will output the main
-            decision variable for each asset. A "detailed" dataframe will output all decision variables.
-
         Returns:
-            DataFrame containing the solution variables with time periods
-            as rows and variables as columns.
+            DataFrame containing all solution variables with units, variables,
+            and time periods as multi-level index columns.
         """
         if self._solver_status != SolverStatus.ok:
             msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."

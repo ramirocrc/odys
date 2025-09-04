@@ -35,12 +35,12 @@ class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forb
     @property
     @abstractmethod
     def constraint(self) -> linopy.Constraint:
-        """Get the Pyomo constraint.
+        """Get the linopy constraint.
 
         This abstract method must be implemented by subclasses to
         define the specific constraint logic.
 
         Returns:
-            The Pyomo constraint object.
+            The linopy constraint object.
 
         """

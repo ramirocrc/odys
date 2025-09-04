@@ -70,7 +70,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     def parameters(self) -> EnergyModelParameters:
         """Returns energy model parameters."""
         return EnergyModelParameters(
-            generators_nomianl_power=self._generators_nominal_power,
+            generators_nominal_power=self._generators_nominal_power,
             generators_variable_cost=self._generators_variable_cost,
             batteries_capacity=self._batteries_capacity,
             batteries_max_power=self._batteries_max_power,
