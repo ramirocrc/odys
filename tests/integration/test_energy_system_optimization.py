@@ -21,24 +21,24 @@ def test_single_generator_meets_demand() -> None:
     demand_profile = [50.0, 100.0, 150.0, 180.0, 120.0]
     timestep = timedelta(hours=1)
 
+    expected_results = pd.DataFrame(
+        {"generator": demand_profile},
+        index=pd.Index(("0", "1", "2", "3", "4"), name="time"),
+    )
+    expected_results.columns.name = "generators"
+
     energy_system = EnergySystem(
         portfolio=portfolio,
         demand_profile=demand_profile,
         timestep=timestep,
         power_unit="MW",
     )
-
     result = energy_system.optimize()
-
-    results_df = result.to_dataframe("basic")
-    expected_results = pd.DataFrame(
-        {"generator": demand_profile},
-        index=pd.Index((0, 1, 2, 3, 4), name="time"),
-    )
-    expected_results.columns.name = "unit"
+    generator_power = result.generators.power
     assert result.solver_status == "ok"
     assert result.termination_condition == "optimal"
-    pd.testing.assert_frame_equal(results_df, expected_results)
+
+    pd.testing.assert_frame_equal(generator_power, expected_results)
 
 
 def test_three_generators_meet_demand() -> None:
@@ -66,6 +66,16 @@ def test_three_generators_meet_demand() -> None:
     demand_profile = [50.0, 100.0, 150.0, 200.0, 250.0, 300.0]
     timestep = timedelta(hours=1)
 
+    expected_results = pd.DataFrame(
+        {
+            generator_cheap.name: [50.0, 100.0, 100.0, 100.0, 100.0, 100.0],
+            generator_medium.name: [0.0, 0.0, 50.0, 100.0, 100.0, 100.0],
+            generator_expensive.name: [0.0, 0.0, 0.0, 0.0, 50.0, 100.0],
+        },
+        index=pd.Index(("0", "1", "2", "3", "4", "5"), name="time"),
+    )
+    expected_results.columns.name = "generators"
+
     energy_system = EnergySystem(
         portfolio=portfolio,
         demand_profile=demand_profile,
@@ -74,18 +84,9 @@ def test_three_generators_meet_demand() -> None:
     )
 
     result = energy_system.optimize()
+    generator_power = result.generators.power
 
-    results_df = result.to_dataframe("basic")
-    expected_results = pd.DataFrame(
-        {
-            generator_cheap.name: [50.0, 100.0, 100.0, 100.0, 100.0, 100.0],
-            generator_expensive.name: [0.0, 0.0, 0.0, 0.0, 50.0, 100.0],
-            generator_medium.name: [0.0, 0.0, 50.0, 100.0, 100.0, 100.0],
-        },
-        index=pd.Index((0, 1, 2, 3, 4, 5), name="time"),
-    )
-    expected_results.columns.name = "unit"
-    pd.testing.assert_frame_equal(results_df, expected_results)
+    pd.testing.assert_frame_equal(generator_power, expected_results)
 
 
 def test_generator_and_battery_optimization() -> None:
@@ -109,14 +110,21 @@ def test_generator_and_battery_optimization() -> None:
     portfolio.add_asset(battery)
 
     demand_profile = [50.0, 50.0, 150.0, 150.0, 50.0]
-    expected_results = pd.DataFrame(
+    index = pd.Index(("0", "1", "2", "3", "4"), name="time")
+    expected_generator_results = pd.DataFrame(
         {
             generator.name: [100.0, 100.0, 100.0, 100.0, 100.0],
+        },
+        index=index,
+    )
+    expected_battery_soc_results = pd.DataFrame(
+        {
             battery.name: [50.0, 100.0, 50.0, 0.0, 50.0],
         },
-        index=pd.Index((0, 1, 2, 3, 4), name="time"),
+        index=index,
     )
-    expected_results.columns.name = "unit"
+    expected_generator_results.columns.name = "generators"
+    expected_battery_soc_results.columns.name = "batteries"
     timestep = timedelta(hours=1)
 
     energy_system = EnergySystem(
@@ -125,9 +133,13 @@ def test_generator_and_battery_optimization() -> None:
         timestep=timestep,
         power_unit="MW",
     )
+
     result = energy_system.optimize()
-    results_df = result.to_dataframe("basic")
-    pd.testing.assert_frame_equal(results_df, expected_results)
+    generator_power = result.generators.power
+    battery_soc = result.batteries.state_of_charge
+
+    pd.testing.assert_frame_equal(generator_power, expected_generator_results)
+    pd.testing.assert_frame_equal(battery_soc, expected_battery_soc_results)
 
 
 def test_generator_and_battery_with_efficiencies_optimization() -> None:
@@ -153,6 +165,22 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
     demand_profile = [50.0, 50.0, 100.0]
     timestep = timedelta(hours=1)
 
+    index = pd.Index(("0", "1", "2"), name="time")
+    expected_generator_results = pd.DataFrame(
+        {
+            generator.name: [100.0, 100.0, 100.0],
+        },
+        index=index,
+    )
+    expected_battery_soc_results = pd.DataFrame(
+        {
+            battery.name: [25.0, 50.0, 50.0],
+        },
+        index=index,
+    )
+    expected_generator_results.columns.name = "generators"
+    expected_battery_soc_results.columns.name = "batteries"
+
     energy_system = EnergySystem(
         portfolio=portfolio,
         demand_profile=demand_profile,
@@ -160,13 +188,8 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
         power_unit="MW",
     )
     result = energy_system.optimize()
-    results_df = result.to_dataframe("basic")
-    expected_results = pd.DataFrame(
-        {
-            battery.name: [25.0, 50.0, 50.0],
-            generator.name: [100.0, 100.0, 100.0],
-        },
-        index=pd.Index((0, 1, 2), name="time"),
-    )
-    expected_results.columns.name = "unit"
-    pd.testing.assert_frame_equal(results_df, expected_results)
+    generator_power = result.generators.power
+    battery_soc = result.batteries.state_of_charge
+
+    pd.testing.assert_frame_equal(generator_power, expected_generator_results)
+    pd.testing.assert_frame_equal(battery_soc, expected_battery_soc_results)
