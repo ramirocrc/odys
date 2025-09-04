@@ -4,7 +4,7 @@ import linopy
 import xarray as xr
 
 from optimes._math_model.model_components.constraints.base_constraint import SystemConstraint
-from optimes._math_model.model_components.constraints.constraint_names import EnergyModelConstraintName
+from optimes._math_model.model_components.constraints.constraint_names import ModelConstraintName
 
 
 class GenerationLimitConstraint(SystemConstraint):
@@ -14,7 +14,7 @@ class GenerationLimitConstraint(SystemConstraint):
     exceed its nominal power capacity.
     """
 
-    _name: ClassVar = EnergyModelConstraintName.GENERATOR_LIMIT
+    _name: ClassVar = ModelConstraintName.GENERATOR_LIMIT
     var_generator_power: linopy.Variable
     param_generator_nominal_power: xr.DataArray
 

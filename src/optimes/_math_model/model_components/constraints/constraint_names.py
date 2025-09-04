@@ -2,7 +2,7 @@ from enum import Enum, unique
 
 
 @unique
-class EnergyModelConstraintName(str, Enum):
+class ModelConstraintName(str, Enum):
     """Enumeration of constraint names used in the energy model."""
 
     POWER_BALANCE = "power_balance_constraint"

@@ -9,7 +9,7 @@ class EnergyModelDimension(Enum):
     Batteries = "batteries"
 
 
-class EnergyModelSet(BaseModel):
+class ModelSet(BaseModel):
     """Energy Model Set."""
 
     dimension: EnergyModelDimension
@@ -24,6 +24,6 @@ class EnergyModelSet(BaseModel):
 class EnergyModelSets(BaseModel, frozen=True):
     """Energy Model Sets."""
 
-    time: EnergyModelSet
-    generators: EnergyModelSet
-    batteries: EnergyModelSet
+    time: ModelSet
+    generators: ModelSet
+    batteries: ModelSet

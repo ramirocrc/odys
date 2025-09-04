@@ -10,7 +10,7 @@ from typing import ClassVar
 import linopy
 from pydantic import BaseModel
 
-from optimes._math_model.model_components.constraints.constraint_names import EnergyModelConstraintName
+from optimes._math_model.model_components.constraints.constraint_names import ModelConstraintName
 
 
 class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forbid"):
@@ -20,10 +20,10 @@ class SystemConstraint(ABC, BaseModel, arbitrary_types_allowed=True, extra="forb
     model, providing a common structure for constraint implementation.
     """
 
-    _name: ClassVar[EnergyModelConstraintName]
+    _name: ClassVar[ModelConstraintName]
 
     @property
-    def name(self) -> EnergyModelConstraintName:
+    def name(self) -> ModelConstraintName:
         """Get the constraint name.
 
         Returns:
