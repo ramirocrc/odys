@@ -12,21 +12,6 @@ from pydantic import BaseModel
 from optimes._math_model.model_components.sets import EnergyModelDimension, EnergyModelSet
 
 
-@unique
-class EnergyModelVariableName(str, Enum):
-    """Enumeration of variable names used in the energy model."""
-
-    GENERATOR_POWER = "generator_power"
-    BATTERY_SOC = "battery_soc"
-    BATTERY_POWER_NET = "battery_net_power"
-    BATTERY_POWER_IN = "battery_power_in"
-    BATTERY_POWER_OUT = "battery_power_out"
-    BATTERY_CHARGE_MODE = "battery_charge_mode"
-
-    def __str__(self) -> str:
-        return self.value
-
-
 class LinopyVariableParameters(BaseModel, arbitrary_types_allowed=True):
     name: str
     coords: dict
@@ -40,58 +25,75 @@ class VariableLowerBoundType(Enum):
     UNBOUNDED = "unbounded"
 
 
-class SystemVariableMetadata(BaseModel):
-    name: EnergyModelVariableName
-    binary: bool
+class SystemVariableSpec(BaseModel):
+    name: str
+    is_binary: bool
     asset_dimension: EnergyModelDimension
-    bounds: VariableLowerBoundType
+    lower_bound_type: VariableLowerBoundType
 
 
+@unique
 class SystemVariable(Enum):
-    GENERATOR_POWER = SystemVariableMetadata(
-        name=EnergyModelVariableName.GENERATOR_POWER,
-        binary=False,
+    GENERATOR_POWER = SystemVariableSpec(
+        name="generator_power",
+        is_binary=False,
         asset_dimension=EnergyModelDimension.Generators,
-        bounds=VariableLowerBoundType.NON_NEGATIVE,
+        lower_bound_type=VariableLowerBoundType.NON_NEGATIVE,
     )
-    BATTERY_POWER_IN = SystemVariableMetadata(
-        name=EnergyModelVariableName.BATTERY_POWER_IN,
-        binary=False,
+    BATTERY_POWER_IN = SystemVariableSpec(
+        name="battery_power_in",
+        is_binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.NON_NEGATIVE,
+        lower_bound_type=VariableLowerBoundType.NON_NEGATIVE,
     )
-    BATTERY_POWER_NET = SystemVariableMetadata(
-        name=EnergyModelVariableName.BATTERY_POWER_NET,
-        binary=False,
+    BATTERY_POWER_NET = SystemVariableSpec(
+        name="battery_net_power",
+        is_binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.UNBOUNDED,
+        lower_bound_type=VariableLowerBoundType.UNBOUNDED,
     )
-    BATTERY_POWER_OUT = SystemVariableMetadata(
-        name=EnergyModelVariableName.BATTERY_POWER_OUT,
-        binary=False,
+    BATTERY_POWER_OUT = SystemVariableSpec(
+        name="battery_power_out",
+        is_binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.NON_NEGATIVE,
+        lower_bound_type=VariableLowerBoundType.NON_NEGATIVE,
     )
-    BATTERY_SOC = SystemVariableMetadata(
-        name=EnergyModelVariableName.BATTERY_SOC,
-        binary=False,
+    BATTERY_SOC = SystemVariableSpec(
+        name="battery_soc",
+        is_binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.NON_NEGATIVE,
+        lower_bound_type=VariableLowerBoundType.NON_NEGATIVE,
     )
-    BATTERY_CHARGE_MODE = SystemVariableMetadata(
-        name=EnergyModelVariableName.BATTERY_CHARGE_MODE,
-        binary=True,
+    BATTERY_CHARGE_MODE = SystemVariableSpec(
+        name="battery_charge_mode",
+        is_binary=True,
         asset_dimension=EnergyModelDimension.Batteries,
-        bounds=VariableLowerBoundType.UNBOUNDED,
+        lower_bound_type=VariableLowerBoundType.UNBOUNDED,
     )
+
+    @property
+    def var_name(self) -> str:
+        return self.value.name
+
+    @property
+    def asset_dimension(self) -> EnergyModelDimension:
+        return self.value.asset_dimension
+
+    @property
+    def lower_bound_type(self) -> VariableLowerBoundType:
+        return self.value.lower_bound_type
+
+    @property
+    def is_binary(self) -> bool:
+        return self.value.is_binary
 
     @classmethod
     def generator_variables(cls) -> list["SystemVariable"]:
-        return [var for var in SystemVariable if var.value.asset_dimension == EnergyModelDimension.Generators]
+        return [var for var in SystemVariable if var.asset_dimension == EnergyModelDimension.Generators]
 
     @classmethod
     def battery_variables(cls) -> list["SystemVariable"]:
-        return [var for var in SystemVariable if var.value.asset_dimension == EnergyModelDimension.Batteries]
+        return [var for var in SystemVariable if var.asset_dimension == EnergyModelDimension.Batteries]
 
     @classmethod
     def variables_to_report(cls) -> list["SystemVariable"]:
@@ -123,38 +125,46 @@ def get_linopy_variable_parameters(
         msg = f"time_set should have time dimension, got {time_set.dimension}"
         raise ValueError(msg)
 
-    if asset_set.dimension != variable.value.asset_dimension:
-        msg = f"asset_set should have dimension {variable.value.asset_dimension}, got {asset_set.dimension}"
+    if asset_set.dimension != variable.asset_dimension:
+        msg = f"asset_set should have dimension {variable.asset_dimension}, got {asset_set.dimension}"
         raise ValueError(msg)
 
     return LinopyVariableParameters(
-        name=variable.value.name,
+        name=variable.var_name,
         coords=time_set.coordinates | asset_set.coordinates,
         dims=[time_set.dimension.value, asset_set.dimension.value],
-        lower=_get_variable_lower_bound(variable.value, time_set, asset_set),
-        binary=variable.value.binary,
+        lower=_get_variable_lower_bound(
+            time_set=time_set,
+            asset_set=asset_set,
+            lower_bound_type=variable.lower_bound_type,
+            is_binary=variable.is_binary,
+        ),
+        binary=variable.is_binary,
     )
 
 
 def _get_variable_lower_bound(
-    metadata: SystemVariableMetadata,
     time_set: EnergyModelSet,
     asset_set: EnergyModelSet,
+    lower_bound_type: VariableLowerBoundType,
+    *,
+    is_binary: bool,
 ) -> np.ndarray | float:
     """Calculate lower bounds for a variable.
 
     Args:
-        metadata: Variable metadata containing bounds configuration
         time_set: Time dimension set
         asset_set: Asset dimension set
+        lower_bound_type: Type of lower bound
+        is_binary: Whether the variable is binary
 
     Returns:
         Lower bound value or array
     """
-    if metadata.binary:
+    if is_binary:
         return -np.inf  # Required by linopy.add_variable when variable is binary
 
     shape = len(time_set.values), len(asset_set.values)
-    if metadata.bounds == VariableLowerBoundType.UNBOUNDED:
+    if lower_bound_type == VariableLowerBoundType.UNBOUNDED:
         return np.full(shape, -np.inf, dtype=float)
     return np.full(shape, 0, dtype=float)

@@ -76,8 +76,8 @@ class OptimizationResults:
         ds = self._linopy_model.solution
         dfs = []
         for var in SystemVariable.variables_to_report():
-            df = ds[var.value.name].to_dataframe().reset_index()
-            df = df.rename(columns={var.value.asset_dimension.value: "unit", var.value.name: "value"})
+            df = ds[var.var_name].to_dataframe().reset_index()
+            df = df.rename(columns={var.asset_dimension.value: "unit", var.var_name: "value"})
             df = df[["unit", "time", "value"]]
             df["variable"] = var
             dfs.append(df)
