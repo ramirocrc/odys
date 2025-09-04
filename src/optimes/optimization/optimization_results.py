@@ -8,6 +8,8 @@ import pandas as pd
 from linopy import Model
 from linopy.constants import SolverStatus, TerminationCondition
 
+from optimes._math_model.model_components.variables import SystemVariable
+
 
 class OptimizationResults:
     """Container for optimization results and metadata.
@@ -67,7 +69,18 @@ class OptimizationResults:
         if self._solver_status != SolverStatus.ok:
             msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."
             raise ValueError(msg)
+        self._get_results_dataframe()
         return self._get_detailed_dataframe()
+
+    def _get_results_dataframe(self) -> pd.DataFrame:
+        ds = self._linopy_model.solution
+        dfs = []
+        for var in SystemVariable.variables_to_report():
+            df = ds[var.value.name].to_dataframe().reset_index()
+            df = df.rename(columns={var.value.asset_dimension.value: "unit", var.value.name: "value"})
+            df = df[["unit", "time", "value"]]
+            df["variable"] = var
+            dfs.append(df)
 
     def _get_detailed_dataframe(self) -> pd.DataFrame:
         ds = self._linopy_model.solution
