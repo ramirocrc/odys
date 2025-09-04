@@ -93,36 +93,61 @@ class SystemVariable(Enum):
     def battery_variables(cls) -> list["SystemVariable"]:
         return [var for var in SystemVariable if var.value.asset_dimension == EnergyModelDimension.Batteries]
 
-    def get_linopy_variable_parameters(
-        self,
-        time_set: EnergyModelSet,
-        asset_set: EnergyModelSet,
-    ) -> LinopyVariableParameters:
-        if time_set.dimension != EnergyModelDimension.Time:
-            msg = f"time_set should have time dimension, got {time_set.dimension}"
-            raise ValueError(msg)
 
-        if asset_set.dimension != self.value.asset_dimension:
-            msg = f"asset_set should have dimension {self.value.asset_dimension}, got {asset_set.dimension}"
-            raise ValueError(msg)
+def get_linopy_variable_parameters(
+    variable: SystemVariable,
+    time_set: EnergyModelSet,
+    asset_set: EnergyModelSet,
+) -> LinopyVariableParameters:
+    """Create linopy variable parameters for a system variable.
 
-        return LinopyVariableParameters(
-            name=self.value.name,
-            coords=time_set.coordinates | asset_set.coordinates,
-            dims=[time_set.dimension.value, asset_set.dimension.value],
-            lower=self._get_lower_bound(time_set, asset_set),
-            binary=self.value.binary,
-        )
+    Args:
+        variable: The system variable to create parameters for
+        time_set: Time dimension set
+        asset_set: Asset dimension set (generators or batteries)
 
-    def _get_lower_bound(
-        self,
-        time_set: EnergyModelSet,
-        asset_set: EnergyModelSet,
-    ) -> np.ndarray | float:
-        if self.value.binary:
-            return -np.inf  # Required by linopy.add_variable when variable is binary
+    Returns:
+        LinopyVariableParameters for the variable
 
-        shape = len(time_set.values), len(asset_set.values)
-        if self.value.bounds == VariableLowerBoundType.UNBOUNDED:
-            return np.full(shape, -np.inf, dtype=float)
-        return np.full(shape, 0, dtype=float)
+    Raises:
+        ValueError: If dimension constraints are not met
+    """
+    if time_set.dimension != EnergyModelDimension.Time:
+        msg = f"time_set should have time dimension, got {time_set.dimension}"
+        raise ValueError(msg)
+
+    if asset_set.dimension != variable.value.asset_dimension:
+        msg = f"asset_set should have dimension {variable.value.asset_dimension}, got {asset_set.dimension}"
+        raise ValueError(msg)
+
+    return LinopyVariableParameters(
+        name=variable.value.name,
+        coords=time_set.coordinates | asset_set.coordinates,
+        dims=[time_set.dimension.value, asset_set.dimension.value],
+        lower=_get_variable_lower_bound(variable.value, time_set, asset_set),
+        binary=variable.value.binary,
+    )
+
+
+def _get_variable_lower_bound(
+    metadata: SystemVariableMetadata,
+    time_set: EnergyModelSet,
+    asset_set: EnergyModelSet,
+) -> np.ndarray | float:
+    """Calculate lower bounds for a variable.
+
+    Args:
+        metadata: Variable metadata containing bounds configuration
+        time_set: Time dimension set
+        asset_set: Asset dimension set
+
+    Returns:
+        Lower bound value or array
+    """
+    if metadata.binary:
+        return -np.inf  # Required by linopy.add_variable when variable is binary
+
+    shape = len(time_set.values), len(asset_set.values)
+    if metadata.bounds == VariableLowerBoundType.UNBOUNDED:
+        return np.full(shape, -np.inf, dtype=float)
+    return np.full(shape, 0, dtype=float)
