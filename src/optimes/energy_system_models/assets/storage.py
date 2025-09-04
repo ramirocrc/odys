@@ -82,7 +82,7 @@ class Battery(EnergyAsset, frozen=True):
         Field(
             strict=True,
             ge=0,
-            description="Maximum state of charge shouldbe greater than 0",
+            description="Maximum state of charge should be greater than 0",
         ),
     ] = None
     degradation_cost: Annotated[

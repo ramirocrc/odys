@@ -28,10 +28,26 @@ logger = get_logger(__name__)
 
 
 class EnergyAlgebraicModelBuilder:
+    """Builder class for constructing algebraic energy system optimization models.
+
+    This class takes a validated energy system configuration and builds
+    a complete linopy optimization model including variables, constraints,
+    and objectives ready for solving.
+
+    The builder ensures the model is constructed only once and prevents
+    multiple builds of the same instance.
+    """
+
     def __init__(
         self,
         validated_energy_system: ValidatedEnergySystem,
     ) -> None:
+        """Initialize the model builder with validated energy system.
+
+        Args:
+            validated_energy_system: The validated energy system configuration
+                containing all assets, demand profiles, and constraints.
+        """
         self._energy_system = validated_energy_system
         self._linopy_model = Model(force_dim_names=True)
         self._model_is_built: bool = False
@@ -94,7 +110,7 @@ class EnergyAlgebraicModelBuilder:
     def _add_power_generator_constraints(self) -> None:
         linopy_generation_limit_constraint = GenerationLimitConstraint(
             var_generator_power=self._linopy_model.variables[ModelVariable.GENERATOR_POWER.var_name],
-            param_generator_nominal_power=self._energy_system.parameters.generators_nomianl_power,
+            param_generator_nominal_power=self._energy_system.parameters.generators_nominal_power,
         )
         self._linopy_model.add_constraints(
             linopy_generation_limit_constraint.constraint,
