@@ -19,9 +19,9 @@ classifiers = [
 dependencies = [
     "highspy>=1.11.0",
     "linopy>=0.5.5",
+    "numpy>=1.26.4",
     "pandas>=2.3.1",
     "pydantic>=2.11.7",
-    "pyscipopt>=5.6.0",
     "rich>=14.0.0",
     "xarray>=2025.6.1",
 ]
@@ -58,6 +58,7 @@ module-name = "optimes"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 
 [tool.ruff]
@@ -80,6 +81,7 @@ ignore = [
     "INP001",# Checks for packages that are missing an __init__.py
     "S101", # Use of 'assert' detected
     "D", # Check for missing docstrings
+    "F811", # Redefinition of unsuded variables
 ]
 "experiments/**" = [
     "INP001",# Checks for packages that are missing an __init__.py
