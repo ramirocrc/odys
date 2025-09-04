@@ -1,34 +1,27 @@
-from typing import ClassVar
-
 import linopy
 import xarray as xr
 
-from optimes._math_model.model_components.constraints.base_constraint import SystemConstraint
-from optimes._math_model.model_components.constraints.constraint_names import ModelConstraintName
+from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
+from optimes._math_model.model_components.sets import EnergyModelDimension
 
 
-class PowerBalanceConstraint(SystemConstraint):
+def get_power_balance_constraint(
+    var_generator_power: linopy.Variable,
+    var_battery_discharge: linopy.Variable,
+    var_battery_charge: linopy.Variable,
+    param_demand_profile: xr.DataArray,
+) -> ModelConstraint:
     """Linopy power balance constraint ensuring supply equals demand.
 
     This constraint ensures that at each time period, the total power
     generation plus battery discharge equals the demand plus battery charging.
     """
+    generation_total = var_generator_power.sum(EnergyModelDimension.Generators.value)
+    discharge_total = var_battery_discharge.sum(EnergyModelDimension.Batteries.value)
+    charge_total = var_battery_charge.sum(EnergyModelDimension.Batteries.value)
 
-    _name: ClassVar = ModelConstraintName.POWER_BALANCE
-    var_generator_power: linopy.Variable
-    var_battery_discharge: linopy.Variable
-    var_battery_charge: linopy.Variable
-    demand_profile: xr.DataArray
-
-    @property
-    def constraint(self) -> linopy.Constraint:
-        """Get the power balance constraint expression.
-
-        Returns:
-            Linopy expression that equals zero when satisfied.
-        """
-        generation_total = self.var_generator_power.sum("generators")
-        discharge_total = self.var_battery_discharge.sum("batteries")
-        charge_total = self.var_battery_charge.sum("batteries")
-
-        return generation_total + discharge_total - charge_total - self.demand_profile == 0
+    expression = generation_total + discharge_total - charge_total - param_demand_profile == 0
+    return ModelConstraint(
+        name="power_balance_constraint",
+        constraint=expression,
+    )

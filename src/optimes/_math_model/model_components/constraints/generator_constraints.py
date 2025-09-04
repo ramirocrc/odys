@@ -1,23 +1,20 @@
-from typing import ClassVar
-
 import linopy
 import xarray as xr
 
-from optimes._math_model.model_components.constraints.base_constraint import SystemConstraint
-from optimes._math_model.model_components.constraints.constraint_names import ModelConstraintName
+from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
 
 
-class GenerationLimitConstraint(SystemConstraint):
+def get_generation_limit_constriant(
+    var_generator_power: linopy.Variable,
+    param_generator_nominal_power: xr.DataArray,
+) -> ModelConstraint:
     """Generator power limit constraint.
 
     This constraint ensures that each generator's power output does not
     exceed its nominal power capacity.
     """
-
-    _name: ClassVar = ModelConstraintName.GENERATOR_LIMIT
-    var_generator_power: linopy.Variable
-    param_generator_nominal_power: xr.DataArray
-
-    @property
-    def constraint(self) -> linopy.Constraint:
-        return self.var_generator_power <= self.param_generator_nominal_power
+    constraint = var_generator_power <= param_generator_nominal_power
+    return ModelConstraint(
+        constraint=constraint,
+        name="generator_max_power_constraint",
+    )
