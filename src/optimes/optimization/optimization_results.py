@@ -8,7 +8,7 @@ import pandas as pd
 from linopy import Model
 from linopy.constants import SolverStatus, TerminationCondition
 
-from optimes._math_model.model_components.variables import SystemVariable
+from optimes._math_model.model_components.variables import ModelVariable
 
 
 class OptimizationResults:
@@ -75,7 +75,7 @@ class OptimizationResults:
     def _get_results_dataframe(self) -> pd.DataFrame:
         ds = self._linopy_model.solution
         dfs = []
-        for var in SystemVariable.variables_to_report():
+        for var in ModelVariable.variables_to_report():
             df = ds[var.var_name].to_dataframe().reset_index()
             df = df.rename(columns={var.asset_dimension.value: "unit", var.var_name: "value"})
             df = df[["unit", "time", "value"]]

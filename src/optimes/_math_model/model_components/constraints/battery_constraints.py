@@ -4,11 +4,11 @@ import linopy
 import xarray as xr
 
 from optimes._math_model.model_components.constraints.base_constraint import SystemConstraint
-from optimes._math_model.model_components.constraints.constraint_names import EnergyModelConstraintName
+from optimes._math_model.model_components.constraints.constraint_names import ModelConstraintName
 
 
 class BatteryChargeModeConstraint(SystemConstraint):
-    _name: ClassVar = EnergyModelConstraintName.BATTERY_CHARGE_LIMIT
+    _name: ClassVar = ModelConstraintName.BATTERY_CHARGE_LIMIT
     var_battery_charge: linopy.Variable
     var_battery_charge_mode: linopy.Variable
     param_battery_max_power: xr.DataArray
@@ -20,7 +20,7 @@ class BatteryChargeModeConstraint(SystemConstraint):
 
 
 class BatteryDischargeModeConstraint(SystemConstraint):
-    _name: ClassVar = EnergyModelConstraintName.BATTERY_DISCHARGE_LIMIT
+    _name: ClassVar = ModelConstraintName.BATTERY_DISCHARGE_LIMIT
     var_battery_discharge: linopy.Variable
     var_battery_charge_mode: linopy.Variable
     param_battery_max_power: xr.DataArray
@@ -42,7 +42,7 @@ class BatterySocDynamicsConstraint(SystemConstraint):
     Handles both initial conditions and time evolution in a unified manner.
     """
 
-    _name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_DYNAMICS
+    _name: ClassVar = ModelConstraintName.BATTERY_SOC_DYNAMICS
     var_battery_soc: linopy.Variable
     var_battery_charge: linopy.Variable
     var_battery_discharge: linopy.Variable
@@ -70,7 +70,7 @@ class BatterySocStartConstraint(SystemConstraint):
     Handles both initial conditions and time evolution in a unified manner.
     """
 
-    _name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_START
+    _name: ClassVar = ModelConstraintName.BATTERY_SOC_START
     var_battery_soc: linopy.Variable
     var_battery_charge: linopy.Variable
     var_battery_discharge: linopy.Variable
@@ -104,7 +104,7 @@ class BatterySocEndConstraint(SystemConstraint):
     accounting for charging and discharging with efficiency losses.
     """
 
-    _name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_END
+    _name: ClassVar = ModelConstraintName.BATTERY_SOC_END
     var_battery_soc: linopy.Variable
     param_battery_soc_end: xr.DataArray
 
@@ -123,7 +123,7 @@ class BatterySocBoundsConstraint(SystemConstraint):
     terminal state of charge at the end of the optimization period.
     """
 
-    _name: ClassVar = EnergyModelConstraintName.BATTERY_SOC_BOUNDS
+    _name: ClassVar = ModelConstraintName.BATTERY_SOC_BOUNDS
     var_battery_soc: linopy.Variable
     param_battery_capacity: xr.DataArray
 
@@ -133,7 +133,7 @@ class BatterySocBoundsConstraint(SystemConstraint):
 
 
 class BatteryNetPowerConstraint(SystemConstraint):
-    _name: ClassVar = EnergyModelConstraintName.BATTERY_NET_POWER
+    _name: ClassVar = ModelConstraintName.BATTERY_NET_POWER
     var_battery_net_power: linopy.Variable
     var_battery_charge: linopy.Variable
     var_battery_discharge: linopy.Variable

@@ -4,7 +4,7 @@ import linopy
 import xarray as xr
 
 from optimes._math_model.model_components.constraints.base_constraint import SystemConstraint
-from optimes._math_model.model_components.constraints.constraint_names import EnergyModelConstraintName
+from optimes._math_model.model_components.constraints.constraint_names import ModelConstraintName
 
 
 class PowerBalanceConstraint(SystemConstraint):
@@ -14,7 +14,7 @@ class PowerBalanceConstraint(SystemConstraint):
     generation plus battery discharge equals the demand plus battery charging.
     """
 
-    _name: ClassVar = EnergyModelConstraintName.POWER_BALANCE
+    _name: ClassVar = ModelConstraintName.POWER_BALANCE
     var_generator_power: linopy.Variable
     var_battery_discharge: linopy.Variable
     var_battery_charge: linopy.Variable
