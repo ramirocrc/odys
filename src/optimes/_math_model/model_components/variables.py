@@ -93,6 +93,13 @@ class SystemVariable(Enum):
     def battery_variables(cls) -> list["SystemVariable"]:
         return [var for var in SystemVariable if var.value.asset_dimension == EnergyModelDimension.Batteries]
 
+    @classmethod
+    def variables_to_report(cls) -> list["SystemVariable"]:
+        return [
+            cls.GENERATOR_POWER,
+            cls.BATTERY_POWER_NET,
+        ]
+
 
 def get_linopy_variable_parameters(
     variable: SystemVariable,
