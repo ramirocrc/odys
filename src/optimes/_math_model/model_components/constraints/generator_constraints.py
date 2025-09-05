@@ -4,7 +4,7 @@ import xarray as xr
 from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
 
 
-def get_generation_limit_constriant(
+def get_generator_max_power_constraint(
     var_generator_power: linopy.Variable,
     param_generator_nominal_power: xr.DataArray,
 ) -> ModelConstraint:

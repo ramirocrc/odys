@@ -118,14 +118,14 @@ def get_battery_soc_max_constriant(
     )
 
 
-def get_battery_soc_bounds_constraint(
+def get_battery_capacity_constraint(
     var_battery_soc: linopy.Variable,
     param_battery_capacity: xr.DataArray,
 ) -> ModelConstraint:
     constraint = var_battery_soc <= param_battery_capacity  # pyright: ignore reportOperatorIssue
     return ModelConstraint(
         constraint=constraint,
-        name="battery_soc_bounds_constraint",
+        name="battery_capacity_constraint",
     )
 
 

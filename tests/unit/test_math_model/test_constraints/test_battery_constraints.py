@@ -145,11 +145,11 @@ def test_constraint_battery_soc_dynamics(
         assert_conequal(expected_expr, actual_t.lhs == actual_t.rhs)
 
 
-def test_constraint_battery_soc_bounds(
+def test_constraint_battery_capacity(
     linopy_model: linopy.Model,
     battery1: Battery,
 ) -> None:
-    actual_constraint = linopy_model.constraints["battery_soc_bounds_constraint"]
+    actual_constraint = linopy_model.constraints["battery_capacity_constraint"]
 
     battery_soc = linopy_model.variables["battery_soc"]
     expected_expr = battery_soc <= battery1.capacity
