@@ -9,7 +9,6 @@ from linopy.testing import assert_conequal
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.assets.storage import Battery
 from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
@@ -35,28 +34,13 @@ def generator2() -> PowerGenerator:
 
 
 @pytest.fixture
-def battery1() -> Battery:
-    return Battery(
-        name="batt1",
-        max_power=200.0,
-        capacity=100.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.8,
-        soc_start=25.0,
-        soc_end=50.0,
-    )
-
-
-@pytest.fixture
 def asset_portfolio_sample(
     generator1: PowerGenerator,
     generator2: PowerGenerator,
-    battery1: Battery,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator1)
     portfolio.add_asset(generator2)
-    portfolio.add_asset(battery1)
     return portfolio
 
 
