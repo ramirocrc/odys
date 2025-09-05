@@ -71,7 +71,7 @@ def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> 
     assert "battery_max_charge_constraint" in linopy_model.constraints
     assert "battery_max_discharge_constraint" in linopy_model.constraints
     assert "battery_soc_dynamics_constraint" in linopy_model.constraints
-    assert "battery_soc_bounds_constraint" in linopy_model.constraints
+    assert "battery_capacity_constraint" in linopy_model.constraints
     assert "battery_soc_end_constraint" in linopy_model.constraints
     assert "battery_soc_start_constraint" in linopy_model.constraints
 
