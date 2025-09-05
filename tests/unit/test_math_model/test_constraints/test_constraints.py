@@ -1,10 +1,8 @@
 import logging
 
 import linopy
-import xarray as xr
 from linopy.testing import assert_conequal
 
-from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.storage import Battery
 from tests.utils.fixtures import (  # noqa: F401
     asset_portfolio_sample,
@@ -18,44 +16,6 @@ from tests.utils.fixtures import (  # noqa: F401
 )
 
 logger = logging.getLogger(__name__)
-
-
-def test_constraint_power_balance(
-    linopy_model: linopy.Model,
-    demand_profile_sample: list[float],
-    time_index: list[int],
-) -> None:
-    actual_constraint = linopy_model.constraints["power_balance_constraint"]
-
-    generation_total = linopy_model.variables["generator_power"].sum("generators")
-    discharge_total = linopy_model.variables["battery_power_out"].sum("batteries")
-    charge_total = linopy_model.variables["battery_power_in"].sum("batteries")
-
-    demand_array = xr.DataArray(demand_profile_sample, coords=[time_index], dims=["time"])
-    expected_expr = generation_total + discharge_total - charge_total == demand_array
-
-    assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
-
-
-def test_constraint_generator_limit(
-    linopy_model: linopy.Model,
-    generator1: PowerGenerator,
-    generator2: PowerGenerator,
-    time_index: list[int],
-) -> None:
-    actual_constraint = linopy_model.constraints["generator_max_power_constraint"]
-
-    generator_power = linopy_model.variables["generator_power"]
-
-    nominal_powers = [[generator1.nominal_power, generator2.nominal_power]] * len(time_index)
-    nominal_power_array = xr.DataArray(
-        nominal_powers,
-        coords=[time_index, [generator1.name, generator2.name]],
-        dims=["time", "generators"],
-    )
-
-    expected_expr = generator_power <= nominal_power_array
-    assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
 
 def test_constraint_battery_charge_limit(

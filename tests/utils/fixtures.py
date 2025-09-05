@@ -11,7 +11,7 @@ from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def generator1() -> PowerGenerator:
     return PowerGenerator(
         name="gen1",
@@ -20,7 +20,7 @@ def generator1() -> PowerGenerator:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def generator2() -> PowerGenerator:
     return PowerGenerator(
         name="gen2",
@@ -29,7 +29,7 @@ def generator2() -> PowerGenerator:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def battery1() -> Battery:
     return Battery(
         name="batt1",
@@ -42,7 +42,7 @@ def battery1() -> Battery:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def asset_portfolio_sample(
     generator1: PowerGenerator,
     generator2: PowerGenerator,
@@ -55,17 +55,17 @@ def asset_portfolio_sample(
     return portfolio
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def demand_profile_sample() -> list[float]:
     return [150, 200, 150]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def time_index(demand_profile_sample: list[float]) -> list[int]:
     return list(range(len(demand_profile_sample)))
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def energy_system_sample(
     asset_portfolio_sample: AssetPortfolio,
     demand_profile_sample: list[float],
@@ -78,12 +78,7 @@ def energy_system_sample(
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_sample)
     return model_builder.build()
-
-
-@pytest.fixture(params=["generator1", "generator2"])
-def generator(request) -> PowerGenerator:  # noqa: ANN001
-    return request.getfixturevalue(request.param)
