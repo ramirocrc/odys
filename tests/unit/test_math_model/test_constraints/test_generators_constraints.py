@@ -77,17 +77,15 @@ def test_constraint_generator_limit(
     linopy_model: linopy.Model,
     generator1: PowerGenerator,
     generator2: PowerGenerator,
-    time_index: list[int],
 ) -> None:
     actual_constraint = linopy_model.constraints["generator_max_power_constraint"]
 
     generator_power = linopy_model.variables["generator_power"]
 
-    nominal_powers = [[generator1.nominal_power, generator2.nominal_power]] * len(time_index)
+    nominal_powers = [generator1.nominal_power, generator2.nominal_power]
     nominal_power_array = xr.DataArray(
         nominal_powers,
-        coords=[time_index, [generator1.name, generator2.name]],
-        dims=["time", "generators"],
+        coords={"generators": [generator1.name, generator2.name]},
     )
 
     expected_expr = generator_power <= nominal_power_array

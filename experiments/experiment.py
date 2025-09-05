@@ -34,6 +34,7 @@ if __name__ == "__main__":
         efficiency_discharging=0.8,
         soc_start=100.0,
         soc_end=50.0,
+        soc_min=10.0,
     )
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_1)
@@ -42,7 +43,7 @@ if __name__ == "__main__":
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=[150, 75, 100, 50, 125],
+        demand_profile=[300, 75, 300, 50, 125],
         timestep=timedelta(minutes=30),
         power_unit="MW",
     )

@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import linopy
 import pytest
+import xarray as xr
 from linopy.testing import assert_conequal
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
@@ -43,6 +44,8 @@ def battery1() -> Battery:
         efficiency_discharging=0.8,
         soc_start=25.0,
         soc_end=50.0,
+        soc_min=10.0,
+        soc_max=90.0,
     )
 
 
@@ -154,7 +157,7 @@ def test_constraint_battery_soc_bounds(
     assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
 
-def test_constraint_battery_soc_terminal(
+def test_constraint_battery_soc_end(
     linopy_model: linopy.Model,
     battery1: Battery,
     time_index: list[int],
@@ -162,7 +165,72 @@ def test_constraint_battery_soc_terminal(
     actual_constraint = linopy_model.constraints["battery_soc_end_constraint"]
 
     battery_soc = linopy_model.variables["battery_soc"]
-    final_soc = battery_soc.sel(time=str(time_index[-1]))
-    expected_expr = final_soc == battery1.soc_end
+    soc_end = battery_soc.sel(time=str(time_index[-1]))
+    expected_expr = soc_end == battery1.soc_end
 
     assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
+
+
+def test_constraint_battery_soc_start(
+    linopy_model: linopy.Model,
+    battery1: Battery,
+    time_index: list[int],
+) -> None:
+    actual_constraint = linopy_model.constraints["battery_soc_start_constraint"]
+
+    battery_soc = linopy_model.variables["battery_soc"]
+    battery_charge = linopy_model.variables["battery_power_in"]
+    battery_discharge = linopy_model.variables["battery_power_out"]
+
+    eff_ch = battery1.efficiency_charging
+    eff_disch = battery1.efficiency_discharging
+
+    t0 = time_index[0]
+    bat_soc_t0 = battery_soc.sel(time=str(t0), batteries="batt1")
+
+    battery_soc_start = [battery1.soc_start]
+    battery_soc_start_array = xr.DataArray(
+        battery_soc_start,
+        coords={"batteries": [battery1.name]},
+        dims=["batteries"],
+    )
+    battery_charge_t = battery_charge.sel(time=str(t0), batteries="batt1")
+    battery_discharge_t = battery_discharge.sel(time=str(t0), batteries="batt1")
+    expected_expr = (
+        bat_soc_t0 - battery_soc_start_array - eff_ch * battery_charge_t + 1 / eff_disch * battery_discharge_t == 0
+    )
+
+    assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
+
+
+def test_constraint_battery_soc_min(
+    linopy_model: linopy.Model,
+    battery1: Battery,
+) -> None:
+    actual_constraint = linopy_model.constraints["batter_soc_min_constraint"]
+
+    battery_soc = linopy_model.variables["battery_soc"]
+    battery_soc_min_array = xr.DataArray(
+        [battery1.soc_min],
+        coords={"batteries": [battery1.name]},
+        dims=["batteries"],
+    )
+    expected_expr = battery_soc >= battery_soc_min_array
+
+    assert_conequal(expected_expr, actual_constraint.lhs >= actual_constraint.rhs)
+
+
+def test_constraint_battery_soc_max(
+    linopy_model: linopy.Model,
+    battery1: Battery,
+) -> None:
+    actual_constraint = linopy_model.constraints["batter_soc_max_constraint"]
+
+    battery_soc = linopy_model.variables["battery_soc"]
+    battery_soc_max_array = xr.DataArray(
+        [battery1.soc_max],
+        coords={"batteries": [battery1.name]},
+    )
+    expected_expr = battery_soc <= battery_soc_max_array
+
+    assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)

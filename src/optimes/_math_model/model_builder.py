@@ -7,6 +7,8 @@ from optimes._math_model.model_components.constraints.battery_constraints import
     get_battery_soc_bounds_constraint,
     get_battery_soc_dynamics_constraint,
     get_battery_soc_end_constraint,
+    get_battery_soc_max_constriant,
+    get_battery_soc_min_constriant,
     get_battery_soc_start_constraint,
 )
 from optimes._math_model.model_components.constraints.generator_constraints import (
@@ -156,20 +158,11 @@ class EnergyAlgebraicModelBuilder:
             var_battery_discharge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_OUT.var_name],
             param_battery_efficiency_charging=self._energy_system.parameters.batteries_efficiency_charging,
             param_battery_efficiency_discharging=self._energy_system.parameters.batteries_efficiency_discharging,
-            param_battery_soc_initial=self._energy_system.parameters.batteries_soc_start,
+            param_battery_soc_start=self._energy_system.parameters.batteries_soc_start,
         )
         self._linopy_model.add_constraints(
             linopy_soc_start_constraint.constraint,
             name=linopy_soc_start_constraint.name,
-        )
-
-        linopy_soc_bounds_constriant = get_battery_soc_bounds_constraint(
-            var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
-            param_battery_capacity=self._energy_system.parameters.batteries_capacity,
-        )
-        self._linopy_model.add_constraints(
-            linopy_soc_bounds_constriant.constraint,
-            name=linopy_soc_bounds_constriant.name,
         )
 
         linopy_soc_end_dynamics_constraints = get_battery_soc_end_constraint(
@@ -180,6 +173,32 @@ class EnergyAlgebraicModelBuilder:
             linopy_soc_end_dynamics_constraints.constraint,
             name=linopy_soc_end_dynamics_constraints.name,
         )
+        linopy_soc_min_dynamics_constraints = get_battery_soc_min_constriant(
+            var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
+            param_battery_soc_min=self._energy_system.parameters.batteries_soc_min,
+        )
+        self._linopy_model.add_constraints(
+            linopy_soc_min_dynamics_constraints.constraint,
+            name=linopy_soc_min_dynamics_constraints.name,
+        )
+
+        linopy_soc_max_dynamics_constraints = get_battery_soc_max_constriant(
+            var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
+            param_battery_soc_max=self._energy_system.parameters.batteries_soc_max,
+        )
+        self._linopy_model.add_constraints(
+            linopy_soc_max_dynamics_constraints.constraint,
+            name=linopy_soc_max_dynamics_constraints.name,
+        )
+        linopy_soc_bounds_constriant = get_battery_soc_bounds_constraint(
+            var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
+            param_battery_capacity=self._energy_system.parameters.batteries_capacity,
+        )
+        self._linopy_model.add_constraints(
+            linopy_soc_bounds_constriant.constraint,
+            name=linopy_soc_bounds_constriant.name,
+        )
+
         linopy_net_power_constraints = get_battery_net_power_constraint(
             var_battery_net_power=self._linopy_model.variables[ModelVariable.BATTERY_POWER_NET.var_name],
             var_battery_charge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_IN.var_name],

@@ -61,7 +61,7 @@ def get_battery_soc_start_constraint(  # noqa: PLR0913
     var_battery_discharge: linopy.Variable,
     param_battery_efficiency_charging: xr.DataArray,
     param_battery_efficiency_discharging: xr.DataArray,
-    param_battery_soc_initial: xr.DataArray,
+    param_battery_soc_start: xr.DataArray,
 ) -> ModelConstraint:
     t0 = var_battery_soc.coords[EnergyModelDimension.Time.value][0]
 
@@ -71,7 +71,7 @@ def get_battery_soc_start_constraint(  # noqa: PLR0913
 
     constraint_expr = (
         soc_t0
-        - param_battery_soc_initial
+        - param_battery_soc_start
         - param_battery_efficiency_charging * charge_t0
         + 1 / param_battery_efficiency_discharging * discharge_t0
     )
@@ -93,6 +93,28 @@ def get_battery_soc_end_constraint(
     return ModelConstraint(
         constraint=constraint,
         name="battery_soc_end_constraint",
+    )
+
+
+def get_battery_soc_min_constriant(
+    var_battery_soc: linopy.Variable,
+    param_battery_soc_min: xr.DataArray,
+) -> ModelConstraint:
+    expression = var_battery_soc >= param_battery_soc_min
+    return ModelConstraint(
+        constraint=expression,
+        name="batter_soc_min_constraint",
+    )
+
+
+def get_battery_soc_max_constriant(
+    var_battery_soc: linopy.Variable,
+    param_battery_soc_max: xr.DataArray,
+) -> ModelConstraint:
+    expression = var_battery_soc <= param_battery_soc_max
+    return ModelConstraint(
+        constraint=expression,
+        name="batter_soc_max_constraint",
     )
 
 
