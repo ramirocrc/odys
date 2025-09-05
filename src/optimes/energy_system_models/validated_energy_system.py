@@ -76,8 +76,10 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             batteries_max_power=self._batteries_max_power,
             batteries_efficiency_charging=self._batteries_efficiency_charging,
             batteries_efficiency_discharging=self._batteries_efficiency_discharging,
-            batteries_soc_start=self._batteries_soc_initial,
-            batteries_soc_end=self._batteries_soc_terminal,
+            batteries_soc_start=self._batteries_soc_start,
+            batteries_soc_end=self._batteries_soc_end,
+            batteries_soc_min=self._batteries_soc_min,
+            batteries_soc_max=self._batteries_soc_max,
             demand_profile=self._demand_profile,
         )
 
@@ -227,16 +229,34 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         )
 
     @property
-    def _batteries_soc_initial(self) -> xr.DataArray:
+    def _batteries_soc_start(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.soc_start for battery in self.portfolio.batteries],
             coords=self.sets.batteries.coordinates,
         )
 
     @property
-    def _batteries_soc_terminal(self) -> xr.DataArray:
+    def _batteries_soc_end(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.soc_end for battery in self.portfolio.batteries],
+            coords=self.sets.batteries.coordinates,
+        )
+
+    @property
+    def _batteries_soc_min(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[battery.soc_min for battery in self.portfolio.batteries],
+            coords=self.sets.batteries.coordinates,
+        )
+
+    @property
+    def _batteries_soc_max(self) -> xr.DataArray:
+        batteries_soc_max = []
+        for battery in self.portfolio.batteries:
+            battery_soc_max = battery.soc_max if battery.soc_max else battery.capacity
+            batteries_soc_max.append(battery_soc_max)
+        return xr.DataArray(
+            data=batteries_soc_max,
             coords=self.sets.batteries.coordinates,
         )
 
