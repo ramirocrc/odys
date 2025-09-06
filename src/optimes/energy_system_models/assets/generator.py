@@ -4,7 +4,6 @@ This module provides the PowerGenerator class for modeling electrical generators
 in energy system optimization problems.
 """
 
-from datetime import timedelta
 from typing import Annotated
 
 from pydantic import Field
@@ -56,20 +55,20 @@ class PowerGenerator(EnergyAsset, frozen=True):
     ] = None
 
     min_up_time: Annotated[
-        timedelta | None,
+        int,
         Field(
-            ge=timedelta(0),
+            ge=1,
             description="Minimum up time",
         ),
-    ] = None
+    ] = 1
 
     min_down_time: Annotated[
-        timedelta | None,
+        int,
         Field(
-            ge=timedelta(0),
+            ge=1,
             description="Minimum down time",
         ),
-    ] = None
+    ] = 1
 
     startup_cost: Annotated[
         float | None,

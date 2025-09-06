@@ -20,11 +20,13 @@ if __name__ == "__main__":
         name="gen1",
         nominal_power=100.0,
         variable_cost=20.0,
+        min_up_time=1,
     )
     generator_2 = PowerGenerator(
         name="gen2",
         nominal_power=150.0,
         variable_cost=25.0,
+        min_up_time=4,
     )
     battery_1 = Battery(
         name="battery1",
@@ -58,3 +60,5 @@ if __name__ == "__main__":
     logger.info(result.generators.status)
     logger.info("generators startup")
     logger.info(result.generators.startup)
+    logger.info("generators shutdown")
+    logger.info(result.generators.shutdown)
