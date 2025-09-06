@@ -9,7 +9,7 @@ from optimes._math_model.model_components.constraints.generator_constraints impo
     GeneratorConstraints,
 )
 from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
-from optimes._math_model.model_components.constraints.power_balance_constraints import (
+from optimes._math_model.model_components.constraints.scenario_constraints import (
     ScenarioConstraints,
 )
 from optimes._math_model.model_components.linopy_converter import (

@@ -69,24 +69,27 @@ def energy_system_sample(
 
 @pytest.fixture
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample)
+    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
     return model_builder.build()
 
 
-def test_constraint_generator_limit(
-    linopy_model: linopy.Model,
-    generator1: PowerGenerator,
-    generator2: PowerGenerator,
-) -> None:
-    actual_constraint = linopy_model.constraints["generator_max_power_constraint"]
+class TestGeneratorConstraints:
+    @pytest.fixture(autouse=True)
+    def setup(self, linopy_model: linopy.Model, generator1: PowerGenerator, generator2: PowerGenerator) -> None:
+        self.linopy_model = linopy_model
+        self.generator1 = generator1
+        self.generator2 = generator2
 
-    generator_power = linopy_model.variables["generator_power"]
+    def test_constraint_generator_limit(self) -> None:
+        actual_constraint = self.linopy_model.constraints["generator_max_power_constraint"]
 
-    nominal_powers = [generator1.nominal_power, generator2.nominal_power]
-    nominal_power_array = xr.DataArray(
-        nominal_powers,
-        coords={"generators": [generator1.name, generator2.name]},
-    )
+        generator_power = self.linopy_model.variables["generator_power"]
 
-    expected_expr = generator_power <= nominal_power_array
-    assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
+        nominal_powers = [self.generator1.nominal_power, self.generator2.nominal_power]
+        nominal_power_array = xr.DataArray(
+            nominal_powers,
+            coords={"generators": [self.generator1.name, self.generator2.name]},
+        )
+
+        expected_expr = generator_power <= nominal_power_array
+        assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
