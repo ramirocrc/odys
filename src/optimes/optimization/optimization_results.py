@@ -95,6 +95,7 @@ class OptimizationResults:
         return GeneratorResults(
             power=self._get_variable_results(ModelVariable.GENERATOR_POWER),
             status=self._get_variable_results(ModelVariable.GENERATOR_STATUS),
+            startup=self._get_variable_results(ModelVariable.GENERATOR_STARTUP),
         )
 
     def _get_variable_results(self, variable: ModelVariable) -> pd.DataFrame:

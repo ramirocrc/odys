@@ -9,6 +9,7 @@ class GeneratorResults(BaseModel, arbitrary_types_allowed=True):
 
     power: pd.DataFrame
     status: pd.DataFrame
+    startup: pd.DataFrame
 
 
 class BatteryResults(BaseModel, arbitrary_types_allowed=True):

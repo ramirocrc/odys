@@ -32,7 +32,7 @@ class BatteryConstraints:
 
     def _get_battery_max_charge_constraint(self) -> ModelConstraint:
         # var_battery_discharge <= (1 - var_battery_mode) * param_battery_max_power # noqa: ERA001
-        constraint = self.var_battery_charge <= self.var_battery_charge_mode * self.params.batteries_max_power  # pyright: ignore reportOperatorIssue
+        constraint = self.var_battery_charge <= self.var_battery_charge_mode * self.params.max_power  # pyright: ignore reportOperatorIssue
         return ModelConstraint(
             constraint=constraint,
             name="battery_max_charge_constraint",
@@ -41,8 +41,8 @@ class BatteryConstraints:
     def _get_battery_max_discharge_constraint(self) -> ModelConstraint:
         # var_battery_discharge <= (1 - var_battery_mode) * param_battery_max_power # noqa: ERA001
         constraint = (
-            self.var_battery_discharge + self.var_battery_charge_mode * self.params.batteries_max_power  # pyright: ignore reportOperatorIssue
-            <= self.params.batteries_max_power
+            self.var_battery_discharge + self.var_battery_charge_mode * self.params.max_power  # pyright: ignore reportOperatorIssue
+            <= self.params.max_power
         )
         return ModelConstraint(
             constraint=constraint,
@@ -53,8 +53,8 @@ class BatteryConstraints:
         time_coords = self.var_battery_soc.coords[EnergyModelDimension.Time.value]
         constraint_expr = self.var_battery_soc - (
             self.var_battery_soc.shift(time=1)
-            + self.params.batteries_efficiency_charging * self.var_battery_charge
-            - 1 / self.params.batteries_efficiency_discharging * self.var_battery_discharge
+            + self.params.efficiency_charging * self.var_battery_charge
+            - 1 / self.params.efficiency_discharging * self.var_battery_discharge
         )
 
         constraint = constraint_expr.where(time_coords > time_coords[0]) == 0
@@ -72,9 +72,9 @@ class BatteryConstraints:
 
         constraint_expr = (
             soc_t0
-            - self.params.batteries_soc_start
-            - self.params.batteries_efficiency_charging * charge_t0
-            + 1 / self.params.batteries_efficiency_discharging * discharge_t0
+            - self.params.soc_start
+            - self.params.efficiency_charging * charge_t0
+            + 1 / self.params.efficiency_discharging * discharge_t0
         )
 
         constraint = constraint_expr == 0
@@ -85,7 +85,7 @@ class BatteryConstraints:
 
     def _get_battery_soc_end_constraint(self) -> ModelConstraint:
         time_coords = self.var_battery_soc.coords[EnergyModelDimension.Time.value]
-        constr_expression = self.var_battery_soc.loc[time_coords.values[-1]] - self.params.batteries_soc_end
+        constr_expression = self.var_battery_soc.loc[time_coords.values[-1]] - self.params.soc_end
         constraint = constr_expression == 0
         return ModelConstraint(
             constraint=constraint,
@@ -93,21 +93,21 @@ class BatteryConstraints:
         )
 
     def _get_battery_soc_min_constriant(self) -> ModelConstraint:
-        expression = self.var_battery_soc >= self.params.batteries_soc_min
+        expression = self.var_battery_soc >= self.params.soc_min
         return ModelConstraint(
             constraint=expression,
             name="batter_soc_min_constraint",
         )
 
     def _get_battery_soc_max_constriant(self) -> ModelConstraint:
-        expression = self.var_battery_soc <= self.params.batteries_soc_max
+        expression = self.var_battery_soc <= self.params.soc_max
         return ModelConstraint(
             constraint=expression,
             name="batter_soc_max_constraint",
         )
 
     def _get_battery_capacity_constraint(self) -> ModelConstraint:
-        constraint = self.var_battery_soc <= self.params.batteries_capacity
+        constraint = self.var_battery_soc <= self.params.capacity
         return ModelConstraint(
             constraint=constraint,
             name="battery_capacity_constraint",
