@@ -85,22 +85,25 @@ def energy_system_sample(
 
 @pytest.fixture
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample)
+    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
     return model_builder.build()
 
 
-def test_constraint_power_balance(
-    linopy_model: linopy.Model,
-    demand_profile_sample: list[float],
-    time_index: list[int],
-) -> None:
-    actual_constraint = linopy_model.constraints["power_balance_constraint"]
+class TestScenarioConstraints:
+    @pytest.fixture(autouse=True)
+    def setup(self, linopy_model: linopy.Model, demand_profile_sample: list[float], time_index: list[int]) -> None:
+        self.linopy_model = linopy_model
+        self.demand_profile_sample = demand_profile_sample
+        self.time_index = time_index
 
-    generation_total = linopy_model.variables["generator_power"].sum("generators")
-    discharge_total = linopy_model.variables["battery_power_out"].sum("batteries")
-    charge_total = linopy_model.variables["battery_power_in"].sum("batteries")
+    def test_constraint_power_balance(self) -> None:
+        actual_constraint = self.linopy_model.constraints["power_balance_constraint"]
 
-    demand_array = xr.DataArray(demand_profile_sample, coords=[time_index], dims=["time"])
-    expected_expr = generation_total + discharge_total - charge_total == demand_array
+        generation_total = self.linopy_model.variables["generator_power"].sum("generators")
+        discharge_total = self.linopy_model.variables["battery_power_out"].sum("batteries")
+        charge_total = self.linopy_model.variables["battery_power_in"].sum("batteries")
 
-    assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
+        demand_array = xr.DataArray(self.demand_profile_sample, coords=[self.time_index], dims=["time"])
+        expected_expr = generation_total + discharge_total - charge_total == demand_array
+
+        assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)

@@ -55,7 +55,7 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> ValidatedEne
 
 
 def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> None:
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample)
+    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
     linopy_model = model_builder.build()
 
     # Variables
@@ -80,7 +80,7 @@ def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> 
 
 
 def test_model_already_built(energy_system_sample: ValidatedEnergySystem) -> None:
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample)
+    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
     model_builder.build()
     with pytest.raises(AttributeError, match="Model has already been built."):
         model_builder.build()
