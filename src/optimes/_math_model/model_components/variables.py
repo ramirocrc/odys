@@ -43,6 +43,12 @@ class ModelVariable(Enum):
         asset_dimension=EnergyModelDimension.Generators,
         lower_bound_type=BoundType.UNBOUNDED,
     )
+    GENERATOR_SHUTDOWN = VariableSpec(
+        name="generator_shutdown",
+        is_binary=True,
+        asset_dimension=EnergyModelDimension.Generators,
+        lower_bound_type=BoundType.UNBOUNDED,
+    )
     BATTERY_POWER_IN = VariableSpec(
         name="battery_power_in",
         is_binary=False,

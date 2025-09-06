@@ -63,10 +63,7 @@ class OptimizationResults:
             DataFrame containing all solution variables with units, variables,
             and time periods as multi-level index columns.
         """
-        if self._solver_status != SolverStatus.ok:
-            msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."
-            raise ValueError(msg)
-
+        self._validate_terminated_successfully()
         ds = self._linopy_model.solution
         dfs = []
         for variable in ModelVariable:
@@ -81,9 +78,15 @@ class OptimizationResults:
         df_final = df_final[["unit", "variable", "time", "value"]]
         return df_final.set_index(["unit", "variable", "time"]).sort_index()
 
+    def _validate_terminated_successfully(self) -> None:
+        if self._solver_status != SolverStatus.ok:
+            msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."
+            raise ValueError(msg)
+
     @property
     def batteries(self) -> BatteryResults:
         """Get battery results."""
+        self._validate_terminated_successfully()
         return BatteryResults(
             net_power=self._get_variable_results(ModelVariable.BATTERY_POWER_NET),
             state_of_charge=self._get_variable_results(ModelVariable.BATTERY_SOC),
@@ -92,10 +95,12 @@ class OptimizationResults:
     @property
     def generators(self) -> GeneratorResults:
         """Get generator results."""
+        self._validate_terminated_successfully()
         return GeneratorResults(
             power=self._get_variable_results(ModelVariable.GENERATOR_POWER),
             status=self._get_variable_results(ModelVariable.GENERATOR_STATUS),
             startup=self._get_variable_results(ModelVariable.GENERATOR_STARTUP),
+            shutdown=self._get_variable_results(ModelVariable.GENERATOR_SHUTDOWN),
         )
 
     def _get_variable_results(self, variable: ModelVariable) -> pd.DataFrame:
