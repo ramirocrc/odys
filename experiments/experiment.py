@@ -54,6 +54,11 @@ if __name__ == "__main__":
     results_df = result.to_dataframe()
     logger.info(results_df)
     battery_results = result.batteries
+    logger.info("generators power")
     logger.info(result.generators.power)
+    logger.info("generators status")
+    logger.info(result.generators.status)
+    logger.info("batteries net power")
     logger.info(result.batteries.net_power)
+    logger.info("batteries state of charge")
     logger.info(result.batteries.state_of_charge)

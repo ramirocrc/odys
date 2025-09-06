@@ -8,6 +8,7 @@ class GeneratorResults(BaseModel, arbitrary_types_allowed=True):
     """Class to store generator results."""
 
     power: pd.DataFrame
+    status: pd.DataFrame
 
 
 class BatteryResults(BaseModel, arbitrary_types_allowed=True):

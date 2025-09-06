@@ -84,6 +84,7 @@ class TestGeneratorConstraints:
         actual_constraint = self.linopy_model.constraints["generator_max_power_constraint"]
 
         generator_power = self.linopy_model.variables["generator_power"]
+        generator_status = self.linopy_model.variables["generator_status"]
 
         nominal_powers = [self.generator1.nominal_power, self.generator2.nominal_power]
         nominal_power_array = xr.DataArray(
@@ -91,5 +92,5 @@ class TestGeneratorConstraints:
             coords={"generators": [self.generator1.name, self.generator2.name]},
         )
 
-        expected_expr = generator_power <= nominal_power_array
+        expected_expr = generator_power <= generator_status * nominal_power_array
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
