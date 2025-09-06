@@ -19,11 +19,3 @@ class ModelSet(BaseModel):
     def coordinates(self) -> dict[str, list[str]]:
         """Gets coordinates for xarray objects."""
         return {f"{self.dimension.value}": self.values}
-
-
-class EnergyModelSets(BaseModel, frozen=True):
-    """Energy Model Sets."""
-
-    time: ModelSet
-    generators: ModelSet
-    batteries: ModelSet
