@@ -126,6 +126,6 @@ class EnergyAlgebraicModelBuilder:
     def _add_model_objective(self) -> None:
         linopy_objective = LinopyMinimizeOperationalCostObjective(
             var_generator_power=self._linopy_model.variables[ModelVariable.GENERATOR_POWER.var_name],
-            param_generator_variable_cost=self._parameters.generators.generators_variable_cost,
+            param_generator_variable_cost=self._parameters.generators.variable_cost,
         )
         self._linopy_model.add_objective(linopy_objective.function)
