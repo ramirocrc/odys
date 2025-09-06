@@ -22,10 +22,10 @@ from optimes._math_model.model_components.linopy_converter import (
 from optimes._math_model.model_components.objectives import (
     LinopyMinimizeOperationalCostObjective,
 )
+from optimes._math_model.model_components.parameters import EnergyModelParameters
 from optimes._math_model.model_components.variables import (
     ModelVariable,
 )
-from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -44,15 +44,15 @@ class EnergyAlgebraicModelBuilder:
 
     def __init__(
         self,
-        validated_energy_system: ValidatedEnergySystem,
+        energy_system_parameters: EnergyModelParameters,
     ) -> None:
         """Initialize the model builder with validated energy system.
 
         Args:
-            validated_energy_system: The validated energy system configuration
+            energy_system_parameters:  Paramteres of the energy system,
                 containing all assets, demand profiles, and constraints.
         """
-        self._energy_system = validated_energy_system
+        self._parameters = energy_system_parameters
         self._linopy_model = Model(force_dim_names=True)
         self._model_is_built: bool = False
 
@@ -71,16 +71,16 @@ class EnergyAlgebraicModelBuilder:
         for generator_variable_i in ModelVariable.generator_variables():
             linopy_variable_parameters = get_linopy_variable_parameters(
                 variable=generator_variable_i,
-                time_set=self._energy_system.sets.time,
-                asset_set=self._energy_system.sets.generators,
+                time_set=self._parameters.system.time_set,
+                asset_set=self._parameters.generators.set,
             )
             self.add_variable_to_model(linopy_variable_parameters)
 
         for battery_variable_i in ModelVariable.battery_variables():
             linopy_variable_parameters = get_linopy_variable_parameters(
                 variable=battery_variable_i,
-                time_set=self._energy_system.sets.time,
-                asset_set=self._energy_system.sets.batteries,
+                time_set=self._parameters.system.time_set,
+                asset_set=self._parameters.batteries.set,
             )
             self.add_variable_to_model(linopy_variable_parameters)
 
@@ -104,7 +104,7 @@ class EnergyAlgebraicModelBuilder:
             var_generator_power=self._linopy_model.variables[ModelVariable.GENERATOR_POWER.var_name],
             var_battery_discharge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_OUT.var_name],
             var_battery_charge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_IN.var_name],
-            param_demand_profile=self._energy_system.parameters.demand_profile,
+            param_demand_profile=self._parameters.system.demand_profile,
         )
         self._linopy_model.add_constraints(
             power_balance_constraint.constraint,
@@ -114,7 +114,7 @@ class EnergyAlgebraicModelBuilder:
     def _add_power_generator_constraints(self) -> None:
         generator_max_power_constraint = get_generator_max_power_constraint(
             var_generator_power=self._linopy_model.variables[ModelVariable.GENERATOR_POWER.var_name],
-            param_generator_nominal_power=self._energy_system.parameters.generators_nominal_power,
+            param_generator_nominal_power=self._parameters.generators.generators_nominal_power,
         )
         self._linopy_model.add_constraints(
             generator_max_power_constraint.constraint,
@@ -125,7 +125,7 @@ class EnergyAlgebraicModelBuilder:
         battery_max_charge_constraint = get_battery_max_charge_constraint(
             var_battery_charge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_IN.var_name],
             var_battery_charge_mode=self._linopy_model.variables[ModelVariable.BATTERY_CHARGE_MODE.var_name],
-            param_battery_max_power=self._energy_system.parameters.batteries_max_power,
+            param_battery_max_power=self._parameters.batteries.batteries_max_power,
         )
         self._linopy_model.add_constraints(
             battery_max_charge_constraint.constraint,
@@ -135,7 +135,7 @@ class EnergyAlgebraicModelBuilder:
         battery_max_discharge_constraint = get_battery_max_discharge_constraint(
             var_battery_discharge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_OUT.var_name],
             var_battery_charge_mode=self._linopy_model.variables[ModelVariable.BATTERY_CHARGE_MODE.var_name],
-            param_battery_max_power=self._energy_system.parameters.batteries_max_power,
+            param_battery_max_power=self._parameters.batteries.batteries_max_power,
         )
         self._linopy_model.add_constraints(
             battery_max_discharge_constraint.constraint,
@@ -145,8 +145,8 @@ class EnergyAlgebraicModelBuilder:
             var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
             var_battery_charge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_IN.var_name],
             var_battery_discharge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_OUT.var_name],
-            param_battery_efficiency_charging=self._energy_system.parameters.batteries_efficiency_charging,
-            param_battery_efficiency_discharging=self._energy_system.parameters.batteries_efficiency_discharging,
+            param_battery_efficiency_charging=self._parameters.batteries.batteries_efficiency_charging,
+            param_battery_efficiency_discharging=self._parameters.batteries.batteries_efficiency_discharging,
         )
         self._linopy_model.add_constraints(
             battery_soc_dynamics_constraint.constraint,
@@ -156,9 +156,9 @@ class EnergyAlgebraicModelBuilder:
             var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
             var_battery_charge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_IN.var_name],
             var_battery_discharge=self._linopy_model.variables[ModelVariable.BATTERY_POWER_OUT.var_name],
-            param_battery_efficiency_charging=self._energy_system.parameters.batteries_efficiency_charging,
-            param_battery_efficiency_discharging=self._energy_system.parameters.batteries_efficiency_discharging,
-            param_battery_soc_start=self._energy_system.parameters.batteries_soc_start,
+            param_battery_efficiency_charging=self._parameters.batteries.batteries_efficiency_charging,
+            param_battery_efficiency_discharging=self._parameters.batteries.batteries_efficiency_discharging,
+            param_battery_soc_start=self._parameters.batteries.batteries_soc_start,
         )
         self._linopy_model.add_constraints(
             battery_soc_start_constraint.constraint,
@@ -167,7 +167,7 @@ class EnergyAlgebraicModelBuilder:
 
         battery_soc_end_constraint = get_battery_soc_end_constraint(
             var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
-            param_battery_soc_end=self._energy_system.parameters.batteries_soc_end,
+            param_battery_soc_end=self._parameters.batteries.batteries_soc_end,
         )
         self._linopy_model.add_constraints(
             battery_soc_end_constraint.constraint,
@@ -175,7 +175,7 @@ class EnergyAlgebraicModelBuilder:
         )
         battery_soc_min_constraint = get_battery_soc_min_constriant(
             var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
-            param_battery_soc_min=self._energy_system.parameters.batteries_soc_min,
+            param_battery_soc_min=self._parameters.batteries.batteries_soc_min,
         )
         self._linopy_model.add_constraints(
             battery_soc_min_constraint.constraint,
@@ -184,7 +184,7 @@ class EnergyAlgebraicModelBuilder:
 
         battery_soc_max_constraint = get_battery_soc_max_constriant(
             var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
-            param_battery_soc_max=self._energy_system.parameters.batteries_soc_max,
+            param_battery_soc_max=self._parameters.batteries.batteries_soc_max,
         )
         self._linopy_model.add_constraints(
             battery_soc_max_constraint.constraint,
@@ -192,7 +192,7 @@ class EnergyAlgebraicModelBuilder:
         )
         battery_capacity_constriant = get_battery_capacity_constraint(
             var_battery_soc=self._linopy_model.variables[ModelVariable.BATTERY_SOC.var_name],
-            param_battery_capacity=self._energy_system.parameters.batteries_capacity,
+            param_battery_capacity=self._parameters.batteries.batteries_capacity,
         )
         self._linopy_model.add_constraints(
             battery_capacity_constriant.constraint,
@@ -210,12 +210,11 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def _add_scenario_constraints(self) -> None:
-        if self._energy_system.available_capacity_profiles is None:
-            return
+        pass
 
     def _add_model_objective(self) -> None:
         linopy_objective = LinopyMinimizeOperationalCostObjective(
             var_generator_power=self._linopy_model.variables[ModelVariable.GENERATOR_POWER.var_name],
-            param_generator_variable_cost=self._energy_system.parameters.generators_variable_cost,
+            param_generator_variable_cost=self._parameters.generators.generators_variable_cost,
         )
         self._linopy_model.add_objective(linopy_objective.function)

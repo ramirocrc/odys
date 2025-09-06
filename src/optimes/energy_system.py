@@ -63,6 +63,8 @@ class EnergySystem:
             OptimizationResults containing the solution and metadata.
 
         """
-        model_builder = EnergyAlgebraicModelBuilder(self._validated_model)
+        model_builder = EnergyAlgebraicModelBuilder(
+            energy_system_parameters=self._validated_model.parameters,
+        )
         linopy_model = model_builder.build()
         return optimize_algebraic_model(linopy_model)
