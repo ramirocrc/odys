@@ -92,5 +92,5 @@ class TestGeneratorConstraints:
             coords={"generators": [self.generator1.name, self.generator2.name]},
         )
 
-        expected_expr = generator_power <= generator_status * nominal_power_array
+        expected_expr = generator_power <= generator_status * nominal_power_array  # pyright: ignore reportOperatorIssue
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
