@@ -14,47 +14,35 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Install just
+        uses: extractions/setup-just@v2
 
-      - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: just install
 
       - name: Run checks
-        run: make check
+        run: just check
 
   tests-and-type-check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-      fail-fast: false
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: just install
 
       - name: Run tests
-        run: uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
-
-      - name: Check typing
-        run: uv run mypy
-
-
-      - name: Upload coverage reports to Codecov with GitHub Action on Python 3.11
-        uses: codecov/codecov-action@v4
-        if: ${{ matrix.python-version == '3.11' }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: just test-report
 
   check-docs:
     runs-on: ubuntu-latest
@@ -62,8 +50,14 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: just install
 
       - name: Check if documentation can be built
-        run: uv run mkdocs build -s
+        run: just docs-test
