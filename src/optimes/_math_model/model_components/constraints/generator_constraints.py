@@ -114,13 +114,15 @@ class GeneratorConstraints:
         )
 
     def _get_max_ramp_up_constraint(self) -> ModelConstraint:
+        max_ramp_up = self.params.max_ramp_up.fillna(self.params.nominal_power)
         return ModelConstraint(
-            constraint=self.var_generator_power - self.var_generator_power.shift(time=1) <= self.params.max_ramp_up,
+            constraint=self.var_generator_power - self.var_generator_power.shift(time=1) <= max_ramp_up,
             name="generator_max_ramp_up_constraint",
         )
 
     def _get_max_ramp_down_constraint(self) -> ModelConstraint:
-        constraint = self.var_generator_power.shift(time=1) - self.var_generator_power <= self.params.max_ramp_down
+        max_ramp_down = self.params.max_ramp_down.fillna(self.params.nominal_power)
+        constraint = self.var_generator_power.shift(time=1) - self.var_generator_power <= max_ramp_down
 
         return ModelConstraint(
             constraint=constraint,
