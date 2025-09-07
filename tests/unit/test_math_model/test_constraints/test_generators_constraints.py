@@ -128,7 +128,7 @@ class TestGeneratorConstraints:
         )
 
         epsilon = 1e-5 * nominal_power_array
-        expected_expr = generator_power >= generator_status * epsilon
+        expected_expr = generator_power >= generator_status * epsilon  #  pyright: ignore reportOperatorIssue
         assert_conequal(expected_expr, actual_constraint.lhs >= actual_constraint.rhs)
 
     def test_constraint_generator_startup_lower_bound(self) -> None:
