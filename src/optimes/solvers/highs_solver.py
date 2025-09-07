@@ -26,9 +26,6 @@ def optimize_algebraic_model(linopy_model: Model) -> OptimizationResults:
     solving_status, termination_condition = linopy_model.solve(
         solver_name="highs",
         explicit_coordinate_names=True,
-        problem_fn="./data/linear_model.lp",
-        solution_fn="./data/solution",
-        keep_files=False,
         log_to_console=False,
     )
 
