@@ -21,6 +21,8 @@ if __name__ == "__main__":
         nominal_power=100.0,
         variable_cost=20.0,
         min_up_time=1,
+        ramp_up=700,
+        ramp_down=1500,
     )
     generator_2 = PowerGenerator(
         name="gen2",
@@ -29,6 +31,8 @@ if __name__ == "__main__":
         min_up_time=4,
         min_power=30,
         startup_cost=0,
+        ramp_up=700,
+        ramp_down=100,
     )
     battery_1 = Battery(
         name="battery1",

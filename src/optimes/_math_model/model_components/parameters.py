@@ -17,6 +17,8 @@ class GeneratorParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, 
     min_up_time: xr.DataArray
     min_power: xr.DataArray
     startup_cost: xr.DataArray
+    max_ramp_up: xr.DataArray
+    max_ramp_down: xr.DataArray
 
 
 class BatteryParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
