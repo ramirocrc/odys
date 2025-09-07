@@ -27,6 +27,8 @@ class GeneratorConstraints:
             self._get_generator_shutdown_upper_bound_2_constraint(),
             *self._get_min_uptime_constraint(),
             self._get_min_power_constraint(),
+            self._get_max_ramp_up_constraint(),
+            self._get_max_ramp_down_constraint(),
         )
 
     def _get_generator_max_power_constraint(self) -> ModelConstraint:
@@ -109,4 +111,18 @@ class GeneratorConstraints:
         return ModelConstraint(
             constraint=self.var_generator_power >= self.params.min_power * self.var_generator_status,
             name="generator_min_power_constraint",
+        )
+
+    def _get_max_ramp_up_constraint(self) -> ModelConstraint:
+        return ModelConstraint(
+            constraint=self.var_generator_power - self.var_generator_power.shift(time=1) <= self.params.max_ramp_up,
+            name="generator_max_ramp_up_constraint",
+        )
+
+    def _get_max_ramp_down_constraint(self) -> ModelConstraint:
+        constraint = self.var_generator_power.shift(time=1) - self.var_generator_power <= self.params.max_ramp_down
+
+        return ModelConstraint(
+            constraint=constraint,
+            name="generator_max_ramp_down_constraint",
         )
