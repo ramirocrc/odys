@@ -11,11 +11,10 @@ Start by importing the necessary components for energy system optimization:
 ```python
 from datetime import timedelta
 
-from optimes.energy_system.assets.generator import PowerGenerator
-from optimes.energy_system.assets.portfolio import AssetPortfolio
-from optimes.energy_system.assets.storage import Battery
-from optimes.energy_system.energy_system_conditions import EnergySystem
-from optimes.optimization.model_optimizer import EnergySystemOptimizer
+from optimes.energy_system import EnergySystem
+from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.assets.storage import Battery
 ```
 
 ### 2. Create Power Generators
@@ -53,10 +52,10 @@ battery_1 = Battery(
     name="battery1",
     max_power=200.0,
     capacity=100.0,
-    efficiency_charging=1,
-    efficiency_discharging=1,
-    soc_initial=100.0,
-    soc_terminal=50.0,
+    efficiency_charging=1.0,
+    efficiency_discharging=1.0,
+    soc_start=100.0,
+    soc_end=50.0,
 )
 ```
 
@@ -80,20 +79,20 @@ Define the complete energy system with the asset portfolio, demand profile, and 
 - Time step: 30 minutes
 
 ```python
-system_data = EnergySystem(
+energy_system = EnergySystem(
     portfolio=portfolio,
     demand_profile=[50, 75, 100, 125, 150],
     timestep=timedelta(minutes=30),
+    power_unit="MW",
 )
 ```
 
 ### 6. Run Optimization
 
-Use the `EnergySystemOptimizer` to find the optimal operation schedule that minimizes total cost while meeting demand:
+Use the `EnergySystem.optimize()` method to find the optimal operation schedule that minimizes total cost while meeting demand:
 
 ```python
-optimizer = EnergySystemOptimizer(system_data)
-result = optimizer.optimize()
+result = energy_system.optimize()
 ```
 
 ### 7. Access Results
@@ -101,7 +100,7 @@ result = optimizer.optimize()
 Convert the optimization results to a pandas DataFrame for analysis:
 
 ```python
-results_df = result.to_dataframe
+results_df = result.to_dataframe()
 ```
 
 ### 8. Example Results
