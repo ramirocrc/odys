@@ -70,6 +70,14 @@ class PowerGenerator(EnergyAsset, frozen=True):
         ),
     ] = 1
 
+    min_power: Annotated[
+        float,
+        Field(
+            ge=0,
+            description="Minimum power output",
+        ),
+    ] = 0.0
+
     startup_cost: Annotated[
         float | None,
         Field(

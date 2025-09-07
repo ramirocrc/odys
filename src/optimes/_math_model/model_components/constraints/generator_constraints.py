@@ -26,6 +26,7 @@ class GeneratorConstraints:
             self._get_generator_shutdown_constraint_2(),
             self._get_generator_shutdown_constraint_3(),
             *self._get_min_uptime_constraint(),
+            self._get_min_power_constraint(),
         )
 
     def _get_generator_max_power_constraint(self) -> ModelConstraint:
@@ -52,42 +53,42 @@ class GeneratorConstraints:
         constraint = self.var_generator_startup >= self.var_generator_status - self.var_generator_status.shift(time=1)
         return ModelConstraint(
             constraint=constraint,
-            name="startup_lower_bound_constraint",
+            name="generator_startup_lower_bound_constraint",
         )
 
     def _get_generator_startup_constraint_2(self) -> ModelConstraint:
         constraint = self.var_generator_startup <= self.var_generator_status
         return ModelConstraint(
             constraint=constraint,
-            name="startup_upper_bound_1_constraint",
+            name="generator_startup_upper_bound_1_constraint",
         )
 
     def _get_generator_startup_constraint_3(self) -> ModelConstraint:
         constraint = self.var_generator_startup + self.var_generator_status.shift(time=1) <= 1.0
         return ModelConstraint(
             constraint=constraint,
-            name="startup_upper_bound_2_constraint",
+            name="generator_startup_upper_bound_2_constraint",
         )
 
     def _get_generator_shutdown_constraint_1(self) -> ModelConstraint:
         constraint = self.var_generator_shutdown >= self.var_generator_status.shift(time=1) - self.var_generator_status
         return ModelConstraint(
             constraint=constraint,
-            name="shutdown_lower_bound_constraint",
+            name="generator_shutdown_lower_bound_constraint",
         )
 
     def _get_generator_shutdown_constraint_2(self) -> ModelConstraint:
         constraint = self.var_generator_shutdown <= self.var_generator_status.shift(time=1)
         return ModelConstraint(
             constraint=constraint,
-            name="shutdown_upper_bound_1_constraint",
+            name="generator_shutdown_upper_bound_1_constraint",
         )
 
     def _get_generator_shutdown_constraint_3(self) -> ModelConstraint:
         constraint = self.var_generator_shutdown + self.var_generator_status <= 1.0
         return ModelConstraint(
             constraint=constraint,
-            name="shutdown_upper_bound_2_constraint",
+            name="generator_shutdown_upper_bound_2_constraint",
         )
 
     def _get_min_uptime_constraint(self) -> tuple[ModelConstraint, ...]:
@@ -102,8 +103,14 @@ class GeneratorConstraints:
             constraints.append(
                 ModelConstraint(
                     constraint=constraint_generator,
-                    name=f"min_uptime_{generator}",
+                    name=f"generator_min_uptime_{generator}_constraint",
                 ),
             )
 
         return tuple(constraints)
+
+    def _get_min_power_constraint(self) -> ModelConstraint:
+        return ModelConstraint(
+            constraint=self.var_generator_power >= self.params.min_power * self.var_generator_status,
+            name="generator_min_power_constraint",
+        )

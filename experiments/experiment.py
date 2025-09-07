@@ -25,8 +25,9 @@ if __name__ == "__main__":
     generator_2 = PowerGenerator(
         name="gen2",
         nominal_power=150.0,
-        variable_cost=25.0,
+        variable_cost=100.0,
         min_up_time=4,
+        min_power=30,
     )
     battery_1 = Battery(
         name="battery1",
@@ -45,7 +46,7 @@ if __name__ == "__main__":
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=[300, 75, 300, 50, 125],
+        demand_profile=[300, 75, 300, 50, 100, 120, 125],
         timestep=timedelta(minutes=30),
         power_unit="MW",
     )
