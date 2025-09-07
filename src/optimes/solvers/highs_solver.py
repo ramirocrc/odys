@@ -28,7 +28,7 @@ def optimize_algebraic_model(linopy_model: Model) -> OptimizationResults:
         explicit_coordinate_names=True,
         problem_fn="./data/linear_model.lp",
         solution_fn="./data/solution",
-        keep_files=True,
+        keep_files=False,
         log_to_console=False,
     )
 
