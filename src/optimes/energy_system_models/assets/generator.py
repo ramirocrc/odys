@@ -79,13 +79,13 @@ class PowerGenerator(EnergyAsset, frozen=True):
     ] = 0.0
 
     startup_cost: Annotated[
-        float | None,
+        float,
         Field(
             strict=True,
             ge=0,
             description="Startup cost of the generator, in currency per MWh",
         ),
-    ] = None
+    ] = 0.0
 
     shutdown_cost: Annotated[
         float | None,

@@ -17,7 +17,7 @@ from optimes._math_model.model_components.linopy_converter import (
     get_linopy_variable_parameters,
 )
 from optimes._math_model.model_components.objectives import (
-    LinopyMinimizeOperationalCostObjective,
+    get_operating_costs,
 )
 from optimes._math_model.model_components.parameters import EnergyModelParameters
 from optimes._math_model.model_components.variables import (
@@ -124,8 +124,10 @@ class EnergyAlgebraicModelBuilder:
             )
 
     def _add_model_objective(self) -> None:
-        linopy_objective = LinopyMinimizeOperationalCostObjective(
+        objective = get_operating_costs(
             var_generator_power=self._linopy_model.variables[ModelVariable.GENERATOR_POWER.var_name],
+            var_generator_startup=self._linopy_model.variables[ModelVariable.GENERATOR_STARTUP.var_name],
             param_generator_variable_cost=self._parameters.generators.variable_cost,
+            param_generator_startup_cost=self._parameters.generators.startup_cost,
         )
-        self._linopy_model.add_objective(linopy_objective.function)
+        self._linopy_model.add_objective(objective)

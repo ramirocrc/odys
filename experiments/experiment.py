@@ -28,6 +28,7 @@ if __name__ == "__main__":
         variable_cost=100.0,
         min_up_time=4,
         min_power=30,
+        startup_cost=0,
     )
     battery_1 = Battery(
         name="battery1",
