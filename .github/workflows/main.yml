@@ -26,7 +26,7 @@ jobs:
       - name: Run checks
         run: just check
 
-  tests-and-type-check:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
