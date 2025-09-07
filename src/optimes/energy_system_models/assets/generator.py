@@ -40,7 +40,7 @@ class PowerGenerator(EnergyAsset, frozen=True):
         float | None,
         Field(
             strict=True,
-            gt=0,
+            ge=0,
             description="Ramp-up rate of the generator in MW per hour",
         ),
     ] = None
@@ -49,7 +49,7 @@ class PowerGenerator(EnergyAsset, frozen=True):
         float | None,
         Field(
             strict=True,
-            gt=0,
+            ge=0,
             description="Ramp-down rate of the generator in MW per hour",
         ),
     ] = None
