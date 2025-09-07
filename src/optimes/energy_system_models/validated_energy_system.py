@@ -83,6 +83,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                 variable_cost=self._generators_variable_cost,
                 min_up_time=self._generators_min_up_time,
                 min_power=self._generators_min_power,
+                startup_cost=self._generators_startup_cost,
             ),
             batteries=BatteryParameters(
                 set=self._batteries_set,
@@ -229,6 +230,13 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     def _generators_min_power(self) -> xr.DataArray:
         return xr.DataArray(
             data=[gen.min_power for gen in self.portfolio.generators],
+            coords=self._generators_set.coordinates,
+        )
+
+    @property
+    def _generators_startup_cost(self) -> xr.DataArray:
+        return xr.DataArray(
+            data=[gen.startup_cost for gen in self.portfolio.generators],
             coords=self._generators_set.coordinates,
         )
 
