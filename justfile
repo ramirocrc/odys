@@ -1,4 +1,3 @@
-eck
 # justfile equivalent of the provided Makefile
 
 # Install the virtual environment and install the pre-commit hooks
