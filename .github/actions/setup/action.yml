@@ -1,0 +1,17 @@
+name: 'Setup Environment'
+description: 'Common setup steps for CI workflows'
+runs:
+  using: 'composite'
+  steps:
+    - name: Check out
+      uses: actions/checkout@v4
+
+    - name: Install just
+      uses: extractions/setup-just@v2
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v6
+
+    - name: Install dependencies
+      run: just install
+      shell: bash
