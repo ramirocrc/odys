@@ -30,7 +30,7 @@
 
 # Model extension
 
-- [ ] Add batteries soc_min and soc_max params
+- [x] Add batteries soc_min and soc_max params
 - [ ] Review time step implementation
   - [ ] Review power balance
   - [x] Review ValidatedEnergySystem.\_validate_inputs
