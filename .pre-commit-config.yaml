@@ -5,6 +5,8 @@ repos:
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-toml
+      - id: sort-simple-yaml
+        files: ^config/simple/
       - id: check-yaml
         args: [--unsafe]
       - id: check-json
