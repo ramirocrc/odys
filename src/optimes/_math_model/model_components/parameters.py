@@ -36,6 +36,7 @@ class BatteryParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, ex
 class SystemParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
     time_set: ModelSet
     demand_profile: xr.DataArray
+    available_capacity_profiles: xr.DataArray
 
 
 class EnergyModelParameters(BaseModel):
