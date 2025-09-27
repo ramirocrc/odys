@@ -18,7 +18,10 @@ class ScenarioConstraints:
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
-        return (self._get_power_balance_constraint(),)
+        return (
+            self._get_power_balance_constraint(),
+            self._get_available_capcity_profiles_constraint(),
+        )
 
     def _get_power_balance_constraint(self) -> ModelConstraint:
         """Linopy power balance constraint ensuring supply equals demand.
@@ -33,5 +36,12 @@ class ScenarioConstraints:
         expression = generation_total + discharge_total - charge_total - self.params.demand_profile == 0
         return ModelConstraint(
             name="power_balance_constraint",
+            constraint=expression,
+        )
+
+    def _get_available_capcity_profiles_constraint(self) -> ModelConstraint:
+        expression = self.var_generator_power <= self.params.available_capacity_profiles
+        return ModelConstraint(
+            name="available_capacity_constraint",
             constraint=expression,
         )

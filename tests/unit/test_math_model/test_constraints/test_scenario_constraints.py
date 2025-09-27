@@ -80,6 +80,9 @@ def energy_system_sample(
         demand_profile=demand_profile_sample,
         timestep=timedelta(hours=1),
         power_unit=PowerUnit.MegaWatt,
+        available_capacity_profiles={
+            "gen1": [80, 80, 100],
+        },
     )
 
 
@@ -91,7 +94,12 @@ def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
 
 class TestScenarioConstraints:
     @pytest.fixture(autouse=True)
-    def setup(self, linopy_model: linopy.Model, demand_profile_sample: list[float], time_index: list[int]) -> None:
+    def setup(
+        self,
+        linopy_model: linopy.Model,
+        demand_profile_sample: list[float],
+        time_index: list[int],
+    ) -> None:
         self.linopy_model = linopy_model
         self.demand_profile_sample = demand_profile_sample
         self.time_index = time_index
@@ -107,3 +115,24 @@ class TestScenarioConstraints:
         expected_expr = generation_total + discharge_total - charge_total == demand_array
 
         assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
+
+    def test_constraint_available_capacity_profiles(self) -> None:
+        actual_constraint = self.linopy_model.constraints["available_capacity_constraint"]
+        generator_power = self.linopy_model.variables["generator_power"]
+
+        available_capacity_data = [
+            [80, 80, 100],  # gen1
+            [150, 150, 150],  # gen2 defaults to its nominal power
+        ]
+
+        available_capacity_array = xr.DataArray(
+            available_capacity_data,
+            coords={
+                "generators": ["gen1", "gen2"],
+                "time": self.time_index,
+            },
+            dims=["generators", "time"],
+        )
+
+        expected_expr = generator_power <= available_capacity_array
+        assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)

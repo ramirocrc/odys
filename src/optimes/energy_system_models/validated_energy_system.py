@@ -101,6 +101,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             system=SystemParameters(
                 time_set=self._time_set,
                 demand_profile=self._demand_profile,
+                available_capacity_profiles=self._available_capacity_profiles,
             ),
         )
 
@@ -118,28 +119,9 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             ValueError: If the system configuration is infeasible.
 
         """
-        self._validate_capacity_profile_lengths()
         self._validate_available_capacity()
         self._validate_demand_can_be_met()
         return self
-
-    def _validate_capacity_profile_lengths(self) -> None:
-        """Validate that available capacity profiles match demand profile length.
-
-        Raises:
-            ValueError: If capacity profile lengths don't match demand profile.
-
-        """
-        if self.available_capacity_profiles is None:
-            return
-        demand_profile_length = len(self.demand_profile)
-        for asset_name, available_capacity_profile in self.available_capacity_profiles.items():
-            if len(available_capacity_profile) != demand_profile_length:
-                msg = (
-                    f"Available capacity for asset '{asset_name}' has a length of {len(available_capacity_profile)}, "
-                    "which does not match demand profile length {demand_profile_length}."
-                )
-                raise ValueError(msg)
 
     def _validate_available_capacity(self) -> None:
         """Validate that available capacity profiles are only for generators.
@@ -165,6 +147,13 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                     f"which doesn't match the length of the demand profile ({len(self.demand_profile)})."
                 )
                 raise ValueError(msg)
+            for capacity_i in capacities:
+                if not (0 <= capacity_i <= asset.nominal_power):
+                    msg = (
+                        f"Capacity profile values of {asset_name} must positive and lower than its nominal power "
+                        f"({asset.nominal_power}), got {capacity_i}"
+                    )
+                    raise ValueError(msg)
 
     def _validate_demand_can_be_met(self) -> None:
         """Validate that the system can meet the demand profile.
@@ -321,4 +310,25 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         return xr.DataArray(
             data=self.demand_profile,
             coords=self._time_set.coordinates,
+        )
+
+    @property
+    def _available_capacity_profiles(self) -> xr.DataArray:
+        if self.available_capacity_profiles is None:
+            array_nominal_power = [[gen.nominal_power] * len(self.demand_profile) for gen in self.portfolio.generators]
+            return xr.DataArray(
+                data=array_nominal_power,
+                coords=self._generators_set.coordinates | self._time_set.coordinates,
+            )
+
+        array_available_capacities = []
+        for generator in self.portfolio.generators:
+            generator_availability = self.available_capacity_profiles.get(
+                generator.name,
+                [generator.nominal_power] * len(self.demand_profile),
+            )
+            array_available_capacities.append(generator_availability)
+        return xr.DataArray(
+            data=array_available_capacities,
+            coords=self._generators_set.coordinates | self._time_set.coordinates,
         )

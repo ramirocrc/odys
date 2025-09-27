@@ -4,26 +4,26 @@ version = "0.0.1"
 description = "Python framework for optimizing multi-energy systems"
 authors = [{ name = "Ramiro Criach", email = "ramirocriach@gmail.com" }]
 readme = "README.md"
-keywords = ['python']
+keywords = ["python"]
 requires-python = ">=3.10,<4.0"
 classifiers = [
-    "Intended Audience :: Developers",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Topic :: Software Development :: Libraries :: Python Modules",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "highspy>=1.11.0",
-    "linopy>=0.5.5",
-    "numpy>=1.26.4",
-    "pandas>=2.3.1",
-    "pydantic>=2.11.7",
-    "rich>=14.0.0",
-    "xarray>=2025.6.1",
+  "highspy>=1.11.0",
+  "linopy>=0.5.5",
+  "numpy>=1.26.4",
+  "pandas>=2.3.1",
+  "pydantic>=2.11.7",
+  "rich>=14.0.0",
+  "xarray>=2025.6.1",
 ]
 
 [project.urls]
@@ -33,20 +33,20 @@ Documentation = "https://ramirorcr.github.io/optimes/"
 
 [dependency-groups]
 dev = [
-    "deptry>=0.23.0",
-    "nox>=2025.5.1",
-    "pre-commit>=4.3.0",
-    "pyright>=1.1.403",
-    "pytest>=8.4.0",
-    "pytest-cov>=6.2.1",
-    "ruff>=0.11.13",
+  "deptry>=0.23.0",
+  "nox>=2025.5.1",
+  "pre-commit>=4.3.0",
+  "pyright>=1.1.403",
+  "pytest>=8.4.0",
+  "pytest-cov>=6.2.1",
+  "ruff>=0.11.13",
 ]
 docs = [
-    "mkdocs>=1.6.1",
-    "mkdocs-exclude>=1.0.2",
-    "mkdocs-material>=9.6.16",
-    "mkdocstrings-python>=1.16.12",
-    "pyupgrade>=3.20.0",
+  "mkdocs>=1.6.1",
+  "mkdocs-exclude>=1.0.2",
+  "mkdocs-material>=9.6.16",
+  "mkdocstrings-python>=1.16.12",
+  "pyupgrade>=3.20.0",
 ]
 
 [build-system]
@@ -59,48 +59,45 @@ module-name = "optimes"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
-
 [tool.ruff]
 line-length = 120
 target-version = "py313"
 
 [tool.ruff.lint]
-
 select = ["ALL"]
-
 ignore = [
-    "TD",
-    "FIX",
+  "TD",
+  "FIX",
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [
-    "INP001",# Checks for packages that are missing an __init__.py
-    "S101", # Use of 'assert' detected
-    "D", # Check for missing docstrings
-    "F811", # Redefinition of unsuded variables
+  "INP001",  # Checks for packages that are missing an __init__.py
+  "S101",  # Use of 'assert' detected
+  "D",  # Check for missing docstrings
+  "F811",  # Redefinition of unsuded variables
 ]
 "experiments/**" = [
-    "INP001",# Checks for packages that are missing an __init__.py
-    "S101", # Use of 'assert' detected
-    "D", # Check for missing docstrings
+  "INP001",  # Checks for packages that are missing an __init__.py
+  "S101",  # Use of 'assert' detected
+  "D",  # Check for missing docstrings
 ]
-
-[tool.ruff.format]
-preview = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.format]
+preview = true
 
 [tool.pyright]
 typeCheckingMode = "standard"
 
 [tool.deptry.per_rule_ignores]
-DEP002 = [ "highspy"]
+DEP002 = ["highspy"]
 
 [tool.coverage.report]
 skip_empty = true
-fail_under= 90
+fail_under = 90
 
 [tool.coverage.run]
 branch = true

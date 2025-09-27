@@ -94,7 +94,7 @@ def test_validation_of_capacity_profile_lengths(
         "test_generator": [90.0, 100.0],  # Only 2 values instead of 4
     }
 
-    with pytest.raises(ValueError, match="does not match demand profile length"):
+    with pytest.raises(ValueError, match="which doesn't match the length of the demand profile"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             demand_profile=valid_demand_profile,
