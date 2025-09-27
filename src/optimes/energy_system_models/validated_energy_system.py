@@ -314,21 +314,11 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
 
     @property
     def _available_capacity_profiles(self) -> xr.DataArray:
-        if self.available_capacity_profiles is None:
-            array_nominal_power = [[gen.nominal_power] * len(self.demand_profile) for gen in self.portfolio.generators]
-            return xr.DataArray(
-                data=array_nominal_power,
-                coords=self._generators_set.coordinates | self._time_set.coordinates,
-            )
-
-        array_available_capacities = []
-        for generator in self.portfolio.generators:
-            generator_availability = self.available_capacity_profiles.get(
-                generator.name,
-                [generator.nominal_power] * len(self.demand_profile),
-            )
-            array_available_capacities.append(generator_availability)
+        profiles = self.available_capacity_profiles or {}
+        data = [
+            profiles.get(gen.name, [gen.nominal_power] * len(self.demand_profile)) for gen in self.portfolio.generators
+        ]
         return xr.DataArray(
-            data=array_available_capacities,
+            data=data,
             coords=self._generators_set.coordinates | self._time_set.coordinates,
         )
