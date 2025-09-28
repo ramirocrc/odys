@@ -1,3 +1,5 @@
+from collections.abc import Mapping, Sequence
+
 import numpy as np
 from pydantic import BaseModel
 
@@ -7,8 +9,8 @@ from optimes._math_model.model_components.variables import BoundType, ModelVaria
 
 class LinopyVariableParameters(BaseModel, arbitrary_types_allowed=True):
     name: str
-    coords: dict
-    dims: list[str]
+    coords: Mapping
+    dims: Sequence[str]
     lower: np.ndarray | float
     binary: bool
 
