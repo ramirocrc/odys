@@ -4,6 +4,7 @@ This module provides the EnergySystemOptimizer class for solving
 energy system optimization problems.
 """
 
+from collections.abc import Mapping, Sequence
 from datetime import timedelta
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
@@ -27,10 +28,10 @@ class EnergySystem:
     def __init__(
         self,
         portfolio: AssetPortfolio,
-        demand_profile: list[float],
+        demand_profile: Sequence[float],
         timestep: timedelta,
         power_unit: str,
-        available_capacity_profiles: dict[str, list[float]] | None = None,
+        available_capacity_profiles: Mapping[str, Sequence[float]] | None = None,
     ) -> None:
         """Initialize the energy system configuration and optimizer.
 

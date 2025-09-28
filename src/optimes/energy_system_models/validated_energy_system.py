@@ -4,6 +4,7 @@ This module provides classes for representing energy system conditions,
 including demand profiles and system configurations.
 """
 
+from collections.abc import Mapping, Sequence
 from datetime import timedelta
 from functools import cached_property
 from typing import Self
@@ -47,10 +48,10 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     """
 
     portfolio: AssetPortfolio
-    demand_profile: list[float]
+    demand_profile: Sequence[float]
     timestep: timedelta
     power_unit: PowerUnit
-    available_capacity_profiles: dict[str, list[float]] | None = None
+    available_capacity_profiles: Mapping[str, Sequence[float]] | None = None
 
     @cached_property
     def _time_set(self) -> ModelSet:
