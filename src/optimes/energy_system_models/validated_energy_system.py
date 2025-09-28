@@ -24,7 +24,7 @@ from optimes._math_model.model_components.sets import (
 )
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.scenarios import Scenario
+from optimes.energy_system_models.scenarios import ScenariosVector
 from optimes.energy_system_models.units import PowerUnit
 from optimes.utils.logging import get_logger
 
@@ -53,7 +53,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     timestep: timedelta
     power_unit: PowerUnit
     available_capacity_profiles: Mapping[str, Sequence[float]] | None = None
-    scenarios: Sequence[Scenario] | None = None
+    scenarios: ScenariosVector | None = None
 
     @cached_property
     def _time_set(self) -> ModelSet:
@@ -124,6 +124,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         """
         self._validate_available_capacity()
         self._validate_demand_can_be_met()
+        self._validate_stochastic_scenarios()
         return self
 
     def _validate_available_capacity(self) -> None:
@@ -144,6 +145,12 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                     f"but got '{asset_name}' of type {type(asset)}."
                 )
                 raise TypeError(msg)
+            if asset.is_stochastic:
+                msg = (
+                    f"Asset '{asset_name}' is stochastic. Available capacity profiles for stochastic assets "
+                    "must be specified in the `scenarios` field, not in `available_capacity_profiles`."
+                )
+                raise ValueError(msg)
             if len(capacities) != len(self.demand_profile):
                 msg = (
                     f"Available capacity for '{asset_name}' has a length of {len(capacities)}, "
@@ -153,8 +160,8 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             for capacity_i in capacities:
                 if not (0 <= capacity_i <= asset.nominal_power):
                     msg = (
-                        f"Capacity profile values of {asset_name} must positive and lower than its nominal power "
-                        f"({asset.nominal_power}), got {capacity_i}"
+                        f"Available capacity value {capacity_i} for asset '{asset_name}' is invalid. "
+                        f"Values must be between 0 and the asset's nominal power ({asset.nominal_power})."
                     )
                     raise ValueError(msg)
 
@@ -198,6 +205,42 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         """
         # TODO: Validate that:
         # sum(demand * timestep) <= sum(generator.nominal_power * timestep) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
+
+    def _validate_stochastic_scenarios(self) -> None:
+        stochastic_generators = self.portfolio.stochastic_generators
+        if not stochastic_generators:
+            if self.scenarios:
+                msg = (
+                    "Scenarios have been provided, but no assets are marked as stochastic. "
+                    "Either set `scenarios` to None or mark the relevant assets as stochastic."
+                )
+                raise ValueError(msg)
+            return
+        if not self.scenarios:
+            stochastic_gen_names = [gen.name for gen in stochastic_generators]
+            msg = (
+                f"Assets {stochastic_gen_names} are marked as stochastic, but no scenarios have been provided. "
+                "Please provide scenarios or mark these assets as non-stochastic."
+            )
+            raise ValueError(msg)
+
+        stochastic_gen_names = {gen.name for gen in stochastic_generators}
+        for scenario in self.scenarios:
+            extra_assets = set(scenario.available_capacity_profiles.keys()) - stochastic_gen_names
+            if extra_assets:
+                msg = (
+                    f"Scenario contains assets {sorted(extra_assets)} that are not marked as stochastic generators. "
+                    "Only stochastic generators should have capacity profiles in scenarios."
+                )
+                raise ValueError(msg)
+
+            for stochastic_gen in stochastic_generators:
+                if stochastic_gen.name not in scenario.available_capacity_profiles:
+                    msg = (
+                        f"Stochastic generator '{stochastic_gen.name}' is missing from scenario. "
+                        "All stochastic generators must have capacity profiles in every scenario."
+                    )
+                    raise ValueError(msg)
 
     @property
     def _generators_nominal_power(self) -> xr.DataArray:
