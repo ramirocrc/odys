@@ -9,6 +9,7 @@ from datetime import timedelta
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.scenarios import Scenario
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from optimes.optimization.optimization_results import OptimizationResults
 from optimes.solvers.highs_solver import optimize_algebraic_model
@@ -25,22 +26,24 @@ class EnergySystem:
     optimization execution through external solvers.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         portfolio: AssetPortfolio,
         demand_profile: Sequence[float],
         timestep: timedelta,
         power_unit: str,
         available_capacity_profiles: Mapping[str, Sequence[float]] | None = None,
+        scenarios: Sequence[Scenario] | None = None,
     ) -> None:
         """Initialize the energy system configuration and optimizer.
 
         Args:
             portfolio: The portfolio of energy assets (generators, batteries, etc.).
-            demand_profile: List of power demand values for each time period.
+            demand_profile: Sequence of power demand values for each time period.
             timestep: Duration of each time period.
             power_unit: Unit used for power quantities ('W', 'kW', or 'MW').
             available_capacity_profiles: Optional dict mapping generator names to
+            scenarios: Sequence of scenarios. Probabilities must add up to 1.
                 their available capacity profiles over time.
 
         """
@@ -50,6 +53,7 @@ class EnergySystem:
             timestep=timestep,
             power_unit=power_unit,  # pyright: ignore reportArgumentType
             available_capacity_profiles=available_capacity_profiles,
+            scenarios=scenarios,
         )
 
     def optimize(

@@ -11,6 +11,7 @@ from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.scenarios import Scenario
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -24,9 +25,10 @@ if __name__ == "__main__":
         ramp_down=100,
     )
     generator_2 = PowerGenerator(
-        name="gen2",
+        name="wind_farm",
         nominal_power=150.0,
         variable_cost=100.0,
+        is_stochastic=True,
     )
     battery_1 = Battery(
         name="battery1",
@@ -49,7 +51,16 @@ if __name__ == "__main__":
         power_unit="MW",
         available_capacity_profiles={
             "gen1": [100, 100, 100, 50, 50, 50, 50],
+            "wind_farm": [100, 100, 100, 50, 50, 50, 50],
         },
+        scenarios=[
+            Scenario(
+                probability=1.0,
+                available_capacity_profiles={
+                    "wind_farm": [100, 100, 100, 50, 50, 50, 50],
+                },
+            ),
+        ],
     )
 
     result = energy_system.optimize()
