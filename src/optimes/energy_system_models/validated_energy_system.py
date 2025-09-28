@@ -24,6 +24,7 @@ from optimes._math_model.model_components.sets import (
 )
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.scenarios import Scenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.utils.logging import get_logger
 
@@ -52,6 +53,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     timestep: timedelta
     power_unit: PowerUnit
     available_capacity_profiles: Mapping[str, Sequence[float]] | None = None
+    scenarios: Sequence[Scenario] | None = None
 
     @cached_property
     def _time_set(self) -> ModelSet:

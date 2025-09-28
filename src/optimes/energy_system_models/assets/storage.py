@@ -21,86 +21,43 @@ class Battery(EnergyAsset, frozen=True):
 
     capacity: Annotated[
         float,
-        Field(
-            strict=True,
-            gt=0,
-            description="Battery capacity in MWh",
-        ),
+        Field(strict=True, gt=0, description="Battery capacity in MWh."),
     ]
     max_power: Annotated[
         float,
-        Field(
-            strict=True,
-            gt=0,
-            description="Maximum power in MW",
-        ),
+        Field(strict=True, gt=0, description="Maximum power in MW."),
     ]
     efficiency_charging: Annotated[
         float,
-        Field(
-            strict=True,
-            gt=0,
-            le=1,
-            description="Charging efficiency (0-1)",
-        ),
+        Field(strict=True, gt=0, le=1, description="Charging efficiency (0-1)."),
     ]
     efficiency_discharging: Annotated[
         float,
-        Field(
-            strict=True,
-            gt=0,
-            le=1,
-            description="Discharging efficiency (0-1)",
-        ),
+        Field(strict=True, gt=0, le=1, description="Discharging efficiency (0-1)."),
     ]
     soc_start: Annotated[
         float,
-        Field(
-            strict=True,
-            ge=0,
-            description="Initial state of charge in MWh",
-        ),
+        Field(strict=True, ge=0, description="Initial state of charge in MWh."),
     ]
     soc_end: Annotated[
         float | None,
-        Field(
-            strict=True,
-            ge=0,
-            description="Final state of charge in MWh",
-        ),
+        Field(strict=True, ge=0, description="Final state of charge in MWh."),
     ] = None
     soc_min: Annotated[
         float | None,
-        Field(
-            strict=True,
-            ge=0,
-            description="Minimum state of charge should be greater than 0",
-        ),
+        Field(strict=True, ge=0, description="Minimum state of charge should be greater than 0."),
     ] = None
     soc_max: Annotated[
         float | None,
-        Field(
-            strict=True,
-            ge=0,
-            description="Maximum state of charge should be greater than 0",
-        ),
+        Field(strict=True, ge=0, description="Maximum state of charge should be greater than 0."),
     ] = None
     degradation_cost: Annotated[
         float | None,
-        Field(
-            strict=True,
-            ge=0,
-            description="Degradation cost, in currency per MWh cycled",
-        ),
+        Field(strict=True, ge=0, description="Degradation cost, in currency per MWh cycled."),
     ] = None
     self_discharge_rate: Annotated[
         float | None,
-        Field(
-            strict=True,
-            ge=0,
-            le=1,
-            description="Self-discharge rate (0-1) per hour",
-        ),
+        Field(strict=True, ge=0, le=1, description="Self-discharge rate (0-1) per hour."),
     ] = None
 
     @model_validator(mode="after")

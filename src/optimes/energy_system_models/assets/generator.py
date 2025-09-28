@@ -20,87 +20,50 @@ class PowerGenerator(EnergyAsset, frozen=True):
 
     nominal_power: Annotated[
         float,
-        Field(
-            strict=True,
-            gt=0,
-            description="Nominal power of the generator in MW",
-        ),
+        Field(strict=True, gt=0, description="Nominal power of the generator in MW."),
     ]
 
     variable_cost: Annotated[
         float,
-        Field(
-            strict=True,
-            gt=0,
-            description="Variable cost of the generator in currency per MWh",
-        ),
+        Field(strict=True, gt=0, description="Variable cost of the generator in currency per MWh."),
     ]
 
     ramp_up: Annotated[
         float | None,
-        Field(
-            strict=True,
-            ge=0,
-            description="Ramp-up rate of the generator in MW per hour",
-        ),
+        Field(strict=True, ge=0, description="Ramp-up rate of the generator in MW per hour"),
     ] = None
 
     ramp_down: Annotated[
         float | None,
-        Field(
-            strict=True,
-            ge=0,
-            description="Ramp-down rate of the generator in MW per hour",
-        ),
+        Field(strict=True, ge=0, description="Ramp-down rate of the generator in MW per hour"),
     ] = None
 
     min_up_time: Annotated[
         int,
-        Field(
-            ge=1,
-            description="Minimum up time",
-        ),
+        Field(ge=1, description="Minimum up time"),
     ] = 1
 
     min_down_time: Annotated[
         int,
-        Field(
-            ge=1,
-            description="Minimum down time",
-        ),
+        Field(ge=1, description="Minimum down time"),
     ] = 1
 
     min_power: Annotated[
         float,
-        Field(
-            ge=0,
-            description="Minimum power output",
-        ),
+        Field(ge=0, description="Minimum power output"),
     ] = 0.0
 
     startup_cost: Annotated[
         float,
-        Field(
-            strict=True,
-            ge=0,
-            description="Startup cost of the generator, in currency per MWh",
-        ),
+        Field(strict=True, ge=0, description="Startup cost of the generator, in currency per MWh."),
     ] = 0.0
 
     shutdown_cost: Annotated[
         float | None,
-        Field(
-            strict=True,
-            ge=0,
-            description="Shutdown cost of the generator, in currency per MWh",
-        ),
+        Field(strict=True, ge=0, description="Shutdown cost of the generator, in currency per MWh"),
     ] = None
 
-    emission_factor: Annotated[
-        float | None,
-        Field(
-            strict=True,
-            ge=0,
-            description="Emission factor of the generator in kg CO2 per MWh",
-        ),
-    ] = None
+    is_stochastic: Annotated[
+        bool,
+        Field(description="Set to True to if asset is stochastic (e.g. wind, solar)"),
+    ] = False
