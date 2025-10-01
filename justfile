@@ -25,7 +25,7 @@ test:
 # Generate test report
 test-report:
     @echo "🚀 Generating test report"
-    uv run python -m pytest -n auto --cov-report term-missing:skip-covered --cov=src tests/
+    uv run python -m pytest -n auto --cov-report term-missing:skip-covered --cov=src tests/ --durations=10
 
 # Clean build artifacts
 clean-build:
