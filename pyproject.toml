@@ -33,7 +33,7 @@ Documentation = "https://ramirorcr.github.io/optimes/"
 
 [dependency-groups]
 dev = [
-  "deptry>=0.23.0",
+  "deptry>=0.23.1",
   "nox>=2025.5.1",
   "pre-commit>=4.3.0",
   "pyright>=1.1.405",
