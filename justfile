@@ -20,12 +20,12 @@ check:
 # Test the code with pytest
 test:
     @echo "🚀 Testing code: Running pytest"
-    uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
+    uv run python -m pytest -n auto --cov --cov-config=pyproject.toml --cov-report=xml
 
 # Generate test report
 test-report:
     @echo "🚀 Generating test report"
-    uv run python -m pytest --cov-report term-missing:skip-covered --cov=src tests/
+    uv run python -m pytest -n auto --cov-report term-missing:skip-covered --cov=src tests/
 
 # Clean build artifacts
 clean-build:
