@@ -23,7 +23,10 @@ def test_single_generator_meets_demand() -> None:
 
     expected_results = pd.DataFrame(
         {"generator": demand_profile},
-        index=pd.Index(("0", "1", "2", "3", "4"), name="time"),
+        index=pd.MultiIndex.from_product(
+            [["deterministic_scenario"], ["0", "1", "2", "3", "4"]],
+            names=["scenarios", "time"],
+        ),
     )
     expected_results.columns.name = "generators"
 
@@ -72,7 +75,10 @@ def test_three_generators_meet_demand() -> None:
             generator_medium.name: [0.0, 0.0, 50.0, 100.0, 100.0, 100.0],
             generator_expensive.name: [0.0, 0.0, 0.0, 0.0, 50.0, 100.0],
         },
-        index=pd.Index(("0", "1", "2", "3", "4", "5"), name="time"),
+        index=pd.MultiIndex.from_product(
+            [["deterministic_scenario"], ["0", "1", "2", "3", "4", "5"]],
+            names=["scenarios", "time"],
+        ),
     )
     expected_results.columns.name = "generators"
 
@@ -110,7 +116,10 @@ def test_generator_and_battery_optimization() -> None:
     portfolio.add_asset(battery)
 
     demand_profile = [50.0, 50.0, 150.0, 150.0, 50.0]
-    index = pd.Index(("0", "1", "2", "3", "4"), name="time")
+    index = pd.MultiIndex.from_product(
+        [["deterministic_scenario"], ["0", "1", "2", "3", "4"]],
+        names=["scenarios", "time"],
+    )
     expected_generator_results = pd.DataFrame(
         {
             generator.name: [100.0, 100.0, 100.0, 100.0, 100.0],
@@ -165,7 +174,10 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
     demand_profile = [50.0, 50.0, 100.0]
     timestep = timedelta(hours=1)
 
-    index = pd.Index(("0", "1", "2"), name="time")
+    index = pd.MultiIndex.from_product(
+        [["deterministic_scenario"], ["0", "1", "2"]],
+        names=["scenarios", "time"],
+    )
     expected_generator_results = pd.DataFrame(
         {
             generator.name: [100.0, 100.0, 100.0],

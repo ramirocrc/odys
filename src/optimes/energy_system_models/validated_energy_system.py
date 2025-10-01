@@ -24,7 +24,7 @@ from optimes._math_model.model_components.sets import (
 )
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.scenarios import Scenario, ScenariosSequence, SctochasticScenario
+from optimes.energy_system_models.scenarios import Scenario, ScenariosSequence
 from optimes.energy_system_models.units import PowerUnit
 from optimes.utils.logging import get_logger
 
@@ -78,9 +78,14 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
 
     @cached_property
     def _scenario_set(self) -> ModelSet:
+        if self.scenarios is not None:
+            return ModelSet(
+                dimension=EnergyModelDimension.Scenarios,
+                values=[scenario.name for scenario in self.scenarios],
+            )
         return ModelSet(
             dimension=EnergyModelDimension.Scenarios,
-            values=[scenario.name for scenario in self.scenarios],
+            values=["deterministic_scenario"],
         )
 
     @cached_property
@@ -131,11 +136,20 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
 
         """
         self._validate_demand_can_be_met()
-        for scenario in self.scenarios:
-            self._validate_available_capacity(scenario)
+        self._validate_available_capacity()
+
         return self
 
-    def _validate_available_capacity(self, scenario: SctochasticScenario) -> None:
+    def _validate_available_capacity(self) -> None:
+        if self.scenario:
+            self._validate_available_capacity_scenario(self.scenario)
+            return
+
+        if self.scenarios:
+            for scenario in self.scenarios:
+                self._validate_available_capacity_scenario(scenario)
+
+    def _validate_available_capacity_scenario(self, scenario: Scenario) -> None:
         """Validate that available capacity profiles are only for generators.
 
         Raises:
@@ -156,7 +170,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             if len(capacities) != len(self.demand_profile):
                 msg = (
                     f"Available capacity for '{asset_name}' has a length of {len(capacities)}, which doesn't match"
-                    f" the length of the demand profile in scenario {scenario.name} ({len(self.demand_profile)})."
+                    f" the length of the demand profile ({len(self.demand_profile)})."
                 )
                 raise ValueError(msg)
             for capacity_i in capacities:
@@ -327,13 +341,26 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     @property
     def _available_capacity_profiles(self) -> xr.DataArray:
         all_profiles = []
-        for scenario in self.scenarios:
-            profiles = scenario.available_capacity_profiles or {}  # todo: make available capacity profiles optional?
+        scenario_list = [self.scenario] if self.scenario else self.scenarios
+
+        if scenario_list is None:
+            scenario_complete_profiles = [
+                [gen.nominal_power] * len(self.demand_profile) for gen in self.portfolio.generators
+            ]
+            all_profiles.append(scenario_complete_profiles)
+            return xr.DataArray(
+                data=all_profiles,
+                coords=self._scenario_set.coordinates | self._generator_set.coordinates | self._time_set.coordinates,
+            )
+
+        for scenario in scenario_list:
+            profiles = scenario.available_capacity_profiles or {}
             scenario_complete_profiles = [
                 profiles.get(gen.name, [gen.nominal_power] * len(self.demand_profile))
                 for gen in self.portfolio.generators
             ]
             all_profiles.append(scenario_complete_profiles)
+
         return xr.DataArray(
             data=all_profiles,
             coords=self._scenario_set.coordinates | self._generator_set.coordinates | self._time_set.coordinates,

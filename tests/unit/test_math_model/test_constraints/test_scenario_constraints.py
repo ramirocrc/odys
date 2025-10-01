@@ -10,6 +10,7 @@ from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.scenarios import Scenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
@@ -80,9 +81,11 @@ def energy_system_sample(
         demand_profile=demand_profile_sample,
         timestep=timedelta(hours=1),
         power_unit=PowerUnit.MegaWatt,
-        available_capacity_profiles={
-            "gen1": [80, 80, 100],
-        },
+        scenario=Scenario(
+            available_capacity_profiles={
+                "gen1": [80, 80, 100],
+            },
+        ),
     )
 
 
@@ -120,18 +123,22 @@ class TestScenarioConstraints:
         actual_constraint = self.linopy_model.constraints["available_capacity_constraint"]
         generator_power = self.linopy_model.variables["generator_power"]
 
+        # Need to include scenario dimension as our system now uses scenarios
         available_capacity_data = [
-            [80, 80, 100],  # gen1
-            [150, 150, 150],  # gen2 defaults to its nominal power
+            [
+                [80, 80, 100],  # gen1
+                [150, 150, 150],  # gen2 defaults to its nominal power
+            ],
         ]
 
         available_capacity_array = xr.DataArray(
             available_capacity_data,
             coords={
+                "scenarios": ["deterministic_scenario"],
                 "generators": ["gen1", "gen2"],
                 "time": self.time_index,
             },
-            dims=["generators", "time"],
+            dims=["scenarios", "generators", "time"],
         )
 
         expected_expr = generator_power <= available_capacity_array

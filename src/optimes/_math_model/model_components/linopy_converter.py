@@ -40,7 +40,7 @@ def get_linopy_variable_parameters(
         raise ValueError(msg)
 
     if scenario_set.dimension != EnergyModelDimension.Scenarios:
-        msg = f"scenario_ste should have time dimension, got {scenario_set.dimension}"
+        msg = f"scenario_set should have scenarios dimension, got {scenario_set.dimension}"
         raise ValueError(msg)
 
     if asset_set.dimension != variable.asset_dimension:
@@ -73,8 +73,8 @@ def _get_variable_lower_bound(
     """Calculate lower bounds for a variable.
 
     Args:
-        time_set: Time dimension set
         scenario_set: Scenario dimension set
+        time_set: Time dimension set
         asset_set: Asset dimension set
         lower_bound_type: Type of lower bound
         is_binary: Whether the variable is binary
@@ -86,6 +86,7 @@ def _get_variable_lower_bound(
         return -np.inf  # Required by linopy.add_variable when variable is binary
 
     shape = len(scenario_set.values), len(time_set.values), len(asset_set.values)
+
     if lower_bound_type == BoundType.UNBOUNDED:
         return np.full(shape, -np.inf, dtype=float)
     return np.full(shape, 0, dtype=float)
