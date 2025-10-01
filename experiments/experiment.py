@@ -52,7 +52,7 @@ if __name__ == "__main__":
     energy_system = EnergySystem(
         portfolio=portfolio,
         demand_profile=[300, 75, 300, 50, 100, 120, 125],
-        scenarios=Scenario(
+        scenario=Scenario(
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
             },

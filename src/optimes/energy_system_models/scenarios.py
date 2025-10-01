@@ -15,18 +15,16 @@ class Scenario(BaseModel):
     ]
 
 
-class SctochasticScenario(BaseModel):
+class SctochasticScenario(Scenario):
     """Stochastic scenario conditions."""
 
     name: str
     probability: Annotated[float, Field(ge=0, le=1, description="Probability (0-1) of the scenario.")]
-    available_capacity_profiles: Annotated[
-        Mapping[str, Sequence[float]],
-        Field(description="Available capacity scenario for each stochatic asset."),
-    ]
 
 
-def validate_sequence_of_scenarios(scenarios: Sequence[SctochasticScenario]) -> Sequence[SctochasticScenario]:
+def validate_sequence_of_stochastic_scenarios(
+    scenarios: Sequence[SctochasticScenario],
+) -> Sequence[SctochasticScenario]:
     """Validate that scenarios probabilities add up to 1.
 
     Args:
@@ -50,4 +48,4 @@ def validate_sequence_of_scenarios(scenarios: Sequence[SctochasticScenario]) -> 
     return scenarios
 
 
-ScenariosSequence = Annotated[Sequence[SctochasticScenario], AfterValidator(validate_sequence_of_scenarios)]
+ScenariosSequence = Annotated[Sequence[SctochasticScenario], AfterValidator(validate_sequence_of_stochastic_scenarios)]

@@ -12,6 +12,7 @@ import pytest
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.scenarios import Scenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
@@ -84,11 +85,13 @@ def test_validation_of_capacity_profile_lengths(
         portfolio=testing_portfolio,
         demand_profile=valid_demand_profile,
         timestep=valid_timestep,
-        available_capacity_profiles=valid_capacity_profiles,
+        scenario=Scenario(available_capacity_profiles=valid_capacity_profiles),
         power_unit=PowerUnit.MegaWatt,
     )
 
-    assert energy_system.available_capacity_profiles == valid_capacity_profiles
+    # Note: energy_system.available_capacity_profiles is now an xr.DataArray, not a dict
+    assert energy_system.scenario is not None  # The original scenario is preserved
+    assert energy_system.scenarios is None  # Only one is set
 
     invalid_capacity_profiles = {
         "test_generator": [90.0, 100.0],  # Only 2 values instead of 4
@@ -99,7 +102,7 @@ def test_validation_of_capacity_profile_lengths(
             portfolio=testing_portfolio,
             demand_profile=valid_demand_profile,
             timestep=valid_timestep,
-            available_capacity_profiles=invalid_capacity_profiles,
+            scenario=Scenario(available_capacity_profiles=invalid_capacity_profiles),
             power_unit=PowerUnit.MegaWatt,
         )
 
@@ -119,7 +122,7 @@ def test_validation_that_capacity_profiles_only_for_generators(
             portfolio=testing_portfolio,
             demand_profile=valid_demand_profile,
             timestep=valid_timestep,
-            available_capacity_profiles=invalid_capacity_profiles,
+            scenario=Scenario(available_capacity_profiles=invalid_capacity_profiles),
             power_unit=PowerUnit.MegaWatt,
         )
 

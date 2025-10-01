@@ -169,16 +169,18 @@ class TestBatteryConstraints:
         eff_disch = self.battery1.efficiency_discharging
 
         t0 = self.time_index[0]
-        bat_soc_t0 = battery_soc.sel(time=str(t0), batteries="batt1")
+        bat_soc_t0 = battery_soc.sel(time=str(t0))
+        battery_charge_t = battery_charge.sel(time=str(t0))
+        battery_discharge_t = battery_discharge.sel(time=str(t0))
 
-        battery_soc_start = [self.battery1.soc_start]
         battery_soc_start_array = xr.DataArray(
-            battery_soc_start,
-            coords={"batteries": [self.battery1.name]},
-            dims=["batteries"],
+            [[self.battery1.soc_start]],  # [scenarios, batteries]
+            coords={
+                "scenarios": ["deterministic_scenario"],
+                "batteries": [self.battery1.name],
+            },
+            dims=["scenarios", "batteries"],
         )
-        battery_charge_t = battery_charge.sel(time=str(t0), batteries="batt1")
-        battery_discharge_t = battery_discharge.sel(time=str(t0), batteries="batt1")
         expected_expr = (
             bat_soc_t0 - battery_soc_start_array - eff_ch * battery_charge_t + 1 / eff_disch * battery_discharge_t == 0
         )

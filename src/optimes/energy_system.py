@@ -48,8 +48,8 @@ class EnergySystem:
                 their available capacity profiles over time.
 
         """
-        if not (bool(scenario) ^ bool(scenarios)):
-            msg = "Either `scenario` or `scenarios` must be specified, but not both of them."
+        if scenario is not None and scenarios is not None:
+            msg = "Either specify `scenario` or `scenarios`, but not both."
             raise ValueError(msg)
         self._validated_model = ValidatedEnergySystem(
             portfolio=portfolio,
