@@ -21,6 +21,7 @@ class VariableSpec(BaseModel):
     is_binary: bool
     asset_dimension: EnergyModelDimension
     lower_bound_type: BoundType
+    dimensions: list[EnergyModelDimension]
 
 
 @unique
@@ -30,54 +31,63 @@ class ModelVariable(Enum):
         is_binary=False,
         asset_dimension=EnergyModelDimension.Generators,
         lower_bound_type=BoundType.NON_NEGATIVE,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Generators, EnergyModelDimension.Scenarios],
     )
     GENERATOR_STATUS = VariableSpec(
         name="generator_status",
         is_binary=True,
         asset_dimension=EnergyModelDimension.Generators,
         lower_bound_type=BoundType.UNBOUNDED,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Generators, EnergyModelDimension.Scenarios],
     )
     GENERATOR_STARTUP = VariableSpec(
         name="generator_startup",
         is_binary=True,
         asset_dimension=EnergyModelDimension.Generators,
         lower_bound_type=BoundType.UNBOUNDED,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Generators, EnergyModelDimension.Scenarios],
     )
     GENERATOR_SHUTDOWN = VariableSpec(
         name="generator_shutdown",
         is_binary=True,
         asset_dimension=EnergyModelDimension.Generators,
         lower_bound_type=BoundType.UNBOUNDED,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Generators, EnergyModelDimension.Scenarios],
     )
     BATTERY_POWER_IN = VariableSpec(
         name="battery_power_in",
         is_binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
         lower_bound_type=BoundType.NON_NEGATIVE,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Batteries, EnergyModelDimension.Scenarios],
     )
     BATTERY_POWER_NET = VariableSpec(
         name="battery_net_power",
         is_binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
         lower_bound_type=BoundType.UNBOUNDED,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Batteries, EnergyModelDimension.Scenarios],
     )
     BATTERY_POWER_OUT = VariableSpec(
         name="battery_power_out",
         is_binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
         lower_bound_type=BoundType.NON_NEGATIVE,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Batteries, EnergyModelDimension.Scenarios],
     )
     BATTERY_SOC = VariableSpec(
         name="battery_soc",
         is_binary=False,
         asset_dimension=EnergyModelDimension.Batteries,
         lower_bound_type=BoundType.NON_NEGATIVE,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Batteries, EnergyModelDimension.Scenarios],
     )
     BATTERY_CHARGE_MODE = VariableSpec(
         name="battery_charge_mode",
         is_binary=True,
         asset_dimension=EnergyModelDimension.Batteries,
         lower_bound_type=BoundType.UNBOUNDED,
+        dimensions=[EnergyModelDimension.Time, EnergyModelDimension.Batteries, EnergyModelDimension.Scenarios],
     )
 
     @property
@@ -95,6 +105,10 @@ class ModelVariable(Enum):
     @property
     def is_binary(self) -> bool:
         return self.value.is_binary
+
+    @property
+    def dimensions(self) -> list[EnergyModelDimension]:
+        return self.value.dimensions
 
     @classmethod
     def generator_variables(cls) -> list["ModelVariable"]:

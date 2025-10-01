@@ -95,13 +95,3 @@ class AssetPortfolio:
 
         """
         return self._get_assets_by_type(Battery)
-
-    @property
-    def stochastic_generators(self) -> tuple[PowerGenerator, ...]:
-        """Get all stochastic generators in the portfolio.
-
-        Returns:
-            A tuple containing all stochastic generators.
-
-        """
-        return tuple(gen for gen in self.generators if gen.is_stochastic)

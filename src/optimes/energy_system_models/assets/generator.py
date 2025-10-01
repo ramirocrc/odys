@@ -62,8 +62,3 @@ class PowerGenerator(EnergyAsset, frozen=True):
         float | None,
         Field(strict=True, ge=0, description="Shutdown cost of the generator, in currency per MWh"),
     ] = None
-
-    is_stochastic: Annotated[
-        bool,
-        Field(description="Set to True to if asset is stochastic (e.g. wind, solar)"),
-    ] = False
