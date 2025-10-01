@@ -37,7 +37,7 @@ dev = [
   "nox>=2025.5.1",
   "pre-commit>=4.3.0",
   "pyright>=1.1.405",
-  "pytest>=8.4.0",
+  "pytest>=8.4.1",
   "pytest-cov>=6.2.1",
   "ruff>=0.11.13",
 ]
