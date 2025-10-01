@@ -26,7 +26,7 @@ class ScenarioConstraints:
     def _get_power_balance_constraint(self) -> ModelConstraint:
         """Linopy power balance constraint ensuring supply equals demand.
 
-        This constraint ensures that at each time period, the total power
+        This constraint ensures that at each time period and scenario, the total power
         generation plus battery discharge equals the demand plus battery charging.
         """
         generation_total = self.var_generator_power.sum(EnergyModelDimension.Generators.value)

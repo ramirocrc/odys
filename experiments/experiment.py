@@ -11,6 +11,7 @@ from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.scenarios import Scenario
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -51,6 +52,11 @@ if __name__ == "__main__":
     energy_system = EnergySystem(
         portfolio=portfolio,
         demand_profile=[300, 75, 300, 50, 100, 120, 125],
+        scenarios=Scenario(
+            available_capacity_profiles={
+                "gen1": [100, 100, 100, 50, 50, 50, 50],
+            },
+        ),
         timestep=timedelta(minutes=30),
         power_unit="MW",
     )

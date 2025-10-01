@@ -85,7 +85,8 @@ class BatteryConstraints:
 
     def _get_battery_soc_end_constraint(self) -> ModelConstraint:
         time_coords = self.var_battery_soc.coords[EnergyModelDimension.Time.value]
-        constr_expression = self.var_battery_soc.loc[time_coords.values[-1]] - self.params.soc_end
+        last_time = time_coords.values[-1]
+        constr_expression = self.var_battery_soc.sel(time=last_time) - self.params.soc_end
         constraint = constr_expression == 0
         return ModelConstraint(
             constraint=constraint,

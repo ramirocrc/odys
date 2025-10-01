@@ -4,7 +4,7 @@ This module provides classes for representing energy system conditions,
 including demand profiles and system configurations.
 """
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from datetime import timedelta
 from functools import cached_property
 from typing import Self
@@ -24,7 +24,7 @@ from optimes._math_model.model_components.sets import (
 )
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.scenarios import ScenariosVector
+from optimes.energy_system_models.scenarios import Scenario, ScenariosSequence, SctochasticScenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.utils.logging import get_logger
 
@@ -52,8 +52,8 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     demand_profile: Sequence[float]
     timestep: timedelta
     power_unit: PowerUnit
-    available_capacity_profiles: Mapping[str, Sequence[float]] | None = None
-    scenarios: ScenariosVector | None = None
+    scenario: Scenario | None = None
+    scenarios: ScenariosSequence | None = None
 
     @cached_property
     def _time_set(self) -> ModelSet:
@@ -63,17 +63,24 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         )
 
     @cached_property
-    def _generators_set(self) -> ModelSet:
+    def _generator_set(self) -> ModelSet:
         return ModelSet(
             dimension=EnergyModelDimension.Generators,
             values=[gen.name for gen in self.portfolio.generators],
         )
 
     @cached_property
-    def _batteries_set(self) -> ModelSet:
+    def _battery_set(self) -> ModelSet:
         return ModelSet(
             dimension=EnergyModelDimension.Batteries,
             values=[battery.name for battery in self.portfolio.batteries],
+        )
+
+    @cached_property
+    def _scenario_set(self) -> ModelSet:
+        return ModelSet(
+            dimension=EnergyModelDimension.Scenarios,
+            values=[scenario.name for scenario in self.scenarios],
         )
 
     @cached_property
@@ -81,7 +88,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         """Returns energy model parameters."""
         return EnergyModelParameters(
             generators=GeneratorParameters(
-                set=self._generators_set,
+                set=self._generator_set,
                 nominal_power=self._generators_nominal_power,
                 variable_cost=self._generators_variable_cost,
                 min_up_time=self._generators_min_up_time,
@@ -91,7 +98,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                 max_ramp_down=self._generators_max_ramp_down,
             ),
             batteries=BatteryParameters(
-                set=self._batteries_set,
+                set=self._battery_set,
                 capacity=self._batteries_capacity,
                 max_power=self._batteries_max_power,
                 efficiency_charging=self._batteries_efficiency_charging,
@@ -103,6 +110,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             ),
             system=SystemParameters(
                 time_set=self._time_set,
+                scenario_set=self._scenario_set,
                 demand_profile=self._demand_profile,
                 available_capacity_profiles=self._available_capacity_profiles,
             ),
@@ -122,12 +130,12 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             ValueError: If the system configuration is infeasible.
 
         """
-        self._validate_available_capacity()
         self._validate_demand_can_be_met()
-        self._validate_stochastic_scenarios()
+        for scenario in self.scenarios:
+            self._validate_available_capacity(scenario)
         return self
 
-    def _validate_available_capacity(self) -> None:
+    def _validate_available_capacity(self, scenario: SctochasticScenario) -> None:
         """Validate that available capacity profiles are only for generators.
 
         Raises:
@@ -135,9 +143,9 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             ValueError: If capacity profile length doesn't match demand profile.
 
         """
-        if self.available_capacity_profiles is None:
+        if scenario.available_capacity_profiles is None:
             return
-        for asset_name, capacities in self.available_capacity_profiles.items():
+        for asset_name, capacities in scenario.available_capacity_profiles.items():
             asset = self.portfolio.get_asset(asset_name)
             if not isinstance(asset, PowerGenerator):
                 msg = (
@@ -145,16 +153,10 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                     f"but got '{asset_name}' of type {type(asset)}."
                 )
                 raise TypeError(msg)
-            if asset.is_stochastic:
-                msg = (
-                    f"Asset '{asset_name}' is stochastic. Available capacity profiles for stochastic assets "
-                    "must be specified in the `scenarios` field, not in `available_capacity_profiles`."
-                )
-                raise ValueError(msg)
             if len(capacities) != len(self.demand_profile):
                 msg = (
-                    f"Available capacity for '{asset_name}' has a length of {len(capacities)}, "
-                    f"which doesn't match the length of the demand profile ({len(self.demand_profile)})."
+                    f"Available capacity for '{asset_name}' has a length of {len(capacities)}, which doesn't match"
+                    f" the length of the demand profile in scenario {scenario.name} ({len(self.demand_profile)})."
                 )
                 raise ValueError(msg)
             for capacity_i in capacities:
@@ -206,138 +208,102 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         # TODO: Validate that:
         # sum(demand * timestep) <= sum(generator.nominal_power * timestep) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
 
-    def _validate_stochastic_scenarios(self) -> None:
-        stochastic_generators = self.portfolio.stochastic_generators
-        if not stochastic_generators:
-            if self.scenarios:
-                msg = (
-                    "Scenarios have been provided, but no assets are marked as stochastic. "
-                    "Either set `scenarios` to None or mark the relevant assets as stochastic."
-                )
-                raise ValueError(msg)
-            return
-        if not self.scenarios:
-            stochastic_gen_names = [gen.name for gen in stochastic_generators]
-            msg = (
-                f"Assets {stochastic_gen_names} are marked as stochastic, but no scenarios have been provided. "
-                "Please provide scenarios or mark these assets as non-stochastic."
-            )
-            raise ValueError(msg)
-
-        stochastic_gen_names = {gen.name for gen in stochastic_generators}
-        for scenario in self.scenarios:
-            extra_assets = set(scenario.available_capacity_profiles.keys()) - stochastic_gen_names
-            if extra_assets:
-                msg = (
-                    f"Scenario contains assets {sorted(extra_assets)} that are not marked as stochastic generators. "
-                    "Only stochastic generators should have capacity profiles in scenarios."
-                )
-                raise ValueError(msg)
-
-            for stochastic_gen in stochastic_generators:
-                if stochastic_gen.name not in scenario.available_capacity_profiles:
-                    msg = (
-                        f"Stochastic generator '{stochastic_gen.name}' is missing from scenario. "
-                        "All stochastic generators must have capacity profiles in every scenario."
-                    )
-                    raise ValueError(msg)
-
     @property
     def _generators_nominal_power(self) -> xr.DataArray:
         return xr.DataArray(
             data=[gen.nominal_power for gen in self.portfolio.generators],
-            coords=self._generators_set.coordinates,
+            coords=self._generator_set.coordinates,
         )
 
     @property
     def _generators_variable_cost(self) -> xr.DataArray:
         return xr.DataArray(
             data=[gen.variable_cost for gen in self.portfolio.generators],
-            coords=self._generators_set.coordinates,
+            coords=self._generator_set.coordinates,
         )
 
     @property
     def _generators_min_up_time(self) -> xr.DataArray:
         return xr.DataArray(
             data=[gen.min_up_time for gen in self.portfolio.generators],
-            coords=self._generators_set.coordinates,
+            coords=self._generator_set.coordinates,
         )
 
     @property
     def _generators_min_power(self) -> xr.DataArray:
         return xr.DataArray(
             data=[gen.min_power for gen in self.portfolio.generators],
-            coords=self._generators_set.coordinates,
+            coords=self._generator_set.coordinates,
         )
 
     @property
     def _generators_startup_cost(self) -> xr.DataArray:
         return xr.DataArray(
             data=[gen.startup_cost for gen in self.portfolio.generators],
-            coords=self._generators_set.coordinates,
+            coords=self._generator_set.coordinates,
         )
 
     @property
     def _generators_max_ramp_up(self) -> xr.DataArray:
         return xr.DataArray(
             data=[gen.ramp_up for gen in self.portfolio.generators],
-            coords=self._generators_set.coordinates,
+            coords=self._generator_set.coordinates,
         )
 
     @property
     def _generators_max_ramp_down(self) -> xr.DataArray:
         return xr.DataArray(
             data=[gen.ramp_down for gen in self.portfolio.generators],
-            coords=self._generators_set.coordinates,
+            coords=self._generator_set.coordinates,
         )
 
     @property
     def _batteries_capacity(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.capacity for battery in self.portfolio.batteries],
-            coords=self._batteries_set.coordinates,
+            coords=self._battery_set.coordinates,
         )
 
     @property
     def _batteries_max_power(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.max_power for battery in self.portfolio.batteries],
-            coords=self._batteries_set.coordinates,
+            coords=self._battery_set.coordinates,
         )
 
     @property
     def _batteries_efficiency_charging(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.efficiency_charging for battery in self.portfolio.batteries],
-            coords=self._batteries_set.coordinates,
+            coords=self._battery_set.coordinates,
         )
 
     @property
     def _batteries_efficiency_discharging(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.efficiency_discharging for battery in self.portfolio.batteries],
-            coords=self._batteries_set.coordinates,
+            coords=self._battery_set.coordinates,
         )
 
     @property
     def _batteries_soc_start(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.soc_start for battery in self.portfolio.batteries],
-            coords=self._batteries_set.coordinates,
+            coords=self._battery_set.coordinates,
         )
 
     @property
     def _batteries_soc_end(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.soc_end for battery in self.portfolio.batteries],
-            coords=self._batteries_set.coordinates,
+            coords=self._battery_set.coordinates,
         )
 
     @property
     def _batteries_soc_min(self) -> xr.DataArray:
         return xr.DataArray(
             data=[battery.soc_min for battery in self.portfolio.batteries],
-            coords=self._batteries_set.coordinates,
+            coords=self._battery_set.coordinates,
         )
 
     @property
@@ -348,7 +314,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             batteries_soc_max.append(battery_soc_max)
         return xr.DataArray(
             data=batteries_soc_max,
-            coords=self._batteries_set.coordinates,
+            coords=self._battery_set.coordinates,
         )
 
     @property
@@ -360,11 +326,15 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
 
     @property
     def _available_capacity_profiles(self) -> xr.DataArray:
-        profiles = self.available_capacity_profiles or {}
-        data = [
-            profiles.get(gen.name, [gen.nominal_power] * len(self.demand_profile)) for gen in self.portfolio.generators
-        ]
+        all_profiles = []
+        for scenario in self.scenarios:
+            profiles = scenario.available_capacity_profiles or {}  # todo: make available capacity profiles optional?
+            scenario_complete_profiles = [
+                profiles.get(gen.name, [gen.nominal_power] * len(self.demand_profile))
+                for gen in self.portfolio.generators
+            ]
+            all_profiles.append(scenario_complete_profiles)
         return xr.DataArray(
-            data=data,
-            coords=self._generators_set.coordinates | self._time_set.coordinates,
+            data=all_profiles,
+            coords=self._scenario_set.coordinates | self._generator_set.coordinates | self._time_set.coordinates,
         )

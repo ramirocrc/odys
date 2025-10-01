@@ -7,6 +7,7 @@ class EnergyModelDimension(Enum):
     Time = "time"
     Generators = "generators"
     Batteries = "batteries"
+    Scenarios = "scenarios"
 
 
 class ModelSet(BaseModel):
