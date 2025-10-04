@@ -109,7 +109,7 @@ class TestGeneratorConstraints:
         nominal_powers = [self.generator1.nominal_power, self.generator2.nominal_power]
         nominal_power_array = xr.DataArray(
             nominal_powers,
-            coords={"generators": [self.generator1.name, self.generator2.name]},
+            coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
         expected_expr = generator_power <= generator_status * nominal_power_array  # pyright: ignore reportOperatorIssue
@@ -124,7 +124,7 @@ class TestGeneratorConstraints:
         nominal_powers = [self.generator1.nominal_power, self.generator2.nominal_power]
         nominal_power_array = xr.DataArray(
             nominal_powers,
-            coords={"generators": [self.generator1.name, self.generator2.name]},
+            coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
         epsilon = 1e-5 * nominal_power_array
@@ -195,15 +195,15 @@ class TestGeneratorConstraints:
         generator_status = self.linopy_model.variables["generator_status"]
         generator_shutdown = self.linopy_model.variables["generator_shutdown"]
 
-        gen1_status = generator_status.sel(generators=self.generator1.name)
-        gen1_shutdown = generator_shutdown.sel(generators=self.generator1.name)
+        gen1_status = generator_status.sel(generator=self.generator1.name)
+        gen1_shutdown = generator_shutdown.sel(generator=self.generator1.name)
         gen1_expected_expr = gen1_status.rolling(
             time=self.generator1.min_up_time,
         ).sum() >= self.generator1.min_up_time * gen1_shutdown.shift(time=-1)
         assert_conequal(gen1_expected_expr, gen1_actual_constraint.lhs >= gen1_actual_constraint.rhs)
 
-        gen2_status = generator_status.sel(generators=self.generator2.name)
-        gen2_shutdown = generator_shutdown.sel(generators=self.generator2.name)
+        gen2_status = generator_status.sel(generator=self.generator2.name)
+        gen2_shutdown = generator_shutdown.sel(generator=self.generator2.name)
         gen2_expected_expr = gen2_status.rolling(
             time=self.generator2.min_up_time,
         ).sum() >= self.generator2.min_up_time * gen2_shutdown.shift(time=-1)
@@ -218,7 +218,7 @@ class TestGeneratorConstraints:
         min_powers = [self.generator1.min_power, self.generator2.min_power]
         min_power_array = xr.DataArray(
             min_powers,
-            coords={"generators": [self.generator1.name, self.generator2.name]},
+            coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
         expected_expr = generator_power >= min_power_array * generator_status
@@ -232,7 +232,7 @@ class TestGeneratorConstraints:
         max_ramp_ups = [self.generator1.ramp_up, self.generator2.ramp_up]
         max_ramp_up_array = xr.DataArray(
             max_ramp_ups,
-            coords={"generators": [self.generator1.name, self.generator2.name]},
+            coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
         expected_expr = generator_power - generator_power.shift(time=1) <= max_ramp_up_array
@@ -246,7 +246,7 @@ class TestGeneratorConstraints:
         max_ramp_downs = [self.generator1.ramp_down, self.generator2.ramp_down]
         max_ramp_down_array = xr.DataArray(
             max_ramp_downs,
-            coords={"generators": [self.generator1.name, self.generator2.name]},
+            coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
         expected_expr = generator_power.shift(time=1) - generator_power <= max_ramp_down_array

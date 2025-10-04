@@ -29,9 +29,9 @@ class ScenarioConstraints:
         This constraint ensures that at each time period and scenario, the total power
         generation plus battery discharge equals the demand plus battery charging.
         """
-        generation_total = self.var_generator_power.sum(EnergyModelDimension.Generators.value)
-        discharge_total = self.var_battery_discharge.sum(EnergyModelDimension.Batteries.value)
-        charge_total = self.var_battery_charge.sum(EnergyModelDimension.Batteries.value)
+        generation_total = self.var_generator_power.sum(EnergyModelDimension.Generators)
+        discharge_total = self.var_battery_discharge.sum(EnergyModelDimension.Batteries)
+        charge_total = self.var_battery_charge.sum(EnergyModelDimension.Batteries)
 
         expression = generation_total + discharge_total - charge_total - self.params.demand_profile == 0
         return ModelConstraint(

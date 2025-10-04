@@ -25,10 +25,10 @@ def test_single_generator_meets_demand() -> None:
         {"generator": demand_profile},
         index=pd.MultiIndex.from_product(
             [["deterministic_scenario"], ["0", "1", "2", "3", "4"]],
-            names=["scenarios", "time"],
+            names=["scenario", "time"],
         ),
     )
-    expected_results.columns.name = "generators"
+    expected_results.columns.name = "generator"
 
     energy_system = EnergySystem(
         portfolio=portfolio,
@@ -77,10 +77,10 @@ def test_three_generators_meet_demand() -> None:
         },
         index=pd.MultiIndex.from_product(
             [["deterministic_scenario"], ["0", "1", "2", "3", "4", "5"]],
-            names=["scenarios", "time"],
+            names=["scenario", "time"],
         ),
     )
-    expected_results.columns.name = "generators"
+    expected_results.columns.name = "generator"
 
     energy_system = EnergySystem(
         portfolio=portfolio,
@@ -118,7 +118,7 @@ def test_generator_and_battery_optimization() -> None:
     demand_profile = [50.0, 50.0, 150.0, 150.0, 50.0]
     index = pd.MultiIndex.from_product(
         [["deterministic_scenario"], ["0", "1", "2", "3", "4"]],
-        names=["scenarios", "time"],
+        names=["scenario", "time"],
     )
     expected_generator_results = pd.DataFrame(
         {
@@ -132,8 +132,8 @@ def test_generator_and_battery_optimization() -> None:
         },
         index=index,
     )
-    expected_generator_results.columns.name = "generators"
-    expected_battery_soc_results.columns.name = "batteries"
+    expected_generator_results.columns.name = "generator"
+    expected_battery_soc_results.columns.name = "battery"
     timestep = timedelta(hours=1)
 
     energy_system = EnergySystem(
@@ -176,7 +176,7 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
 
     index = pd.MultiIndex.from_product(
         [["deterministic_scenario"], ["0", "1", "2"]],
-        names=["scenarios", "time"],
+        names=["scenario", "time"],
     )
     expected_generator_results = pd.DataFrame(
         {
@@ -190,8 +190,8 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
         },
         index=index,
     )
-    expected_generator_results.columns.name = "generators"
-    expected_battery_soc_results.columns.name = "batteries"
+    expected_generator_results.columns.name = "generator"
+    expected_battery_soc_results.columns.name = "battery"
 
     energy_system = EnergySystem(
         portfolio=portfolio,
