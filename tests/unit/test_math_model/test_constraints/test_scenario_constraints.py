@@ -7,10 +7,11 @@ import xarray as xr
 from linopy.testing import assert_conequal
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
+from optimes._math_model.model_components.variables import ModelVariable
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
-from optimes.energy_system_models.scenarios import Scenario
+from optimes.energy_system_models.scenarios import Scenario, SctochasticScenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
@@ -90,8 +91,47 @@ def energy_system_sample(
 
 
 @pytest.fixture
+def energy_system_with_multiple_scenarios(
+    asset_portfolio_sample: AssetPortfolio,
+    demand_profile_sample: list[float],
+) -> ValidatedEnergySystem:
+    scenarios = [
+        SctochasticScenario(
+            name="scenario_1",
+            probability=0.6,
+            available_capacity_profiles={
+                "gen1": [80, 80, 100],
+                "gen2": [150, 150, 150],
+            },
+        ),
+        SctochasticScenario(
+            name="scenario_2",
+            probability=0.4,
+            available_capacity_profiles={
+                "gen1": [90, 70, 80],
+                "gen2": [120, 140, 130],
+            },
+        ),
+    ]
+    return ValidatedEnergySystem(
+        portfolio=asset_portfolio_sample,
+        demand_profile=demand_profile_sample,
+        timestep=timedelta(hours=1),
+        power_unit=PowerUnit.MegaWatt,
+        scenarios=scenarios,
+        enforce_non_anticipativity=True,
+    )
+
+
+@pytest.fixture
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
+    return model_builder.build()
+
+
+@pytest.fixture
+def linopy_model_with_non_anticipativity(energy_system_with_multiple_scenarios: ValidatedEnergySystem) -> linopy.Model:
+    model_builder = EnergyAlgebraicModelBuilder(energy_system_with_multiple_scenarios.parameters)
     return model_builder.build()
 
 
@@ -143,3 +183,24 @@ class TestScenarioConstraints:
 
         expected_expr = generator_power <= available_capacity_array
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
+
+
+class TestNonAnticipativityConstraints:
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        linopy_model_with_non_anticipativity: linopy.Model,
+        time_index: list[int],
+    ) -> None:
+        self.linopy_model = linopy_model_with_non_anticipativity
+        self.time_index = time_index
+
+    def test_non_anticipativity_constraints(self) -> None:
+        for variable in ModelVariable:
+            constraint_name = f"non_anticipativity_{variable.var_name}_constraint"
+            actual_constraint = self.linopy_model.constraints[constraint_name]
+
+            linopy_var = self.linopy_model.variables[variable.var_name]
+            first_scenario_var = linopy_var.isel(scenario=0)
+            expected_expr = linopy_var - first_scenario_var == 0
+            assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
