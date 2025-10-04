@@ -20,7 +20,7 @@ if __name__ == "__main__":
     generator_1 = PowerGenerator(
         name="gen1",
         nominal_power=100.0,
-        variable_cost=20.0,
+        variable_cost=200.0,
         min_up_time=1,
         ramp_down=100,
     )
@@ -43,29 +43,31 @@ if __name__ == "__main__":
     portfolio.add_asset(generator_2)
     portfolio.add_asset(battery_1)
 
+    scenarios = [
+        SctochasticScenario(
+            name="default",
+            probability=0.5,
+            available_capacity_profiles={
+                "gen1": [100, 100, 100, 50, 50, 50, 50],
+                "wind_farm": [100, 100, 100, 50, 50, 50, 50],
+            },
+        ),
+        SctochasticScenario(
+            name="high_wind",
+            probability=0.5,
+            available_capacity_profiles={
+                "gen1": [100, 100, 100, 50, 50, 50, 50],
+                "wind_farm": [150, 150, 100, 50, 50, 50, 50],
+            },
+        ),
+    ]
     energy_system = EnergySystem(
         portfolio=portfolio,
         demand_profile=[180, 180, 150, 50, 80, 90, 95],
         timestep=timedelta(minutes=30),
+        scenarios=scenarios,
+        enforce_non_anticipativity=False,
         power_unit="MW",
-        scenarios=[
-            SctochasticScenario(
-                name="default",
-                probability=0.5,
-                available_capacity_profiles={
-                    "gen1": [100, 100, 100, 50, 50, 50, 50],
-                    "wind_farm": [100, 100, 100, 50, 50, 50, 50],
-                },
-            ),
-            SctochasticScenario(
-                name="high_wind",
-                probability=0.5,
-                available_capacity_profiles={
-                    "gen1": [100, 100, 100, 50, 50, 50, 50],
-                    "wind_farm": [150, 150, 100, 50, 50, 50, 50],
-                },
-            ),
-        ],
     )
 
     result = energy_system.optimize()

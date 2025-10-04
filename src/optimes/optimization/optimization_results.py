@@ -7,6 +7,7 @@ from energy system models.
 from functools import cached_property
 
 import pandas as pd
+import xarray as xr
 from linopy import Model
 from linopy.constants import SolverStatus, TerminationCondition
 
@@ -60,6 +61,11 @@ class OptimizationResults:
         return self._termination_condition.value
 
     @cached_property
+    def _solution(self) -> xr.Dataset:
+        self._validate_terminated_successfully()
+        return self._linopy_model.solution
+
+    @cached_property
     def to_dataframe(self) -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
 
@@ -67,24 +73,35 @@ class OptimizationResults:
             DataFrame containing all solution variables with units, variables,
             and time periods as multi-level index columns.
         """
-        self._validate_terminated_successfully()
-        ds = self._linopy_model.solution
         dfs = []
         for variable in ModelVariable:
             variable_name = variable.var_name
-            df = ds[variable_name].to_series().reset_index()
-            df = df.rename(columns={variable.asset_dimension.value: "unit", variable_name: "value"})
-            df = df[[EnergyModelDimension.Scenarios, "unit", EnergyModelDimension.Time, "value"]]
-            df["variable"] = variable_name
+            df = (
+                self._solution[variable_name]
+                .to_series()
+                .reset_index()
+                .rename(columns={variable.asset_dimension.value: "unit", variable_name: "value"})
+                .assign(variable=variable_name)
+            )
             dfs.append(df)
 
-        df_final = pd.concat(dfs, ignore_index=True)
-        return df_final.set_index([
-            EnergyModelDimension.Scenarios,
-            "unit",
-            "variable",
-            EnergyModelDimension.Time,
-        ]).sort_index()
+        return (
+            pd.concat(dfs, ignore_index=True)
+            .set_index([
+                EnergyModelDimension.Scenarios,
+                "unit",
+                "variable",
+                EnergyModelDimension.Time,
+            ])
+            .sort_index()
+            .pipe(self._drop_single_scenario_level)
+        )
+
+    def _drop_single_scenario_level(self, df: pd.DataFrame) -> pd.DataFrame:
+        scenario_values = df.index.get_level_values(EnergyModelDimension.Scenarios).to_numpy()
+        if (scenario_values == scenario_values[0]).all():
+            return df.droplevel(EnergyModelDimension.Scenarios)
+        return df
 
     def _validate_terminated_successfully(self) -> None:
         if self._solver_status != SolverStatus.ok:
@@ -112,4 +129,4 @@ class OptimizationResults:
         )
 
     def _get_variable_results(self, variable: ModelVariable) -> pd.DataFrame:
-        return self._linopy_model.solution[variable.var_name].to_series().unstack()  # noqa: PD010
+        return self._solution[variable.var_name].to_series().unstack().pipe(self._drop_single_scenario_level)  # noqa: PD010

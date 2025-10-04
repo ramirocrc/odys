@@ -54,6 +54,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     power_unit: PowerUnit
     scenario: Scenario | None = None
     scenarios: ScenariosSequence | None = None
+    enforce_non_anticipativity: bool = False
 
     @cached_property
     def _time_set(self) -> ModelSet:
@@ -116,8 +117,10 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             system=SystemParameters(
                 time_set=self._time_set,
                 scenario_set=self._scenario_set,
+                enforce_non_anticipativity=self.enforce_non_anticipativity,
                 demand_profile=self._demand_profile,
                 available_capacity_profiles=self._available_capacity_profiles,
+                scenario_probabilities=self._scenario_probabilities,
             ),
         )
 
@@ -364,4 +367,18 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         return xr.DataArray(
             data=all_profiles,
             coords=self._scenario_set.coordinates | self._generator_set.coordinates | self._time_set.coordinates,
+        )
+
+    @cached_property
+    def _scenario_probabilities(self) -> xr.DataArray:
+        """Returns scenario probabilities as xarray DataArray."""
+        if self.scenarios:
+            return xr.DataArray(
+                data=[scenario.probability for scenario in self.scenarios],
+                coords=self._scenario_set.coordinates,
+            )
+
+        return xr.DataArray(
+            data=[1.0],
+            coords=self._scenario_set.coordinates,
         )

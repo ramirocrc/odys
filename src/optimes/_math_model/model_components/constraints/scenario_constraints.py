@@ -18,10 +18,13 @@ class ScenarioConstraints:
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
-        return (
+        constraints = [
             self._get_power_balance_constraint(),
             self._get_available_capcity_profiles_constraint(),
-        )
+        ]
+        if self.params.enforce_non_anticipativity:
+            constraints += self._get_non_anticipativity_constraint()
+        return tuple(constraints)
 
     def _get_power_balance_constraint(self) -> ModelConstraint:
         """Linopy power balance constraint ensuring supply equals demand.
@@ -45,3 +48,23 @@ class ScenarioConstraints:
             name="available_capacity_constraint",
             constraint=expression,
         )
+
+    def _get_non_anticipativity_constraint(self) -> list[ModelConstraint]:
+        """Non-anticipativity constraint ensuring variables have same values across scenarios.
+
+        This constraint enforces that decision variables take the same values across
+        all scenarios, reflecting that decisions are made before uncertainty is revealed.
+        """
+        constraints = []
+        for variable in ModelVariable:
+            linopy_var = self.model.variables[variable.var_name]
+            first_scenario_var = linopy_var.isel({EnergyModelDimension.Scenarios: 0})
+            expression = linopy_var - first_scenario_var == 0
+            constraints.append(
+                ModelConstraint(
+                    name=f"non_anticipativity_{variable.name}_constraint",
+                    constraint=expression,
+                ),
+            )
+
+        return constraints

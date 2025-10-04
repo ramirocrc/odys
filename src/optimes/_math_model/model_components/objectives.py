@@ -15,5 +15,7 @@ def get_operating_costs(
     var_generator_startup: linopy.Variable,
     param_generator_variable_cost: xr.DataArray,
     param_generator_startup_cost: xr.DataArray,
+    scenario_probabilities: xr.DataArray,
 ) -> linopy.LinearExpression:
-    return var_generator_power * param_generator_variable_cost + var_generator_startup * param_generator_startup_cost  # pyright: ignore reportOperatorIssue
+    costs = var_generator_power * param_generator_variable_cost + var_generator_startup * param_generator_startup_cost  # pyright: ignore reportOperatorIssue
+    return costs * scenario_probabilities  # pyright: ignore reportOperatorIssue

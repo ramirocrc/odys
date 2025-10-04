@@ -92,7 +92,7 @@ class GeneratorConstraints:
     def _get_min_uptime_constraint(self) -> tuple[ModelConstraint, ...]:
         constraints = []
         for generator in self.params.set.values:
-            min_up_time = int(self.params.min_up_time.sel(generator=generator).values)
+            min_up_time = int(self.params.min_up_time.sel(generator=generator))
             generator_status = self.var_generator_status.sel(generator=generator)
             generator_shutdown = self.var_generator_shutdown.sel(generator=generator)
             constraint_generator = generator_status.rolling(
