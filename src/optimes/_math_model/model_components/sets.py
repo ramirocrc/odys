@@ -1,13 +1,13 @@
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel
 
 
-class EnergyModelDimension(Enum):
+class EnergyModelDimension(StrEnum):
     Time = "time"
-    Generators = "generators"
-    Batteries = "batteries"
-    Scenarios = "scenarios"
+    Generators = "generator"
+    Batteries = "battery"
+    Scenarios = "scenario"
 
 
 class ModelSet(BaseModel):

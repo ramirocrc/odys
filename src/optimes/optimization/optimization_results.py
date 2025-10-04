@@ -4,10 +4,13 @@ This module provides classes for handling and analyzing optimization results
 from energy system models.
 """
 
+from functools import cached_property
+
 import pandas as pd
 from linopy import Model
 from linopy.constants import SolverStatus, TerminationCondition
 
+from optimes._math_model.model_components.sets import EnergyModelDimension
 from optimes._math_model.model_components.variables import ModelVariable
 from optimes.optimization.result_containers import BatteryResults, GeneratorResults
 
@@ -36,7 +39,7 @@ class OptimizationResults:
         self._termination_condition = termination_condition
         self._linopy_model = linopy_model
 
-    @property
+    @cached_property
     def solver_status(self) -> str:
         """Get the solver status.
 
@@ -46,7 +49,7 @@ class OptimizationResults:
         """
         return self._solver_status.value
 
-    @property
+    @cached_property
     def termination_condition(self) -> str:
         """Get the termination condition.
 
@@ -56,6 +59,7 @@ class OptimizationResults:
         """
         return self._termination_condition.value
 
+    @cached_property
     def to_dataframe(self) -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
 
@@ -70,20 +74,24 @@ class OptimizationResults:
             variable_name = variable.var_name
             df = ds[variable_name].to_series().reset_index()
             df = df.rename(columns={variable.asset_dimension.value: "unit", variable_name: "value"})
-            df = df[["unit", "time", "value"]]
+            df = df[[EnergyModelDimension.Scenarios, "unit", EnergyModelDimension.Time, "value"]]
             df["variable"] = variable_name
             dfs.append(df)
 
         df_final = pd.concat(dfs, ignore_index=True)
-        df_final = df_final[["unit", "variable", "time", "value"]]
-        return df_final.set_index(["unit", "variable", "time"]).sort_index()
+        return df_final.set_index([
+            EnergyModelDimension.Scenarios,
+            "unit",
+            "variable",
+            EnergyModelDimension.Time,
+        ]).sort_index()
 
     def _validate_terminated_successfully(self) -> None:
         if self._solver_status != SolverStatus.ok:
             msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."
             raise ValueError(msg)
 
-    @property
+    @cached_property
     def batteries(self) -> BatteryResults:
         """Get battery results."""
         self._validate_terminated_successfully()
@@ -92,7 +100,7 @@ class OptimizationResults:
             state_of_charge=self._get_variable_results(ModelVariable.BATTERY_SOC),
         )
 
-    @property
+    @cached_property
     def generators(self) -> GeneratorResults:
         """Get generator results."""
         self._validate_terminated_successfully()

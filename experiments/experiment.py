@@ -73,3 +73,6 @@ if __name__ == "__main__":
     logger.info(result.generators.startup)
     logger.info("generators shutdown")
     logger.info(result.generators.shutdown)
+
+    logger.info("results summary dataframe")
+    logger.info(result.to_dataframe)

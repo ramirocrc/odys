@@ -110,9 +110,9 @@ class TestScenarioConstraints:
     def test_constraint_power_balance(self) -> None:
         actual_constraint = self.linopy_model.constraints["power_balance_constraint"]
 
-        generation_total = self.linopy_model.variables["generator_power"].sum("generators")
-        discharge_total = self.linopy_model.variables["battery_power_out"].sum("batteries")
-        charge_total = self.linopy_model.variables["battery_power_in"].sum("batteries")
+        generation_total = self.linopy_model.variables["generator_power"].sum("generator")
+        discharge_total = self.linopy_model.variables["battery_power_out"].sum("battery")
+        charge_total = self.linopy_model.variables["battery_power_in"].sum("battery")
 
         demand_array = xr.DataArray(self.demand_profile_sample, coords=[self.time_index], dims=["time"])
         expected_expr = generation_total + discharge_total - charge_total == demand_array
@@ -134,11 +134,11 @@ class TestScenarioConstraints:
         available_capacity_array = xr.DataArray(
             available_capacity_data,
             coords={
-                "scenarios": ["deterministic_scenario"],
-                "generators": ["gen1", "gen2"],
+                "scenario": ["deterministic_scenario"],
+                "generator": ["gen1", "gen2"],
                 "time": self.time_index,
             },
-            dims=["scenarios", "generators", "time"],
+            dims=["scenario", "generator", "time"],
         )
 
         expected_expr = generator_power <= available_capacity_array

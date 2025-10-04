@@ -129,12 +129,12 @@ class TestBatteryConstraints:
         eff_disch = self.battery1.efficiency_discharging
 
         for t in self.time_index[1:]:  # Skip t=0
-            actual_t = actual_constraint.sel(time=str(t), batteries="batt1")
+            actual_t = actual_constraint.sel(time=str(t), battery="batt1")
 
-            bat_soc_t = battery_soc.sel(time=str(t), batteries="batt1")
-            bat_soc_t_minus_1 = battery_soc.sel(time=str(t - 1), batteries="batt1")
-            battery_charge_t = battery_charge.sel(time=str(t), batteries="batt1")
-            battery_discharge_t = battery_discharge.sel(time=str(t), batteries="batt1")
+            bat_soc_t = battery_soc.sel(time=str(t), battery="batt1")
+            bat_soc_t_minus_1 = battery_soc.sel(time=str(t - 1), battery="batt1")
+            battery_charge_t = battery_charge.sel(time=str(t), battery="batt1")
+            battery_discharge_t = battery_discharge.sel(time=str(t), battery="batt1")
             expected_expr = (
                 bat_soc_t == bat_soc_t_minus_1 + eff_ch * battery_charge_t - 1 / eff_disch * battery_discharge_t
             )
@@ -176,10 +176,10 @@ class TestBatteryConstraints:
         battery_soc_start_array = xr.DataArray(
             [[self.battery1.soc_start]],  # [scenarios, batteries]
             coords={
-                "scenarios": ["deterministic_scenario"],
-                "batteries": [self.battery1.name],
+                "scenario": ["deterministic_scenario"],
+                "battery": [self.battery1.name],
             },
-            dims=["scenarios", "batteries"],
+            dims=["scenario", "battery"],
         )
         expected_expr = (
             bat_soc_t0 - battery_soc_start_array - eff_ch * battery_charge_t + 1 / eff_disch * battery_discharge_t == 0
@@ -193,8 +193,8 @@ class TestBatteryConstraints:
         battery_soc = self.linopy_model.variables["battery_soc"]
         battery_soc_min_array = xr.DataArray(
             [self.battery1.soc_min],
-            coords={"batteries": [self.battery1.name]},
-            dims=["batteries"],
+            coords={"battery": [self.battery1.name]},
+            dims=["battery"],
         )
         expected_expr = battery_soc >= battery_soc_min_array
 
@@ -206,8 +206,8 @@ class TestBatteryConstraints:
         battery_soc = self.linopy_model.variables["battery_soc"]
         battery_soc_max_array = xr.DataArray(
             [self.battery1.soc_max],
-            coords={"batteries": [self.battery1.name]},
-            dims=["batteries"],
+            coords={"battery": [self.battery1.name]},
+            dims=["battery"],
         )
         expected_expr = battery_soc <= battery_soc_max_array
 
