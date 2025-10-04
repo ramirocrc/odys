@@ -34,6 +34,8 @@ class EnergySystem:
         power_unit: str,
         scenario: Scenario | None = None,
         scenarios: Sequence[SctochasticScenario] | None = None,
+        *,
+        enforce_non_anticipativity: bool = False,
     ) -> None:
         """Initialize the energy system configuration and optimizer.
 
@@ -45,7 +47,9 @@ class EnergySystem:
             available_capacity_profiles: Optional dict mapping generator names to
             scenario: Scenario of the system
             scenarios: Sequence of stochastic scenarios. Probabilities must add up to 1.
-                their available capacity profiles over time.
+            enforce_non_anticipativity: When True, decision variables must take the same values across all scenarios,
+            reflecting that decisions are made before uncertainty is revealed. When False, scenarios are optimized
+            separately allowing different decisions per scenario.
 
         """
         if scenario is not None and scenarios is not None:
@@ -58,6 +62,7 @@ class EnergySystem:
             power_unit=power_unit,  # pyright: ignore reportArgumentType
             scenario=scenario,
             scenarios=scenarios,
+            enforce_non_anticipativity=enforce_non_anticipativity,
         )
 
     def optimize(

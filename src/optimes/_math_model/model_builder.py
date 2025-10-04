@@ -131,5 +131,6 @@ class EnergyAlgebraicModelBuilder:
             var_generator_startup=self._linopy_model.variables[ModelVariable.GENERATOR_STARTUP.var_name],
             param_generator_variable_cost=self._parameters.generators.variable_cost,
             param_generator_startup_cost=self._parameters.generators.startup_cost,
+            scenario_probabilities=self._parameters.system.scenario_probabilities,
         )
         self._linopy_model.add_objective(objective)
