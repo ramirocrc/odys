@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
     scenarios = [
         SctochasticScenario(
-            name="default",
-            probability=0.9,
+            name="low_wind",
+            probability=0.1,
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
                 "wind_farm": [100, 100, 100, 50, 50, 50, 50],
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         ),
         SctochasticScenario(
             name="high_wind",
-            probability=0.1,
+            probability=0.9,
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
                 "wind_farm": [150, 150, 100, 50, 50, 50, 50],

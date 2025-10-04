@@ -40,6 +40,29 @@
 - [ ] Support for other assets (e.g. wind, hydro, solar pv)
 - [ ] Implement cusomt Exceptions
 
+- [ ] . Demand-Side Assets
+  - FlexibleLoad: Demand response, load shifting
+  - ElectricVehicle: Mobile storage with driving patterns
+  - HeatPump: Thermal/electrical coupling
+
+- [ ] . Multi-Objective Optimization
+  - Cost vs. emissions
+  - Reliability vs. cost
+  - Risk vs. return
+
+- [ ] Enhanced Risk Management
+  - CVaR: Conditional Value at Risk
+  - Chance Constraints: Probabiistic constraint satisfaction
+  - Robust Optimization: Worst-case scenarios
+
+- [ ] . Market Mechanisms
+  - Bidding Strategies: Market participation
+  - Ancilary Services: Frequency regulation, reserves
+  - Capacity Markets: Long-term planning
+
+- [ ] Framework Extensions 3. Dynamic Features
+  - Rolling Horizon: Multi-stage optimization
+
 # Codebase refactoring
 
 - [x] Move Scenario specific configuration (e.g. battery soc_initial soc_terminal to EnergySystem class)
