@@ -62,7 +62,7 @@ class ScenarioConstraints:
             expression = linopy_var - first_scenario_var == 0
             constraints.append(
                 ModelConstraint(
-                    name=f"non_anticipativity_{variable.name}_constraint",
+                    name=f"non_anticipativity_{variable.var_name}_constraint",
                     constraint=expression,
                 ),
             )
