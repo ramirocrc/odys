@@ -11,7 +11,7 @@ import xarray as xr
 from linopy import Model
 from linopy.constants import SolverStatus, TerminationCondition
 
-from optimes._math_model.model_components.sets import EnergyModelDimension
+from optimes._math_model.model_components.sets import ModelDimension
 from optimes._math_model.model_components.variables import ModelVariable
 from optimes.optimization.result_containers import BatteryResults, GeneratorResults
 
@@ -80,7 +80,7 @@ class OptimizationResults:
                 self._solution[variable_name]
                 .to_series()
                 .reset_index()
-                .rename(columns={variable.asset_dimension.value: "unit", variable_name: "value"})
+                .rename(columns={variable.asset_dimension: "unit", variable_name: "value"})
                 .assign(variable=variable_name)
             )
             dfs.append(df)
@@ -88,19 +88,19 @@ class OptimizationResults:
         return (
             pd.concat(dfs, ignore_index=True)
             .set_index([
-                EnergyModelDimension.Scenarios,
+                ModelDimension.Scenarios,
                 "unit",
                 "variable",
-                EnergyModelDimension.Time,
+                ModelDimension.Time,
             ])
             .sort_index()
             .pipe(self._drop_single_scenario_level)
         )
 
     def _drop_single_scenario_level(self, df: pd.DataFrame) -> pd.DataFrame:
-        scenario_values = df.index.get_level_values(EnergyModelDimension.Scenarios).to_numpy()
+        scenario_values = df.index.get_level_values(ModelDimension.Scenarios).to_numpy()
         if (scenario_values == scenario_values[0]).all():
-            return df.droplevel(EnergyModelDimension.Scenarios)
+            return df.droplevel(ModelDimension.Scenarios)
         return df
 
     def _validate_terminated_successfully(self) -> None:

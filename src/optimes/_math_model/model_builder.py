@@ -68,18 +68,18 @@ class EnergyAlgebraicModelBuilder:
         for generator_variable_i in ModelVariable.generator_variables():
             linopy_variable_parameters = get_linopy_variable_parameters(
                 variable=generator_variable_i,
-                scenario_set=self._parameters.system.scenario_set,
-                time_set=self._parameters.system.time_set,
-                asset_set=self._parameters.generators.set,
+                scenario_index=self._parameters.system.scenario_set,
+                time_index=self._parameters.system.time_set,
+                generator_index=self._parameters.generators.set,
             )
             self.add_variable_to_model(linopy_variable_parameters)
 
         for battery_variable_i in ModelVariable.battery_variables():
             linopy_variable_parameters = get_linopy_variable_parameters(
                 variable=battery_variable_i,
-                time_set=self._parameters.system.time_set,
-                scenario_set=self._parameters.system.scenario_set,
-                asset_set=self._parameters.batteries.set,
+                time_index=self._parameters.system.time_set,
+                scenario_index=self._parameters.system.scenario_set,
+                battery_index=self._parameters.batteries.set,
             )
             self.add_variable_to_model(linopy_variable_parameters)
 

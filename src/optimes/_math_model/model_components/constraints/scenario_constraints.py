@@ -4,7 +4,7 @@ from optimes._math_model.model_components.constraints.model_constraint import Mo
 from optimes._math_model.model_components.parameters import (
     SystemParameters,
 )
-from optimes._math_model.model_components.sets import EnergyModelDimension
+from optimes._math_model.model_components.sets import ModelDimension
 from optimes._math_model.model_components.variables import ModelVariable
 
 
@@ -32,9 +32,9 @@ class ScenarioConstraints:
         This constraint ensures that at each time period and scenario, the total power
         generation plus battery discharge equals the demand plus battery charging.
         """
-        generation_total = self.var_generator_power.sum(EnergyModelDimension.Generators)
-        discharge_total = self.var_battery_discharge.sum(EnergyModelDimension.Batteries)
-        charge_total = self.var_battery_charge.sum(EnergyModelDimension.Batteries)
+        generation_total = self.var_generator_power.sum(ModelDimension.Generators)
+        discharge_total = self.var_battery_discharge.sum(ModelDimension.Batteries)
+        charge_total = self.var_battery_charge.sum(ModelDimension.Batteries)
 
         expression = generation_total + discharge_total - charge_total - self.params.demand_profile == 0
         return ModelConstraint(
@@ -58,7 +58,7 @@ class ScenarioConstraints:
         constraints = []
         for variable in ModelVariable:
             linopy_var = self.model.variables[variable.var_name]
-            first_scenario_var = linopy_var.isel({EnergyModelDimension.Scenarios: 0})
+            first_scenario_var = linopy_var.isel({ModelDimension.Scenarios: 0})
             expression = linopy_var - first_scenario_var == 0
             constraints.append(
                 ModelConstraint(

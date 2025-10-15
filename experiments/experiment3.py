@@ -55,7 +55,7 @@ if __name__ == "__main__":
         demand_profile=[180, 180, 150, 50, 80, 90, 95],
         timestep=timedelta(minutes=30),
         scenarios=scenarios,
-        enforce_non_anticipativity=True,
+        enforce_non_anticipativity=False,
         power_unit="MW",
     )
 
