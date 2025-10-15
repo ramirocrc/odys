@@ -14,12 +14,13 @@ from optimes._math_model.model_components.constraints.scenario_constraints impor
 )
 from optimes._math_model.model_components.linopy_converter import (
     LinopyVariableParameters,
-    get_linopy_variable_parameters,
+    get_variable_lower_bound,
 )
 from optimes._math_model.model_components.objectives import (
     get_operating_costs,
 )
 from optimes._math_model.model_components.parameters import EnergyModelParameters
+from optimes._math_model.model_components.sets import ModelDimension
 from optimes._math_model.model_components.variables import (
     ModelVariable,
 )
@@ -65,23 +66,41 @@ class EnergyAlgebraicModelBuilder:
         return self._linopy_model
 
     def _add_model_variables(self) -> None:
-        for generator_variable_i in ModelVariable.generator_variables():
-            linopy_variable_parameters = get_linopy_variable_parameters(
-                variable=generator_variable_i,
-                scenario_index=self._parameters.system.scenario_set,
-                time_index=self._parameters.system.time_set,
-                generator_index=self._parameters.generators.set,
-            )
-            self.add_variable_to_model(linopy_variable_parameters)
+        for variable in ModelVariable:
+            linopy_variable = self._get_linopy_variable_params(variable)
+            self.add_variable_to_model(linopy_variable)
 
-        for battery_variable_i in ModelVariable.battery_variables():
-            linopy_variable_parameters = get_linopy_variable_parameters(
-                variable=battery_variable_i,
-                time_index=self._parameters.system.time_set,
-                scenario_index=self._parameters.system.scenario_set,
-                battery_index=self._parameters.batteries.set,
-            )
-            self.add_variable_to_model(linopy_variable_parameters)
+    def _get_linopy_variable_params(self, variable: ModelVariable) -> LinopyVariableParameters:
+        scenario_index = self._parameters.system.scenario_index
+        time_index = self._parameters.system.time_index
+
+        coords = scenario_index.coordinates | time_index.coordinates
+        dims = [scenario_index.dimension, time_index.dimension]
+        indeces = [scenario_index, time_index]
+
+        if ModelDimension.Generators in variable.dimensions:
+            generator_index = self._parameters.generators.index
+            coords |= generator_index.coordinates
+            dims.append(generator_index.dimension)
+            indeces.append(generator_index)
+
+        if ModelDimension.Batteries in variable.dimensions:
+            battery_index = self._parameters.batteries.index
+            coords |= battery_index.coordinates
+            dims.append(battery_index.dimension)
+            indeces.append(battery_index)
+
+        return LinopyVariableParameters(
+            name=variable.var_name,
+            coords=coords,
+            dims=dims,
+            lower=get_variable_lower_bound(
+                indeces=indeces,
+                lower_bound_type=variable.lower_bound_type,
+                is_binary=variable.is_binary,
+            ),
+            binary=variable.is_binary,
+        )
 
     def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
         self._linopy_model.add_variables(

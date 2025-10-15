@@ -1,3 +1,4 @@
+from abc import ABC
 from enum import StrEnum
 from typing import ClassVar
 
@@ -11,29 +12,29 @@ class ModelDimension(StrEnum):
     Batteries = "battery"
 
 
-class ModelIndex(BaseModel):
+class ModelIndex(BaseModel, ABC, frozen=True):
     """Energy Model Set."""
 
     dimension: ClassVar[ModelDimension]
-    values: list[str]
+    values: tuple[str, ...]
 
     @property
     def coordinates(self) -> dict[str, list[str]]:
         """Gets coordinates for xarray objects."""
-        return {f"{self.dimension.value}": self.values}
+        return {f"{self.dimension.value}": list(self.values)}
 
 
-class ScenarioIndex(ModelIndex):
+class ScenarioIndex(ModelIndex, frozen=True):
     dimension: ClassVar[ModelDimension] = ModelDimension.Scenarios
 
 
-class TimeIndex(ModelIndex):
+class TimeIndex(ModelIndex, frozen=True):
     dimension: ClassVar[ModelDimension] = ModelDimension.Time
 
 
-class GeneratorIndex(ModelIndex):
+class GeneratorIndex(ModelIndex, frozen=True):
     dimension: ClassVar[ModelDimension] = ModelDimension.Generators
 
 
-class BatteryIndex(ModelIndex):
+class BatteryIndex(ModelIndex, frozen=True):
     dimension: ClassVar[ModelDimension] = ModelDimension.Batteries
