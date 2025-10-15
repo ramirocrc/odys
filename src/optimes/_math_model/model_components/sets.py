@@ -1,22 +1,39 @@
 from enum import StrEnum
+from typing import ClassVar
 
 from pydantic import BaseModel
 
 
-class EnergyModelDimension(StrEnum):
+class ModelDimension(StrEnum):
+    Scenarios = "scenario"
     Time = "time"
     Generators = "generator"
     Batteries = "battery"
-    Scenarios = "scenario"
 
 
-class ModelSet(BaseModel):
+class ModelIndex(BaseModel):
     """Energy Model Set."""
 
-    dimension: EnergyModelDimension
+    dimension: ClassVar[ModelDimension]
     values: list[str]
 
     @property
     def coordinates(self) -> dict[str, list[str]]:
         """Gets coordinates for xarray objects."""
         return {f"{self.dimension.value}": self.values}
+
+
+class ScenarioIndex(ModelIndex):
+    dimension: ClassVar[ModelDimension] = ModelDimension.Scenarios
+
+
+class TimeIndex(ModelIndex):
+    dimension: ClassVar[ModelDimension] = ModelDimension.Time
+
+
+class GeneratorIndex(ModelIndex):
+    dimension: ClassVar[ModelDimension] = ModelDimension.Generators
+
+
+class BatteryIndex(ModelIndex):
+    dimension: ClassVar[ModelDimension] = ModelDimension.Batteries

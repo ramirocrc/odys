@@ -19,8 +19,10 @@ from optimes._math_model.model_components.parameters import (
     SystemParameters,
 )
 from optimes._math_model.model_components.sets import (
-    EnergyModelDimension,
-    ModelSet,
+    BatteryIndex,
+    GeneratorIndex,
+    ScenarioIndex,
+    TimeIndex,
 )
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
@@ -57,35 +59,30 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     enforce_non_anticipativity: bool = False
 
     @cached_property
-    def _time_set(self) -> ModelSet:
-        return ModelSet(
-            dimension=EnergyModelDimension.Time,
+    def _time_set(self) -> TimeIndex:
+        return TimeIndex(
             values=[str(time_step) for time_step in range(len(self.demand_profile))],
         )
 
     @cached_property
-    def _generator_set(self) -> ModelSet:
-        return ModelSet(
-            dimension=EnergyModelDimension.Generators,
+    def _generator_set(self) -> GeneratorIndex:
+        return GeneratorIndex(
             values=[gen.name for gen in self.portfolio.generators],
         )
 
     @cached_property
-    def _battery_set(self) -> ModelSet:
-        return ModelSet(
-            dimension=EnergyModelDimension.Batteries,
+    def _battery_set(self) -> BatteryIndex:
+        return BatteryIndex(
             values=[battery.name for battery in self.portfolio.batteries],
         )
 
     @cached_property
-    def _scenario_set(self) -> ModelSet:
+    def _scenario_set(self) -> ScenarioIndex:
         if self.scenarios is not None:
-            return ModelSet(
-                dimension=EnergyModelDimension.Scenarios,
+            return ScenarioIndex(
                 values=[scenario.name for scenario in self.scenarios],
             )
-        return ModelSet(
-            dimension=EnergyModelDimension.Scenarios,
+        return ScenarioIndex(
             values=["deterministic_scenario"],
         )
 

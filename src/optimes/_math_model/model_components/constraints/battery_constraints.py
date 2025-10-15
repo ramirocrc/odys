@@ -2,7 +2,7 @@ import linopy
 
 from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
 from optimes._math_model.model_components.parameters import BatteryParameters
-from optimes._math_model.model_components.sets import EnergyModelDimension
+from optimes._math_model.model_components.sets import ModelDimension
 from optimes._math_model.model_components.variables import ModelVariable
 
 
@@ -50,7 +50,7 @@ class BatteryConstraints:
         )
 
     def _get_battery_soc_dynamics_constraint(self) -> ModelConstraint:
-        time_coords = self.var_battery_soc.coords[EnergyModelDimension.Time.value]
+        time_coords = self.var_battery_soc.coords[ModelDimension.Time.value]
         constraint_expr = self.var_battery_soc - (
             self.var_battery_soc.shift(time=1)
             + self.params.efficiency_charging * self.var_battery_charge
@@ -64,7 +64,7 @@ class BatteryConstraints:
         )
 
     def _get_battery_soc_start_constraint(self) -> ModelConstraint:
-        t0 = self.var_battery_soc.coords[EnergyModelDimension.Time.value][0]
+        t0 = self.var_battery_soc.coords[ModelDimension.Time.value][0]
 
         soc_t0 = self.var_battery_soc.sel(time=t0)
         charge_t0 = self.var_battery_charge.sel(time=t0)
@@ -84,7 +84,7 @@ class BatteryConstraints:
         )
 
     def _get_battery_soc_end_constraint(self) -> ModelConstraint:
-        time_coords = self.var_battery_soc.coords[EnergyModelDimension.Time.value]
+        time_coords = self.var_battery_soc.coords[ModelDimension.Time.value]
         last_time = time_coords.values[-1]
         constr_expression = self.var_battery_soc.sel(time=last_time) - self.params.soc_end
         constraint = constr_expression == 0

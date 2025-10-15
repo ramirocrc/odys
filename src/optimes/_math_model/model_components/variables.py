@@ -8,7 +8,7 @@ from enum import Enum, unique
 
 from pydantic import BaseModel
 
-from optimes._math_model.model_components.sets import EnergyModelDimension
+from optimes._math_model.model_components.sets import ModelDimension
 
 
 class BoundType(Enum):
@@ -19,7 +19,7 @@ class BoundType(Enum):
 class VariableSpec(BaseModel):
     name: str
     is_binary: bool
-    asset_dimension: EnergyModelDimension
+    dimensions: list[ModelDimension]
     lower_bound_type: BoundType
 
 
@@ -28,55 +28,55 @@ class ModelVariable(Enum):
     GENERATOR_POWER = VariableSpec(
         name="generator_power",
         is_binary=False,
-        asset_dimension=EnergyModelDimension.Generators,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
     GENERATOR_STATUS = VariableSpec(
         name="generator_status",
         is_binary=True,
-        asset_dimension=EnergyModelDimension.Generators,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
         lower_bound_type=BoundType.UNBOUNDED,
     )
     GENERATOR_STARTUP = VariableSpec(
         name="generator_startup",
         is_binary=True,
-        asset_dimension=EnergyModelDimension.Generators,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
         lower_bound_type=BoundType.UNBOUNDED,
     )
     GENERATOR_SHUTDOWN = VariableSpec(
         name="generator_shutdown",
         is_binary=True,
-        asset_dimension=EnergyModelDimension.Generators,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
         lower_bound_type=BoundType.UNBOUNDED,
     )
     BATTERY_POWER_IN = VariableSpec(
         name="battery_power_in",
         is_binary=False,
-        asset_dimension=EnergyModelDimension.Batteries,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
     BATTERY_POWER_NET = VariableSpec(
         name="battery_net_power",
         is_binary=False,
-        asset_dimension=EnergyModelDimension.Batteries,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
         lower_bound_type=BoundType.UNBOUNDED,
     )
     BATTERY_POWER_OUT = VariableSpec(
         name="battery_power_out",
         is_binary=False,
-        asset_dimension=EnergyModelDimension.Batteries,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
     BATTERY_SOC = VariableSpec(
         name="battery_soc",
         is_binary=False,
-        asset_dimension=EnergyModelDimension.Batteries,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
     BATTERY_CHARGE_MODE = VariableSpec(
         name="battery_charge_mode",
         is_binary=True,
-        asset_dimension=EnergyModelDimension.Batteries,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
         lower_bound_type=BoundType.UNBOUNDED,
     )
 
@@ -85,8 +85,12 @@ class ModelVariable(Enum):
         return self.value.name
 
     @property
-    def asset_dimension(self) -> EnergyModelDimension:
-        return self.value.asset_dimension
+    def asset_dimension(self) -> ModelDimension | None:
+        """Get the asset dimension (Generators or Batteries) if present."""
+        for dim in self.value.dimensions:
+            if dim in (ModelDimension.Generators, ModelDimension.Batteries):
+                return dim
+        return None
 
     @property
     def lower_bound_type(self) -> BoundType:
@@ -98,8 +102,8 @@ class ModelVariable(Enum):
 
     @classmethod
     def generator_variables(cls) -> list["ModelVariable"]:
-        return [var for var in ModelVariable if var.asset_dimension == EnergyModelDimension.Generators]
+        return [var for var in ModelVariable if ModelDimension.Generators in var.value.dimensions]
 
     @classmethod
     def battery_variables(cls) -> list["ModelVariable"]:
-        return [var for var in ModelVariable if var.asset_dimension == EnergyModelDimension.Batteries]
+        return [var for var in ModelVariable if ModelDimension.Batteries in var.value.dimensions]
