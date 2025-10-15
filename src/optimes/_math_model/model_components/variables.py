@@ -85,6 +85,10 @@ class ModelVariable(Enum):
         return self.value.name
 
     @property
+    def dimensions(self) -> list[ModelDimension]:
+        return self.value.dimensions
+
+    @property
     def asset_dimension(self) -> ModelDimension | None:
         """Get the asset dimension (Generators or Batteries) if present."""
         for dim in self.value.dimensions:

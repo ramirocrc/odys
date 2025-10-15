@@ -61,29 +61,29 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     @cached_property
     def _time_set(self) -> TimeIndex:
         return TimeIndex(
-            values=[str(time_step) for time_step in range(len(self.demand_profile))],
+            values=tuple(str(time_step) for time_step in range(len(self.demand_profile))),
         )
 
     @cached_property
     def _generator_set(self) -> GeneratorIndex:
         return GeneratorIndex(
-            values=[gen.name for gen in self.portfolio.generators],
+            values=tuple(gen.name for gen in self.portfolio.generators),
         )
 
     @cached_property
     def _battery_set(self) -> BatteryIndex:
         return BatteryIndex(
-            values=[battery.name for battery in self.portfolio.batteries],
+            values=tuple(battery.name for battery in self.portfolio.batteries),
         )
 
     @cached_property
     def _scenario_set(self) -> ScenarioIndex:
         if self.scenarios is not None:
             return ScenarioIndex(
-                values=[scenario.name for scenario in self.scenarios],
+                values=tuple(scenario.name for scenario in self.scenarios),
             )
         return ScenarioIndex(
-            values=["deterministic_scenario"],
+            values=("deterministic_scenario",),
         )
 
     @cached_property
@@ -91,7 +91,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         """Returns energy model parameters."""
         return EnergyModelParameters(
             generators=GeneratorParameters(
-                set=self._generator_set,
+                index=self._generator_set,
                 nominal_power=self._generators_nominal_power,
                 variable_cost=self._generators_variable_cost,
                 min_up_time=self._generators_min_up_time,
@@ -101,7 +101,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                 max_ramp_down=self._generators_max_ramp_down,
             ),
             batteries=BatteryParameters(
-                set=self._battery_set,
+                index=self._battery_set,
                 capacity=self._batteries_capacity,
                 max_power=self._batteries_max_power,
                 efficiency_charging=self._batteries_efficiency_charging,
@@ -112,8 +112,8 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                 soc_max=self._batteries_soc_max,
             ),
             system=SystemParameters(
-                time_set=self._time_set,
-                scenario_set=self._scenario_set,
+                time_index=self._time_set,
+                scenario_index=self._scenario_set,
                 enforce_non_anticipativity=self.enforce_non_anticipativity,
                 demand_profile=self._demand_profile,
                 available_capacity_profiles=self._available_capacity_profiles,

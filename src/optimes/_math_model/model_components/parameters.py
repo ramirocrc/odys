@@ -11,7 +11,7 @@ from optimes._math_model.model_components.sets import BatteryIndex, GeneratorInd
 
 
 class GeneratorParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
-    set: GeneratorIndex
+    index: GeneratorIndex
     nominal_power: xr.DataArray
     variable_cost: xr.DataArray
     min_up_time: xr.DataArray
@@ -22,7 +22,7 @@ class GeneratorParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, 
 
 
 class BatteryParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
-    set: BatteryIndex
+    index: BatteryIndex
     capacity: xr.DataArray
     max_power: xr.DataArray
     efficiency_charging: xr.DataArray
@@ -34,8 +34,8 @@ class BatteryParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, ex
 
 
 class SystemParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
-    time_set: TimeIndex
-    scenario_set: ScenarioIndex
+    scenario_index: ScenarioIndex
+    time_index: TimeIndex
     enforce_non_anticipativity: bool
     demand_profile: xr.DataArray
     available_capacity_profiles: xr.DataArray
