@@ -17,6 +17,7 @@
 - [x] Add tests for ValidatedEnergySystem and EnergySystem
   - [x] Test for invalid inputs
   - [x] Perform optimization with different inputs (e.g. only battery, only generation, combined) and validate optimal results
+- [ ] is it possible to not have `scenario` nor `scenarios` after migrating loads to a dedicated class and having to specify load_profiles?
 
 # Optimization
 
@@ -36,8 +37,6 @@
   - [x] Review ValidatedEnergySystem.\_validate_inputs
 - [ ] Add "GridConnection" asset
 - [ ] Evaluate other uses cases (e.g. optimze bids based on day-ahead price forecast)
-- [ ] Add additional parameteres for assets (e.g. generator min_up_time, battery degradation_cost)
-- [ ] Support for other assets (e.g. wind, hydro, solar pv)
 - [ ] Implement cusomt Exceptions
 
 - [ ] . Demand-Side Assets
@@ -54,11 +53,6 @@
   - CVaR: Conditional Value at Risk
   - Chance Constraints: Probabiistic constraint satisfaction
   - Robust Optimization: Worst-case scenarios
-
-- [ ] . Market Mechanisms
-  - Bidding Strategies: Market participation
-  - Ancilary Services: Frequency regulation, reserves
-  - Capacity Markets: Long-term planning
 
 - [ ] Framework Extensions 3. Dynamic Features
   - Rolling Horizon: Multi-stage optimization

@@ -3,7 +3,7 @@
 from collections.abc import Mapping, Sequence
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class Scenario(BaseModel):
@@ -13,9 +13,13 @@ class Scenario(BaseModel):
         Mapping[str, Sequence[float]],
         Field(description="Available capacity for each asset."),
     ]
+    load_profiles: Annotated[
+        Mapping[str, Sequence[float]],
+        Field(description="Load profiles"),
+    ]
 
 
-class SctochasticScenario(Scenario):
+class StochasticScenario(Scenario):
     """Stochastic scenario conditions."""
 
     name: str
@@ -23,8 +27,8 @@ class SctochasticScenario(Scenario):
 
 
 def validate_sequence_of_stochastic_scenarios(
-    scenarios: Sequence[SctochasticScenario],
-) -> Sequence[SctochasticScenario]:
+    scenarios: Sequence[StochasticScenario],
+) -> None:
     """Validate that scenarios probabilities add up to 1.
 
     Args:
@@ -45,7 +49,3 @@ def validate_sequence_of_stochastic_scenarios(
             f"Scenarios must have a unique name. The following names appear more than once: {duplicated_scenario_names}"
         )
         raise ValueError(msg)
-    return scenarios
-
-
-ScenariosSequence = Annotated[Sequence[SctochasticScenario], AfterValidator(validate_sequence_of_stochastic_scenarios)]

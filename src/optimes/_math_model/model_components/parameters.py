@@ -7,7 +7,7 @@ optimization models.
 import xarray as xr
 from pydantic import BaseModel
 
-from optimes._math_model.model_components.sets import BatteryIndex, GeneratorIndex, ScenarioIndex, TimeIndex
+from optimes._math_model.model_components.sets import BatteryIndex, GeneratorIndex, LoadIndex, ScenarioIndex, TimeIndex
 
 
 class GeneratorParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
@@ -33,6 +33,10 @@ class BatteryParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, ex
     soc_max: xr.DataArray
 
 
+class LoadParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
+    index: LoadIndex
+
+
 class SystemParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
     scenario_index: ScenarioIndex
     time_index: TimeIndex
@@ -45,4 +49,5 @@ class SystemParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, ext
 class EnergyModelParameters(BaseModel):
     generators: GeneratorParameters
     batteries: BatteryParameters
+    loads: LoadParameters
     system: SystemParameters

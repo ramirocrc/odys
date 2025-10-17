@@ -8,8 +8,10 @@ from linopy.testing import assert_conequal
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.scenarios import Scenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
@@ -50,15 +52,22 @@ def battery1() -> Battery:
 
 
 @pytest.fixture
+def load1() -> Load:
+    return Load(name="load1")
+
+
+@pytest.fixture
 def asset_portfolio_sample(
     generator1: PowerGenerator,
     generator2: PowerGenerator,
     battery1: Battery,
+    load1: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator1)
     portfolio.add_asset(generator2)
     portfolio.add_asset(battery1)
+    portfolio.add_asset(load1)
     return portfolio
 
 
@@ -79,9 +88,13 @@ def energy_system_sample(
 ) -> ValidatedEnergySystem:
     return ValidatedEnergySystem(
         portfolio=asset_portfolio_sample,
-        demand_profile=demand_profile_sample,
+        number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),
         power_unit=PowerUnit.MegaWatt,
+        scenarios=Scenario(
+            available_capacity_profiles={},
+            load_profiles={"load1": demand_profile_sample},
+        ),
     )
 
 

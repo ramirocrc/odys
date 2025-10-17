@@ -4,12 +4,11 @@ This module provides the EnergySystemOptimizer class for solving
 energy system optimization problems.
 """
 
-from collections.abc import Sequence
 from datetime import timedelta
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.scenarios import Scenario, SctochasticScenario
+from optimes.energy_system_models.scenarios import Scenario, StochasticScenario
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from optimes.optimization.optimization_results import OptimizationResults
 from optimes.solvers.highs_solver import optimize_algebraic_model
@@ -29,11 +28,10 @@ class EnergySystem:
     def __init__(  # noqa: PLR0913
         self,
         portfolio: AssetPortfolio,
-        demand_profile: Sequence[float],
         timestep: timedelta,
+        number_of_steps: int,
         power_unit: str,
-        scenario: Scenario | None = None,
-        scenarios: Sequence[SctochasticScenario] | None = None,
+        scenarios: Scenario | list[StochasticScenario],
         *,
         enforce_non_anticipativity: bool = False,
     ) -> None:
@@ -43,24 +41,20 @@ class EnergySystem:
             portfolio: The portfolio of energy assets (generators, batteries, etc.).
             demand_profile: Sequence of power demand values for each time period.
             timestep: Duration of each time period.
+            number_of_steps: Number of time steps.
             power_unit: Unit used for power quantities ('W', 'kW', or 'MW').
             available_capacity_profiles: Optional dict mapping generator names to
-            scenario: Scenario of the system
             scenarios: Sequence of stochastic scenarios. Probabilities must add up to 1.
             enforce_non_anticipativity: When True, decision variables must take the same values across all scenarios,
             reflecting that decisions are made before uncertainty is revealed. When False, scenarios are optimized
             separately allowing different decisions per scenario.
 
         """
-        if scenario is not None and scenarios is not None:
-            msg = "Either specify `scenario` or `scenarios`, but not both."
-            raise ValueError(msg)
         self._validated_model = ValidatedEnergySystem(
             portfolio=portfolio,
-            demand_profile=demand_profile,
             timestep=timestep,
+            number_of_steps=number_of_steps,
             power_unit=power_unit,  # pyright: ignore reportArgumentType
-            scenario=scenario,
             scenarios=scenarios,
             enforce_non_anticipativity=enforce_non_anticipativity,
         )
