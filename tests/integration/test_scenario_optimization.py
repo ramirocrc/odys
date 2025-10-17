@@ -4,9 +4,10 @@ import pytest
 
 from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
-from optimes.energy_system_models.scenarios import SctochasticScenario
+from optimes.energy_system_models.scenarios import StochasticScenario
 
 
 @pytest.fixture
@@ -41,43 +42,61 @@ def battery() -> Battery:
 
 
 @pytest.fixture
+def load() -> Load:
+    return Load(name="load1")
+
+
+@pytest.fixture
 def portfolio_with_battery(
     wind_generator: PowerGenerator,
     gas_generator: PowerGenerator,
     battery: Battery,
+    load: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
     portfolio.add_asset(wind_generator)
     portfolio.add_asset(gas_generator)
     portfolio.add_asset(battery)
+    portfolio.add_asset(load)
     return portfolio
 
 
 @pytest.fixture
-def portfolio_without_battery(wind_generator: PowerGenerator, gas_generator: PowerGenerator) -> AssetPortfolio:
+def portfolio_without_battery(
+    wind_generator: PowerGenerator,
+    gas_generator: PowerGenerator,
+    load: Load,
+) -> AssetPortfolio:
     portfolio = AssetPortfolio()
     portfolio.add_asset(wind_generator)
     portfolio.add_asset(gas_generator)
+    portfolio.add_asset(load)
     return portfolio
 
 
 @pytest.fixture
-def scenarios() -> list[SctochasticScenario]:
+def scenarios() -> list[StochasticScenario]:
     return [
-        SctochasticScenario(
+        StochasticScenario(
             name="high_wind",
             probability=0.6,
             available_capacity_profiles={
                 "wind_farm": [150.0, 120.0, 100.0],
                 "gas_plant": [100.0, 100.0, 100.0],
             },
+            load_profiles={
+                "load1": [120.0, 100.0, 80.0],
+            },
         ),
-        SctochasticScenario(
+        StochasticScenario(
             name="low_wind",
             probability=0.4,
             available_capacity_profiles={
                 "wind_farm": [50.0, 30.0, 20.0],
                 "gas_plant": [100.0, 100.0, 100.0],
+            },
+            load_profiles={
+                "load1": [120.0, 100.0, 80.0],
             },
         ),
     ]
@@ -90,13 +109,13 @@ def demand_profile() -> list[float]:
 
 def test_two_scenario_optimization_with_anticipativity(
     portfolio_with_battery: AssetPortfolio,
-    scenarios: list[SctochasticScenario],
+    scenarios: list[StochasticScenario],
     demand_profile: list[float],
 ) -> None:
     energy_system_anticipative = EnergySystem(
         portfolio=portfolio_with_battery,
-        demand_profile=demand_profile,
         timestep=timedelta(hours=1),
+        number_of_steps=len(demand_profile),
         scenarios=scenarios,
         enforce_non_anticipativity=False,
         power_unit="MW",
@@ -110,13 +129,13 @@ def test_two_scenario_optimization_with_anticipativity(
 
 def test_two_scenario_optimization_with_non_anticipativity(
     portfolio_with_battery: AssetPortfolio,
-    scenarios: list[SctochasticScenario],
+    scenarios: list[StochasticScenario],
     demand_profile: list[float],
 ) -> None:
     energy_system_non_anticipative = EnergySystem(
         portfolio=portfolio_with_battery,
-        demand_profile=demand_profile,
         timestep=timedelta(hours=1),
+        number_of_steps=len(demand_profile),
         scenarios=scenarios,
         enforce_non_anticipativity=True,
         power_unit="MW",
@@ -130,13 +149,13 @@ def test_two_scenario_optimization_with_non_anticipativity(
 
 def test_anticipativity_vs_non_anticipativity_comparison(
     portfolio_without_battery: AssetPortfolio,
-    scenarios: list[SctochasticScenario],
+    scenarios: list[StochasticScenario],
     demand_profile: list[float],
 ) -> None:
     energy_system_anticipative = EnergySystem(
         portfolio=portfolio_without_battery,
-        demand_profile=demand_profile,
         timestep=timedelta(hours=1),
+        number_of_steps=len(demand_profile),
         scenarios=scenarios,
         enforce_non_anticipativity=False,
         power_unit="MW",
@@ -144,8 +163,8 @@ def test_anticipativity_vs_non_anticipativity_comparison(
 
     energy_system_non_anticipative = EnergySystem(
         portfolio=portfolio_without_battery,
-        demand_profile=demand_profile,
         timestep=timedelta(hours=1),
+        number_of_steps=len(demand_profile),
         scenarios=scenarios,
         enforce_non_anticipativity=True,
         power_unit="MW",

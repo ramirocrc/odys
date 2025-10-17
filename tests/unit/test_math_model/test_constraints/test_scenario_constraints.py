@@ -9,9 +9,10 @@ from linopy.testing import assert_conequal
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes._math_model.model_components.variables import ModelVariable
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
-from optimes.energy_system_models.scenarios import Scenario, SctochasticScenario
+from optimes.energy_system_models.scenarios import Scenario, StochasticScenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
@@ -50,15 +51,22 @@ def battery1() -> Battery:
 
 
 @pytest.fixture
+def load1() -> Load:
+    return Load(name="load1")
+
+
+@pytest.fixture
 def asset_portfolio_sample(
     generator1: PowerGenerator,
     generator2: PowerGenerator,
     battery1: Battery,
+    load1: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator1)
     portfolio.add_asset(generator2)
     portfolio.add_asset(battery1)
+    portfolio.add_asset(load1)
     return portfolio
 
 
@@ -79,12 +87,15 @@ def energy_system_sample(
 ) -> ValidatedEnergySystem:
     return ValidatedEnergySystem(
         portfolio=asset_portfolio_sample,
-        demand_profile=demand_profile_sample,
         timestep=timedelta(hours=1),
+        number_of_steps=len(demand_profile_sample),
         power_unit=PowerUnit.MegaWatt,
-        scenario=Scenario(
+        scenarios=Scenario(
             available_capacity_profiles={
                 "gen1": [80, 80, 100],
+            },
+            load_profiles={
+                "load1": demand_profile_sample,
             },
         ),
     )
@@ -96,27 +107,33 @@ def energy_system_with_multiple_scenarios(
     demand_profile_sample: list[float],
 ) -> ValidatedEnergySystem:
     scenarios = [
-        SctochasticScenario(
+        StochasticScenario(
             name="scenario_1",
             probability=0.6,
             available_capacity_profiles={
                 "gen1": [80, 80, 100],
                 "gen2": [150, 150, 150],
             },
+            load_profiles={
+                "load1": demand_profile_sample,
+            },
         ),
-        SctochasticScenario(
+        StochasticScenario(
             name="scenario_2",
             probability=0.4,
             available_capacity_profiles={
                 "gen1": [90, 70, 80],
                 "gen2": [120, 140, 130],
             },
+            load_profiles={
+                "load1": demand_profile_sample,
+            },
         ),
     ]
     return ValidatedEnergySystem(
         portfolio=asset_portfolio_sample,
-        demand_profile=demand_profile_sample,
         timestep=timedelta(hours=1),
+        number_of_steps=len(demand_profile_sample),
         power_unit=PowerUnit.MegaWatt,
         scenarios=scenarios,
         enforce_non_anticipativity=True,
@@ -154,7 +171,22 @@ class TestScenarioConstraints:
         discharge_total = self.linopy_model.variables["battery_power_out"].sum("battery")
         charge_total = self.linopy_model.variables["battery_power_in"].sum("battery")
 
-        demand_array = xr.DataArray(self.demand_profile_sample, coords=[self.time_index], dims=["time"])
+        # Create demand array with the proper dimensions to match actual constraint
+        demand_data = [
+            [
+                self.demand_profile_sample,  # load1 profile
+            ],
+        ]
+        demand_array = xr.DataArray(
+            demand_data,
+            coords={
+                "scenario": ["deterministic_scenario"],
+                "load": ["load1"],
+                "time": [str(t) for t in self.time_index],
+            },
+            dims=["scenario", "load", "time"],
+        )
+
         expected_expr = generation_total + discharge_total - charge_total == demand_array
 
         assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)

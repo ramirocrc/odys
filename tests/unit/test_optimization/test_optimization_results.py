@@ -5,8 +5,10 @@ import pytest
 
 from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.scenarios import Scenario
 
 
 @pytest.fixture
@@ -30,16 +32,23 @@ def energy_system_sample() -> EnergySystem:
         soc_start=100.0,
         soc_end=50.0,
     )
+    load_1 = Load(name="load_1")
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_1)
     portfolio.add_asset(generator_2)
     portfolio.add_asset(battery_1)
+    portfolio.add_asset(load_1)
 
+    demand_profile = [50, 75, 100, 125, 150]
     return EnergySystem(
         portfolio=portfolio,
-        demand_profile=[50, 75, 100, 125, 150],
+        number_of_steps=len(demand_profile),
         timestep=timedelta(minutes=30),
         power_unit="MW",
+        scenarios=Scenario(
+            available_capacity_profiles={},
+            load_profiles={"load_1": demand_profile},
+        ),
     )
 
 

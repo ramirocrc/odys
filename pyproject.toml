@@ -22,7 +22,7 @@ dependencies = [
   "linopy>=0.5.5",
   "numpy>=1.26.4",
   "pandas>=2.3.1",
-  "pydantic>=2.11.7",
+  "pydantic>=2.12.2",
   "rich>=14.0.0",
   "xarray>=2025.6.1",
 ]

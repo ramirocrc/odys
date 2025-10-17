@@ -9,9 +9,10 @@ from datetime import timedelta
 
 from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load, LoadType
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
-from optimes.energy_system_models.scenarios import SctochasticScenario
+from optimes.energy_system_models.scenarios import StochasticScenario
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -38,33 +39,41 @@ if __name__ == "__main__":
         soc_start=100.0,
         soc_end=50.0,
     )
+    load = Load(name="load", type=LoadType.Fixed)
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_1)
     portfolio.add_asset(generator_2)
     portfolio.add_asset(battery_1)
+    portfolio.add_asset(load)
 
     scenarios = [
-        SctochasticScenario(
+        StochasticScenario(
             name="default",
             probability=0.5,
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
                 "wind_farm": [100, 100, 100, 50, 50, 50, 50],
             },
+            load_profiles={
+                "load": [180, 180, 150, 50, 80, 90, 95],
+            },
         ),
-        SctochasticScenario(
+        StochasticScenario(
             name="high_wind",
             probability=0.5,
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
                 "wind_farm": [150, 150, 100, 50, 50, 50, 50],
             },
+            load_profiles={
+                "load": [180, 180, 150, 50, 80, 90, 100],
+            },
         ),
     ]
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=[180, 180, 150, 50, 80, 90, 95],
         timestep=timedelta(minutes=30),
+        number_of_steps=7,
         scenarios=scenarios,
         enforce_non_anticipativity=False,
         power_unit="MW",

@@ -4,8 +4,10 @@ import pandas as pd
 
 from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.scenarios import Scenario
 
 
 def test_single_generator_meets_demand() -> None:
@@ -14,9 +16,11 @@ def test_single_generator_meets_demand() -> None:
         nominal_power=200.0,
         variable_cost=30.0,
     )
+    load = Load(name="load1")
 
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator)
+    portfolio.add_asset(load)
 
     demand_profile = [50.0, 100.0, 150.0, 180.0, 120.0]
     timestep = timedelta(hours=1)
@@ -29,9 +33,15 @@ def test_single_generator_meets_demand() -> None:
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=demand_profile,
         timestep=timestep,
+        number_of_steps=len(demand_profile),
         power_unit="MW",
+        scenarios=Scenario(
+            available_capacity_profiles={},
+            load_profiles={
+                "load1": demand_profile,
+            },
+        ),
     )
     result = energy_system.optimize()
     generator_power = result.generators.power
@@ -57,11 +67,13 @@ def test_three_generators_meet_demand() -> None:
         nominal_power=100.0,
         variable_cost=40.0,
     )
+    load = Load(name="load1")
 
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_cheap)
     portfolio.add_asset(generator_medium)
     portfolio.add_asset(generator_expensive)
+    portfolio.add_asset(load)
 
     demand_profile = [50.0, 100.0, 150.0, 200.0, 250.0, 300.0]
     timestep = timedelta(hours=1)
@@ -78,9 +90,15 @@ def test_three_generators_meet_demand() -> None:
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=demand_profile,
         timestep=timestep,
+        number_of_steps=len(demand_profile),
         power_unit="MW",
+        scenarios=Scenario(
+            available_capacity_profiles={},
+            load_profiles={
+                "load1": demand_profile,
+            },
+        ),
     )
 
     result = energy_system.optimize()
@@ -104,10 +122,12 @@ def test_generator_and_battery_optimization() -> None:
         soc_start=0.0,
         soc_end=50.0,
     )
+    load = Load(name="load1")
 
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator)
     portfolio.add_asset(battery)
+    portfolio.add_asset(load)
 
     demand_profile = [50.0, 50.0, 150.0, 150.0, 50.0]
     index = pd.Index(["0", "1", "2", "3", "4"], name="time")
@@ -129,9 +149,15 @@ def test_generator_and_battery_optimization() -> None:
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=demand_profile,
         timestep=timestep,
+        number_of_steps=len(demand_profile),
         power_unit="MW",
+        scenarios=Scenario(
+            available_capacity_profiles={},
+            load_profiles={
+                "load1": demand_profile,
+            },
+        ),
     )
 
     result = energy_system.optimize()
@@ -157,10 +183,12 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
         soc_start=0.0,
         soc_end=50.0,
     )
+    load = Load(name="load1")
 
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator)
     portfolio.add_asset(battery)
+    portfolio.add_asset(load)
 
     demand_profile = [50.0, 50.0, 100.0]
     timestep = timedelta(hours=1)
@@ -183,9 +211,15 @@ def test_generator_and_battery_with_efficiencies_optimization() -> None:
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=demand_profile,
         timestep=timestep,
+        number_of_steps=len(demand_profile),
         power_unit="MW",
+        scenarios=Scenario(
+            available_capacity_profiles={},
+            load_profiles={
+                "load1": demand_profile,
+            },
+        ),
     )
     result = energy_system.optimize()
     generator_power = result.generators.power

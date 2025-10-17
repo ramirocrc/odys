@@ -10,6 +10,7 @@ from datetime import timedelta
 import pytest
 
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
 from optimes.energy_system_models.scenarios import Scenario
@@ -39,10 +40,20 @@ def testing_battery() -> Battery:
 
 
 @pytest.fixture
-def testing_portfolio(testing_generator: PowerGenerator, testing_battery: Battery) -> AssetPortfolio:
+def testing_load() -> Load:
+    return Load(name="test_load")
+
+
+@pytest.fixture
+def testing_portfolio(
+    testing_generator: PowerGenerator,
+    testing_battery: Battery,
+    testing_load: Load,
+) -> AssetPortfolio:
     portfolio = AssetPortfolio()
     portfolio.add_asset(testing_generator)
     portfolio.add_asset(testing_battery)
+    portfolio.add_asset(testing_load)
     return portfolio
 
 
@@ -64,9 +75,13 @@ def test_energy_system_creation_with_valid_inputs(
     """Test that EnergySystem can be created with valid inputs."""
     ValidatedEnergySystem(
         portfolio=testing_portfolio,
-        demand_profile=valid_demand_profile,
+        number_of_steps=len(valid_demand_profile),
         timestep=valid_timestep,
         power_unit=PowerUnit.MegaWatt,
+        scenarios=Scenario(
+            available_capacity_profiles={},
+            load_profiles={"test_load": valid_demand_profile},
+        ),
     )
 
 
@@ -83,26 +98,31 @@ def test_validation_of_capacity_profile_lengths(
 
     energy_system = ValidatedEnergySystem(
         portfolio=testing_portfolio,
-        demand_profile=valid_demand_profile,
+        number_of_steps=len(valid_demand_profile),
         timestep=valid_timestep,
-        scenario=Scenario(available_capacity_profiles=valid_capacity_profiles),
+        scenarios=Scenario(
+            available_capacity_profiles=valid_capacity_profiles,
+            load_profiles={"test_load": valid_demand_profile},
+        ),
         power_unit=PowerUnit.MegaWatt,
     )
 
     # Note: energy_system.available_capacity_profiles is now an xr.DataArray, not a dict
-    assert energy_system.scenario is not None  # The original scenario is preserved
-    assert energy_system.scenarios is None  # Only one is set
+    assert energy_system.scenarios is not None  # The scenarios is preserved
 
     invalid_capacity_profiles = {
         "test_generator": [90.0, 100.0],  # Only 2 values instead of 4
     }
 
-    with pytest.raises(ValueError, match="which doesn't match the length of the demand profile"):
+    with pytest.raises(ValueError, match="does not match the number of time steps"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
-            demand_profile=valid_demand_profile,
+            number_of_steps=len(valid_demand_profile),
             timestep=valid_timestep,
-            scenario=Scenario(available_capacity_profiles=invalid_capacity_profiles),
+            scenarios=Scenario(
+                available_capacity_profiles=invalid_capacity_profiles,
+                load_profiles={"test_load": valid_demand_profile},
+            ),
             power_unit=PowerUnit.MegaWatt,
         )
 
@@ -120,9 +140,12 @@ def test_validation_that_capacity_profiles_only_for_generators(
     with pytest.raises(TypeError, match="Available capacity can only be specified for generators"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
-            demand_profile=valid_demand_profile,
+            number_of_steps=len(valid_demand_profile),
             timestep=valid_timestep,
-            scenario=Scenario(available_capacity_profiles=invalid_capacity_profiles),
+            scenarios=Scenario(
+                available_capacity_profiles=invalid_capacity_profiles,
+                load_profiles={"test_load": valid_demand_profile},
+            ),
             power_unit=PowerUnit.MegaWatt,
         )
 
@@ -135,10 +158,14 @@ def test_validation_that_system_can_meet_power_demand(
 
     excessive_demand = [80.0, 200.0, 90.0, 150.0]  # 200 MW exceeds 150 MW capacity
 
-    with pytest.raises(ValueError, match="Infeasible problem at time index 1"):
+    with pytest.raises(ValueError, match="Infeasible problem"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
-            demand_profile=excessive_demand,
+            number_of_steps=len(excessive_demand),
             timestep=valid_timestep,
             power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={"test_load": excessive_demand},
+            ),
         )

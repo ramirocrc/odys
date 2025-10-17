@@ -9,6 +9,7 @@ from datetime import timedelta
 
 from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load, LoadType
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
 from optimes.energy_system_models.scenarios import Scenario
@@ -48,16 +49,19 @@ if __name__ == "__main__":
     portfolio.add_asset(generator_1)
     portfolio.add_asset(generator_2)
     portfolio.add_asset(battery_1)
+    load = Load(name="load", type=LoadType.Fixed)
+    portfolio.add_asset(load)
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=[300, 75, 300, 50, 100, 120, 125],
-        scenario=Scenario(
+        scenarios=Scenario(
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
             },
+            load_profiles={"load": [300, 75, 300, 50, 100, 120, 125]},
         ),
         timestep=timedelta(minutes=30),
+        number_of_steps=7,
         power_unit="MW",
     )
 
@@ -67,12 +71,8 @@ if __name__ == "__main__":
     battery_results = result.batteries
     logger.info("generators power")
     logger.info(result.generators.power)
-    logger.info("generators status")
-    logger.info(result.generators.status)
-    logger.info("generators startup")
-    logger.info(result.generators.startup)
-    logger.info("generators shutdown")
-    logger.info(result.generators.shutdown)
+    logger.info("battery")
+    logger.info(result.batteries.net_power)
 
     logger.info("results summary dataframe")
     logger.info(result.to_dataframe)

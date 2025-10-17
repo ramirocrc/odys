@@ -9,6 +9,7 @@ from typing import TypeVar
 
 from optimes.energy_system_models.assets.base import EnergyAsset
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.storage import Battery
 
 T = TypeVar("T", bound=EnergyAsset)
@@ -95,3 +96,13 @@ class AssetPortfolio:
 
         """
         return self._get_assets_by_type(Battery)
+
+    @property
+    def loads(self) -> tuple[Load, ...]:
+        """Get all the loads in the portfolio.
+
+        Returns:
+            A tuple containing all Load assets.
+
+        """
+        return self._get_assets_by_type(Load)

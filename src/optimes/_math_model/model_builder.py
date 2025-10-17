@@ -71,29 +71,28 @@ class EnergyAlgebraicModelBuilder:
             self.add_variable_to_model(linopy_variable)
 
     def _get_linopy_variable_params(self, variable: ModelVariable) -> LinopyVariableParameters:
-        scenario_index = self._parameters.system.scenario_index
-        time_index = self._parameters.system.time_index
+        dimension_to_index = {
+            ModelDimension.Scenarios: self._parameters.system.scenario_index,
+            ModelDimension.Time: self._parameters.system.time_index,
+            ModelDimension.Generators: self._parameters.generators.index,
+            ModelDimension.Batteries: self._parameters.batteries.index,
+            ModelDimension.Loads: self._parameters.loads.index,
+        }
 
-        coords = scenario_index.coordinates | time_index.coordinates
-        dims = [scenario_index.dimension, time_index.dimension]
-        indeces = [scenario_index, time_index]
+        coordinates = {}
+        dimensions = []
+        indeces = []
 
-        if ModelDimension.Generators in variable.dimensions:
-            generator_index = self._parameters.generators.index
-            coords |= generator_index.coordinates
-            dims.append(generator_index.dimension)
-            indeces.append(generator_index)
-
-        if ModelDimension.Batteries in variable.dimensions:
-            battery_index = self._parameters.batteries.index
-            coords |= battery_index.coordinates
-            dims.append(battery_index.dimension)
-            indeces.append(battery_index)
+        for dimension in variable.dimensions:
+            index = dimension_to_index[dimension]
+            coordinates |= index.coordinates
+            dimensions.append(index.dimension)
+            indeces.append(index)
 
         return LinopyVariableParameters(
             name=variable.var_name,
-            coords=coords,
-            dims=dims,
+            coords=coordinates,
+            dims=dimensions,
             lower=get_variable_lower_bound(
                 indeces=indeces,
                 lower_bound_type=variable.lower_bound_type,
