@@ -12,6 +12,7 @@ from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.load import Load, LoadType
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.markets import EnergyMarket
 from optimes.energy_system_models.scenarios import Scenario
 from optimes.utils.logging import get_logger
 
@@ -54,6 +55,7 @@ if __name__ == "__main__":
 
     energy_system = EnergySystem(
         portfolio=portfolio,
+        markets=EnergyMarket(name="sdac"),
         scenarios=Scenario(
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],

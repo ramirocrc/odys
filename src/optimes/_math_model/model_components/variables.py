@@ -79,6 +79,12 @@ class ModelVariable(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
         lower_bound_type=BoundType.UNBOUNDED,
     )
+    MARKET_TRADED_VOLUME = VariableSpec(
+        name="market_traded_volume",
+        is_binary=False,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
+        lower_bound_type=BoundType.UNBOUNDED,
+    )
 
     @property
     def var_name(self) -> str:

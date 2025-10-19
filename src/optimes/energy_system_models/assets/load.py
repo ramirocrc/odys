@@ -1,7 +1,7 @@
 """Load asset definitions for energy system models."""
 
 from enum import StrEnum
-from typing import Annotated, Self
+from typing import Self
 
 from pydantic import Field, model_validator
 
@@ -18,20 +18,23 @@ class LoadType(StrEnum):
 class Load(EnergyAsset, frozen=True):
     """Represents a load asset in the energy system."""
 
-    type: Annotated[
-        LoadType,
-        Field(strict=True, description="Type of load"),
-    ] = LoadType.Fixed
+    type: LoadType = Field(
+        default=LoadType.Fixed,
+        strict=True,
+        description="Type of load",
+    )
 
-    variable_cost_to_increase: Annotated[
-        float | None,
-        Field(strict=True, description="Variable cost of changing the load currency per MWh."),
-    ] = None
+    variable_cost_to_increase: float | None = Field(
+        default=None,
+        strict=True,
+        description="Variable cost of changing the load currency per MWh.",
+    )
 
-    variable_cost_to_decrease: Annotated[
-        float | None,
-        Field(strict=True, description="Variable cost of changing the load currency per MWh."),
-    ] = None
+    variable_cost_to_decrease: float | None = Field(
+        default=None,
+        strict=True,
+        description="Variable cost of changing the load currency per MWh.",
+    )
 
     @model_validator(mode="after")
     def _validate_type_and_variable_cost(self) -> Self:

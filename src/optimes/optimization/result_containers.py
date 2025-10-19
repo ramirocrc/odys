@@ -18,3 +18,9 @@ class BatteryResults(BaseModel, arbitrary_types_allowed=True):
 
     net_power: pd.DataFrame
     state_of_charge: pd.DataFrame
+
+
+class MarketResults(BaseModel, arbitrary_types_allowed=True):
+    """Class to store market results."""
+
+    traded_volume: pd.DataFrame

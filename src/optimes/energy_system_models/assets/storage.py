@@ -4,7 +4,7 @@ This module provides the Battery class for modeling energy storage devices
 in energy system optimization problems.
 """
 
-from typing import Annotated, Self
+from typing import Self
 
 from pydantic import Field, model_validator
 
@@ -19,46 +19,64 @@ class Battery(EnergyAsset, frozen=True):
     and degradation characteristics.
     """
 
-    capacity: Annotated[
-        float,
-        Field(strict=True, gt=0, description="Battery capacity in MWh."),
-    ]
-    max_power: Annotated[
-        float,
-        Field(strict=True, gt=0, description="Maximum power in MW."),
-    ]
-    efficiency_charging: Annotated[
-        float,
-        Field(strict=True, gt=0, le=1, description="Charging efficiency (0-1)."),
-    ]
-    efficiency_discharging: Annotated[
-        float,
-        Field(strict=True, gt=0, le=1, description="Discharging efficiency (0-1)."),
-    ]
-    soc_start: Annotated[
-        float,
-        Field(strict=True, ge=0, description="Initial state of charge in MWh."),
-    ]
-    soc_end: Annotated[
-        float | None,
-        Field(strict=True, ge=0, description="Final state of charge in MWh."),
-    ] = None
-    soc_min: Annotated[
-        float | None,
-        Field(strict=True, ge=0, description="Minimum state of charge should be greater than 0."),
-    ] = None
-    soc_max: Annotated[
-        float | None,
-        Field(strict=True, ge=0, description="Maximum state of charge should be greater than 0."),
-    ] = None
-    degradation_cost: Annotated[
-        float | None,
-        Field(strict=True, ge=0, description="Degradation cost, in currency per MWh cycled."),
-    ] = None
-    self_discharge_rate: Annotated[
-        float | None,
-        Field(strict=True, ge=0, le=1, description="Self-discharge rate (0-1) per hour."),
-    ] = None
+    capacity: float = Field(
+        strict=True,
+        gt=0,
+        description="Battery capacity in MWh.",
+    )
+    max_power: float = Field(
+        strict=True,
+        gt=0,
+        description="Maximum power in MW.",
+    )
+    efficiency_charging: float = Field(
+        strict=True,
+        gt=0,
+        le=1,
+        description="Charging efficiency (0-1).",
+    )
+    efficiency_discharging: float = Field(
+        strict=True,
+        gt=0,
+        le=1,
+        description="Discharging efficiency (0-1).",
+    )
+    soc_start: float = Field(
+        strict=True,
+        ge=0,
+        description="Initial state of charge in MWh.",
+    )
+    soc_end: float | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Final state of charge in MWh.",
+    )
+    soc_min: float | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Minimum state of charge should be greater than 0.",
+    )
+    soc_max: float | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Maximum state of charge should be greater than 0.",
+    )
+    degradation_cost: float | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Degradation cost, in currency per MWh cycled.",
+    )
+    self_discharge_rate: float | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        le=1,
+        description="Self-discharge rate (0-1) per hour.",
+    )
 
     @model_validator(mode="after")
     def _validate_soc_values_remain_within_capacity(self) -> Self:
