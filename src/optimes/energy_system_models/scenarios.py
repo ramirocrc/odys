@@ -1,7 +1,6 @@
 """Scenario definitions for energy system optimization models."""
 
 from collections.abc import Mapping, Sequence
-from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -9,21 +8,16 @@ from pydantic import BaseModel, Field
 class Scenario(BaseModel):
     """Scenario conditions."""
 
-    available_capacity_profiles: Annotated[
-        Mapping[str, Sequence[float]],
-        Field(description="Available capacity for each asset."),
-    ]
-    load_profiles: Annotated[
-        Mapping[str, Sequence[float]],
-        Field(description="Load profiles"),
-    ]
+    available_capacity_profiles: Mapping[str, Sequence[float]] = Field(description="Available capacity for each asset.")
+    load_profiles: Mapping[str, Sequence[float]] | None = Field(default=None, description="Load profiles")
+    market_prices: Mapping[str, Sequence[float]] | None = Field(default=None, description="Market prices.")
 
 
 class StochasticScenario(Scenario):
     """Stochastic scenario conditions."""
 
     name: str
-    probability: Annotated[float, Field(ge=0, le=1, description="Probability (0-1) of the scenario.")]
+    probability: float = Field(ge=0, le=1, description="Probability (0-1) of the scenario.")
 
 
 def validate_sequence_of_stochastic_scenarios(

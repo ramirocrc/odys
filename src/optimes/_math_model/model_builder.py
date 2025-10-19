@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from functools import cached_property
 
 from linopy import Model
 
@@ -17,10 +18,10 @@ from optimes._math_model.model_components.linopy_converter import (
     get_variable_lower_bound,
 )
 from optimes._math_model.model_components.objectives import (
-    get_operating_costs,
+    ObjectiveFuncions,
 )
 from optimes._math_model.model_components.parameters import EnergyModelParameters
-from optimes._math_model.model_components.sets import ModelDimension
+from optimes._math_model.model_components.sets import ModelDimension, ModelIndex
 from optimes._math_model.model_components.variables import (
     ModelVariable,
 )
@@ -68,23 +69,16 @@ class EnergyAlgebraicModelBuilder:
     def _add_model_variables(self) -> None:
         for variable in ModelVariable:
             linopy_variable = self._get_linopy_variable_params(variable)
+            # todo: If variable coordinates has a zero in one dimension it means that it's not needed and can be skipped
             self.add_variable_to_model(linopy_variable)
 
     def _get_linopy_variable_params(self, variable: ModelVariable) -> LinopyVariableParameters:
-        dimension_to_index = {
-            ModelDimension.Scenarios: self._parameters.system.scenario_index,
-            ModelDimension.Time: self._parameters.system.time_index,
-            ModelDimension.Generators: self._parameters.generators.index,
-            ModelDimension.Batteries: self._parameters.batteries.index,
-            ModelDimension.Loads: self._parameters.loads.index,
-        }
-
         coordinates = {}
         dimensions = []
         indeces = []
 
         for dimension in variable.dimensions:
-            index = dimension_to_index[dimension]
+            index = self.get_index_for_dimension(dimension)
             coordinates |= index.coordinates
             dimensions.append(index.dimension)
             indeces.append(index)
@@ -100,6 +94,24 @@ class EnergyAlgebraicModelBuilder:
             ),
             binary=variable.is_binary,
         )
+
+    def get_index_for_dimension(self, dimension: ModelDimension) -> ModelIndex:
+        index = self._dimension_to_index_mapping.get(dimension)
+        if not index:
+            msg = f"No index found for dimension {dimension}."
+            raise ValueError(msg)
+        return index
+
+    @cached_property
+    def _dimension_to_index_mapping(self) -> dict[ModelDimension, ModelIndex]:
+        return {
+            ModelDimension.Scenarios: self._parameters.system.scenario_index,
+            ModelDimension.Time: self._parameters.system.time_index,
+            ModelDimension.Generators: self._parameters.generators.index,
+            ModelDimension.Batteries: self._parameters.batteries.index,
+            ModelDimension.Loads: self._parameters.loads.index,
+            ModelDimension.Markets: self._parameters.markets.index,
+        }
 
     def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
         self._linopy_model.add_variables(
@@ -144,11 +156,13 @@ class EnergyAlgebraicModelBuilder:
             )
 
     def _add_model_objective(self) -> None:
-        objective = get_operating_costs(
+        objective = ObjectiveFuncions(
             var_generator_power=self._linopy_model.variables[ModelVariable.GENERATOR_POWER.var_name],
             var_generator_startup=self._linopy_model.variables[ModelVariable.GENERATOR_STARTUP.var_name],
+            var_market_traded_vol=self._linopy_model.variables[ModelVariable.MARKET_TRADED_VOLUME.var_name],
             param_generator_variable_cost=self._parameters.generators.variable_cost,
             param_generator_startup_cost=self._parameters.generators.startup_cost,
-            scenario_probabilities=self._parameters.system.scenario_probabilities,
-        )
-        self._linopy_model.add_objective(objective)
+            param_scenario_probabilities=self._parameters.system.scenario_probabilities,
+            param_market_prices=self._parameters.system.market_prices,
+        ).profit
+        self._linopy_model.add_objective(objective, sense="max")

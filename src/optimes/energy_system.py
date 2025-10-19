@@ -8,6 +8,7 @@ from datetime import timedelta
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.markets import EnergyMarket
 from optimes.energy_system_models.scenarios import Scenario, StochasticScenario
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from optimes.optimization.optimization_results import OptimizationResults
@@ -33,18 +34,18 @@ class EnergySystem:
         power_unit: str,
         scenarios: Scenario | list[StochasticScenario],
         *,
+        markets: EnergyMarket | None = None,
         enforce_non_anticipativity: bool = False,
     ) -> None:
         """Initialize the energy system configuration and optimizer.
 
         Args:
             portfolio: The portfolio of energy assets (generators, batteries, etc.).
-            demand_profile: Sequence of power demand values for each time period.
             timestep: Duration of each time period.
             number_of_steps: Number of time steps.
             power_unit: Unit used for power quantities ('W', 'kW', or 'MW').
-            available_capacity_profiles: Optional dict mapping generator names to
             scenarios: Sequence of stochastic scenarios. Probabilities must add up to 1.
+            markets: Optional energy markets in which assets can participate.
             enforce_non_anticipativity: When True, decision variables must take the same values across all scenarios,
             reflecting that decisions are made before uncertainty is revealed. When False, scenarios are optimized
             separately allowing different decisions per scenario.
@@ -52,6 +53,7 @@ class EnergySystem:
         """
         self._validated_model = ValidatedEnergySystem(
             portfolio=portfolio,
+            markets=markets,
             timestep=timestep,
             number_of_steps=number_of_steps,
             power_unit=power_unit,  # pyright: ignore reportArgumentType

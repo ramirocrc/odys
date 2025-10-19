@@ -7,7 +7,14 @@ optimization models.
 import xarray as xr
 from pydantic import BaseModel
 
-from optimes._math_model.model_components.sets import BatteryIndex, GeneratorIndex, LoadIndex, ScenarioIndex, TimeIndex
+from optimes._math_model.model_components.sets import (
+    BatteryIndex,
+    GeneratorIndex,
+    LoadIndex,
+    MarketIndex,
+    ScenarioIndex,
+    TimeIndex,
+)
 
 
 class GeneratorParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
@@ -37,17 +44,23 @@ class LoadParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra
     index: LoadIndex
 
 
-class SystemParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
+class MarketParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
+    index: MarketIndex
+
+
+class ScenarioParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
     scenario_index: ScenarioIndex
     time_index: TimeIndex
     enforce_non_anticipativity: bool
-    demand_profile: xr.DataArray
+    load_profiles: xr.DataArray | None
+    market_prices: xr.DataArray | None
     available_capacity_profiles: xr.DataArray
     scenario_probabilities: xr.DataArray
 
 
-class EnergyModelParameters(BaseModel):
+class EnergyModelParameters(BaseModel, frozen=True, extra="forbid"):
     generators: GeneratorParameters
     batteries: BatteryParameters
     loads: LoadParameters
-    system: SystemParameters
+    system: ScenarioParameters
+    markets: MarketParameters

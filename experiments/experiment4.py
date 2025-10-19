@@ -11,7 +11,6 @@ from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.load import Load, LoadType
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.assets.storage import Battery
 from optimes.energy_system_models.markets import EnergyMarket
 from optimes.energy_system_models.scenarios import Scenario
 from optimes.utils.logging import get_logger
@@ -36,20 +35,9 @@ if __name__ == "__main__":
         ramp_up=140,
         ramp_down=100,
     )
-    battery_1 = Battery(
-        name="battery1",
-        max_power=200.0,
-        capacity=100.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.8,
-        soc_start=100.0,
-        soc_end=50.0,
-        soc_min=10.0,
-    )
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_1)
     portfolio.add_asset(generator_2)
-    portfolio.add_asset(battery_1)
     load = Load(name="load", type=LoadType.Fixed)
     portfolio.add_asset(load)
 
@@ -60,7 +48,8 @@ if __name__ == "__main__":
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
             },
-            load_profiles={"load": [300, 75, 300, 50, 100, 120, 125]},
+            load_profiles={"load": [200, 75, 200, 50, 100, 120, 125]},
+            market_prices={"sdac": [150, 150, 150, 150, 150, 150, 150]},
         ),
         timestep=timedelta(minutes=30),
         number_of_steps=7,
@@ -70,11 +59,7 @@ if __name__ == "__main__":
     result = energy_system.optimize()
     logger.info(result.termination_condition)
     logger.info(result.solver_status)
-    battery_results = result.batteries
     logger.info("generators power")
     logger.info(result.generators.power)
-    logger.info("battery")
-    logger.info(result.batteries.net_power)
-
-    logger.info("results summary dataframe")
-    logger.info(result.to_dataframe)
+    logger.info("market_traded volume")
+    logger.info(result.markets.traded_volume)

@@ -11,6 +11,7 @@ class ModelDimension(StrEnum):
     Generators = "generator"
     Batteries = "battery"
     Loads = "load"
+    Markets = "market"
 
 
 class ModelIndex(BaseModel, ABC, frozen=True):
@@ -43,3 +44,7 @@ class BatteryIndex(ModelIndex, frozen=True):
 
 class LoadIndex(ModelIndex, frozen=True):
     dimension: ClassVar[ModelDimension] = ModelDimension.Loads
+
+
+class MarketIndex(ModelIndex, frozen=True):
+    dimension: ClassVar[ModelDimension] = ModelDimension.Markets

@@ -4,6 +4,7 @@ This module provides classes for representing energy system conditions,
 including demand profiles and system configurations.
 """
 
+from collections.abc import Sequence
 from datetime import timedelta
 from functools import cached_property
 from typing import Self
@@ -16,17 +17,20 @@ from optimes._math_model.model_components.parameters import (
     EnergyModelParameters,
     GeneratorParameters,
     LoadParameters,
-    SystemParameters,
+    MarketParameters,
+    ScenarioParameters,
 )
 from optimes._math_model.model_components.sets import (
     BatteryIndex,
     GeneratorIndex,
     LoadIndex,
+    MarketIndex,
     ScenarioIndex,
     TimeIndex,
 )
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from optimes.energy_system_models.markets import EnergyMarket
 from optimes.energy_system_models.scenarios import (
     Scenario,
     StochasticScenario,
@@ -38,7 +42,7 @@ from optimes.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True):
+class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
     """Represents the complete energy system configuration with validation.
 
     This class defines the energy system including the asset portfolio,
@@ -59,7 +63,8 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     timestep: timedelta
     number_of_steps: int
     power_unit: PowerUnit
-    scenarios: Scenario | list[StochasticScenario] = Field(init_var=True)
+    markets: EnergyMarket | Sequence[EnergyMarket] | None = Field(default=None, init_var=True)
+    scenarios: Scenario | Sequence[StochasticScenario] = Field(init_var=True)
     enforce_non_anticipativity: bool = False
 
     @field_validator("scenarios", mode="after")
@@ -74,23 +79,33 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         return value
 
     @cached_property
-    def _list_of_scenarios(self) -> list[StochasticScenario]:
-        if isinstance(self.scenarios, list):
-            return self.scenarios
+    def _collection_of_scenarios(self) -> tuple[StochasticScenario, ...]:
+        if isinstance(self.scenarios, Sequence):
+            return tuple(self.scenarios)
 
-        return [
+        return (
             StochasticScenario(
                 name="deterministic_scenario",
                 probability=1.0,
                 available_capacity_profiles=self.scenarios.available_capacity_profiles,
                 load_profiles=self.scenarios.load_profiles,
+                market_prices=self.scenarios.market_prices,
             ),
-        ]
+        )
+
+    @cached_property
+    def _collection_of_markets(self) -> tuple[EnergyMarket, ...]:
+        if not self.markets:
+            return ()
+        if isinstance(self.markets, Sequence):
+            return tuple(self.markets)
+
+        return (self.markets,)
 
     @cached_property
     def _scenario_index(self) -> ScenarioIndex:
         return ScenarioIndex(
-            values=tuple(scenario.name for scenario in self._list_of_scenarios),
+            values=tuple(scenario.name for scenario in self._collection_of_scenarios),
         )
 
     @cached_property
@@ -115,6 +130,12 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     def _load_index(self) -> LoadIndex:
         return LoadIndex(
             values=tuple(load.name for load in self.portfolio.loads),
+        )
+
+    @cached_property
+    def _market_index(self) -> MarketIndex:
+        return MarketIndex(
+            values=tuple(market.name for market in self._collection_of_markets),
         )
 
     @cached_property
@@ -145,11 +166,15 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             loads=LoadParameters(
                 index=self._load_index,
             ),
-            system=SystemParameters(
+            markets=MarketParameters(
+                index=self._market_index,
+            ),
+            system=ScenarioParameters(
                 scenario_index=self._scenario_index,
                 time_index=self._time_index,
                 enforce_non_anticipativity=self.enforce_non_anticipativity,
-                demand_profile=self._demand_profile,
+                load_profiles=self._load_profiles,
+                market_prices=self._market_prices,
                 available_capacity_profiles=self._available_capacity_profiles,
                 scenario_probabilities=self._scenario_probabilities,
             ),
@@ -169,14 +194,121 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             ValueError: If the system configuration is infeasible.
 
         """
-        self._validate_demand_can_be_met()
-        self._validate_available_capacity()
+        self._validate_load_consisten_with_scenario_load_profiles()
+        self._validate_markets_consistent_with_scenario_market_prices()
+
+        for scenario in self._collection_of_scenarios:
+            self._validate_available_capacity_scenario(scenario)
+            self._validate_load_profiles(scenario)
+
+            if not self.markets:
+                self._validate_enough_power_to_meet_demand(scenario)
+                self._validate_enough_energy_to_meet_demand(scenario)
 
         return self
 
-    def _validate_available_capacity(self) -> None:
-        for scenario in self._list_of_scenarios:
-            self._validate_available_capacity_scenario(scenario)
+    def _validate_load_consisten_with_scenario_load_profiles(self) -> None:
+        """Validate consistency between portfolio loads and scenario load profiles.
+
+        If there are loads in the portfolio, each scenario must have a profile for each load.
+        If there are no loads in the portfolio, all scenarios should have load_profiles=None.
+
+        Raises:
+            ValueError: If load profiles are inconsistent with portfolio loads.
+        """
+        has_loads = bool(self.portfolio.loads)
+
+        for scenario in self._collection_of_scenarios:
+            if has_loads:
+                if scenario.load_profiles is None:
+                    msg = (
+                        f"Portfolio contains loads {[load.name for load in self.portfolio.loads]}, "
+                        f"but scenario '{scenario.name}' has no load profiles."
+                    )
+                    raise ValueError(msg)
+
+                portfolio_load_names = {load.name for load in self.portfolio.loads}
+                scenario_load_names = set(scenario.load_profiles.keys())
+
+                missing_loads = portfolio_load_names - scenario_load_names
+                if missing_loads:
+                    msg = f"Scenario '{scenario.name}' is missing load profiles for: {sorted(missing_loads)}"
+                    raise ValueError(msg)
+
+                extra_loads = scenario_load_names - portfolio_load_names
+                if extra_loads:
+                    msg = (
+                        f"Scenario '{scenario.name}' has load profiles for loads not in portfolio: "
+                        f"{sorted(extra_loads)}"
+                    )
+                    raise ValueError(msg)
+            elif scenario.load_profiles is not None:
+                msg = (
+                    f"Portfolio contains no loads, but scenario '{scenario.name}' "
+                    f"has load profiles: {list(scenario.load_profiles.keys())}"
+                )
+                raise ValueError(msg)
+
+    def _validate_markets_consistent_with_scenario_market_prices(self) -> None:
+        """Validate consistency between portfolio markets and scenario market prices.
+
+        If there are markets in the portfolio, each scenario must have prices for each market.
+        If there are no markets in the portfolio, all scenarios should have market_prices=None.
+
+        Raises:
+            ValueError: If market prices are inconsistent with portfolio markets.
+        """
+        has_markets = bool(self._collection_of_markets)
+
+        for scenario in self._collection_of_scenarios:
+            if has_markets:
+                if scenario.market_prices is None:
+                    msg = (
+                        f"Portfolio contains markets {[market.name for market in self._collection_of_markets]}, "
+                        f"but scenario '{scenario.name}' has no market prices."
+                    )
+                    raise ValueError(msg)
+
+                portfolio_market_names = {market.name for market in self._collection_of_markets}
+                scenario_market_names = set(scenario.market_prices.keys())
+
+                missing_markets = portfolio_market_names - scenario_market_names
+                if missing_markets:
+                    msg = f"Scenario '{scenario.name}' is missing market prices for: {sorted(missing_markets)}"
+                    raise ValueError(msg)
+
+                extra_markets = scenario_market_names - portfolio_market_names
+                if extra_markets:
+                    msg = (
+                        f"Scenario '{scenario.name}' has market prices for markets not in portfolio: "
+                        f"{sorted(extra_markets)}"
+                    )
+                    raise ValueError(msg)
+            elif scenario.market_prices is not None:
+                msg = (
+                    f"Portfolio contains no markets, but scenario '{scenario.name}' "
+                    f"has market prices: {list(scenario.market_prices.keys())}"
+                )
+                raise ValueError(msg)
+
+    def _validate_load_profiles(self, scenario: Scenario) -> None:
+        """Validate that available capacity profiles are only for generators.
+
+        Raises:
+            TypeError: If available capacity is specified for non-generator assets.
+            ValueError: If capacity profile length doesn't match demand profile.
+
+        """
+        if scenario.load_profiles is None:
+            return
+
+        for load_name, load_profile in scenario.load_profiles.items():
+            if len(load_profile) != self.number_of_steps:
+                msg = (
+                    f"Length of load profile {load_name} ({len(load_profile)})"
+                    f" does not match the number of time steps ({self.number_of_steps})."
+                )
+                raise ValueError(msg)
 
     def _validate_available_capacity_scenario(self, scenario: Scenario) -> None:
         """Validate that available capacity profiles are only for generators.
@@ -189,13 +321,6 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         if scenario.available_capacity_profiles is None:
             return
 
-        for load_name, load_profile in scenario.load_profiles.items():
-            if len(load_profile) != self.number_of_steps:
-                msg = (
-                    f"Length of load profile {load_name} ({len(load_profile)})"
-                    f" does not match the number of time steps ({self.number_of_steps})."
-                )
-                raise ValueError(msg)
         for asset_name, capacity_profile in scenario.available_capacity_profiles.items():
             asset = self.portfolio.get_asset(asset_name)
             if not isinstance(asset, PowerGenerator):
@@ -217,16 +342,6 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                         f"Values must be between 0 and the asset's nominal power ({asset.nominal_power})."
                     )
                     raise ValueError(msg)
-
-    def _validate_demand_can_be_met(self) -> None:
-        """Validate that the system can meet the demand profile.
-
-        This method checks both power and energy balance constraints
-        to ensure the system is feasible.
-        """
-        for scenario in self._list_of_scenarios:
-            self._validate_enough_power_to_meet_demand(scenario)
-            self._validate_enough_energy_to_meet_demand(scenario)
 
     def _validate_enough_power_to_meet_demand(self, scenario: StochasticScenario) -> None:
         """Validate that maximum available power can meet peak demand.
@@ -372,13 +487,16 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         )
 
     @property
-    def _demand_profile(self) -> xr.DataArray:
+    def _load_profiles(self) -> xr.DataArray | None:
+        if not self.portfolio.loads:
+            return None
         all_load_profiles = []
-
-        for scenario in self._list_of_scenarios:
-            profiles = scenario.load_profiles or {}
-            scenario_complete_load_profiles = [profiles.get(load.name) for load in self.portfolio.loads]
-            all_load_profiles.append(scenario_complete_load_profiles)
+        for scenario in self._collection_of_scenarios:
+            scenario_load_profiles_mapping = scenario.load_profiles or {}
+            scenario_load_profiles_array = [
+                scenario_load_profiles_mapping.get(load.name) for load in self.portfolio.loads
+            ]
+            all_load_profiles.append(scenario_load_profiles_array)
 
         return xr.DataArray(
             data=all_load_profiles,
@@ -386,10 +504,27 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         )
 
     @property
+    def _market_prices(self) -> xr.DataArray | None:
+        if not self.markets:
+            return None
+        all_market_prices = []
+        for scenario in self._collection_of_scenarios:
+            scenario_market_prices_mapping = scenario.market_prices or {}
+            scenario_market_prices_array = [
+                scenario_market_prices_mapping.get(market.name) for market in self._collection_of_markets
+            ]
+            all_market_prices.append(scenario_market_prices_array)
+
+        return xr.DataArray(
+            data=all_market_prices,
+            coords=self._scenario_index.coordinates | self._market_index.coordinates | self._time_index.coordinates,
+        )
+
+    @property
     def _available_capacity_profiles(self) -> xr.DataArray:
         all_capacity_profiles = []
 
-        for scenario in self._list_of_scenarios:
+        for scenario in self._collection_of_scenarios:
             profiles = scenario.available_capacity_profiles or {}
             scenario_complete_capacity_profiles = [
                 profiles.get(gen.name, [gen.nominal_power] * self.number_of_steps) for gen in self.portfolio.generators
@@ -401,10 +536,10 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             coords=self._scenario_index.coordinates | self._generator_index.coordinates | self._time_index.coordinates,
         )
 
-    @cached_property
+    @property
     def _scenario_probabilities(self) -> xr.DataArray:
         """Returns scenario probabilities as xarray DataArray."""
         return xr.DataArray(
-            data=[scenario.probability for scenario in self._list_of_scenarios],
+            data=[scenario.probability for scenario in self._collection_of_scenarios],
             coords=self._scenario_index.coordinates,
         )

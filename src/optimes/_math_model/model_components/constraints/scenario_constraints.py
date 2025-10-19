@@ -2,19 +2,20 @@ import linopy
 
 from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
 from optimes._math_model.model_components.parameters import (
-    SystemParameters,
+    ScenarioParameters,
 )
 from optimes._math_model.model_components.sets import ModelDimension
 from optimes._math_model.model_components.variables import ModelVariable
 
 
 class ScenarioConstraints:
-    def __init__(self, linopy_model: linopy.Model, params: SystemParameters) -> None:
+    def __init__(self, linopy_model: linopy.Model, params: ScenarioParameters) -> None:
         self.model = linopy_model
         self.params = params
         self.var_generator_power = self.model.variables[ModelVariable.GENERATOR_POWER.var_name]
         self.var_battery_charge = self.model.variables[ModelVariable.BATTERY_POWER_IN.var_name]
         self.var_battery_discharge = self.model.variables[ModelVariable.BATTERY_POWER_OUT.var_name]
+        self.var_market_traded_volume = self.model.variables[ModelVariable.MARKET_TRADED_VOLUME.var_name]
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
@@ -35,11 +36,14 @@ class ScenarioConstraints:
         generation_total = self.var_generator_power.sum(ModelDimension.Generators)
         discharge_total = self.var_battery_discharge.sum(ModelDimension.Batteries)
         charge_total = self.var_battery_charge.sum(ModelDimension.Batteries)
+        market_traded_volume_total = self.var_market_traded_volume.sum(ModelDimension.Markets)
 
-        expression = generation_total + discharge_total - charge_total - self.params.demand_profile == 0
+        lhs = generation_total + discharge_total - charge_total - market_traded_volume_total
+        if self.params.load_profiles is not None:
+            lhs = lhs - self.params.load_profiles
         return ModelConstraint(
             name="power_balance_constraint",
-            constraint=expression,
+            constraint=lhs == 0,
         )
 
     def _get_available_capcity_profiles_constraint(self) -> ModelConstraint:

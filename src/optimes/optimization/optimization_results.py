@@ -13,7 +13,7 @@ from linopy.constants import SolverStatus, TerminationCondition
 
 from optimes._math_model.model_components.sets import ModelDimension
 from optimes._math_model.model_components.variables import ModelVariable
-from optimes.optimization.result_containers import BatteryResults, GeneratorResults
+from optimes.optimization.result_containers import BatteryResults, GeneratorResults, MarketResults
 
 
 class OptimizationResults:
@@ -76,9 +76,12 @@ class OptimizationResults:
         dfs = []
         for variable in ModelVariable:
             variable_name = variable.var_name
+            var_solution = self._solution[variable_name]
+            # Skip if there is this variable is not populated (eg skip battery varialbes if no batteries in the system)
+            if var_solution.size == 0:
+                continue
             df = (
-                self._solution[variable_name]
-                .to_series()
+                var_solution.to_series()
                 .reset_index()
                 .rename(columns={variable.asset_dimension: "unit", variable_name: "value"})
                 .assign(variable=variable_name)
@@ -118,6 +121,14 @@ class OptimizationResults:
         )
 
     @cached_property
+    def markets(self) -> MarketResults:
+        """Get battery results."""
+        self._validate_terminated_successfully()
+        return MarketResults(
+            traded_volume=self._get_variable_results(ModelVariable.MARKET_TRADED_VOLUME),
+        )
+
+    @cached_property
     def generators(self) -> GeneratorResults:
         """Get generator results."""
         self._validate_terminated_successfully()
@@ -129,4 +140,8 @@ class OptimizationResults:
         )
 
     def _get_variable_results(self, variable: ModelVariable) -> pd.DataFrame:
-        return self._solution[variable.var_name].to_series().unstack().pipe(self._drop_single_scenario_level)  # noqa: PD010
+        var_timeseries = self._solution[variable.var_name].to_series()
+        if var_timeseries.empty:
+            msg = f"Variable {variable.var_name} is not part of the model."
+            raise ValueError(msg)
+        return var_timeseries.unstack().pipe(self._drop_single_scenario_level)  # noqa: PD010
