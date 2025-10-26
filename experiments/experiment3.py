@@ -9,6 +9,7 @@ from datetime import timedelta
 
 from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
+from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.scenarios import StochasticScenario
 from optimes.utils.logging import get_logger
@@ -31,6 +32,7 @@ if __name__ == "__main__":
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_1)
     portfolio.add_asset(generator_2)
+    portfolio.add_asset(Load(name="load"))
 
     scenarios = [
         StochasticScenario(
@@ -40,6 +42,9 @@ if __name__ == "__main__":
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
                 "wind_farm": [100, 100, 100, 50, 50, 50, 50],
             },
+            load_profiles={
+                "load": [180, 180, 150, 50, 80, 90, 95],
+            },
         ),
         StochasticScenario(
             name="high_wind",
@@ -48,12 +53,15 @@ if __name__ == "__main__":
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
                 "wind_farm": [150, 150, 100, 50, 50, 50, 50],
             },
+            load_profiles={
+                "load": [180, 180, 150, 50, 80, 90, 95],
+            },
         ),
     ]
     energy_system = EnergySystem(
         portfolio=portfolio,
-        demand_profile=[180, 180, 150, 50, 80, 90, 95],
         timestep=timedelta(minutes=30),
+        number_of_steps=7,
         scenarios=scenarios,
         enforce_non_anticipativity=False,
         power_unit="MW",

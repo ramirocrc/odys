@@ -110,10 +110,7 @@ class ModelVariable(Enum):
     def is_binary(self) -> bool:
         return self.value.is_binary
 
-    @classmethod
-    def generator_variables(cls) -> list["ModelVariable"]:
-        return [var for var in ModelVariable if ModelDimension.Generators in var.value.dimensions]
 
-    @classmethod
-    def battery_variables(cls) -> list["ModelVariable"]:
-        return [var for var in ModelVariable if ModelDimension.Batteries in var.value.dimensions]
+GENERATOR_VARIABLES = [var for var in ModelVariable if ModelDimension.Generators in var.value.dimensions]
+BATTERY_VARIABLES = [var for var in ModelVariable if ModelDimension.Batteries in var.value.dimensions]
+MARKET_VARIABLES = [var for var in ModelVariable if ModelDimension.Markets in var.value.dimensions]

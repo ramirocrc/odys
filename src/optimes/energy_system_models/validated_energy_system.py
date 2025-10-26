@@ -19,6 +19,7 @@ from optimes._math_model.model_components.parameters import (
     LoadParameters,
     MarketParameters,
     ScenarioParameters,
+    TimeParameters,
 )
 from optimes._math_model.model_components.sets import (
     BatteryIndex,
@@ -142,42 +143,69 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     def parameters(self) -> EnergyModelParameters:
         """Returns energy model parameters."""
         return EnergyModelParameters(
-            generators=GeneratorParameters(
-                index=self._generator_index,
-                nominal_power=self._generators_nominal_power,
-                variable_cost=self._generators_variable_cost,
-                min_up_time=self._generators_min_up_time,
-                min_power=self._generators_min_power,
-                startup_cost=self._generators_startup_cost,
-                max_ramp_up=self._generators_max_ramp_up,
-                max_ramp_down=self._generators_max_ramp_down,
-            ),
-            batteries=BatteryParameters(
-                index=self._battery_index,
-                capacity=self._batteries_capacity,
-                max_power=self._batteries_max_power,
-                efficiency_charging=self._batteries_efficiency_charging,
-                efficiency_discharging=self._batteries_efficiency_discharging,
-                soc_start=self._batteries_soc_start,
-                soc_end=self._batteries_soc_end,
-                soc_min=self._batteries_soc_min,
-                soc_max=self._batteries_soc_max,
-            ),
-            loads=LoadParameters(
-                index=self._load_index,
-            ),
-            markets=MarketParameters(
-                index=self._market_index,
-            ),
-            system=ScenarioParameters(
-                scenario_index=self._scenario_index,
+            generators=self._generator_parameters,
+            batteries=self._battery_parameters,
+            loads=self._load_parameters,
+            markets=self._market_parameters,
+            time=TimeParameters(
                 time_index=self._time_index,
+            ),
+            scenario=ScenarioParameters(
+                scenario_index=self._scenario_index,
                 enforce_non_anticipativity=self.enforce_non_anticipativity,
                 load_profiles=self._load_profiles,
                 market_prices=self._market_prices,
                 available_capacity_profiles=self._available_capacity_profiles,
                 scenario_probabilities=self._scenario_probabilities,
             ),
+        )
+
+    @property
+    def _generator_parameters(self) -> GeneratorParameters | None:
+        if len(self.portfolio.generators) == 0:
+            return None
+        return GeneratorParameters(
+            index=self._generator_index,
+            nominal_power=self._generators_nominal_power,
+            variable_cost=self._generators_variable_cost,
+            min_up_time=self._generators_min_up_time,
+            min_power=self._generators_min_power,
+            startup_cost=self._generators_startup_cost,
+            max_ramp_up=self._generators_max_ramp_up,
+            max_ramp_down=self._generators_max_ramp_down,
+        )
+
+    @property
+    def _battery_parameters(self) -> BatteryParameters | None:
+        if len(self.portfolio.batteries) == 0:
+            return None
+
+        return BatteryParameters(
+            index=self._battery_index,
+            capacity=self._batteries_capacity,
+            max_power=self._batteries_max_power,
+            efficiency_charging=self._batteries_efficiency_charging,
+            efficiency_discharging=self._batteries_efficiency_discharging,
+            soc_start=self._batteries_soc_start,
+            soc_end=self._batteries_soc_end,
+            soc_min=self._batteries_soc_min,
+            soc_max=self._batteries_soc_max,
+        )
+
+    @property
+    def _load_parameters(self) -> LoadParameters | None:
+        if len(self.portfolio.loads) == 0:
+            return None
+        return LoadParameters(
+            index=self._load_index,
+        )
+
+    @property
+    def _market_parameters(self) -> MarketParameters | None:
+        if self.markets is None:
+            return None
+        return MarketParameters(
+            index=self._market_index,
         )
 
     @model_validator(mode="after")
@@ -353,6 +381,10 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
             ValueError: If maximum available power is insufficient for peak demand.
 
         """
+        if scenario.load_profiles is None:
+            msg = "Load profile is empty, there is nothing to balance."
+            raise ValueError(msg)
+
         cumulative_generators_power = sum(gen.nominal_power for gen in self.portfolio.generators)
         # TODO: We assume full capacity can be discharged -> Needs to be limited by max power
         cumulative_battery_capacities = sum(bat.capacity for bat in self.portfolio.batteries)
@@ -521,7 +553,9 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         )
 
     @property
-    def _available_capacity_profiles(self) -> xr.DataArray:
+    def _available_capacity_profiles(self) -> xr.DataArray | None:
+        if not self.portfolio.generators:
+            return None
         all_capacity_profiles = []
 
         for scenario in self._collection_of_scenarios:

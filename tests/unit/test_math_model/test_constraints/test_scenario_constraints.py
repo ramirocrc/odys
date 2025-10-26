@@ -143,13 +143,15 @@ def energy_system_with_multiple_scenarios(
 @pytest.fixture
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
-    return model_builder.build()
+    energy_milp_model = model_builder.build()
+    return energy_milp_model.linopy_model
 
 
 @pytest.fixture
 def linopy_model_with_non_anticipativity(energy_system_with_multiple_scenarios: ValidatedEnergySystem) -> linopy.Model:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_with_multiple_scenarios.parameters)
-    return model_builder.build()
+    energy_milp_model = model_builder.build()
+    return energy_milp_model.linopy_model
 
 
 class TestScenarioConstraints:
@@ -229,10 +231,12 @@ class TestNonAnticipativityConstraints:
 
     def test_non_anticipativity_constraints(self) -> None:
         for variable in ModelVariable:
-            constraint_name = f"non_anticipativity_{variable.var_name}_constraint"
-            actual_constraint = self.linopy_model.constraints[constraint_name]
+            # Only test constraints for variables that exist in the model
+            if variable.var_name in self.linopy_model.variables:
+                constraint_name = f"non_anticipativity_{variable.var_name}_constraint"
+                actual_constraint = self.linopy_model.constraints[constraint_name]
 
-            linopy_var = self.linopy_model.variables[variable.var_name]
-            first_scenario_var = linopy_var.isel(scenario=0)
-            expected_expr = linopy_var - first_scenario_var == 0
-            assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
+                linopy_var = self.linopy_model.variables[variable.var_name]
+                first_scenario_var = linopy_var.isel(scenario=0)
+                expected_expr = linopy_var - first_scenario_var == 0
+                assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)

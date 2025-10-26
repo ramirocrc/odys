@@ -1,21 +1,21 @@
-import linopy
-
+from optimes._math_model.milp_model import EnergyMILPModel
 from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
-from optimes._math_model.model_components.parameters import GeneratorParameters
-from optimes._math_model.model_components.variables import ModelVariable
 
 
 class GeneratorConstraints:
-    def __init__(self, linopy_model: linopy.Model, params: GeneratorParameters) -> None:
-        self.model = linopy_model
-        self.params = params
-        self.var_generator_power = self.model.variables[ModelVariable.GENERATOR_POWER.var_name]
-        self.var_generator_status = self.model.variables[ModelVariable.GENERATOR_STATUS.var_name]
-        self.var_generator_startup = self.model.variables[ModelVariable.GENERATOR_STARTUP.var_name]
-        self.var_generator_shutdown = self.model.variables[ModelVariable.GENERATOR_SHUTDOWN.var_name]
+    def __init__(self, milp_model: EnergyMILPModel) -> None:
+        self.model = milp_model
+        self.params = milp_model.parameters.generators
+
+    def _validate_generator_parameters_exist(self) -> None:
+        if self.params is None:
+            msg = "No generator parameters specified."
+            raise ValueError(msg)
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
+        if self.params is None:
+            return ()
         return (
             self._get_generator_max_power_constraint(),
             self._get_generator_status_constraint(),
@@ -37,22 +37,26 @@ class GeneratorConstraints:
         This constraint ensures that each generator's power output does not
         exceed its nominal power capacity.
         """
-        constraint = self.var_generator_power - self.var_generator_status * self.params.nominal_power <= 0  # pyright: ignore reportOperatorIssue
+        self._validate_generator_parameters_exist()
+        constraint = self.model.generator_power - self.model.generator_status * self.params.nominal_power <= 0  # pyright: ignore reportOptionalMemberAccess
         return ModelConstraint(
             constraint=constraint,
             name="generator_max_power_constraint",
         )
 
     def _get_generator_status_constraint(self) -> ModelConstraint:
-        epsilon = 1e-5 * self.params.nominal_power
-        constraint = self.var_generator_power >= self.var_generator_status * epsilon  # pyright: ignore reportOperatorIssue
+        self._validate_generator_parameters_exist()
+        epsilon = 1e-5 * self.params.nominal_power  # pyright: ignore reportOptionalMemberAccess
+        constraint = self.model.generator_power >= self.model.generator_status * epsilon  # pyright: ignore reportOperatorIssue
         return ModelConstraint(
             constraint=constraint,
             name="generator_status_constraint",
         )
 
     def _get_generator_startup_lower_bound_constraint(self) -> ModelConstraint:
-        constraint = self.var_generator_startup >= self.var_generator_status - self.var_generator_status.shift(time=1)
+        constraint = self.model.generator_startup >= self.model.generator_status - self.model.generator_status.shift(
+            time=1,
+        )
         return ModelConstraint(
             constraint=constraint,
             name="generator_startup_lower_bound_constraint",
@@ -60,18 +64,20 @@ class GeneratorConstraints:
 
     def _get_generator_startup_upper_bound_1_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.var_generator_startup <= self.var_generator_status,
+            constraint=self.model.generator_startup <= self.model.generator_status,
             name="generator_startup_upper_bound_1_constraint",
         )
 
     def _get_generator_startup_upper_bound_2_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.var_generator_startup + self.var_generator_status.shift(time=1) <= 1.0,
+            constraint=self.model.generator_startup + self.model.generator_status.shift(time=1) <= 1.0,
             name="generator_startup_upper_bound_2_constraint",
         )
 
     def _get_generator_shutdown_lower_bound_constraint(self) -> ModelConstraint:
-        constraint = self.var_generator_shutdown >= self.var_generator_status.shift(time=1) - self.var_generator_status
+        constraint = (
+            self.model.generator_shutdown >= self.model.generator_status.shift(time=1) - self.model.generator_status
+        )
         return ModelConstraint(
             constraint=constraint,
             name="generator_shutdown_lower_bound_constraint",
@@ -79,22 +85,23 @@ class GeneratorConstraints:
 
     def _get_generator_shutdown_upper_bound_1_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.var_generator_shutdown <= self.var_generator_status.shift(time=1),
+            constraint=self.model.generator_shutdown <= self.model.generator_status.shift(time=1),
             name="generator_shutdown_upper_bound_1_constraint",
         )
 
     def _get_generator_shutdown_upper_bound_2_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.var_generator_shutdown + self.var_generator_status <= 1.0,
+            constraint=self.model.generator_shutdown + self.model.generator_status <= 1.0,
             name="generator_shutdown_upper_bound_2_constraint",
         )
 
     def _get_min_uptime_constraint(self) -> tuple[ModelConstraint, ...]:
+        self._validate_generator_parameters_exist()
         constraints = []
-        for generator in self.params.index.values:
-            min_up_time = int(self.params.min_up_time.sel(generator=generator))
-            generator_status = self.var_generator_status.sel(generator=generator)
-            generator_shutdown = self.var_generator_shutdown.sel(generator=generator)
+        for generator in self.params.index.values:  # pyright: ignore reportOptionalMemberAccess
+            min_up_time = int(self.params.min_up_time.sel(generator=generator))  # pyright: ignore reportOptionalMemberAccess
+            generator_status = self.model.generator_status.sel(generator=generator)
+            generator_shutdown = self.model.generator_shutdown.sel(generator=generator)
             constraint_generator = generator_status.rolling(
                 time=min_up_time,
             ).sum() >= min_up_time * generator_shutdown.shift(time=-1)
@@ -108,21 +115,24 @@ class GeneratorConstraints:
         return tuple(constraints)
 
     def _get_min_power_constraint(self) -> ModelConstraint:
+        self._validate_generator_parameters_exist()
         return ModelConstraint(
-            constraint=self.var_generator_power >= self.params.min_power * self.var_generator_status,
+            constraint=self.model.generator_power >= self.params.min_power * self.model.generator_status,  # pyright: ignore reportOptionalMemberAccess
             name="generator_min_power_constraint",
         )
 
     def _get_max_ramp_up_constraint(self) -> ModelConstraint:
-        max_ramp_up = self.params.max_ramp_up.fillna(self.params.nominal_power)
+        self._validate_generator_parameters_exist()
+        max_ramp_up = self.params.max_ramp_up.fillna(self.params.nominal_power)  # pyright: ignore reportOptionalMemberAccess
         return ModelConstraint(
-            constraint=self.var_generator_power - self.var_generator_power.shift(time=1) <= max_ramp_up,
+            constraint=self.model.generator_power - self.model.generator_power.shift(time=1) <= max_ramp_up,
             name="generator_max_ramp_up_constraint",
         )
 
     def _get_max_ramp_down_constraint(self) -> ModelConstraint:
-        max_ramp_down = self.params.max_ramp_down.fillna(self.params.nominal_power)
-        constraint = self.var_generator_power.shift(time=1) - self.var_generator_power <= max_ramp_down
+        self._validate_generator_parameters_exist()
+        max_ramp_down = self.params.max_ramp_down.fillna(self.params.nominal_power)  # pyright: ignore reportOptionalMemberAccess
+        constraint = self.model.generator_power.shift(time=1) - self.model.generator_power <= max_ramp_down
 
         return ModelConstraint(
             constraint=constraint,

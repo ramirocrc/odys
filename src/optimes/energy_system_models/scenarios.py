@@ -8,7 +8,10 @@ from pydantic import BaseModel, Field
 class Scenario(BaseModel):
     """Scenario conditions."""
 
-    available_capacity_profiles: Mapping[str, Sequence[float]] = Field(description="Available capacity for each asset.")
+    available_capacity_profiles: Mapping[str, Sequence[float]] | None = Field(
+        default=None,
+        description="Available capacity for each asset.",
+    )
     load_profiles: Mapping[str, Sequence[float]] | None = Field(default=None, description="Load profiles")
     market_prices: Mapping[str, Sequence[float]] | None = Field(default=None, description="Market prices.")
 
