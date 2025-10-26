@@ -5,41 +5,39 @@ optimization models.
 """
 
 import linopy
-import xarray as xr
+
+from optimes._math_model.milp_model import EnergyMILPModel
 
 
 class ObjectiveFuncions:
-    def __init__(  # noqa: PLR0913
-        self,
-        var_generator_power: linopy.Variable,
-        var_generator_startup: linopy.Variable,
-        var_market_traded_vol: linopy.Variable,
-        param_generator_variable_cost: xr.DataArray,
-        param_generator_startup_cost: xr.DataArray,
-        param_market_prices: xr.DataArray,
-        param_scenario_probabilities: xr.DataArray,
-    ) -> None:
-        self.generator_power = var_generator_power
-        self.generator_startup = var_generator_startup
-        self.var_market_traded_vol = var_market_traded_vol
-        self.generator_variable_cost = param_generator_variable_cost
-        self.generator_startup_cost = param_generator_startup_cost
-        self.param_market_prices = param_market_prices
-        self.param_scenario_probabilities = param_scenario_probabilities
+    def __init__(self, milp_model: EnergyMILPModel) -> None:
+        self._model = milp_model
 
     @property
     def profit(self) -> linopy.LinearExpression:
-        if self.param_market_prices is None:
-            return -self.operating_cost
-        return self.market_revenue - self.operating_cost
+        profit = None
 
-    @property
-    def market_revenue(self) -> linopy.LinearExpression:
-        return self.var_market_traded_vol * self.param_market_prices * self.param_scenario_probabilities  # pyright: ignore reportOperatorIssue
+        if self._model.parameters.scenario.market_prices is not None:
+            profit = self.get_market_revenue()
 
-    @property
-    def operating_cost(self) -> linopy.LinearExpression:
-        scenario_cost = (
-            self.generator_power * self.generator_variable_cost + self.generator_startup * self.generator_startup_cost  # pyright: ignore reportOperatorIssue
+        if self._model.parameters.generators is not None:
+            operating_cost = self.get_operating_costs()
+            profit = -operating_cost if profit is None else profit - operating_cost
+
+        if profit is None:
+            msg = "No terms added to profit"
+            raise ValueError(msg)
+        return profit
+
+    def get_market_revenue(self) -> linopy.LinearExpression:
+        return (
+            self._model.market_traded_volume  # pyright: ignore reportOperatorIssue
+            * self._model.parameters.scenario.market_prices  # pyright: ignore reportOperatorIssue
+            * self._model.parameters.scenario.scenario_probabilities
         )
-        return scenario_cost * self.param_scenario_probabilities  # pyright: ignore reportOperatorIssue
+
+    def get_operating_costs(self) -> linopy.LinearExpression:
+        return (
+            self._model.generator_power * self._model.parameters.generators.variable_cost  # pyright: ignore reportOperatorIssue
+            + self._model.generator_startup * self._model.parameters.generators.startup_cost  # pyright: ignore reportOperatorIssue
+        )

@@ -23,7 +23,7 @@ class ModelIndex(BaseModel, ABC, frozen=True):
     @property
     def coordinates(self) -> dict[str, list[str]]:
         """Gets coordinates for xarray objects."""
-        return {f"{self.dimension.value}": list(self.values)}
+        return {f"{self.dimension}": list(self.values)}
 
 
 class ScenarioIndex(ModelIndex, frozen=True):

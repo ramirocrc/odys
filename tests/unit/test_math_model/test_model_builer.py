@@ -69,7 +69,8 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> ValidatedEne
 
 def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> None:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
-    linopy_model = model_builder.build()
+    energy_milp_model = model_builder.build()
+    linopy_model = energy_milp_model.linopy_model
 
     # Variables
     assert "generator_power" in linopy_model.variables

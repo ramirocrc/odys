@@ -12,7 +12,6 @@ from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.load import Load, LoadType
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
-from optimes.energy_system_models.markets import EnergyMarket
 from optimes.energy_system_models.scenarios import StochasticScenario
 from optimes.utils.logging import get_logger
 
@@ -47,8 +46,6 @@ if __name__ == "__main__":
     portfolio.add_asset(battery_1)
     portfolio.add_asset(load)
 
-    market = EnergyMarket(name="sdac")
-
     scenarios = [
         StochasticScenario(
             name="default",
@@ -75,7 +72,6 @@ if __name__ == "__main__":
     ]
     energy_system = EnergySystem(
         portfolio=portfolio,
-        markets=market,
         timestep=timedelta(minutes=30),
         number_of_steps=7,
         scenarios=scenarios,

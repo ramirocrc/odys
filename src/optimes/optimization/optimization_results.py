@@ -8,9 +8,9 @@ from functools import cached_property
 
 import pandas as pd
 import xarray as xr
-from linopy import Model
 from linopy.constants import SolverStatus, TerminationCondition
 
+from optimes._math_model.milp_model import EnergyMILPModel
 from optimes._math_model.model_components.sets import ModelDimension
 from optimes._math_model.model_components.variables import ModelVariable
 from optimes.optimization.result_containers import BatteryResults, GeneratorResults, MarketResults
@@ -27,18 +27,18 @@ class OptimizationResults:
         self,
         solver_status: SolverStatus,
         termination_condition: TerminationCondition,
-        linopy_model: Model,
+        milp_model: EnergyMILPModel,
     ) -> None:
         """Initialize the optimization results object.
 
         Args:
             solver_status: Solving status
             termination_condition: Termination condition
-            linopy_model: Solved Linopy Model
+            milp_model: Solved EnergyMILPModel Model
         """
         self._solver_status = solver_status
         self._termination_condition = termination_condition
-        self._linopy_model = linopy_model
+        self._milp_model = milp_model
 
     @cached_property
     def solver_status(self) -> str:
@@ -63,7 +63,7 @@ class OptimizationResults:
     @cached_property
     def _solution(self) -> xr.Dataset:
         self._validate_terminated_successfully()
-        return self._linopy_model.solution
+        return self._milp_model.linopy_model.solution
 
     @cached_property
     def to_dataframe(self) -> pd.DataFrame:
@@ -76,10 +76,10 @@ class OptimizationResults:
         dfs = []
         for variable in ModelVariable:
             variable_name = variable.var_name
-            var_solution = self._solution[variable_name]
             # Skip if there is this variable is not populated (eg skip battery varialbes if no batteries in the system)
-            if var_solution.size == 0:
+            if variable_name not in self._milp_model.linopy_model.variables:
                 continue
+            var_solution = self._solution[variable_name]
             df = (
                 var_solution.to_series()
                 .reset_index()
@@ -115,6 +115,9 @@ class OptimizationResults:
     def batteries(self) -> BatteryResults:
         """Get battery results."""
         self._validate_terminated_successfully()
+        if self._milp_model.parameters.batteries is None:
+            msg = "This model does not contain battery results"
+            raise ValueError(msg)
         return BatteryResults(
             net_power=self._get_variable_results(ModelVariable.BATTERY_POWER_NET),
             state_of_charge=self._get_variable_results(ModelVariable.BATTERY_SOC),
@@ -124,6 +127,9 @@ class OptimizationResults:
     def markets(self) -> MarketResults:
         """Get battery results."""
         self._validate_terminated_successfully()
+        if self._milp_model.parameters.markets is None:
+            msg = "This model does not contain market results"
+            raise ValueError(msg)
         return MarketResults(
             traded_volume=self._get_variable_results(ModelVariable.MARKET_TRADED_VOLUME),
         )
@@ -132,6 +138,10 @@ class OptimizationResults:
     def generators(self) -> GeneratorResults:
         """Get generator results."""
         self._validate_terminated_successfully()
+        if self._milp_model.parameters.generators is None:
+            msg = "This model does not contain generator results"
+            raise ValueError(msg)
+
         return GeneratorResults(
             power=self._get_variable_results(ModelVariable.GENERATOR_POWER),
             status=self._get_variable_results(ModelVariable.GENERATOR_STATUS),
@@ -141,7 +151,4 @@ class OptimizationResults:
 
     def _get_variable_results(self, variable: ModelVariable) -> pd.DataFrame:
         var_timeseries = self._solution[variable.var_name].to_series()
-        if var_timeseries.empty:
-            msg = f"Variable {variable.var_name} is not part of the model."
-            raise ValueError(msg)
         return var_timeseries.unstack().pipe(self._drop_single_scenario_level)  # noqa: PD010

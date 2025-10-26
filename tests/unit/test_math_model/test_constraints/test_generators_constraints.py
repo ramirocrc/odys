@@ -96,7 +96,8 @@ def energy_system_sample(
 @pytest.fixture
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
-    return model_builder.build()
+    energy_milp_model = model_builder.build()
+    return energy_milp_model.linopy_model
 
 
 class TestGeneratorConstraints:

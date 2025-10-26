@@ -76,5 +76,5 @@ class EnergySystem:
         model_builder = EnergyAlgebraicModelBuilder(
             energy_system_parameters=self._validated_model.parameters,
         )
-        linopy_model = model_builder.build()
-        return optimize_algebraic_model(linopy_model)
+        milp_model = model_builder.build()
+        return optimize_algebraic_model(milp_model)

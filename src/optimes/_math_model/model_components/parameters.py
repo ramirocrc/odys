@@ -50,17 +50,21 @@ class MarketParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, ext
 
 class ScenarioParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
     scenario_index: ScenarioIndex
-    time_index: TimeIndex
     enforce_non_anticipativity: bool
     load_profiles: xr.DataArray | None
     market_prices: xr.DataArray | None
-    available_capacity_profiles: xr.DataArray
+    available_capacity_profiles: xr.DataArray | None
     scenario_probabilities: xr.DataArray
 
 
+class TimeParameters(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
+    time_index: TimeIndex
+
+
 class EnergyModelParameters(BaseModel, frozen=True, extra="forbid"):
-    generators: GeneratorParameters
-    batteries: BatteryParameters
-    loads: LoadParameters
-    system: ScenarioParameters
-    markets: MarketParameters
+    scenario: ScenarioParameters
+    time: TimeParameters
+    generators: GeneratorParameters | None
+    batteries: BatteryParameters | None
+    loads: LoadParameters | None
+    markets: MarketParameters | None
