@@ -55,7 +55,7 @@ if __name__ == "__main__":
                 "wind_farm": [100, 100, 100, 50, 50, 50, 50],
             },
             load_profiles={
-                "load": [180, 180, 150, 50, 80, 90, 95],
+                "load": [180, 180, 150, 50, 80, 90, 100],
             },
         ),
         StochasticScenario(
@@ -75,7 +75,6 @@ if __name__ == "__main__":
         timestep=timedelta(minutes=30),
         number_of_steps=7,
         scenarios=scenarios,
-        enforce_non_anticipativity=False,
         power_unit="MW",
     )
 

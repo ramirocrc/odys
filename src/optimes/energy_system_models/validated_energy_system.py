@@ -9,26 +9,16 @@ from datetime import timedelta
 from functools import cached_property
 from typing import Self
 
-import xarray as xr
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from optimes._math_model.model_components.parameters import (
-    BatteryParameters,
-    EnergyModelParameters,
-    GeneratorParameters,
-    LoadParameters,
-    MarketParameters,
-    ScenarioParameters,
-    TimeParameters,
+from optimes._math_model.model_components.parameters.battery_parameters import BatteryParameters
+from optimes._math_model.model_components.parameters.generator_parameters import GeneratorParameters
+from optimes._math_model.model_components.parameters.load_parameters import LoadParameters
+from optimes._math_model.model_components.parameters.market_parameters import MarketParameters
+from optimes._math_model.model_components.parameters.parameters import (
+    EnergySystemParameters,
 )
-from optimes._math_model.model_components.sets import (
-    BatteryIndex,
-    GeneratorIndex,
-    LoadIndex,
-    MarketIndex,
-    ScenarioIndex,
-    TimeIndex,
-)
+from optimes._math_model.model_components.parameters.scenario_parameters import ScenarioParameters
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.markets import EnergyMarket
@@ -66,7 +56,6 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     power_unit: PowerUnit
     markets: EnergyMarket | Sequence[EnergyMarket] | None = Field(default=None, init_var=True)
     scenarios: Scenario | Sequence[StochasticScenario] = Field(init_var=True)
-    enforce_non_anticipativity: bool = False
 
     @field_validator("scenarios", mode="after")
     @classmethod
@@ -104,109 +93,55 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         return (self.markets,)
 
     @cached_property
-    def _scenario_index(self) -> ScenarioIndex:
-        return ScenarioIndex(
-            values=tuple(scenario.name for scenario in self._collection_of_scenarios),
-        )
-
-    @cached_property
-    def _time_index(self) -> TimeIndex:
-        return TimeIndex(
-            values=tuple(str(time_step) for time_step in range(self.number_of_steps)),
-        )
-
-    @cached_property
-    def _generator_index(self) -> GeneratorIndex:
-        return GeneratorIndex(
-            values=tuple(gen.name for gen in self.portfolio.generators),
-        )
-
-    @cached_property
-    def _battery_index(self) -> BatteryIndex:
-        return BatteryIndex(
-            values=tuple(battery.name for battery in self.portfolio.batteries),
-        )
-
-    @cached_property
-    def _load_index(self) -> LoadIndex:
-        return LoadIndex(
-            values=tuple(load.name for load in self.portfolio.loads),
-        )
-
-    @cached_property
-    def _market_index(self) -> MarketIndex:
-        return MarketIndex(
-            values=tuple(market.name for market in self._collection_of_markets),
-        )
-
-    @cached_property
-    def parameters(self) -> EnergyModelParameters:
-        """Returns energy model parameters."""
-        return EnergyModelParameters(
+    def energy_system_parameters(self) -> EnergySystemParameters:
+        """Parameters of the energy system."""
+        return EnergySystemParameters(
             generators=self._generator_parameters,
             batteries=self._battery_parameters,
             loads=self._load_parameters,
             markets=self._market_parameters,
-            time=TimeParameters(
-                time_index=self._time_index,
-            ),
-            scenario=ScenarioParameters(
-                scenario_index=self._scenario_index,
-                enforce_non_anticipativity=self.enforce_non_anticipativity,
-                load_profiles=self._load_profiles,
-                market_prices=self._market_prices,
-                available_capacity_profiles=self._available_capacity_profiles,
-                scenario_probabilities=self._scenario_probabilities,
-            ),
+            scenarios=self._scenario_parameters,
+        )
+
+    @cached_property
+    def _scenario_parameters(self) -> ScenarioParameters:
+        generators_index = self._generator_parameters.index if self._generator_parameters else None
+        batteries_index = self._battery_parameters.index if self._battery_parameters else None
+        loads_index = self._load_parameters.index if self._load_parameters else None
+        markets_index = self._market_parameters.index if self._market_parameters else None
+
+        return ScenarioParameters(
+            number_of_timesteps=self.number_of_steps,
+            scenarios=self._collection_of_scenarios,
+            generators_index=generators_index,
+            batteries_index=batteries_index,
+            loads_index=loads_index,
+            markets_index=markets_index,
         )
 
     @property
     def _generator_parameters(self) -> GeneratorParameters | None:
         if len(self.portfolio.generators) == 0:
             return None
-        return GeneratorParameters(
-            index=self._generator_index,
-            nominal_power=self._generators_nominal_power,
-            variable_cost=self._generators_variable_cost,
-            min_up_time=self._generators_min_up_time,
-            min_power=self._generators_min_power,
-            startup_cost=self._generators_startup_cost,
-            max_ramp_up=self._generators_max_ramp_up,
-            max_ramp_down=self._generators_max_ramp_down,
-        )
+        return GeneratorParameters(generators=self.portfolio.generators)
 
     @property
     def _battery_parameters(self) -> BatteryParameters | None:
         if len(self.portfolio.batteries) == 0:
             return None
-
-        return BatteryParameters(
-            index=self._battery_index,
-            capacity=self._batteries_capacity,
-            max_power=self._batteries_max_power,
-            efficiency_charging=self._batteries_efficiency_charging,
-            efficiency_discharging=self._batteries_efficiency_discharging,
-            soc_start=self._batteries_soc_start,
-            soc_end=self._batteries_soc_end,
-            soc_min=self._batteries_soc_min,
-            soc_max=self._batteries_soc_max,
-        )
+        return BatteryParameters(self.portfolio.batteries)
 
     @property
     def _load_parameters(self) -> LoadParameters | None:
         if len(self.portfolio.loads) == 0:
             return None
-        return LoadParameters(
-            index=self._load_index,
-        )
+        return LoadParameters(loads=self.portfolio.loads)
 
     @property
     def _market_parameters(self) -> MarketParameters | None:
         if self.markets is None:
             return None
-        return MarketParameters(
-            index=self._market_index,
-        )
+        return MarketParameters(self._collection_of_markets)
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:
@@ -408,172 +343,3 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         """
         # TODO: Validate that:
         # sum(demand * timestep) <= sum(generator.nominal_power * timestep) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
-
-    @property
-    def _generators_nominal_power(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[gen.nominal_power for gen in self.portfolio.generators],
-            coords=self._generator_index.coordinates,
-        )
-
-    @property
-    def _generators_variable_cost(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[gen.variable_cost for gen in self.portfolio.generators],
-            coords=self._generator_index.coordinates,
-        )
-
-    @property
-    def _generators_min_up_time(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[gen.min_up_time for gen in self.portfolio.generators],
-            coords=self._generator_index.coordinates,
-        )
-
-    @property
-    def _generators_min_power(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[gen.min_power for gen in self.portfolio.generators],
-            coords=self._generator_index.coordinates,
-        )
-
-    @property
-    def _generators_startup_cost(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[gen.startup_cost for gen in self.portfolio.generators],
-            coords=self._generator_index.coordinates,
-        )
-
-    @property
-    def _generators_max_ramp_up(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[gen.ramp_up for gen in self.portfolio.generators],
-            coords=self._generator_index.coordinates,
-        )
-
-    @property
-    def _generators_max_ramp_down(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[gen.ramp_down for gen in self.portfolio.generators],
-            coords=self._generator_index.coordinates,
-        )
-
-    @property
-    def _batteries_capacity(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[battery.capacity for battery in self.portfolio.batteries],
-            coords=self._battery_index.coordinates,
-        )
-
-    @property
-    def _batteries_max_power(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[battery.max_power for battery in self.portfolio.batteries],
-            coords=self._battery_index.coordinates,
-        )
-
-    @property
-    def _batteries_efficiency_charging(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[battery.efficiency_charging for battery in self.portfolio.batteries],
-            coords=self._battery_index.coordinates,
-        )
-
-    @property
-    def _batteries_efficiency_discharging(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[battery.efficiency_discharging for battery in self.portfolio.batteries],
-            coords=self._battery_index.coordinates,
-        )
-
-    @property
-    def _batteries_soc_start(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[battery.soc_start for battery in self.portfolio.batteries],
-            coords=self._battery_index.coordinates,
-        )
-
-    @property
-    def _batteries_soc_end(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[battery.soc_end for battery in self.portfolio.batteries],
-            coords=self._battery_index.coordinates,
-        )
-
-    @property
-    def _batteries_soc_min(self) -> xr.DataArray:
-        return xr.DataArray(
-            data=[battery.soc_min for battery in self.portfolio.batteries],
-            coords=self._battery_index.coordinates,
-        )
-
-    @property
-    def _batteries_soc_max(self) -> xr.DataArray:
-        batteries_soc_max = []
-        for battery in self.portfolio.batteries:
-            battery_soc_max = battery.soc_max if battery.soc_max else battery.capacity
-            batteries_soc_max.append(battery_soc_max)
-        return xr.DataArray(
-            data=batteries_soc_max,
-            coords=self._battery_index.coordinates,
-        )
-
-    @property
-    def _load_profiles(self) -> xr.DataArray | None:
-        if not self.portfolio.loads:
-            return None
-        all_load_profiles = []
-        for scenario in self._collection_of_scenarios:
-            scenario_load_profiles_mapping = scenario.load_profiles or {}
-            scenario_load_profiles_array = [
-                scenario_load_profiles_mapping.get(load.name) for load in self.portfolio.loads
-            ]
-            all_load_profiles.append(scenario_load_profiles_array)
-
-        return xr.DataArray(
-            data=all_load_profiles,
-            coords=self._scenario_index.coordinates | self._load_index.coordinates | self._time_index.coordinates,
-        )
-
-    @property
-    def _market_prices(self) -> xr.DataArray | None:
-        if not self.markets:
-            return None
-        all_market_prices = []
-        for scenario in self._collection_of_scenarios:
-            scenario_market_prices_mapping = scenario.market_prices or {}
-            scenario_market_prices_array = [
-                scenario_market_prices_mapping.get(market.name) for market in self._collection_of_markets
-            ]
-            all_market_prices.append(scenario_market_prices_array)
-
-        return xr.DataArray(
-            data=all_market_prices,
-            coords=self._scenario_index.coordinates | self._market_index.coordinates | self._time_index.coordinates,
-        )
-
-    @property
-    def _available_capacity_profiles(self) -> xr.DataArray | None:
-        if not self.portfolio.generators:
-            return None
-        all_capacity_profiles = []
-
-        for scenario in self._collection_of_scenarios:
-            profiles = scenario.available_capacity_profiles or {}
-            scenario_complete_capacity_profiles = [
-                profiles.get(gen.name, [gen.nominal_power] * self.number_of_steps) for gen in self.portfolio.generators
-            ]
-            all_capacity_profiles.append(scenario_complete_capacity_profiles)
-
-        return xr.DataArray(
-            data=all_capacity_profiles,
-            coords=self._scenario_index.coordinates | self._generator_index.coordinates | self._time_index.coordinates,
-        )
-
-    @property
-    def _scenario_probabilities(self) -> xr.DataArray:
-        """Returns scenario probabilities as xarray DataArray."""
-        return xr.DataArray(
-            data=[scenario.probability for scenario in self._collection_of_scenarios],
-            coords=self._scenario_index.coordinates,
-        )
