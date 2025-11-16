@@ -63,7 +63,6 @@ if __name__ == "__main__":
         timestep=timedelta(minutes=30),
         number_of_steps=7,
         scenarios=scenarios,
-        enforce_non_anticipativity=False,
         power_unit="MW",
     )
 

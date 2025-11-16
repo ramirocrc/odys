@@ -4,6 +4,7 @@ This module provides the EnergySystemOptimizer class for solving
 energy system optimization problems.
 """
 
+from collections.abc import Sequence
 from datetime import timedelta
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
@@ -32,10 +33,8 @@ class EnergySystem:
         timestep: timedelta,
         number_of_steps: int,
         power_unit: str,
-        scenarios: Scenario | list[StochasticScenario],
-        *,
-        markets: EnergyMarket | None = None,
-        enforce_non_anticipativity: bool = False,
+        scenarios: Scenario | Sequence[StochasticScenario],
+        markets: EnergyMarket | Sequence[EnergyMarket] | None = None,
     ) -> None:
         """Initialize the energy system configuration and optimizer.
 
@@ -46,7 +45,6 @@ class EnergySystem:
             power_unit: Unit used for power quantities ('W', 'kW', or 'MW').
             scenarios: Sequence of stochastic scenarios. Probabilities must add up to 1.
             markets: Optional energy markets in which assets can participate.
-            enforce_non_anticipativity: When True, decision variables must take the same values across all scenarios,
             reflecting that decisions are made before uncertainty is revealed. When False, scenarios are optimized
             separately allowing different decisions per scenario.
 
@@ -58,23 +56,28 @@ class EnergySystem:
             number_of_steps=number_of_steps,
             power_unit=power_unit,  # pyright: ignore reportArgumentType
             scenarios=scenarios,
-            enforce_non_anticipativity=enforce_non_anticipativity,
         )
 
     def optimize(
         self,
+        *,
+        enforce_non_anticipativity: bool = False,
     ) -> OptimizationResults:
         """Optimize the energy system.
 
         This method solves the pre-built algebraic model using HiGHS solver.
         The model is built during optimization from the energy system configuration.
 
+        Args:
+            enforce_non_anticipativity: When True, decision variables must take the same values across all scenarios,
+
         Returns:
             OptimizationResults containing the solution and metadata.
 
         """
         model_builder = EnergyAlgebraicModelBuilder(
-            energy_system_parameters=self._validated_model.parameters,
+            energy_system_parameters=self._validated_model.energy_system_parameters,
+            enforce_non_anticipativity=enforce_non_anticipativity,
         )
         milp_model = model_builder.build()
         return optimize_algebraic_model(milp_model)
