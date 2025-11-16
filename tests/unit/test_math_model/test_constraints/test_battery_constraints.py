@@ -100,7 +100,11 @@ def energy_system_sample(
 
 @pytest.fixture
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
+    model_builder = EnergyAlgebraicModelBuilder(
+        energy_system_sample.energy_system_parameters,
+        enforce_non_anticipativity=False,
+    )
+
     energy_milp_model = model_builder.build()
     return energy_milp_model.linopy_model
 

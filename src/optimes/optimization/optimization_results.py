@@ -131,7 +131,7 @@ class OptimizationResults:
             msg = "This model does not contain market results"
             raise ValueError(msg)
         return MarketResults(
-            traded_volume=self._get_variable_results(ModelVariable.MARKET_TRADED_VOLUME),
+            traded_volume=self._get_variable_results(ModelVariable.MARKET_VOLUME_SOLD),
         )
 
     @cached_property
