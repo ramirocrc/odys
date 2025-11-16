@@ -3,15 +3,12 @@ from functools import cached_property
 from linopy import Model, Variable
 from pydantic import BaseModel
 
-from optimes._math_model.model_components.parameters import EnergyModelParameters
-from optimes._math_model.model_components.sets import (
-    BatteryIndex,
-    GeneratorIndex,
-    LoadIndex,
-    MarketIndex,
-    ScenarioIndex,
-    TimeIndex,
-)
+from optimes._math_model.model_components.parameters.battery_parameters import BatteryIndex
+from optimes._math_model.model_components.parameters.generator_parameters import GeneratorIndex
+from optimes._math_model.model_components.parameters.load_parameters import LoadIndex
+from optimes._math_model.model_components.parameters.market_parameters import MarketIndex
+from optimes._math_model.model_components.parameters.parameters import EnergySystemParameters
+from optimes._math_model.model_components.parameters.scenario_parameters import ScenarioIndex, TimeIndex
 from optimes._math_model.model_components.variables import ModelVariable
 
 
@@ -25,15 +22,15 @@ class EnergyModelIndices(BaseModel, frozen=True, extra="forbid"):
 
 
 class EnergyMILPModel:
-    def __init__(self, parameters: EnergyModelParameters) -> None:
+    def __init__(self, parameters: EnergySystemParameters) -> None:
         self._parameters = parameters
         self._linopy_model = Model(force_dim_names=True)
 
     @cached_property
     def indices(self) -> EnergyModelIndices:
         return EnergyModelIndices(
-            scenarios=self._parameters.scenario.scenario_index,
-            time=self._parameters.time.time_index,
+            scenarios=self._parameters.scenarios.scenario_index,
+            time=self._parameters.scenarios.time_index,
             generators=self._parameters.generators.index if self._parameters.generators is not None else None,
             batteries=self._parameters.batteries.index if self._parameters.batteries is not None else None,
             loads=self._parameters.loads.index if self._parameters.loads is not None else None,
@@ -45,7 +42,7 @@ class EnergyMILPModel:
         return self._linopy_model
 
     @property
-    def parameters(self) -> EnergyModelParameters:
+    def parameters(self) -> EnergySystemParameters:
         return self._parameters
 
     @property
@@ -85,5 +82,5 @@ class EnergyMILPModel:
         return self._linopy_model.variables[ModelVariable.BATTERY_CHARGE_MODE.var_name]
 
     @property
-    def market_traded_volume(self) -> Variable:
-        return self._linopy_model.variables[ModelVariable.MARKET_TRADED_VOLUME.var_name]
+    def market_volume_sold(self) -> Variable:
+        return self._linopy_model.variables[ModelVariable.MARKET_VOLUME_SOLD.var_name]

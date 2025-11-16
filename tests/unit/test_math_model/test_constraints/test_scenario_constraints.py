@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 
 import linopy
+import numpy as np
 import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
@@ -136,20 +137,25 @@ def energy_system_with_multiple_scenarios(
         number_of_steps=len(demand_profile_sample),
         power_unit=PowerUnit.MegaWatt,
         scenarios=scenarios,
-        enforce_non_anticipativity=True,
     )
 
 
 @pytest.fixture
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_sample.parameters)
+    model_builder = EnergyAlgebraicModelBuilder(
+        energy_system_sample.energy_system_parameters,
+        enforce_non_anticipativity=False,
+    )
     energy_milp_model = model_builder.build()
     return energy_milp_model.linopy_model
 
 
 @pytest.fixture
 def linopy_model_with_non_anticipativity(energy_system_with_multiple_scenarios: ValidatedEnergySystem) -> linopy.Model:
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_with_multiple_scenarios.parameters)
+    model_builder = EnergyAlgebraicModelBuilder(
+        energy_system_with_multiple_scenarios.energy_system_parameters,
+        enforce_non_anticipativity=True,
+    )
     energy_milp_model = model_builder.build()
     return energy_milp_model.linopy_model
 
@@ -201,7 +207,7 @@ class TestScenarioConstraints:
         available_capacity_data = [
             [
                 [80, 80, 100],  # gen1
-                [150, 150, 150],  # gen2 defaults to its nominal power
+                [np.inf, np.inf, np.inf],  # gen2 defaults to inf when no profile provided
             ],
         ]
 

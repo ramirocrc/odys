@@ -5,9 +5,15 @@ from optimes._math_model.model_components.variables import ModelVariable
 
 
 class ScenarioConstraints:
-    def __init__(self, milp_model: EnergyMILPModel) -> None:
+    def __init__(
+        self,
+        milp_model: EnergyMILPModel,
+        *,
+        enforce_non_anticipativity: bool,
+    ) -> None:
         self.model = milp_model
-        self.params = milp_model.parameters.scenario
+        self.enforce_non_anticipativity = enforce_non_anticipativity
+        self.params = milp_model.parameters.scenarios
         self._include_generators = bool(milp_model.parameters.generators)
         self._include_batteries = bool(milp_model.parameters.batteries)
         self._include_markets = bool(milp_model.parameters.markets)
@@ -19,7 +25,7 @@ class ScenarioConstraints:
         ]
         if self._include_generators and self.params.available_capacity_profiles is not None:
             constraints.append(self._get_available_capacity_profiles_constraint())
-        if self.params.enforce_non_anticipativity:
+        if self.enforce_non_anticipativity:
             constraints += self._get_non_anticipativity_constraint()
         return tuple(constraints)
 
@@ -35,13 +41,13 @@ class ScenarioConstraints:
 
         if self._include_batteries:
             lhs += self.model.battery_power_out.sum(ModelDimension.Batteries)
-            lhs -= self.model.battery_power_in.sum(ModelDimension.Batteries)
+            lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)
 
         if self._include_markets:
-            lhs += self.model.market_traded_volume.sum(ModelDimension.Markets)
+            lhs += -self.model.market_volume_sold.sum(ModelDimension.Markets)
 
         if self.params.load_profiles is not None:
-            lhs -= self.params.load_profiles
+            lhs += -self.params.load_profiles
 
         return ModelConstraint(
             name="power_balance_constraint",

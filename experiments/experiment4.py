@@ -43,13 +43,16 @@ if __name__ == "__main__":
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        markets=EnergyMarket(name="sdac"),
+        markets=(EnergyMarket(name="sdac", limit=500), EnergyMarket(name="sidc", limit=100)),
         scenarios=Scenario(
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
             },
             load_profiles={"load": [200, 75, 200, 50, 100, 120, 125]},
-            market_prices={"sdac": [150, 150, 150, 150, 150, 150, 150]},
+            market_prices={
+                "sdac": [150, 150, 150, 150, 150, 150, 150],
+                "sidc": [200, 200, 200, 175, 100, 100, 100],
+            },
         ),
         timestep=timedelta(minutes=30),
         number_of_steps=7,
@@ -61,5 +64,5 @@ if __name__ == "__main__":
     logger.info(result.solver_status)
     logger.info("generators power")
     logger.info(result.generators.power)
-    logger.info("market_traded volume")
+    logger.info("volume sold to markets")
     logger.info(result.markets.traded_volume)

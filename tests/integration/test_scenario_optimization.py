@@ -117,11 +117,10 @@ def test_two_scenario_optimization_with_anticipativity(
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile),
         scenarios=scenarios,
-        enforce_non_anticipativity=False,
         power_unit="MW",
     )
 
-    result_anticipative = energy_system_anticipative.optimize()
+    result_anticipative = energy_system_anticipative.optimize(enforce_non_anticipativity=False)
 
     assert result_anticipative.solver_status == "ok"
     assert result_anticipative.termination_condition == "optimal"
@@ -137,11 +136,10 @@ def test_two_scenario_optimization_with_non_anticipativity(
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile),
         scenarios=scenarios,
-        enforce_non_anticipativity=True,
         power_unit="MW",
     )
 
-    result_non_anticipative = energy_system_non_anticipative.optimize()
+    result_non_anticipative = energy_system_non_anticipative.optimize(enforce_non_anticipativity=True)
 
     assert result_non_anticipative.solver_status == "ok"
     assert result_non_anticipative.termination_condition == "optimal"
@@ -152,26 +150,16 @@ def test_anticipativity_vs_non_anticipativity_comparison(
     scenarios: list[StochasticScenario],
     demand_profile: list[float],
 ) -> None:
-    energy_system_anticipative = EnergySystem(
+    energy_system = EnergySystem(
         portfolio=portfolio_without_battery,
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile),
         scenarios=scenarios,
-        enforce_non_anticipativity=False,
         power_unit="MW",
     )
 
-    energy_system_non_anticipative = EnergySystem(
-        portfolio=portfolio_without_battery,
-        timestep=timedelta(hours=1),
-        number_of_steps=len(demand_profile),
-        scenarios=scenarios,
-        enforce_non_anticipativity=True,
-        power_unit="MW",
-    )
-
-    result_anticipative = energy_system_anticipative.optimize()
-    result_non_anticipative = energy_system_non_anticipative.optimize()
+    result_anticipative = energy_system.optimize(enforce_non_anticipativity=False)
+    result_non_anticipative = energy_system.optimize(enforce_non_anticipativity=True)
 
     assert result_anticipative.solver_status == "ok"
     assert result_non_anticipative.solver_status == "ok"
