@@ -35,9 +35,9 @@ class MarketParameters:
         return self._index
 
     @property
-    def _market_max_volume(self) -> xr.DataArray:
+    def max_volume(self) -> xr.DataArray:
         markets = [self._markets] if isinstance(self._markets, EnergyMarket) else self._markets
-        market_max_volumes = [market.limit for market in markets]
+        market_max_volumes = [market.max_trading_volume for market in markets]
         return xr.DataArray(
             data=market_max_volumes,
             coords=self.index.coordinates,

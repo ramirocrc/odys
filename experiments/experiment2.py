@@ -78,7 +78,7 @@ if __name__ == "__main__":
         power_unit="MW",
     )
 
-    result = energy_system.optimize()
+    result = energy_system.optimize(enforce_non_anticipativity=True)
     logger.info(result.termination_condition)
     logger.info(result.solver_status)
     battery_results = result.batteries

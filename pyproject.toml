@@ -41,7 +41,9 @@ dev = [
   "pytest>=8.4.1",
   "pytest-cov>=6.2.1",
   "pytest-xdist>=3.8.0",
+  "radon>=6.0.1",
   "ruff>=0.11.13",
+  "vulture>=2.14",
 ]
 docs = [
   "mkdocs>=1.6.1",
@@ -104,3 +106,8 @@ fail_under = 90
 [tool.coverage.run]
 branch = true
 source = ["src"]
+
+[tool.vulture]
+# make_whitelist = true
+min_confidence = 80
+paths = ["src/"]
