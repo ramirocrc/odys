@@ -8,6 +8,7 @@ from optimes._math_model.model_components.constraints.battery_constraints import
 from optimes._math_model.model_components.constraints.generator_constraints import (
     GeneratorConstraints,
 )
+from optimes._math_model.model_components.constraints.market_constraints import MarketConstraints
 from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
 from optimes._math_model.model_components.constraints.scenario_constraints import (
     ScenarioConstraints,
@@ -139,6 +140,7 @@ class EnergyAlgebraicModelBuilder:
     def _add_model_constraints(self) -> None:
         self._add_generator_constraints()
         self._add_battery_constraints()
+        self._add_market_constraints()
         self._add_scenario_constraints()
 
     def _add_battery_constraints(self) -> None:
@@ -147,6 +149,10 @@ class EnergyAlgebraicModelBuilder:
 
     def _add_generator_constraints(self) -> None:
         constraints = GeneratorConstraints(self._milp_model).all
+        self._add_set_of_contraints_to_model(constraints)
+
+    def _add_market_constraints(self) -> None:
+        constraints = MarketConstraints(milp_model=self._milp_model).all
         self._add_set_of_contraints_to_model(constraints)
 
     def _add_scenario_constraints(self) -> None:

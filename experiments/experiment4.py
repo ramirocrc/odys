@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     energy_system = EnergySystem(
         portfolio=portfolio,
-        markets=(EnergyMarket(name="sdac", limit=500), EnergyMarket(name="sidc", limit=100)),
+        markets=(EnergyMarket(name="sdac", max_trading_volume=150), EnergyMarket(name="sidc", max_trading_volume=100)),
         scenarios=Scenario(
             available_capacity_profiles={
                 "gen1": [100, 100, 100, 50, 50, 50, 50],
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         power_unit="MW",
     )
 
-    result = energy_system.optimize()
+    result = energy_system.optimize(enforce_non_anticipativity=True)
     logger.info(result.termination_condition)
     logger.info(result.solver_status)
     logger.info("generators power")

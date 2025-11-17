@@ -58,9 +58,8 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
     scenarios: Scenario | Sequence[StochasticScenario] = Field(init_var=True)
 
     @field_validator("scenarios", mode="after")
-    @classmethod
+    @staticmethod
     def _validated_scenario_sequence(
-        cls,
         value: Scenario | list[StochasticScenario],
     ) -> Scenario | list[StochasticScenario]:
         if isinstance(value, list):
@@ -145,19 +144,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:
-        """Validate all system inputs after model creation.
-
-        This validator ensures that the energy system configuration
-        is feasible and consistent.
-
-        Returns:
-            Self if validation passes.
-
-        Raises:
-            ValueError: If the system configuration is infeasible.
-
-        """
-        self._validate_load_consisten_with_scenario_load_profiles()
+        self._validate_load_consistent_with_scenario_load_profiles()
         self._validate_markets_consistent_with_scenario_market_prices()
 
         for scenario in self._collection_of_scenarios:
@@ -170,7 +157,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
 
         return self
 
-    def _validate_load_consisten_with_scenario_load_profiles(self) -> None:
+    def _validate_load_consistent_with_scenario_load_profiles(self) -> None:
         """Validate consistency between portfolio loads and scenario load profiles.
 
         If there are loads in the portfolio, each scenario must have a profile for each load.
@@ -334,7 +321,7 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
                     )
                     raise ValueError(msg)
 
-    def _validate_enough_energy_to_meet_demand(self, scenario: StochasticScenario) -> None:
+    def _validate_enough_energy_to_meet_demand(self, scenario: StochasticScenario) -> None:  # noqa: ARG002
         """Validate that the system has enough energy to meet total demand.
 
         This method checks that the total energy available from generators
@@ -343,3 +330,4 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         """
         # TODO: Validate that:
         # sum(demand * timestep) <= sum(generator.nominal_power * timestep) + sum(battery.soc_initial - battery.soc_terminal) # noqa: ERA001, E501
+        return

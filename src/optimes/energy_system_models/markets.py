@@ -7,4 +7,4 @@ class EnergyMarket(BaseModel):
     """Represents an energy market in the energy system."""
 
     name: str
-    limit: float = Field(gt=0)
+    max_trading_volume: float = Field(gt=0)
