@@ -13,6 +13,7 @@ from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.markets import EnergyMarket
 from optimes.energy_system_models.scenarios import Scenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
@@ -167,5 +168,225 @@ def test_validation_that_system_can_meet_power_demand(
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles={"test_load": excessive_demand},
+            ),
+        )
+
+
+@pytest.fixture
+def testing_market() -> EnergyMarket:
+    return EnergyMarket(name="test_market", max_trading_volume=100.0)
+
+
+@pytest.fixture
+def portfolio_without_loads() -> AssetPortfolio:
+    portfolio = AssetPortfolio()
+    portfolio.add_asset(PowerGenerator(name="gen", nominal_power=100.0, variable_cost=50.0))
+    return portfolio
+
+
+@pytest.fixture
+def portfolio_without_generators() -> AssetPortfolio:
+    portfolio = AssetPortfolio()
+    portfolio.add_asset(
+        Battery(
+            name="battery",
+            capacity=50.0,
+            max_power=25.0,
+            efficiency_charging=0.9,
+            efficiency_discharging=0.9,
+            soc_start=25.0,
+        ),
+    )
+    portfolio.add_asset(Load(name="load"))
+    return portfolio
+
+
+@pytest.fixture
+def empty_portfolio() -> AssetPortfolio:
+    return AssetPortfolio()
+
+
+def test_load_validation_missing_load_profiles(testing_portfolio: AssetPortfolio) -> None:
+    """Test validation when portfolio has loads but scenario has no load profiles."""
+    with pytest.raises(ValueError, match="Portfolio contains loads.*but scenario.*has no load profiles"):
+        ValidatedEnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles=None,  # Missing load profiles
+            ),
+        )
+
+
+def test_load_validation_missing_specific_load_profile(testing_portfolio: AssetPortfolio) -> None:
+    """Test validation when scenario is missing profiles for specific loads."""
+    with pytest.raises(ValueError, match="Scenario.*is missing load profiles for"):
+        ValidatedEnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={},  # Empty dict, missing "test_load"
+            ),
+        )
+
+
+def test_load_validation_extra_load_profiles(testing_portfolio: AssetPortfolio) -> None:
+    """Test validation when scenario has profiles for loads not in portfolio."""
+    with pytest.raises(ValueError, match="Scenario.*has load profiles for loads not in portfolio"):
+        ValidatedEnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={
+                    "test_load": [80.0, 120.0, 90.0, 150.0],
+                    "extra_load": [10.0, 20.0, 30.0, 40.0],  # Not in portfolio
+                },
+            ),
+        )
+
+
+def test_load_validation_no_loads_but_has_profiles(portfolio_without_loads: AssetPortfolio) -> None:
+    """Test validation when portfolio has no loads but scenario has load profiles."""
+    with pytest.raises(ValueError, match="Portfolio contains no loads.*but scenario.*has load profiles"):
+        ValidatedEnergySystem(
+            portfolio=portfolio_without_loads,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={"some_load": [80.0, 120.0, 90.0, 150.0]},
+            ),
+        )
+
+
+def test_market_validation_missing_market_prices(
+    testing_portfolio: AssetPortfolio,
+    testing_market: EnergyMarket,
+) -> None:
+    """Test validation when portfolio has markets but scenario has no market prices."""
+    with pytest.raises(ValueError, match="Portfolio contains markets.*but scenario.*has no market prices"):
+        ValidatedEnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            markets=testing_market,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={"test_load": [80.0, 120.0, 90.0, 150.0]},
+                market_prices=None,  # Missing market prices
+            ),
+        )
+
+
+def test_market_validation_missing_specific_market_prices(
+    testing_portfolio: AssetPortfolio,
+    testing_market: EnergyMarket,
+) -> None:
+    """Test validation when scenario is missing prices for specific markets."""
+    with pytest.raises(ValueError, match="Scenario.*is missing market prices for"):
+        ValidatedEnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            markets=testing_market,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={"test_load": [80.0, 120.0, 90.0, 150.0]},
+                market_prices={},  # Empty dict, missing "test_market"
+            ),
+        )
+
+
+def test_market_validation_extra_market_prices(testing_portfolio: AssetPortfolio, testing_market: EnergyMarket) -> None:
+    """Test validation when scenario has prices for markets not in portfolio."""
+    with pytest.raises(ValueError, match="Scenario.*has market prices for markets not in portfolio"):
+        ValidatedEnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            markets=testing_market,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={"test_load": [80.0, 120.0, 90.0, 150.0]},
+                market_prices={
+                    "test_market": [10.0, 20.0, 30.0, 40.0],
+                    "extra_market": [5.0, 15.0, 25.0, 35.0],  # Not in portfolio
+                },
+            ),
+        )
+
+
+def test_market_validation_no_markets_but_has_prices(portfolio_without_loads: AssetPortfolio) -> None:
+    """Test validation when portfolio has no markets but scenario has market prices."""
+    with pytest.raises(ValueError, match="Portfolio contains no markets.*but scenario.*has market prices"):
+        ValidatedEnergySystem(
+            portfolio=portfolio_without_loads,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles=None,
+                market_prices={"some_market": [10.0, 20.0, 30.0, 40.0]},
+            ),
+        )
+
+
+def test_load_profile_length_validation(testing_portfolio: AssetPortfolio) -> None:
+    """Test validation of load profile length mismatch."""
+    with pytest.raises(ValueError, match="Length of load profile.*does not match the number of time steps"):
+        ValidatedEnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={"test_load": [80.0, 120.0]},  # Only 2 values instead of 4
+            ),
+        )
+
+
+def test_capacity_profile_value_validation(testing_portfolio: AssetPortfolio) -> None:
+    """Test validation of capacity profile values outside valid range."""
+    with pytest.raises(ValueError, match="Available capacity value.*is invalid"):
+        ValidatedEnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={
+                    "test_generator": [90.0, 150.0, 95.0, 100.0],  # 150.0 exceeds nominal_power of 100.0
+                },
+                load_profiles={"test_load": [80.0, 120.0, 90.0, 100.0]},
+            ),
+        )
+
+
+def test_empty_load_profiles_validation(portfolio_without_loads: AssetPortfolio) -> None:
+    """Test validation when load profiles is empty (should trigger empty load profile error)."""
+    with pytest.raises(ValueError, match="Load profile is empty, there is nothing to balance"):
+        ValidatedEnergySystem(
+            portfolio=portfolio_without_loads,
+            number_of_steps=4,
+            timestep=timedelta(hours=1),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles=None,
             ),
         )
