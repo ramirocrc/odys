@@ -13,10 +13,7 @@ from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
 from optimes.energy_system_models.markets import EnergyMarket
 from optimes.energy_system_models.scenarios import Scenario
-
-# Test constants
-DEFAULT_TIMESTEP = timedelta(hours=1)
-POWER_UNIT = "MW"
+from optimes.energy_system_models.units import PowerUnit
 
 STANDARD_GENERATOR_POWER = 100.0
 LARGE_GENERATOR_POWER = 200.0
@@ -31,13 +28,11 @@ STANDARD_BATTERY_CAPACITY = 100.0
 PERFECT_EFFICIENCY = 1.0
 HALF_EFFICIENCY = 0.5
 
-# Common load profiles for testing
 SIMPLE_LOAD_PROFILE = [50.0, 100.0, 150.0, 180.0, 120.0]
 RAMPING_LOAD_PROFILE = [50.0, 100.0, 150.0, 200.0, 250.0, 300.0]
 STORAGE_TEST_PROFILE = [50.0, 50.0, 150.0, 150.0, 50.0]
 SHORT_STORAGE_PROFILE = [50.0, 50.0, 100.0]
 
-# Market price profiles
 MARKET_HIGH_PRICES = [50.0, 60.0, 55.0]
 MARKET_LOW_PRICES = [25.0, 30.0, 28.0]
 
@@ -146,9 +141,9 @@ def _create_energy_system(
     return EnergySystem(
         portfolio=portfolio,
         markets=markets,
-        timestep=DEFAULT_TIMESTEP,
+        timestep=timedelta(hours=1),
         number_of_steps=len(load_profile),
-        power_unit=POWER_UNIT,
+        power_unit=PowerUnit.MegaWatt,
         scenarios=Scenario(
             available_capacity_profiles={},
             load_profiles={load.name: load_profile},
