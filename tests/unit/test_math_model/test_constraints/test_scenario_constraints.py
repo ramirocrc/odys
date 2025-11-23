@@ -8,7 +8,7 @@ import xarray as xr
 from linopy.testing import assert_conequal
 
 from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
-from optimes._math_model.model_components.variables import ModelVariable
+from optimes._math_model.model_components.variables import MARKET_VARIABLES
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
@@ -236,7 +236,7 @@ class TestNonAnticipativityConstraints:
         self.time_index = time_index
 
     def test_non_anticipativity_constraints(self) -> None:
-        for variable in ModelVariable:
+        for variable in MARKET_VARIABLES:
             # Only test constraints for variables that exist in the model
             if variable.var_name in self.linopy_model.variables:
                 constraint_name = f"non_anticipativity_{variable.var_name}_constraint"
