@@ -12,7 +12,7 @@ from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.load import Load, LoadType
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.markets import EnergyMarket
-from optimes.energy_system_models.scenarios import Scenario
+from optimes.energy_system_models.scenarios import StochasticScenario
 from optimes.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -48,17 +48,34 @@ if __name__ == "__main__":
             EnergyMarket(name="sidc1", max_trading_volume=100),
             EnergyMarket(name="sidc2", max_trading_volume=50),
         ),
-        scenarios=Scenario(
-            available_capacity_profiles={
-                "gen1": [100, 100, 100, 50, 50, 50, 50],
-            },
-            load_profiles={"load": [200, 75, 200, 50, 100, 120, 125]},
-            market_prices={
-                "sdac": [150, 150, 150, 150, 150, 150, 150],
-                "sidc1": [200, 200, 200, 175, 100, 100, 100],
-                "sidc2": [190, 150, 150, 175, 100, 100, 100],
-            },
-        ),
+        scenarios=[
+            StochasticScenario(
+                name="scenario1",
+                probability=0.5,
+                available_capacity_profiles={
+                    "gen1": [100, 100, 100, 50, 50, 50, 50],
+                },
+                load_profiles={"load": [200, 75, 200, 50, 100, 120, 125]},
+                market_prices={
+                    "sdac": [150, 150, 150, 150, 150, 150, 150],
+                    "sidc1": [200, 200, 200, 175, 100, 100, 100],
+                    "sidc2": [190, 150, 150, 175, 100, 100, 100],
+                },
+            ),
+            StochasticScenario(
+                name="scenario2",
+                probability=0.5,
+                available_capacity_profiles={
+                    "gen1": [100, 100, 100, 50, 50, 50, 50],
+                },
+                load_profiles={"load": [200, 75, 200, 50, 100, 120, 125]},
+                market_prices={
+                    "sdac": [210, 210, 210, 185, 100, 100, 100],
+                    "sidc1": [120, 140, 140, 140, 140, 140, 140],
+                    "sidc2": [200, 160, 140, 180, 110, 90, 100],
+                },
+            ),
+        ],
         timestep=timedelta(minutes=30),
         number_of_steps=7,
         power_unit="MW",
