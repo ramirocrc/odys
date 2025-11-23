@@ -1,7 +1,7 @@
 from optimes._math_model.milp_model import EnergyMILPModel
 from optimes._math_model.model_components.constraints.model_constraint import ModelConstraint
 from optimes._math_model.model_components.sets import ModelDimension
-from optimes._math_model.model_components.variables import ModelVariable
+from optimes._math_model.model_components.variables import MARKET_VARIABLES
 
 
 class ScenarioConstraints:
@@ -69,7 +69,7 @@ class ScenarioConstraints:
         all scenarios, reflecting that decisions are made before uncertainty is revealed.
         """
         constraints = []
-        for variable in ModelVariable:
+        for variable in MARKET_VARIABLES:
             # Only create constraints for variables that exist in the model
             if variable.var_name in self.model.linopy_model.variables:
                 linopy_var = self.model.linopy_model.variables[variable.var_name]
