@@ -9,7 +9,7 @@ class MarketConstraints:
 
     def _validate_market_parameters_exist(self) -> None:
         if self.params is None:
-            msg = "No  parameters specified."
+            msg = "No parameters specified."
             raise ValueError(msg)
 
     @property

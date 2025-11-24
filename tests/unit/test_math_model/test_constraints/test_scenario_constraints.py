@@ -13,6 +13,7 @@ from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.load import Load
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
 from optimes.energy_system_models.assets.storage import Battery
+from optimes.energy_system_models.markets import EnergyMarket
 from optimes.energy_system_models.scenarios import Scenario, StochasticScenario
 from optimes.energy_system_models.units import PowerUnit
 from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
@@ -118,6 +119,10 @@ def energy_system_with_multiple_scenarios(
             load_profiles={
                 "load1": demand_profile_sample,
             },
+            market_prices={
+                "stage_fixed": [100, 110, 120],
+                "other": [90, 100, 110],
+            },
         ),
         StochasticScenario(
             name="scenario_2",
@@ -129,6 +134,10 @@ def energy_system_with_multiple_scenarios(
             load_profiles={
                 "load1": demand_profile_sample,
             },
+            market_prices={
+                "stage_fixed": [105, 115, 125],
+                "other": [95, 105, 115],
+            },
         ),
     ]
     return ValidatedEnergySystem(
@@ -137,6 +146,10 @@ def energy_system_with_multiple_scenarios(
         number_of_steps=len(demand_profile_sample),
         power_unit=PowerUnit.MegaWatt,
         scenarios=scenarios,
+        markets=(
+            EnergyMarket(name="stage_fixed", max_trading_volume=100, stage_fixed=True),
+            EnergyMarket(name="other", max_trading_volume=50, stage_fixed=False),
+        ),
     )
 
 
@@ -144,7 +157,6 @@ def energy_system_with_multiple_scenarios(
 def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
     model_builder = EnergyAlgebraicModelBuilder(
         energy_system_sample.energy_system_parameters,
-        enforce_non_anticipativity=False,
     )
     energy_milp_model = model_builder.build()
     return energy_milp_model.linopy_model
@@ -154,7 +166,6 @@ def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
 def linopy_model_with_non_anticipativity(energy_system_with_multiple_scenarios: ValidatedEnergySystem) -> linopy.Model:
     model_builder = EnergyAlgebraicModelBuilder(
         energy_system_with_multiple_scenarios.energy_system_parameters,
-        enforce_non_anticipativity=True,
     )
     energy_milp_model = model_builder.build()
     return energy_milp_model.linopy_model
@@ -237,12 +248,16 @@ class TestNonAnticipativityConstraints:
 
     def test_non_anticipativity_constraints(self) -> None:
         for variable in MARKET_VARIABLES:
-            # Only test constraints for variables that exist in the model
-            if variable.var_name in self.linopy_model.variables:
-                constraint_name = f"non_anticipativity_{variable.var_name}_constraint"
-                actual_constraint = self.linopy_model.constraints[constraint_name]
+            constraint_name = f"non_anticipativity_{variable.var_name}_constraint"
+            actual_constraint = self.linopy_model.constraints[constraint_name]
 
-                linopy_var = self.linopy_model.variables[variable.var_name]
-                first_scenario_var = linopy_var.isel(scenario=0)
-                expected_expr = linopy_var - first_scenario_var == 0
-                assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
+            linopy_var = self.linopy_model.variables[variable.var_name]
+            stage_fixed_markets = xr.DataArray(
+                data=[True, False],
+                coords=[["stage_fixed", "other"]],
+                dims=["market"],
+            )
+            fixed_var = linopy_var.where(stage_fixed_markets, drop=True)
+            first_scenario_var = fixed_var.isel(scenario=0)
+            expected_expr = fixed_var - first_scenario_var == 0
+            assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)

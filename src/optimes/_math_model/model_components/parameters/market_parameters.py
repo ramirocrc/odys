@@ -25,9 +25,7 @@ class MarketParameters:
             markets: Sequence of energy market objects.
         """
         self._markets = markets
-        self._index = MarketIndex(
-            values=tuple(market.name for market in self._markets),
-        )
+        self._index = MarketIndex(values=tuple(market.name for market in self._markets))
 
     @property
     def index(self) -> MarketIndex:
@@ -36,9 +34,16 @@ class MarketParameters:
 
     @property
     def max_volume(self) -> xr.DataArray:
-        markets = [self._markets] if isinstance(self._markets, EnergyMarket) else self._markets
-        market_max_volumes = [market.max_trading_volume for market in markets]
+        market_max_volumes = [market.max_trading_volume for market in self._markets]
         return xr.DataArray(
             data=market_max_volumes,
+            coords=self.index.coordinates,
+        )
+
+    @property
+    def stage_fixed(self) -> xr.DataArray:
+        market_stage_fixed = [market.stage_fixed for market in self._markets]
+        return xr.DataArray(
+            data=market_stage_fixed,
             coords=self.index.coordinates,
         )

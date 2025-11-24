@@ -58,18 +58,11 @@ class EnergySystem:
             scenarios=scenarios,
         )
 
-    def optimize(
-        self,
-        *,
-        enforce_non_anticipativity: bool = False,
-    ) -> OptimizationResults:
+    def optimize(self) -> OptimizationResults:
         """Optimize the energy system.
 
         This method solves the pre-built algebraic model using HiGHS solver.
         The model is built during optimization from the energy system configuration.
-
-        Args:
-            enforce_non_anticipativity: When True, decision variables must take the same values across all scenarios,
 
         Returns:
             OptimizationResults containing the solution and metadata.
@@ -77,7 +70,6 @@ class EnergySystem:
         """
         model_builder = EnergyAlgebraicModelBuilder(
             energy_system_parameters=self._validated_model.energy_system_parameters,
-            enforce_non_anticipativity=enforce_non_anticipativity,
         )
         milp_model = model_builder.build()
         return optimize_algebraic_model(milp_model)
