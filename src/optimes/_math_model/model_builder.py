@@ -47,18 +47,14 @@ class EnergyAlgebraicModelBuilder:
     def __init__(
         self,
         energy_system_parameters: EnergySystemParameters,
-        *,
-        enforce_non_anticipativity: bool,
     ) -> None:
         """Initialize the model builder with validated energy system.
 
         Args:
             energy_system_parameters:  Paramteres of the energy system,
                 containing all assets, demand profiles, and constraints.
-            enforce_non_anticipativity: When True, decision variables must take the same values across all scenarios,
         """
         self._milp_model = EnergyMILPModel(energy_system_parameters)
-        self.enforce_non_anticipativity = enforce_non_anticipativity
         self._model_is_built: bool = False
 
     def build(self) -> EnergyMILPModel:
@@ -158,7 +154,6 @@ class EnergyAlgebraicModelBuilder:
     def _add_scenario_constraints(self) -> None:
         constraints = ScenarioConstraints(
             milp_model=self._milp_model,
-            enforce_non_anticipativity=self.enforce_non_anticipativity,
         ).all
         self._add_set_of_contraints_to_model(constraints)
 

@@ -120,7 +120,7 @@ def test_two_scenario_optimization_with_anticipativity(
         power_unit="MW",
     )
 
-    result_anticipative = energy_system_anticipative.optimize(enforce_non_anticipativity=False)
+    result_anticipative = energy_system_anticipative.optimize()
 
     assert result_anticipative.solver_status == "ok"
     assert result_anticipative.termination_condition == "optimal"
@@ -139,7 +139,7 @@ def test_two_scenario_optimization_with_non_anticipativity(
         power_unit="MW",
     )
 
-    result_non_anticipative = energy_system_non_anticipative.optimize(enforce_non_anticipativity=True)
+    result_non_anticipative = energy_system_non_anticipative.optimize()
 
     assert result_non_anticipative.solver_status == "ok"
     assert result_non_anticipative.termination_condition == "optimal"
@@ -158,8 +158,8 @@ def test_anticipativity_vs_non_anticipativity_comparison(
         power_unit="MW",
     )
 
-    result_anticipative = energy_system.optimize(enforce_non_anticipativity=False)
-    result_non_anticipative = energy_system.optimize(enforce_non_anticipativity=True)
+    result_anticipative = energy_system.optimize()
+    result_non_anticipative = energy_system.optimize()
 
     assert result_anticipative.solver_status == "ok"
     assert result_non_anticipative.solver_status == "ok"
