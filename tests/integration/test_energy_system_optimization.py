@@ -328,7 +328,7 @@ def _create_generator_load_and_market_system() -> SystemTestCase:
 
     market = EnergyMarket(
         name="energy_market",
-        max_trading_volume=STANDARD_GENERATOR_POWER,
+        max_trading_volume_per_step=STANDARD_GENERATOR_POWER,
     )
 
     load = Load(name="load1")
@@ -369,11 +369,11 @@ def _create_generator_and_two_markets_system() -> SystemTestCase:
 
     cheap_market = EnergyMarket(
         name="cheap_market",
-        max_trading_volume=50.0,
+        max_trading_volume_per_step=50.0,
     )
     expensive_market = EnergyMarket(
         name="expensive_market",
-        max_trading_volume=50.0,
+        max_trading_volume_per_step=50.0,
     )
 
     load = Load(name="load1")
@@ -411,7 +411,7 @@ def _create_market_only_system() -> SystemTestCase:
     """
     market = EnergyMarket(
         name="energy_market",
-        max_trading_volume=200.0,
+        max_trading_volume_per_step=200.0,
     )
 
     load = Load(name="load1")

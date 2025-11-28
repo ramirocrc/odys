@@ -10,7 +10,7 @@ from optimes._math_model.milp_model import EnergyMILPModel
 from optimes._math_model.model_components.sets import ModelDimension
 
 
-class ObjectiveFuncions:
+class ObjectiveFunction:
     def __init__(self, milp_model: EnergyMILPModel) -> None:
         self._model = milp_model
 
@@ -31,7 +31,7 @@ class ObjectiveFuncions:
 
     def get_market_revenue(self) -> linopy.LinearExpression:
         return (
-            self._model.market_volume_sold
+            (self._model.market_sell_volume - self._model.market_buy_volume)
             * self._model.parameters.scenarios.market_prices  # pyright: ignore reportOperatorIssue
             * self._model.parameters.scenarios.scenario_probabilities
         ).sum([ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets])

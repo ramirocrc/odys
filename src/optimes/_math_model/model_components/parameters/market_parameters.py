@@ -34,7 +34,7 @@ class MarketParameters:
 
     @property
     def max_volume(self) -> xr.DataArray:
-        market_max_volumes = [market.max_trading_volume for market in self._markets]
+        market_max_volumes = [market.max_trading_volume_per_step for market in self._markets]
         return xr.DataArray(
             data=market_max_volumes,
             coords=self.index.coordinates,
@@ -45,5 +45,13 @@ class MarketParameters:
         market_stage_fixed = [market.stage_fixed for market in self._markets]
         return xr.DataArray(
             data=market_stage_fixed,
+            coords=self.index.coordinates,
+        )
+
+    @property
+    def trade_direction(self) -> xr.DataArray:
+        market_trade_direction = [market.trade_direction for market in self._markets]
+        return xr.DataArray(
+            data=market_trade_direction,
             coords=self.index.coordinates,
         )

@@ -79,9 +79,21 @@ class ModelVariable(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
         lower_bound_type=BoundType.UNBOUNDED,
     )
-    MARKET_VOLUME_SOLD = VariableSpec(
-        name="market_volume_sold",
+    MARKET_SELL = VariableSpec(
+        name="market_sell_volume",
         is_binary=False,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
+        lower_bound_type=BoundType.NON_NEGATIVE,
+    )
+    MARKET_BUY = VariableSpec(
+        name="market_buy_volume",
+        is_binary=False,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
+        lower_bound_type=BoundType.NON_NEGATIVE,
+    )
+    MARKET_TRADE_MODE = VariableSpec(
+        name="market_trade_mode",
+        is_binary=True,
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
         lower_bound_type=BoundType.UNBOUNDED,
     )

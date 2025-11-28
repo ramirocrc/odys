@@ -82,5 +82,13 @@ class EnergyMILPModel:
         return self._linopy_model.variables[ModelVariable.BATTERY_CHARGE_MODE.var_name]
 
     @property
-    def market_volume_sold(self) -> Variable:
-        return self._linopy_model.variables[ModelVariable.MARKET_VOLUME_SOLD.var_name]
+    def market_sell_volume(self) -> Variable:
+        return self._linopy_model.variables[ModelVariable.MARKET_SELL.var_name]
+
+    @property
+    def market_buy_volume(self) -> Variable:
+        return self._linopy_model.variables[ModelVariable.MARKET_BUY.var_name]
+
+    @property
+    def market_trade_mode(self) -> Variable:
+        return self._linopy_model.variables[ModelVariable.MARKET_TRADE_MODE.var_name]

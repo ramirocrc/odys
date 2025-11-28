@@ -44,7 +44,8 @@ class ScenarioConstraints:
             lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)
 
         if self._include_markets:
-            lhs += -self.model.market_volume_sold.sum(ModelDimension.Markets)
+            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)
+            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)
 
         if self.scenario_params.load_profiles is not None:
             lhs += -self.scenario_params.load_profiles

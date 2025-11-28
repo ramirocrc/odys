@@ -30,7 +30,7 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Run tests
-        run: just test-report
+        run: just test
 
   check-docs:
     runs-on: ubuntu-latest

@@ -11,7 +11,7 @@ from optimes.energy_system import EnergySystem
 from optimes.energy_system_models.assets.generator import PowerGenerator
 from optimes.energy_system_models.assets.load import Load, LoadType
 from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.markets import EnergyMarket
+from optimes.energy_system_models.markets import EnergyMarket, TradeDirection
 from optimes.energy_system_models.scenarios import StochasticScenario
 from optimes.utils.logging import get_logger
 
@@ -44,9 +44,14 @@ if __name__ == "__main__":
     energy_system = EnergySystem(
         portfolio=portfolio,
         markets=(
-            EnergyMarket(name="sdac", max_trading_volume=150, stage_fixed=True),
-            EnergyMarket(name="sidc1", max_trading_volume=100),
-            EnergyMarket(name="sidc2", max_trading_volume=50),
+            EnergyMarket(
+                name="sdac",
+                max_trading_volume_per_step=150,
+                stage_fixed=True,
+                trade_direction=TradeDirection.BUY,
+            ),
+            EnergyMarket(name="sidc1", max_trading_volume_per_step=100, trade_direction=TradeDirection.BUY),
+            EnergyMarket(name="sidc2", max_trading_volume_per_step=50, trade_direction=TradeDirection.BUY),
         ),
         scenarios=[
             StochasticScenario(
@@ -87,5 +92,6 @@ if __name__ == "__main__":
     logger.info("generators power")
     logger.info(result.generators.power)
     logger.info("volume sold to markets")
-    logger.info(result.markets.traded_volume)
+    logger.info(result.markets.sell_volume)
+    logger.info(result.markets.buy_volume)
     logger.info(result.to_dataframe)
