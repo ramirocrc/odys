@@ -174,7 +174,7 @@ def test_validation_that_system_can_meet_power_demand(
 
 @pytest.fixture
 def testing_market() -> EnergyMarket:
-    return EnergyMarket(name="test_market", max_trading_volume=100.0)
+    return EnergyMarket(name="test_market", max_trading_volume_per_step=100.0)
 
 
 @pytest.fixture

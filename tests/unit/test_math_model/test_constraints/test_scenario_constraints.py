@@ -147,8 +147,8 @@ def energy_system_with_multiple_scenarios(
         power_unit=PowerUnit.MegaWatt,
         scenarios=scenarios,
         markets=(
-            EnergyMarket(name="stage_fixed", max_trading_volume=100, stage_fixed=True),
-            EnergyMarket(name="other", max_trading_volume=50, stage_fixed=False),
+            EnergyMarket(name="stage_fixed", max_trading_volume_per_step=100, stage_fixed=True),
+            EnergyMarket(name="other", max_trading_volume_per_step=50, stage_fixed=False),
         ),
     )
 

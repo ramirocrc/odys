@@ -18,7 +18,7 @@ from optimes._math_model.model_components.linopy_converter import (
     get_variable_lower_bound,
 )
 from optimes._math_model.model_components.objectives import (
-    ObjectiveFuncions,
+    ObjectiveFunction,
 )
 from optimes._math_model.model_components.parameters.parameters import EnergySystemParameters
 from optimes._math_model.model_components.sets import ModelDimension, ModelIndex
@@ -165,5 +165,5 @@ class EnergyAlgebraicModelBuilder:
             )
 
     def _add_model_objective(self) -> None:
-        objective = ObjectiveFuncions(milp_model=self._milp_model).profit
+        objective = ObjectiveFunction(milp_model=self._milp_model).profit
         self._milp_model.linopy_model.add_objective(objective, sense="max")

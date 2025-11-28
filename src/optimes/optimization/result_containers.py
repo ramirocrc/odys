@@ -23,4 +23,5 @@ class BatteryResults(BaseModel, arbitrary_types_allowed=True):
 class MarketResults(BaseModel, arbitrary_types_allowed=True):
     """Class to store market results."""
 
-    traded_volume: pd.DataFrame
+    sell_volume: pd.DataFrame
+    buy_volume: pd.DataFrame

@@ -95,7 +95,7 @@ class GeneratorConstraints:
             name="generator_shutdown_upper_bound_2_constraint",
         )
 
-    def _get_min_uptime_constraint(self) -> tuple[ModelConstraint, ...]:
+    def _get_min_uptime_constraint(self) -> list[ModelConstraint]:
         self._validate_generator_parameters_exist()
         constraints = []
         for generator in self.params.index.values:  # pyright: ignore reportOptionalMemberAccess
@@ -112,7 +112,7 @@ class GeneratorConstraints:
                 ),
             )
 
-        return tuple(constraints)
+        return constraints
 
     def _get_min_power_constraint(self) -> ModelConstraint:
         self._validate_generator_parameters_exist()
