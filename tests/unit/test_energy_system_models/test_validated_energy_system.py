@@ -208,7 +208,7 @@ def empty_portfolio() -> AssetPortfolio:
 
 def test_load_validation_missing_load_profiles(testing_portfolio: AssetPortfolio) -> None:
     """Test validation when portfolio has loads but scenario has no load profiles."""
-    with pytest.raises(ValueError, match="Portfolio contains loads.*but scenario.*has no load profiles"):
+    with pytest.raises(ValueError, match=r"Portfolio contains loads.*but scenario.*has no load profiles"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
@@ -223,7 +223,7 @@ def test_load_validation_missing_load_profiles(testing_portfolio: AssetPortfolio
 
 def test_load_validation_missing_specific_load_profile(testing_portfolio: AssetPortfolio) -> None:
     """Test validation when scenario is missing profiles for specific loads."""
-    with pytest.raises(ValueError, match="Scenario.*is missing load profiles for"):
+    with pytest.raises(ValueError, match=r"Scenario.*is missing load profiles for"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
@@ -238,7 +238,7 @@ def test_load_validation_missing_specific_load_profile(testing_portfolio: AssetP
 
 def test_load_validation_extra_load_profiles(testing_portfolio: AssetPortfolio) -> None:
     """Test validation when scenario has profiles for loads not in portfolio."""
-    with pytest.raises(ValueError, match="Scenario.*has load profiles for loads not in portfolio"):
+    with pytest.raises(ValueError, match=r"Scenario.*has load profiles for loads not in portfolio"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
@@ -256,7 +256,7 @@ def test_load_validation_extra_load_profiles(testing_portfolio: AssetPortfolio) 
 
 def test_load_validation_no_loads_but_has_profiles(portfolio_without_loads: AssetPortfolio) -> None:
     """Test validation when portfolio has no loads but scenario has load profiles."""
-    with pytest.raises(ValueError, match="Portfolio contains no loads.*but scenario.*has load profiles"):
+    with pytest.raises(ValueError, match=r"Portfolio contains no loads.*but scenario.*has load profiles"):
         ValidatedEnergySystem(
             portfolio=portfolio_without_loads,
             number_of_steps=4,
@@ -274,7 +274,7 @@ def test_market_validation_missing_market_prices(
     testing_market: EnergyMarket,
 ) -> None:
     """Test validation when portfolio has markets but scenario has no market prices."""
-    with pytest.raises(ValueError, match="Portfolio contains markets.*but scenario.*has no market prices"):
+    with pytest.raises(ValueError, match=r"Portfolio contains markets.*but scenario.*has no market prices"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
@@ -294,7 +294,7 @@ def test_market_validation_missing_specific_market_prices(
     testing_market: EnergyMarket,
 ) -> None:
     """Test validation when scenario is missing prices for specific markets."""
-    with pytest.raises(ValueError, match="Scenario.*is missing market prices for"):
+    with pytest.raises(ValueError, match=r"Scenario.*is missing market prices for"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
@@ -311,7 +311,7 @@ def test_market_validation_missing_specific_market_prices(
 
 def test_market_validation_extra_market_prices(testing_portfolio: AssetPortfolio, testing_market: EnergyMarket) -> None:
     """Test validation when scenario has prices for markets not in portfolio."""
-    with pytest.raises(ValueError, match="Scenario.*has market prices for markets not in portfolio"):
+    with pytest.raises(ValueError, match=r"Scenario.*has market prices for markets not in portfolio"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
@@ -331,7 +331,7 @@ def test_market_validation_extra_market_prices(testing_portfolio: AssetPortfolio
 
 def test_market_validation_no_markets_but_has_prices(portfolio_without_loads: AssetPortfolio) -> None:
     """Test validation when portfolio has no markets but scenario has market prices."""
-    with pytest.raises(ValueError, match="Portfolio contains no markets.*but scenario.*has market prices"):
+    with pytest.raises(ValueError, match=r"Portfolio contains no markets.*but scenario.*has market prices"):
         ValidatedEnergySystem(
             portfolio=portfolio_without_loads,
             number_of_steps=4,
@@ -347,7 +347,7 @@ def test_market_validation_no_markets_but_has_prices(portfolio_without_loads: As
 
 def test_load_profile_length_validation(testing_portfolio: AssetPortfolio) -> None:
     """Test validation of load profile length mismatch."""
-    with pytest.raises(ValueError, match="Length of load profile.*does not match the number of time steps"):
+    with pytest.raises(ValueError, match=r"Length of load profile.*does not match the number of time steps"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
@@ -362,7 +362,7 @@ def test_load_profile_length_validation(testing_portfolio: AssetPortfolio) -> No
 
 def test_capacity_profile_value_validation(testing_portfolio: AssetPortfolio) -> None:
     """Test validation of capacity profile values outside valid range."""
-    with pytest.raises(ValueError, match="Available capacity value.*is invalid"):
+    with pytest.raises(ValueError, match=r"Available capacity value.*is invalid"):
         ValidatedEnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
