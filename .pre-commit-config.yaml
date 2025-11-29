@@ -49,6 +49,6 @@ repos:
         args: [--strict]
 
   - repo: https://github.com/jendrikseipp/vulture
-    rev: "v2.3" # or any later Vulture version
+    rev: "v2.14" # or any later Vulture version
     hooks:
       - id: vulture
