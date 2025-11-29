@@ -3,6 +3,12 @@ install:
     uv sync --python 3.13 --all-groups
     uv run pre-commit install
 
+precommit-refresh:
+    @echo "🚀 Refreshing pre-commit hooks"
+    uv run pre-commit autoupdate
+    uv run pre-commit clean
+    uv run pre-commit install
+
 check:
     @echo "🚀 Checking lock file consistency with 'pyproject.toml'"
     uv lock --locked
