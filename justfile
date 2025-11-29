@@ -1,6 +1,6 @@
 install:
     @echo "🚀 Creating virtual environment using uv"
-    uv sync --python 3.13 --all-groups
+    uv sync --python 3.14 --all-groups
     uv run pre-commit install
 
 precommit-refresh:
