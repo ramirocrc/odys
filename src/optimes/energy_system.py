@@ -45,8 +45,6 @@ class EnergySystem:
             power_unit: Unit used for power quantities ('W', 'kW', or 'MW').
             scenarios: Sequence of stochastic scenarios. Probabilities must add up to 1.
             markets: Optional energy markets in which assets can participate.
-            reflecting that decisions are made before uncertainty is revealed. When False, scenarios are optimized
-            separately allowing different decisions per scenario.
 
         """
         self._validated_model = ValidatedEnergySystem(
