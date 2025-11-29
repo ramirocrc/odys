@@ -9,44 +9,20 @@ PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
 
 @nox.session(python=PYTHON_VERSIONS)
-def test_integration_highest(session: nox.Session) -> None:
+@nox.parametrize("resolution", ["highest", "lowest-direct"])
+def test_integration(session: nox.Session, resolution: str) -> None:
     """Run the test suite with coverage reporting.
 
     Args:
         session: The nox session object.
+        resolution: Dependencies resolution strategy
     """
     session.install("uv")
-    session.run("uv", "pip", "install", "-e", ".", "--resolution", "highest")
+    session.run("uv", "pip", "install", "-e", ".", "--resolution", resolution)
     session.run(
         "python",
         "-c",
-        "import sys; print(f'Running tests on Python {sys.version} (highest resolution)')",
-    )
-    session.run(
-        "uv",
-        "run",
-        "python",
-        "-m",
-        "pytest",
-        "-n",
-        "auto",
-        "tests/integration",
-    )
-
-
-@nox.session(python=PYTHON_VERSIONS)
-def test_integration_lowest(session: nox.Session) -> None:
-    """Run the test suite with coverage reporting.
-
-    Args:
-        session: The nox session object.
-    """
-    session.install("uv")
-    session.run("uv", "pip", "install", "-e", ".", "--resolution", "lowest-direct")
-    session.run(
-        "python",
-        "-c",
-        "import sys; print(f'Running tests on Python {sys.version} (highest resolution)')",
+        "import sys; print(f'Running tests on Python {sys.version}')",
     )
     session.run(
         "uv",
