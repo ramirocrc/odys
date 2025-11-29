@@ -1,7 +1,7 @@
 [project]
 name = "optimes"
 version = "0.0.1"
-description = "Python framework for optimizing multi-energy systems"
+description = "Python framework for optimizing multi-energy systems."
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
 authors = [{ name = "Ramiro Criach", email = "ramirocriach@gmail.com" }]
