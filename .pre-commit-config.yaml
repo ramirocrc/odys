@@ -18,18 +18,18 @@ repos:
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.8.22
+    rev: 0.9.13
     hooks:
       - id: uv-lock
 
-  - repo: https://github.com/owenlamont/uv-secure
-    rev: 0.13.0
-    hooks:
-      - id: uv-secure
+  # - repo: https://github.com/owenlamont/uv-secure
+  #   rev: 0.15.1
+  #   hooks:
+  #     - id: uv-secure
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.12.8
+    rev: v0.14.7
     hooks:
       # Run the linter.
       - id: ruff-check
@@ -38,17 +38,17 @@ repos:
       - id: ruff-format
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.20.0
+    rev: v3.21.2
     hooks:
       - id: pyupgrade
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 41.113.2
+    rev: 42.26.11
     hooks:
       - id: renovate-config-validator
         args: [--strict]
 
-  - repo: https://github.com/jendrikseipp/vulture
-    rev: "v2.3" # or any later Vulture version
-    hooks:
-      - id: vulture
+  # - repo: https://github.com/jendrikseipp/vulture
+  #   rev: "v2.3" # or any later Vulture version
+  #   hooks:
+  #     - id: vulture

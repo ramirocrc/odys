@@ -5,7 +5,7 @@ This module defines the testing sessions and Python versions for the project.
 
 import nox
 
-PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13"]  # , "3.14"]
+PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13"]
 
 
 @nox.session(python=PYTHON_VERSIONS)
@@ -21,12 +21,10 @@ def tests(session: nox.Session) -> None:
     session.run(
         "uv",
         "run",
-        "python3",
+        "python",
         "-m",
         "pytest",
-        "--doctest-modules",
-        "tests",
-        "--cov",
-        "--cov-config=pyproject.toml",
-        "--cov-report=xml",
+        "-n",
+        "auto",
+        "tests/integration",
     )

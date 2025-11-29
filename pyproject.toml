@@ -2,10 +2,10 @@
 name = "optimes"
 version = "0.0.1"
 description = "Python framework for optimizing multi-energy systems"
-authors = [{ name = "Ramiro Criach", email = "ramirocriach@gmail.com" }]
 readme = "README.md"
-keywords = ["python"]
 requires-python = ">=3.10,<4.0"
+authors = [{ name = "Ramiro Criach", email = "ramirocriach@gmail.com" }]
+keywords = ["python"]
 classifiers = [
   "Intended Audience :: Developers",
   "Programming Language :: Python",
@@ -14,7 +14,6 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  # "Programming Language :: Python :: 3.14",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
@@ -28,9 +27,9 @@ dependencies = [
 ]
 
 [project.urls]
+Documentation = "https://ramirorcr.github.io/optimes/"
 Homepage = "https://ramirorcr.github.io/optimes/"
 Repository = "https://github.com/ramirorcr/optimes"
-Documentation = "https://ramirorcr.github.io/optimes/"
 
 [dependency-groups]
 dev = [
@@ -43,7 +42,6 @@ dev = [
   "pytest-xdist>=3.8.0",
   "radon>=6.0.1",
   "ruff>=0.11.13",
-  "vulture>=2.14",
 ]
 docs = [
   "mkdocs>=1.6.1",
