@@ -42,7 +42,7 @@ dev = [
   "pytest-cov>=6.2.1",
   "pytest-xdist>=3.8.0",
   "radon>=6.0.1",
-  "ruff>=0.11.13",
+  "ruff>=0.14.7",
 ]
 docs = [
   "mkdocs>=1.6.1",

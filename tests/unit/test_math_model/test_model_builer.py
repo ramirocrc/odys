@@ -100,7 +100,7 @@ def test_model_already_built(energy_system_sample: ValidatedEnergySystem) -> Non
         energy_system_sample.energy_system_parameters,
     )
     model_builder.build()
-    with pytest.raises(AttributeError, match="Model has already been built."):
+    with pytest.raises(AttributeError, match=r"Model has already been built."):
         model_builder.build()
 
 

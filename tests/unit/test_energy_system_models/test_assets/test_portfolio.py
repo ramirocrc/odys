@@ -86,7 +86,7 @@ def test_get_asset_returns_correct_asset(
 
 def test_get_asset_raises_key_error_for_nonexistent_asset(portfolio_with_assets: AssetPortfolio) -> None:
     """Test that get_asset raises KeyError for non-existent assets."""
-    with pytest.raises(KeyError, match="Asset with name 'nonexistent' does not exist."):
+    with pytest.raises(KeyError, match=r"Asset with name 'nonexistent' does not exist."):
         portfolio_with_assets.get_asset("nonexistent")
 
 
