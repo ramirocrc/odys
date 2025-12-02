@@ -26,9 +26,9 @@ test:
 
 build:
     @echo "🚀 Removing build artifacts"
-    uv run --locked python -c "import shutil, os; shutil.rmtree('dist') if os.path.exists('dist') else None"
+    rm -rf dist/
     @echo "🚀 Creating wheel file"
-    uv build
+    uv build --no-sources
 
 publish:
     @echo "🚀 Publishing."
