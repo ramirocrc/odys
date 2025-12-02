@@ -1,37 +1,18 @@
 name: release-main
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - v*
 
 jobs:
-
-  set-version:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Export tag
-        id: vars
-        run: echo tag=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
-        if: ${{ github.event_name == 'release' }}
-
-      - name: Update project version
-        run: |
-          sed -i "s/^version = \".*\"/version = \"$RELEASE_VERSION\"/" pyproject.toml
-        env:
-          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
-        if: ${{ github.event_name == 'release' }}
-
-      - name: Upload updated pyproject.toml
-        uses: actions/upload-artifact@v5
-        with:
-          name: pyproject-toml
-          path: pyproject.toml
-
   publish:
     runs-on: ubuntu-latest
-    needs: [set-version]
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Check out
         uses: actions/checkout@v6
@@ -39,18 +20,17 @@ jobs:
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
 
-      - name: Download updated pyproject.toml
-        uses: actions/download-artifact@v6
-        with:
-          name: pyproject-toml
-
       - name: Build package
         run: uv build
 
+      - name: Smoke test (wheel)
+        run: uv run --isolated --no-project --with dist/*.whl smoke_test.py
+
+      - name: Smoke test (source distribution)
+        run: uv run --isolated --no-project --with dist/*.tar.gz smoke_test.py
+
       - name: Publish package
         run: uv publish
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
   deploy-docs:
     needs: publish
