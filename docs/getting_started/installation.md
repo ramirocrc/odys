@@ -5,27 +5,27 @@ Installation is as simple as:
 === "pip"
 
     ```bash
-    pip install optimes
+    pip install odis
     ```
 
 === "uv"
 
     ```bash
-    uv add optimes
+    uv add odis
     ```
 
 ## Install from repository
 
-And if you prefer to install optimes directly from the repository:
+And if you prefer to install odis directly from the repository:
 
 === "pip"
 
     ```bash
-    pip install 'git+https://github.com/ramirorcr/optimes@main'
+    pip install 'git+https://github.com/ramirorcr/odis@main'
     ```
 
 === "uv"
 
     ```bash
-    uv add 'git+https://github.com/ramirorcr/optimes@main'
+    uv add 'git+https://github.com/ramirorcr/odis@main'
     ```

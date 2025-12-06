@@ -11,7 +11,7 @@ precommit-refresh:
 
 check:
     @echo "🚀 Checking lock file consistency with 'pyproject.toml'"
-    uv lock --locked
+    uv sync --locked
     @echo "🚀 Linting code: Running pre-commit"
     uv run --locked pre-commit run -a
     @echo "🚀 Static type checking: Running pyright"
@@ -23,27 +23,34 @@ test:
     @echo "🚀 Testing code: Running pytest"
     uv run --locked python -m pytest -n auto --cov-report term-missing:skip-covered --cov=src tests/ --durations=10
 
+nox:
+    @echo "🚀 Launching nox sessions"
+    uvx nox
 
 build:
     @echo "🚀 Removing build artifacts"
     rm -rf dist/
-    @echo "🚀 Creating wheel file"
+    @echo "🚀 Building source distribution and wheel"
     uv build --no-sources
+    @echo "🚀 Smoke test whell"
+    uv run --isolated --no-project --with dist/*.whl tests/smoke_test.py
+    @echo "🚀 Smoke test source distribution"
+    uv run --isolated --no-project --with dist/*.tar.gz tests/smoke_test.py
 
 publish:
-    @echo "🚀 Publishing."
-    uvx twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+    @echo "🚀 Publishing package"
+    uv publish
 
 build-and-publish: build publish
-
-docs-test:
-    @echo "🚀 Testing docs build"
-    uv run --locked mkdocs build -s
 
 docs:
     @echo "🚀 Serving docs"
     uv run --locked mkdocs serve
 
-nox:
-    @echo "🚀 Launching nox sessions"
-    uvx nox
+docs-test:
+    @echo "🚀 Testing docs build"
+    uv run --locked mkdocs build --strict
+
+docs-deploy:
+    @echo "🚀 Deploying docs"
+    uv run --locked mkdocs gh-deploy --force

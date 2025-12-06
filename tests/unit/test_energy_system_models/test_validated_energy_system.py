@@ -9,14 +9,14 @@ from datetime import timedelta
 
 import pytest
 
-from optimes.energy_system_models.assets.generator import PowerGenerator
-from optimes.energy_system_models.assets.load import Load
-from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.assets.storage import Battery
-from optimes.energy_system_models.markets import EnergyMarket
-from optimes.energy_system_models.scenarios import Scenario
-from optimes.energy_system_models.units import PowerUnit
-from optimes.energy_system_models.validated_energy_system import ValidatedEnergySystem
+from odis.energy_system_models.assets.generator import PowerGenerator
+from odis.energy_system_models.assets.load import Load
+from odis.energy_system_models.assets.portfolio import AssetPortfolio
+from odis.energy_system_models.assets.storage import Battery
+from odis.energy_system_models.markets import EnergyMarket
+from odis.energy_system_models.scenarios import Scenario
+from odis.energy_system_models.units import PowerUnit
+from odis.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
 
 @pytest.fixture

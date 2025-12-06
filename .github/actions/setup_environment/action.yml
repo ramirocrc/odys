@@ -1,0 +1,11 @@
+name: "Install Python depedencies"
+description: "Install Python dependencies using uv and just"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup tools
+      uses: ./.github/actions/setup_just_and_uv
+
+    - name: Install dependencies
+      run: just install
+      shell: bash

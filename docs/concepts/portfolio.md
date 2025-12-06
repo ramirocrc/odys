@@ -13,8 +13,8 @@ The portfolio ensures that all assets meet the following requirements:
 - **Immutable Storage**: Assets cannot be modified after addition
 
 ```python
-from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.assets.generator import PowerGenerator
+from odis.energy_system_models.assets.portfolio import AssetPortfolio
+from odis.energy_system_models.assets.generator import PowerGenerator
 
 portfolio = AssetPortfolio()
 
@@ -156,7 +156,7 @@ def analyze_portfolio(portfolio: AssetPortfolio) -> dict:
 The portfolio integrates seamlessly with the `EnergySystem` class:
 
 ```python
-from optimes.energy_system import EnergySystem
+from odis.energy_system import EnergySystem
 from datetime import timedelta
 
 # Create and populate portfolio

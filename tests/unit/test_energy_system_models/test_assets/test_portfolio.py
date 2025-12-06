@@ -2,10 +2,10 @@
 
 import pytest
 
-from optimes.energy_system_models.assets.base import EnergyAsset
-from optimes.energy_system_models.assets.generator import PowerGenerator
-from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.assets.storage import Battery
+from odis.energy_system_models.assets.base import EnergyAsset
+from odis.energy_system_models.assets.generator import PowerGenerator
+from odis.energy_system_models.assets.portfolio import AssetPortfolio
+from odis.energy_system_models.assets.storage import Battery
 
 
 @pytest.fixture

@@ -4,7 +4,7 @@ The energy system module provides the core components for modeling energy system
 
 ## Energy System Module
 
-::: optimes.energy_system
+::: odis.energy_system
 
 ## Energy System Models
 
@@ -12,7 +12,7 @@ The energy system models module contains validation and asset management compone
 
 ### Validated Energy System
 
-::: optimes.energy_system_models.validated_energy_system
+::: odis.energy_system_models.validated_energy_system
 
 ## Assets
 
@@ -20,16 +20,16 @@ The assets module contains the base classes and implementations for different ty
 
 ### Base Asset
 
-::: optimes.energy_system_models.assets.base
+::: odis.energy_system_models.assets.base
 
 ### Generator Assets
 
-::: optimes.energy_system_models.assets.generator
+::: odis.energy_system_models.assets.generator
 
 ### Storage Assets
 
-::: optimes.energy_system_models.assets.storage
+::: odis.energy_system_models.assets.storage
 
 ### Portfolio Management
 
-::: optimes.energy_system_models.assets.portfolio
+::: odis.energy_system_models.assets.portfolio

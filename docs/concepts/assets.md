@@ -1,6 +1,6 @@
 # Assets
 
-Assets are the fundamental building blocks of energy systems in optimes. They represent energy generation, storage, and consumption components that can be optimized to meet system demands at minimum cost.
+Assets are the fundamental building blocks of energy systems in odis. They represent energy generation, storage, and consumption components that can be optimized to meet system demands at minimum cost.
 
 ## Asset Types
 
@@ -17,7 +17,7 @@ Represents electrical generators with configurable operational constraints:
 
 Example:
 ```python
-from optimes.energy_system_models.assets.generator import PowerGenerator
+from odis.energy_system_models.assets.generator import PowerGenerator
 
 generator = PowerGenerator(
     name="coal_plant",
@@ -42,7 +42,7 @@ Represents energy storage systems with comprehensive modeling capabilities:
 
 Example:
 ```python
-from optimes.energy_system_models.assets.storage import Battery
+from odis.energy_system_models.assets.storage import Battery
 
 battery = Battery(
     name="lithium_battery",
@@ -67,7 +67,7 @@ Assets are managed through the `AssetPortfolio` class, which provides:
 
 Example:
 ```python
-from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from odis.energy_system_models.assets.portfolio import AssetPortfolio
 
 portfolio = AssetPortfolio()
 portfolio.add_asset(generator)

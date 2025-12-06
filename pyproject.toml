@@ -1,5 +1,5 @@
 [project]
-name = "optimes"
+name = "odis"
 version = "0.1.0"
 description = "Python framework for optimizing multi-energy systems."
 readme = "README.md"
@@ -28,9 +28,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://ramirorcr.github.io/optimes/"
-Homepage = "https://ramirorcr.github.io/optimes/"
-Repository = "https://github.com/ramirorcr/optimes"
+Documentation = "https://ramirorcr.github.io/odis/"
+Homepage = "https://ramirorcr.github.io/odis/"
+Repository = "https://github.com/ramirorcr/odis"
 
 [dependency-groups]
 dev = [
@@ -57,7 +57,7 @@ requires = ["uv_build"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = "optimes"
+module-name = "odis"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

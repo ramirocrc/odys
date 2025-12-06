@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
-site_name: optimes
+site_name: odis
 repo_url: https://github.com/ramirorcr/optimes
 site_url: https://ramirorcr.github.io/optimes
 site_description: Python framework for optimizing multi-energy systems
@@ -53,14 +53,14 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/ramirorcr/optimes
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/optimes
+      link: https://pypi.org/project/odis
 
 plugins:
   - search
   - mkdocstrings:
       handlers:
         python:
-          paths: ["src/optimes"]
+          paths: ["src/odis"]
   - exclude:
       glob:
         - __pycache__/*

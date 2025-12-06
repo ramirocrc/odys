@@ -18,8 +18,8 @@ An energy system requires the following components:
 
 ```python
 from datetime import timedelta
-from optimes.energy_system import EnergySystem
-from optimes.energy_system_models.assets.portfolio import AssetPortfolio
+from odis.energy_system import EnergySystem
+from odis.energy_system_models.assets.portfolio import AssetPortfolio
 
 energy_system = EnergySystem(
     portfolio=portfolio,

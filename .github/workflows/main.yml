@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup environment
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/setup_environment
 
       - name: Run checks
         run: just check
@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup environment
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/setup_environment
 
       - name: Run tests
         run: just test
@@ -49,7 +49,7 @@ jobs:
             3.14
 
       - name: Setup environment
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/setup_environment
 
       - name: Run tests
         run: just nox
@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup environment
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/setup_environment
 
       - name: Check if documentation can be built
         run: just docs-test
