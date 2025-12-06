@@ -3,12 +3,12 @@ from datetime import timedelta
 import pandas as pd
 import pytest
 
-from optimes.energy_system import EnergySystem
-from optimes.energy_system_models.assets.generator import PowerGenerator
-from optimes.energy_system_models.assets.load import Load
-from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.assets.storage import Battery
-from optimes.energy_system_models.scenarios import Scenario
+from odis.energy_system import EnergySystem
+from odis.energy_system_models.assets.generator import PowerGenerator
+from odis.energy_system_models.assets.load import Load
+from odis.energy_system_models.assets.portfolio import AssetPortfolio
+from odis.energy_system_models.assets.storage import Battery
+from odis.energy_system_models.scenarios import Scenario
 
 
 @pytest.fixture

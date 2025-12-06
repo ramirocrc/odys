@@ -1,6 +1,6 @@
 # Optimization
 
-The optimization engine in optimes transforms energy system models into mathematical optimization problems and solves them using state-of-the-art solvers.
+The optimization engine in odis transforms energy system models into mathematical optimization problems and solves them using state-of-the-art solvers.
 
 ## Mathematical Framework
 
@@ -36,7 +36,7 @@ The optimization model includes the following decision variables:
 The `EnergyAlgebraicModelBuilder` constructs the mathematical model:
 
 ```python
-from optimes._math_model.model_builder import EnergyAlgebraicModelBuilder
+from odis._math_model.model_builder import EnergyAlgebraicModelBuilder
 
 model_builder = EnergyAlgebraicModelBuilder(
     energy_system_parameters=validated_system.parameters
@@ -49,7 +49,7 @@ linopy_model = model_builder.build()
 The model uses the HiGHS solver for high-performance linear programming:
 
 ```python
-from optimes.solvers.highs_solver import optimize_algebraic_model
+from odis.solvers.highs_solver import optimize_algebraic_model
 
 results = optimize_algebraic_model(linopy_model)
 ```

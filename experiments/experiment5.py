@@ -1,19 +1,19 @@
 """Energy system optimization experiment.
 
-This module demonstrates the usage of the optimes library for energy system optimization.
+This module demonstrates the usage of the odis library for energy system optimization.
 It creates a simple energy system with generators and batteries, then optimizes
 the system operation to meet demand at minimum cost.
 """
 
 from datetime import timedelta
 
-from optimes.energy_system import EnergySystem
-from optimes.energy_system_models.assets.generator import PowerGenerator
-from optimes.energy_system_models.assets.load import Load, LoadType
-from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.markets import EnergyMarket, TradeDirection
-from optimes.energy_system_models.scenarios import StochasticScenario
-from optimes.utils.logging import get_logger
+from odis.energy_system import EnergySystem
+from odis.energy_system_models.assets.generator import PowerGenerator
+from odis.energy_system_models.assets.load import Load, LoadType
+from odis.energy_system_models.assets.portfolio import AssetPortfolio
+from odis.energy_system_models.markets import EnergyMarket, TradeDirection
+from odis.energy_system_models.scenarios import StochasticScenario
+from odis.utils.logging import get_logger
 
 logger = get_logger(__name__)
 

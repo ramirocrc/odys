@@ -5,15 +5,15 @@ from datetime import timedelta
 import pandas as pd
 import pytest
 
-from optimes.energy_system import EnergySystem
-from optimes.energy_system_models.assets.base import EnergyAsset
-from optimes.energy_system_models.assets.generator import PowerGenerator
-from optimes.energy_system_models.assets.load import Load
-from optimes.energy_system_models.assets.portfolio import AssetPortfolio
-from optimes.energy_system_models.assets.storage import Battery
-from optimes.energy_system_models.markets import EnergyMarket
-from optimes.energy_system_models.scenarios import Scenario
-from optimes.energy_system_models.units import PowerUnit
+from odis.energy_system import EnergySystem
+from odis.energy_system_models.assets.base import EnergyAsset
+from odis.energy_system_models.assets.generator import PowerGenerator
+from odis.energy_system_models.assets.load import Load
+from odis.energy_system_models.assets.portfolio import AssetPortfolio
+from odis.energy_system_models.assets.storage import Battery
+from odis.energy_system_models.markets import EnergyMarket
+from odis.energy_system_models.scenarios import Scenario
+from odis.energy_system_models.units import PowerUnit
 
 STANDARD_GENERATOR_POWER = 100.0
 LARGE_GENERATOR_POWER = 200.0

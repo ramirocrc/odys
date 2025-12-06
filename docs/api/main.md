@@ -1,6 +1,6 @@
 # API Reference
 
-This page provides the complete API reference for the `optimes` package.
+This page provides the complete API reference for the `odis` package.
 
 ## Module Documentation
 

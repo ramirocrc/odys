@@ -1,4 +1,4 @@
-# Contributing to `optimes`
+# Contributing to `odis`
 
 Contributions are welcome, and they are greatly appreciated!
 Every little bit helps, and credit will always be given.
@@ -9,7 +9,7 @@ You can contribute in many ways:
 
 ## Report Bugs
 
-Report bugs at https://github.com/ramirorcr/optimes/issues
+Report bugs at https://github.com/ramirorcr/odis/issues
 
 If you are reporting a bug, please include:
 
@@ -29,11 +29,11 @@ Anything tagged with "enhancement" and "help wanted" is open to whoever wants to
 
 ## Write Documentation
 
-optimes could always use more documentation, whether as part of the official docs, in docstrings, or even on the web in blog posts, articles, and such.
+odis could always use more documentation, whether as part of the official docs, in docstrings, or even on the web in blog posts, articles, and such.
 
 ## Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/ramirorcr/optimes/issues.
+The best way to send feedback is to file an issue at https://github.com/ramirorcr/odis/issues.
 
 If you are proposing a new feature:
 
@@ -44,22 +44,22 @@ If you are proposing a new feature:
 
 # Get Started!
 
-Ready to contribute? Here's how to set up `optimes` for local development.
+Ready to contribute? Here's how to set up `odis` for local development.
 Please note this documentation assumes you already have `[uv](https://docs.astral.sh/uv/)`, `[just](https://github.com/casey/just?tab=readme-ov-file)`, and `[Git](https://git-scm.com/)` installed and ready to go.
 
-1. Fork the `optimes` repo on GitHub.
+1. Fork the `odis` repo on GitHub.
 
 2. Clone your fork locally:
 
 ```bash
 cd <directory_in_which_repo_should_be_created>
-git clone git@github.com:YOUR_NAME/optimes.git
+git clone git@github.com:YOUR_NAME/odis.git
 ```
 
 3. Now we need to install the environment. Navigate into the directory
 
 ```bash
-cd optimes
+cd odis
 ```
 
 Then, install and activate the environment with:

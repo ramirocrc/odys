@@ -17,20 +17,14 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+      - name: Set up tools
+        uses: ./.github/actions/setup_just_and_uv
 
-      - name: Build package
-        run: uv build
-
-      - name: Smoke test (wheel)
-        run: uv run --isolated --no-project --with dist/*.whl smoke_test.py
-
-      - name: Smoke test (source distribution)
-        run: uv run --isolated --no-project --with dist/*.tar.gz smoke_test.py
+      - name: Build and test package
+        run: just build
 
       - name: Publish package
-        run: uv publish
+        run: just publish
 
   deploy-docs:
     needs: publish
@@ -39,8 +33,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+      - name: Setup environment
+        uses: ./.github/actions/setup_environment
 
       - name: Deploy documentation
-        run: uv run mkdocs gh-deploy --force
+        run: just docs-test && just docs-deploy
