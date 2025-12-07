@@ -17,14 +17,11 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup_environment
 
-      - name: Cache virtual environment and tools
+      - name: Cache virtual environment
         uses: actions/cache/save@v4
         with:
-          path: |
-            .venv
-            ~/.local/bin
-            /opt/hostedtoolcache
-          key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
   check-quality:
     runs-on: ubuntu-latest
@@ -33,17 +30,14 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Restore environment and tools
+      - name: Setup tools
+        uses: ./.github/actions/setup_just_and_uv
+
+      - name: Restore virtual environment
         uses: actions/cache@v4
         with:
-          path: |
-            .venv
-            ~/.local/bin
-            /opt/hostedtoolcache
-          key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
-
-      - name: Add tools to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Run checks
         run: just check
@@ -55,17 +49,14 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Restore environment and tools
+      - name: Setup tools
+        uses: ./.github/actions/setup_just_and_uv
+
+      - name: Restore virtual environment
         uses: actions/cache@v4
         with:
-          path: |
-            .venv
-            ~/.local/bin
-            /opt/hostedtoolcache
-          key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
-
-      - name: Add tools to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Run tests
         run: just test
@@ -93,8 +84,8 @@ jobs:
           path: .venv
           key: venv-${{ matrix.python-version }}-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
-      - name: Install minimal dependencies
-        run: uv sync --python ${{ matrix.python-version }} --no-group dev --no-group docs
+      - name: Install dependencies with dev group
+        run: uv sync --python ${{ matrix.python-version }} --group dev
 
       - name: Run tests
         run: uv run --locked python -m pytest tests/ -n auto
@@ -106,17 +97,14 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Restore environment and tools
+      - name: Setup tools
+        uses: ./.github/actions/setup_just_and_uv
+
+      - name: Restore virtual environment
         uses: actions/cache@v4
         with:
-          path: |
-            .venv
-            ~/.local/bin
-            /opt/hostedtoolcache
-          key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
-
-      - name: Add tools to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Check if documentation can be built
         run: just docs-test
