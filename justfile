@@ -11,7 +11,7 @@ precommit-refresh:
 
 check:
     @echo "🚀 Checking lock file consistency with 'pyproject.toml'"
-    uv sync --locked
+    uv sync --locked --all-groups
     @echo "🚀 Linting code: Running pre-commit"
     uv run --locked pre-commit run -a
     @echo "🚀 Static type checking: Running pyright"

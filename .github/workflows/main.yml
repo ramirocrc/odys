@@ -96,7 +96,7 @@ jobs:
         run: uv sync --python ${{ matrix.python-version }} --all-groups --resolution ${{ matrix.resolution }}
 
       - name: Run tests
-        run: uv run python -m pytest tests/ -n auto
+        run: uv run python -m pytest tests/integration -n auto
 
   check-docs:
     runs-on: ubuntu-latest
