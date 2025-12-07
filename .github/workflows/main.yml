@@ -34,18 +34,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Setup tools
-        uses: ./.github/actions/setup_just_and_uv
-
-      - name: Get Python path
-        id: python-path
-        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
-
-      - name: Restore virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
+      - name: Restore environment
+        uses: ./.github/actions/restore_environment
 
       - name: Run checks
         run: just check
@@ -57,18 +47,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Setup tools
-        uses: ./.github/actions/setup_just_and_uv
-
-      - name: Get Python path
-        id: python-path
-        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
-
-      - name: Restore virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
+      - name: Restore environment
+        uses: ./.github/actions/restore_environment
 
       - name: Run tests
         run: just test
@@ -105,18 +85,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Setup tools
-        uses: ./.github/actions/setup_just_and_uv
-
-      - name: Get Python path
-        id: python-path
-        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
-
-      - name: Restore virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
+      - name: Restore environment
+        uses: ./.github/actions/restore_environment
 
       - name: Check if documentation can be built
         run: just docs-test
