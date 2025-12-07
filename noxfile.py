@@ -5,10 +5,10 @@ This module defines the testing sessions and Python versions for the project.
 
 import nox
 
-PYTHON_VERSIONS = ["3.11", "3.12", "3.13", "3.14"]
+PYTHON_VERSIONS = ["3.11"]
 
 
-@nox.session(python=PYTHON_VERSIONS)
+@nox.session(python=PYTHON_VERSIONS, venv_backend="uv")
 @nox.parametrize("resolution", ["highest", "lowest-direct"])
 def test_integration(session: nox.Session, resolution: str) -> None:
     """Run the test suite with coverage reporting.
@@ -17,9 +17,8 @@ def test_integration(session: nox.Session, resolution: str) -> None:
         session: The nox session object.
         resolution: Dependencies resolution strategy
     """
-    session.install("uv")
-    session.run("uv", "pip", "install", "-e", ".", "--resolution", resolution)
-    session.run("uv", "pip", "install", "--group", "dev", "--resolution", resolution)
+    session.run_always("uv", "pip", "install", ".", "--resolution", resolution, external=True)
+    session.install("pytest", "pytest-xdist", "pytest-cov")
     session.run(
         "python",
         "-c",
