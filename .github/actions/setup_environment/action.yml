@@ -3,6 +3,11 @@ description: "Install Python dependencies using uv and just"
 runs:
   using: "composite"
   steps:
+    - name: Set up Python 3.14
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.14"
+
     - name: Setup tools
       uses: ./.github/actions/setup_just_and_uv
 
