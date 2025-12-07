@@ -17,11 +17,15 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup_environment
 
+      - name: Get Python path
+        id: python-path
+        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
+
       - name: Cache virtual environment
         uses: actions/cache/save@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
 
   check-quality:
     runs-on: ubuntu-latest
@@ -33,11 +37,15 @@ jobs:
       - name: Setup tools
         uses: ./.github/actions/setup_just_and_uv
 
+      - name: Get Python path
+        id: python-path
+        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
+
       - name: Restore virtual environment
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Run checks
         run: just check
@@ -52,11 +60,15 @@ jobs:
       - name: Setup tools
         uses: ./.github/actions/setup_just_and_uv
 
+      - name: Get Python path
+        id: python-path
+        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
+
       - name: Restore virtual environment
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Run tests
         run: just test
@@ -94,11 +106,15 @@ jobs:
       - name: Setup tools
         uses: ./.github/actions/setup_just_and_uv
 
+      - name: Get Python path
+        id: python-path
+        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
+
       - name: Restore virtual environment
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Check if documentation can be built
         run: just docs-test
