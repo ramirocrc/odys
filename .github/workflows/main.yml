@@ -42,6 +42,9 @@ jobs:
             /opt/hostedtoolcache
           key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
+      - name: Add tools to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Run checks
         run: just check
 
@@ -60,6 +63,9 @@ jobs:
             ~/.local/bin
             /opt/hostedtoolcache
           key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+
+      - name: Add tools to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Run tests
         run: just test
@@ -108,6 +114,9 @@ jobs:
             ~/.local/bin
             /opt/hostedtoolcache
           key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+
+      - name: Add tools to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Check if documentation can be built
         run: just docs-test
