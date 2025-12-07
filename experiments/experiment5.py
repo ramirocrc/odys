@@ -36,6 +36,7 @@ if __name__ == "__main__":
         ramp_down=100,
     )
     portfolio = AssetPortfolio()
+
     portfolio.add_asset(generator_1)
     portfolio.add_asset(generator_2)
     load = Load(name="load", type=LoadType.Fixed)
