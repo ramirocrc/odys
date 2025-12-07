@@ -6,28 +6,8 @@ on:
       - v*
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@v6
-
-      - name: Setup environment
-        uses: ./.github/actions/setup_environment
-
-      - name: Get Python path
-        id: python-path
-        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
-
-      - name: Cache virtual environment
-        uses: actions/cache/save@v4
-        with:
-          path: .venv
-          key: venv-release-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
-
   publish:
     runs-on: ubuntu-latest
-    needs: setup
     environment:
       name: pypi
     permissions:
@@ -37,18 +17,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Setup tools
-        uses: ./.github/actions/setup_just_and_uv
-
-      - name: Get Python path
-        id: python-path
-        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
-
-      - name: Restore virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-release-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
+      - name: Setup environment
+        uses: ./.github/actions/setup_environment
 
       - name: Build and test package
         run: just build
@@ -57,24 +27,14 @@ jobs:
         run: just publish
 
   deploy-docs:
-    needs: [setup, publish]
+    needs: publish
     runs-on: ubuntu-latest
     steps:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Setup tools
-        uses: ./.github/actions/setup_just_and_uv
-
-      - name: Get Python path
-        id: python-path
-        run: echo "path=$(which python3)" >> $GITHUB_OUTPUT
-
-      - name: Restore virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-release-${{ runner.os }}-${{ steps.python-path.outputs.path }}-${{ hashFiles('**/uv.lock') }}
+      - name: Setup environment
+        uses: ./.github/actions/setup_environment
 
       - name: Deploy documentation
         run: just docs-test && just docs-deploy
