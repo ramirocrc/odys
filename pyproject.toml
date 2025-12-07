@@ -18,7 +18,7 @@ classifiers = [
 ]
 dependencies = [
   "highspy>=1.11.0",
-  "linopy>=0.5.5",
+  "linopy==0.5.5",
   "numpy>=1.26.4",
   "pandas>=2.3.1",
   "pydantic>=2.12.5",
