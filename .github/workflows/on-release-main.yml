@@ -6,8 +6,24 @@ on:
       - v*
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+
+      - name: Setup environment
+        uses: ./.github/actions/setup_environment
+
+      - name: Cache virtual environment
+        uses: actions/cache/save@v4
+        with:
+          path: .venv
+          key: venv-release-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+
   publish:
     runs-on: ubuntu-latest
+    needs: setup
     environment:
       name: pypi
     permissions:
@@ -17,8 +33,11 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Set up tools
-        uses: ./.github/actions/setup_just_and_uv
+      - name: Restore virtual environment
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-release-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Build and test package
         run: just build
@@ -27,14 +46,17 @@ jobs:
         run: just publish
 
   deploy-docs:
-    needs: publish
+    needs: [setup, publish]
     runs-on: ubuntu-latest
     steps:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Setup environment
-        uses: ./.github/actions/setup_environment
+      - name: Restore virtual environment
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-release-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Deploy documentation
         run: just docs-test && just docs-deploy
