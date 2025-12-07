@@ -17,11 +17,14 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup_environment
 
-      - name: Cache virtual environment
+      - name: Cache virtual environment and tools
         uses: actions/cache/save@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          path: |
+            .venv
+            ~/.local/bin
+            /opt/hostedtoolcache
+          key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
   check-quality:
     runs-on: ubuntu-latest
@@ -30,11 +33,14 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Restore virtual environment
+      - name: Restore environment and tools
         uses: actions/cache@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          path: |
+            .venv
+            ~/.local/bin
+            /opt/hostedtoolcache
+          key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Run checks
         run: just check
@@ -46,11 +52,14 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Restore virtual environment
+      - name: Restore environment and tools
         uses: actions/cache@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          path: |
+            .venv
+            ~/.local/bin
+            /opt/hostedtoolcache
+          key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Run tests
         run: just test
@@ -91,11 +100,14 @@ jobs:
       - name: Check out
         uses: actions/checkout@v6
 
-      - name: Restore virtual environment
+      - name: Restore environment and tools
         uses: actions/cache@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+          path: |
+            .venv
+            ~/.local/bin
+            /opt/hostedtoolcache
+          key: env-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
 
       - name: Check if documentation can be built
         run: just docs-test
