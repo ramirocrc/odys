@@ -3,17 +3,17 @@ install:
     uv sync --python 3.14 --all-groups
     uv run --locked prek install
 
-precommit-refresh:
-    @echo "🚀 Refreshing pre-commit hooks"
-    uv run --locked pre-commit autoupdate
-    uv run --locked pre-commit clean
-    uv run --locked pre-commit install
+prek-refresh:
+    @echo "🚀 Refreshing prek hooks"
+    uv run --locked prek autoupdate
+    uv run --locked prek clean
+    uv run --locked prek install
 
 check:
     @echo "🚀 Checking lock file consistency with 'pyproject.toml'"
     uv sync --locked --all-groups
-    @echo "🚀 Linting code: Running pre-commit"
-    uv run --locked pre-commit run -a
+    @echo "🚀 Linting code: Running prek"
+    uv run --locked prek run -a
     @echo "🚀 Static type checking: Running pyright"
     uv run --locked pyright src tests
     @echo "🚀 Checking for obsolete dependencies: Running deptry"

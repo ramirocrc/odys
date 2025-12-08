@@ -40,7 +40,7 @@ This will also generate your `uv.lock` file
 Initially, the CI/CD pipeline might be failing due to formatting issues. To resolve those run:
 
 ```bash
-uv run pre-commit run -a
+uv run prek run -a
 ```
 
 ### 4. Commit the changes
