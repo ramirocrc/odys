@@ -17,7 +17,6 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    # uv version.
     rev: 0.9.16
     hooks:
       - id: uv-lock
@@ -28,7 +27,6 @@ repos:
       - id: uv-secure
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
     rev: v0.14.8
     hooks:
       - id: ruff-format
@@ -54,6 +52,6 @@ repos:
         args: [--strict]
 
   - repo: https://github.com/jendrikseipp/vulture
-    rev: v2.14 # or any later Vulture version
+    rev: v2.14
     hooks:
       - id: vulture
