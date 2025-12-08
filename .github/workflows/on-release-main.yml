@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup environment
-        uses: ./.github/actions/setup_environment
+        uses: ./.github/actions/setup_just_and_uv/
 
       - name: Build and test package
         run: just build

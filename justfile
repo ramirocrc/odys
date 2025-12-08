@@ -1,7 +1,7 @@
 install:
     @echo "🚀 Creating virtual environment using uv"
     uv sync --python 3.14 --all-groups
-    uv run --locked pre-commit install
+    uv run --locked prek install
 
 precommit-refresh:
     @echo "🚀 Refreshing pre-commit hooks"
