@@ -3,9 +3,16 @@
 This module defines the testing sessions and Python versions for the project.
 """
 
+import tomllib
+from pathlib import Path
+
 import nox
 
-PYTHON_VERSIONS = ["3.11", "3.12", "3.13", "3.14"]
+pyp = tomllib.loads(Path("pyproject.toml").read_text())
+
+PYTHON_VERSIONS = [
+    pv.rsplit(" ")[-1] for pv in pyp["project"]["classifiers"] if pv.startswith("Programming Language :: Python ::")
+]
 
 
 @nox.session(python=PYTHON_VERSIONS, venv_backend="uv")

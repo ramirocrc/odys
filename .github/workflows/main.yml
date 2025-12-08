@@ -31,13 +31,34 @@ jobs:
       - name: Check if documentation can be built
         run: just docs-test
 
+  get-python-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      python-versions: ${{ steps.extract-versions.outputs.python-versions }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+
+      - name: Extract Python versions from pyproject.toml
+        id: extract-versions
+        run: |
+          python_versions=$(python -c "
+          import tomllib
+          from pathlib import Path
+          pyp = tomllib.loads(Path('pyproject.toml').read_text())
+          versions = [pv.rsplit(' ')[-1] for pv in pyp['project']['classifiers'] if pv.startswith('Programming Language :: Python ::')]
+          print(str(versions).replace(\"'\", '\"'))
+          ")
+          echo "python-versions=$python_versions" >> $GITHUB_OUTPUT
+
   integration_tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.14"]
+        python-version: ${{ fromJson(needs.get-python-versions.outputs.python-versions) }}
         resolution: ["highest", "lowest-direct"]
       fail-fast: false
+    needs: get-python-versions
     steps:
       - name: Check out
         uses: actions/checkout@v6
