@@ -37,27 +37,27 @@ class ScenarioConstraints:
         """
         lhs = 0
         if self._include_generators:
-            lhs += self.model.generator_power.sum(ModelDimension.Generators)
+            lhs += self.model.generator_power.sum(ModelDimension.Generators)  # ty: ignore
 
         if self._include_batteries:
-            lhs += self.model.battery_power_out.sum(ModelDimension.Batteries)
-            lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)
+            lhs += self.model.battery_power_out.sum(ModelDimension.Batteries)  # ty: ignore
+            lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)  # ty: ignore
 
         if self._include_markets:
-            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)
-            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)
+            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)  # ty: ignore
+            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)  # ty: ignore
 
         if self.scenario_params.load_profiles is not None:
-            lhs += -self.scenario_params.load_profiles
+            lhs += -self.scenario_params.load_profiles  # ty: ignore
 
         return ModelConstraint(
             name="power_balance_constraint",
-            constraint=lhs == 0,  # pyright: ignore reportArgumentType
+            constraint=lhs == 0,  # ty: ignore
         )
 
     def _get_available_capacity_profiles_constraint(self) -> ModelConstraint:
         var_generator_power = self.model.generator_power
-        expression = var_generator_power <= self.scenario_params.available_capacity_profiles  # pyright: ignore reportOperatorIssue # Validated before calling function
+        expression = var_generator_power <= self.scenario_params.available_capacity_profiles  # ty: ignore
         return ModelConstraint(
             name="available_capacity_constraint",
             constraint=expression,
@@ -71,7 +71,7 @@ class ScenarioConstraints:
         Only applies to markets where stage_fixed is True.
         """
         constraints = []
-        stage_fixed_markets = self.market_params.stage_fixed  # pyright: ignore reportArgumentType
+        stage_fixed_markets = self.market_params.stage_fixed  # ty: ignore
 
         for market_var in MARKET_VARIABLES:
             linopy_var = self.model.linopy_model.variables[market_var.var_name]

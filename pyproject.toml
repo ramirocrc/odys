@@ -34,18 +34,21 @@ dev = [
   "deptry>=0.23.1",
   "nox>=2025.5.1",
   "prek>=0.2.20",
-  "pyright>=1.1.406",
   "pytest>=8.4.1",
   "pytest-cov>=6.2.1",
   "pytest-xdist>=3.8.0",
   "radon>=6.0.1",
   "ruff>=0.14.7",
+  "ty>=0.0.2",
 ]
 docs = [
   "mkdocs>=1.6.1",
   "mkdocs-exclude>=1.0.2",
   "mkdocs-material>=9.6.16",
   "mkdocstrings-python>=1.16.12",
+]
+vulnerability-fix = [
+    "filelock>=3.20.1",
 ]
 
 [build-system]

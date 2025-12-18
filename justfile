@@ -14,8 +14,8 @@ check:
     uv sync --locked --all-groups
     @echo "🚀 Linting code: Running prek"
     uv run --locked prek run -a
-    @echo "🚀 Static type checking: Running pyright"
-    uv run --locked pyright src tests
+    @echo "🚀 Static type checking: Running ty"
+    uv run --locked ty check
     @echo "🚀 Checking for obsolete dependencies: Running deptry"
     uv run --locked deptry src
 

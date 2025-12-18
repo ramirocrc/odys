@@ -28,21 +28,21 @@ class MarketConstraints:
         return tuple(constraints)
 
     def _get_market_max_sell_volume_constraint(self) -> ModelConstraint:
-        constraint = self.model.market_sell_volume <= self.params.max_volume  # pyright: ignore reportOperatorIssue
+        constraint = self.model.market_sell_volume <= self.params.max_volume  # ty: ignore
         return ModelConstraint(
             constraint=constraint,
             name="market_max_sell_volume_constraint",
         )
 
     def _get_market_max_buy_volume_constraint(self) -> ModelConstraint:
-        constraint = self.model.market_buy_volume <= self.params.max_volume  # pyright: ignore reportOperatorIssue
+        constraint = self.model.market_buy_volume <= self.params.max_volume  # ty: ignore
         return ModelConstraint(
             constraint=constraint,
             name="market_max_buy_volume_constraint",
         )
 
     def _get_market_mutual_exclusivity_sell_constraint(self) -> ModelConstraint:
-        constraint = self.model.market_sell_volume <= self.model.market_trade_mode * self.params.max_volume  # pyright: ignore reportOperatorIssue
+        constraint = self.model.market_sell_volume <= self.model.market_trade_mode * self.params.max_volume  # ty: ignore
         return ModelConstraint(
             constraint=constraint,
             name="market_mutual_exclusivity_sell_constraint",
@@ -50,8 +50,8 @@ class MarketConstraints:
 
     def _get_market_mutual_exclusivity_buy_constraint(self) -> ModelConstraint:
         constraint = (
-            self.model.market_buy_volume + self.model.market_trade_mode * self.params.max_volume  # pyright: ignore reportOperatorIssue
-            <= self.params.max_volume  # pyright: ignore optionalMemberAccess
+            self.model.market_buy_volume + self.model.market_trade_mode * self.params.max_volume  # ty: ignore
+            <= self.params.max_volume  # ty: ignore optionalMemberAccess
         )
         return ModelConstraint(
             constraint=constraint,
@@ -62,7 +62,7 @@ class MarketConstraints:
         """Generate constraints based on trade_direction parameter for each market."""
         constraints = []
 
-        buy_only_mask = self.params.trade_direction == TradeDirection.BUY  # pyright: ignore reportOperatorIssue
+        buy_only_mask = self.params.trade_direction == TradeDirection.BUY  # ty: ignore
         sell_constraint = self.model.market_sell_volume.where(buy_only_mask, drop=True) == 0
         constraints.append(
             ModelConstraint(
@@ -71,7 +71,7 @@ class MarketConstraints:
             ),
         )
 
-        sell_only_mask = self.params.trade_direction == TradeDirection.SELL  # pyright: ignore reportOperatorIssue
+        sell_only_mask = self.params.trade_direction == TradeDirection.SELL  # ty: ignore
         buy_constraint = self.model.market_buy_volume.where(sell_only_mask, drop=True) == 0
         constraints.append(
             ModelConstraint(
