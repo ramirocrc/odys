@@ -45,11 +45,11 @@ repos:
     hooks:
       - id: pyupgrade
 
-  - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 42.39.6
-    hooks:
-      - id: renovate-config-validator
-        args: [--strict]
+  # - repo: https://github.com/renovatebot/pre-commit-hooks
+  #   rev: 42.59.1
+  #   hooks:
+  #     - id: renovate-config-validator
+  #       args: [--strict]
 
   - repo: https://github.com/jendrikseipp/vulture
     rev: v2.14

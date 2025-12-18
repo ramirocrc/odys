@@ -52,7 +52,7 @@ class EnergySystem:
             markets=markets,
             timestep=timestep,
             number_of_steps=number_of_steps,
-            power_unit=power_unit,  # pyright: ignore reportArgumentType
+            power_unit=power_unit,  # ty: ignore
             scenarios=scenarios,
         )
 
