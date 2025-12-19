@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from odis._math_model.model_components.sets import (
     ModelIndex,
@@ -9,7 +9,9 @@ from odis._math_model.model_components.sets import (
 from odis._math_model.model_components.variables import BoundType
 
 
-class LinopyVariableParameters(BaseModel, arbitrary_types_allowed=True):
+class LinopyVariableParameters(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     name: str
     coords: Mapping
     dims: Sequence[str]

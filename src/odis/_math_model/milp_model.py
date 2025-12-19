@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from linopy import Model, Variable
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from odis._math_model.model_components.parameters.battery_parameters import BatteryIndex
 from odis._math_model.model_components.parameters.generator_parameters import GeneratorIndex
@@ -12,7 +12,9 @@ from odis._math_model.model_components.parameters.scenario_parameters import Sce
 from odis._math_model.model_components.variables import ModelVariable
 
 
-class EnergyModelIndices(BaseModel, frozen=True, extra="forbid"):
+class EnergyModelIndices(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     scenarios: ScenarioIndex
     time: TimeIndex
     generators: GeneratorIndex | None

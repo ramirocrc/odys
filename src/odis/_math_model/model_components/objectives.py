@@ -19,25 +19,25 @@ class ObjectiveFunction:
         profit = 0
 
         if self._model.parameters.scenarios.market_prices is not None:
-            profit += self.get_market_revenue()  # ty: ignore
+            profit += self.get_market_revenue()  # ty: ignore # pyrefly: ignore
 
         if self._model.parameters.generators is not None:
-            profit += -self.get_operating_costs()  # ty: ignore
+            profit += -self.get_operating_costs()  # ty: ignore # pyrefly: ignore
 
         if isinstance(profit, int) and profit == 0:
             msg = "No terms added to profit"
             raise ValueError(msg)
-        return profit  # ty: ignore
+        return profit  # ty: ignore # pyrefly: ignore
 
     def get_market_revenue(self) -> linopy.LinearExpression:
         return (
-            (self._model.market_sell_volume - self._model.market_buy_volume)
-            * self._model.parameters.scenarios.market_prices  # ty: ignore
+            (self._model.market_sell_volume - self._model.market_buy_volume)  # pyrefly: ignore
+            * self._model.parameters.scenarios.market_prices  # ty: ignore # pyrefly: ignore
             * self._model.parameters.scenarios.scenario_probabilities
         ).sum([ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets])
 
     def get_operating_costs(self) -> linopy.LinearExpression:
         return (
-            self._model.generator_power * self._model.parameters.generators.variable_cost  # ty: ignore
-            + self._model.generator_startup * self._model.parameters.generators.startup_cost  # ty: ignore
+            self._model.generator_power * self._model.parameters.generators.variable_cost  # ty: ignore # pyrefly: ignore
+            + self._model.generator_startup * self._model.parameters.generators.startup_cost  # ty: ignore # pyrefly: ignore
         ).sum([ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators])

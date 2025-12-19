@@ -16,6 +16,8 @@ check:
     uv run --locked prek run -a
     @echo "🚀 Static type checking: Running ty"
     uv run --locked ty check
+    @echo "🚀 Static type checking: Running pyrefly"
+    uv run --locked pyrefly check
     @echo "🚀 Checking for obsolete dependencies: Running deptry"
     uv run --locked deptry src
 
