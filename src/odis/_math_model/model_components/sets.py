@@ -2,7 +2,7 @@ from abc import ABC
 from enum import StrEnum
 from typing import ClassVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelDimension(StrEnum):
@@ -14,8 +14,10 @@ class ModelDimension(StrEnum):
     Markets = "market"
 
 
-class ModelIndex(BaseModel, ABC, frozen=True):
+class ModelIndex(BaseModel, ABC):
     """Energy Model Set."""
+
+    model_config = ConfigDict(frozen=True)
 
     dimension: ClassVar[ModelDimension]
     values: tuple[str, ...]

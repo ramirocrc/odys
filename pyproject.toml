@@ -34,6 +34,7 @@ dev = [
   "deptry>=0.23.1",
   "nox>=2025.5.1",
   "prek>=0.2.20",
+  "pyrefly>=0.46.0",
   "pytest>=8.4.1",
   "pytest-cov>=6.2.1",
   "pytest-xdist>=3.8.0",
@@ -108,3 +109,6 @@ source = ["src"]
 [tool.vulture]
 min_confidence = 80
 paths = ["src/"]
+
+[tool.pyrefly]
+infer-with-first-use = false

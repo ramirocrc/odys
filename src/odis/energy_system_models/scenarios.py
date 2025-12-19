@@ -2,11 +2,13 @@
 
 from collections.abc import Mapping, Sequence
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Scenario(BaseModel):
     """Scenario conditions."""
+
+    model_config = ConfigDict(strict=True)
 
     available_capacity_profiles: Mapping[str, Sequence[float]] | None = Field(
         default=None,

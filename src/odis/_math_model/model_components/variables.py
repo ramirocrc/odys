@@ -6,7 +6,7 @@ optimization models.
 
 from enum import Enum, unique
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from odis._math_model.model_components.sets import ModelDimension
 
@@ -17,6 +17,8 @@ class BoundType(Enum):
 
 
 class VariableSpec(BaseModel):
+    model_config = ConfigDict()
+
     name: str
     is_binary: bool
     dimensions: list[ModelDimension]

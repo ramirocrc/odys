@@ -2,7 +2,7 @@
 
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TradeDirection(StrEnum):
@@ -13,8 +13,10 @@ class TradeDirection(StrEnum):
     BOTH = "both"
 
 
-class EnergyMarket(BaseModel, extra="forbid"):
+class EnergyMarket(BaseModel):
     """Represents an energy market in the energy system."""
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str
     max_trading_volume_per_step: float = Field(gt=0)

@@ -9,7 +9,7 @@ from datetime import timedelta
 from functools import cached_property
 from typing import Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from odis._math_model.model_components.parameters.battery_parameters import BatteryParameters
 from odis._math_model.model_components.parameters.generator_parameters import GeneratorParameters
@@ -33,7 +33,7 @@ from odis.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True, extra="forbid"):
+class ValidatedEnergySystem(BaseModel):
     """Represents the complete energy system configuration with validation.
 
     This class defines the energy system including the asset portfolio,
@@ -49,6 +49,8 @@ class ValidatedEnergySystem(BaseModel, frozen=True, arbitrary_types_allowed=True
         ValueError: If the system configuration is infeasible.
         TypeError: If available capacity is specified for non-generator assets.
     """
+
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True, extra="forbid")
 
     portfolio: AssetPortfolio
     timestep: timedelta

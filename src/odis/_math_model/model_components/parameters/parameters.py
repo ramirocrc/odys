@@ -4,7 +4,7 @@ This module defines parameter names and types used in energy system
 optimization models.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from odis._math_model.model_components.parameters.battery_parameters import BatteryParameters
 from odis._math_model.model_components.parameters.generator_parameters import GeneratorParameters
@@ -13,8 +13,10 @@ from odis._math_model.model_components.parameters.market_parameters import Marke
 from odis._math_model.model_components.parameters.scenario_parameters import ScenarioParameters
 
 
-class EnergySystemParameters(BaseModel, frozen=True, extra="forbid", arbitrary_types_allowed=True):
+class EnergySystemParameters(BaseModel):
     """Collection of all energy system parameters for optimization models."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
 
     generators: GeneratorParameters | None
     batteries: BatteryParameters | None

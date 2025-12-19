@@ -77,7 +77,7 @@ class OptimizationResults:
         for variable in ModelVariable:
             variable_name = variable.var_name
             # Skip if there is this variable is not populated (eg skip battery varialbes if no batteries in the system)
-            if variable_name not in self._milp_model.linopy_model.variables:
+            if variable_name not in self._milp_model.linopy_model.variables.labels:
                 continue
             var_solution = self._solution[variable_name]
             df = (
