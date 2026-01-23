@@ -15,13 +15,13 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "highspy>=1.11.0",
+  "highspy>=1.12.0",
   "linopy==0.5.5",
-  "numpy>=1.26.4",
-  "pandas>=2.3.1",
+  "numpy>=2.4.1",
+  "pandas>=2.3.3",
   "pydantic>=2.12.5",
-  "rich>=14.0.0",
-  "xarray>=2025.6.1",
+  "rich>=14.2.0",
+  "xarray>=2025.12.0",
 ]
 
 [project.urls]
@@ -31,26 +31,26 @@ Repository = "https://github.com/ramirorcr/odis"
 
 [dependency-groups]
 dev = [
-  "deptry>=0.23.1",
-  "nox>=2025.5.1",
-  "prek>=0.2.20",
-  "pyrefly>=0.46.0",
-  "pytest>=8.4.1",
-  "pytest-cov>=6.2.1",
+  "deptry>=0.24.0",
+  "nox>=2025.5.12",
+  "prek>=0.2.30",
+  "pyrefly>=0.49.0",
+  "pytest>=9.0.2",
+  "pytest-cov>=7.0.0",
   "pytest-xdist>=3.8.0",
   "radon>=6.0.1",
-  "ruff>=0.14.7",
-  "ty>=0.0.2",
+  "ruff>=0.14.13",
+  "ty>=0.0.12",
 ]
 docs = [
   "mkdocs>=1.6.1",
   "mkdocs-exclude>=1.0.2",
-  "mkdocs-material>=9.6.16",
-  "mkdocstrings-python>=1.16.12",
+  "mkdocs-material>=9.7.1",
+  "mkdocstrings-python>=2.0.1",
 ]
-vulnerability-fix = [
-    "filelock>=3.20.1",
-]
+# vulnerability-fix = [
+#     "filelock>=3.20.1",
+# ]
 
 [build-system]
 requires = ["uv_build"]

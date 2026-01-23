@@ -37,22 +37,22 @@ class ScenarioConstraints:
         """
         lhs = 0
         if self._include_generators:
-            lhs += self.model.generator_power.sum(ModelDimension.Generators)  # ty: ignore # pyrefly: ignore
+            lhs += self.model.generator_power.sum(ModelDimension.Generators)
 
         if self._include_batteries:
-            lhs += self.model.battery_power_out.sum(ModelDimension.Batteries)  # ty: ignore # pyrefly: ignore
-            lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)  # ty: ignore # pyrefly: ignore
+            lhs += self.model.battery_power_out.sum(ModelDimension.Batteries)  # ty: ignore
+            lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)  # ty: ignore
 
         if self._include_markets:
-            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)  # ty: ignore # pyrefly: ignore
-            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)  # ty: ignore # pyrefly: ignore
+            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)  # ty: ignore
+            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)  # ty: ignore
 
         if self.scenario_params.load_profiles is not None:
-            lhs += -self.scenario_params.load_profiles  # ty: ignore # pyrefly: ignore
+            lhs += -self.scenario_params.load_profiles  # ty: ignore
 
         return ModelConstraint(
             name="power_balance_constraint",
-            constraint=lhs == 0,  # ty: ignore # pyrefly: ignore
+            constraint=lhs == 0,  # ty: ignore
         )
 
     def _get_available_capacity_profiles_constraint(self) -> ModelConstraint:

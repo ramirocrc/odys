@@ -19,15 +19,15 @@ class ObjectiveFunction:
         profit = 0
 
         if self._model.parameters.scenarios.market_prices is not None:
-            profit += self.get_market_revenue()  # ty: ignore # pyrefly: ignore
+            profit += self.get_market_revenue()
 
         if self._model.parameters.generators is not None:
-            profit += -self.get_operating_costs()  # ty: ignore # pyrefly: ignore
+            profit += -self.get_operating_costs()  # ty: ignore
 
         if isinstance(profit, int) and profit == 0:
             msg = "No terms added to profit"
             raise ValueError(msg)
-        return profit  # ty: ignore # pyrefly: ignore
+        return profit
 
     def get_market_revenue(self) -> linopy.LinearExpression:
         return (
