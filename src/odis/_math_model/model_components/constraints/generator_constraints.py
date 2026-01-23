@@ -47,7 +47,7 @@ class GeneratorConstraints:
     def _get_generator_status_constraint(self) -> ModelConstraint:
         self._validate_generator_parameters_exist()
         epsilon = 1e-5 * self.params.nominal_power  # ty: ignore # pyrefly: ignore
-        constraint = self.model.generator_power >= self.model.generator_status * epsilon  # ty: ignore # pyrefly: ignore
+        constraint = self.model.generator_power >= self.model.generator_status * epsilon  # ty: ignore
         return ModelConstraint(
             constraint=constraint,
             name="generator_status_constraint",
