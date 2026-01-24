@@ -71,27 +71,27 @@ class ValidatedEnergySystem(BaseModel):
 
     @cached_property
     def _collection_of_scenarios(self) -> tuple[StochasticScenario, ...]:
-        if isinstance(self.scenarios, Sequence):
-            return tuple(self.scenarios)
+        if isinstance(self.scenarios, Scenario):
+            return (
+                StochasticScenario(
+                    name="deterministic_scenario",
+                    probability=1.0,
+                    available_capacity_profiles=self.scenarios.available_capacity_profiles,
+                    load_profiles=self.scenarios.load_profiles,
+                    market_prices=self.scenarios.market_prices,
+                ),
+            )
 
-        return (
-            StochasticScenario(
-                name="deterministic_scenario",
-                probability=1.0,
-                available_capacity_profiles=self.scenarios.available_capacity_profiles,
-                load_profiles=self.scenarios.load_profiles,
-                market_prices=self.scenarios.market_prices,
-            ),
-        )
+        return tuple(self.scenarios)
 
     @cached_property
     def _collection_of_markets(self) -> tuple[EnergyMarket, ...]:
         if not self.markets:
             return ()
-        if isinstance(self.markets, Sequence):
-            return tuple(self.markets)
+        if isinstance(self.markets, EnergyMarket):
+            return (self.markets,)
 
-        return (self.markets,)
+        return tuple(self.markets)
 
     @cached_property
     def energy_system_parameters(self) -> EnergySystemParameters:
