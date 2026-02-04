@@ -48,9 +48,6 @@ docs = [
   "mkdocs-material>=9.7.1",
   "mkdocstrings-python>=2.0.1",
 ]
-# vulnerability-fix = [
-#     "filelock>=3.20.1",
-# ]
 
 [build-system]
 requires = ["uv_build"]
