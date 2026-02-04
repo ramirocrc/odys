@@ -35,7 +35,6 @@
 - [ ] Review time step implementation
   - [ ] Review power balance
   - [x] Review ValidatedEnergySystem.\_validate_inputs
-- [ ] Add "GridConnection" asset
 - [ ] Evaluate other uses cases (e.g. optimze bids based on day-ahead price forecast)
 - [ ] Implement cusomt Exceptions
 
