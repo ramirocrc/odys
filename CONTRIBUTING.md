@@ -45,7 +45,7 @@ If you are proposing a new feature:
 # Get Started!
 
 Ready to contribute? Here's how to set up `odys` for local development.
-Please note this documentation assumes you already have `[uv](https://docs.astral.sh/uv/)`, `[just](https://github.com/casey/just?tab=readme-ov-file)`, and `[Git](https://git-scm.com/)` installed and ready to go.
+Please note this documentation assumes you already have [uv](https://docs.astral.sh/uv/), [just](https://github.com/casey/just?tab=readme-ov-file), and [Git](https://git-scm.com/) installed and ready to go.
 
 1. Fork the `odys` repo on GitHub.
 
@@ -68,10 +68,10 @@ Then, install and activate the environment with:
 uv sync --all-groups
 ```
 
-4. Install pre-commit to run linters/formatters at commit time:
+4. Install prek to run linters/formatters at commit time:
 
 ```bash
-uv run pre-commit install
+uv run --locked prek install
 ```
 
 5. Create a branch for local development:
@@ -90,20 +90,20 @@ Now you can make your changes locally.
 just check
 ```
 
-Now, validate that all unit tests are passing:
+8. Validate that all unit tests are passing:
 
 ```bash
 just test
 ```
 
-9. Before raising a pull request you should also run tox.
+9. Before raising a pull request you should also run nox.
    This will run the tests across different versions of Python:
 
 ```bash
-tox
+just nox
 ```
 
-This requires you to have multiple versions of python installed.
+This requires you to have multiple versions of Python installed.
 This step is also triggered in the CI/CD pipeline, so you could also choose to skip this step locally.
 
 10. Commit your changes and push your branch to GitHub:
