@@ -4,7 +4,7 @@ The energy system module provides the core components for modeling energy system
 
 ## Energy System Module
 
-::: odis.energy_system
+::: odys.energy_system
 
 ## Energy System Models
 
@@ -12,7 +12,7 @@ The energy system models module contains validation and asset management compone
 
 ### Validated Energy System
 
-::: odis.energy_system_models.validated_energy_system
+::: odys.energy_system_models.validated_energy_system
 
 ## Assets
 
@@ -20,16 +20,16 @@ The assets module contains the base classes and implementations for different ty
 
 ### Base Asset
 
-::: odis.energy_system_models.assets.base
+::: odys.energy_system_models.assets.base
 
 ### Generator Assets
 
-::: odis.energy_system_models.assets.generator
+::: odys.energy_system_models.assets.generator
 
 ### Storage Assets
 
-::: odis.energy_system_models.assets.storage
+::: odys.energy_system_models.assets.storage
 
 ### Portfolio Management
 
-::: odis.energy_system_models.assets.portfolio
+::: odys.energy_system_models.assets.portfolio

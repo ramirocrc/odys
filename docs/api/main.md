@@ -1,6 +1,6 @@
 # API Reference
 
-This page provides the complete API reference for the `odis` package.
+This page provides the complete API reference for the `odys` package.
 
 ## Module Documentation
 

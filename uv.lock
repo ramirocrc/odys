@@ -985,7 +985,7 @@ wheels = [
 ]
 
 [[package]]
-name = "odis"
+name = "odys"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

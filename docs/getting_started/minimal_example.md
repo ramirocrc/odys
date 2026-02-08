@@ -1,6 +1,6 @@
 # Minimal Example
 
-This page demonstrates a minimal example of using the odis library for energy system optimization. The example creates a simple energy system with generators and batteries, then optimizes the system operation to meet demand at minimum cost.
+This page demonstrates a minimal example of using the odys library for energy system optimization. The example creates a simple energy system with generators and batteries, then optimizes the system operation to meet demand at minimum cost.
 
 ## Step-by-Step Example
 
@@ -11,10 +11,10 @@ Start by importing the necessary components for energy system optimization:
 ```python
 from datetime import timedelta
 
-from odis.energy_system import EnergySystem
-from odis.energy_system_models.assets.generator import PowerGenerator
-from odis.energy_system_models.assets.portfolio import AssetPortfolio
-from odis.energy_system_models.assets.storage import Battery
+from odys.energy_system import EnergySystem
+from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.portfolio import AssetPortfolio
+from odys.energy_system_models.assets.storage import Battery
 ```
 
 ### 2. Create Power Generators

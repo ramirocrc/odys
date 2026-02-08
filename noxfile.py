@@ -1,4 +1,4 @@
-"""Nox configuration for the odis project.
+"""Nox configuration for the odys project.
 
 This module defines the testing sessions and Python versions for the project.
 """
