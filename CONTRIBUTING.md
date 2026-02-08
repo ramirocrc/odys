@@ -33,7 +33,7 @@ Fork the repository on GitHub and clone your fork locally.
 
 ```bash
 # Clone your fork and cd into the repo directory
-git clone git@github.com:ramirocrc/odys.git
+git clone git@github.com:<your username>/odys.git
 cd odys
 
 # Install dependencies and prek hooks
