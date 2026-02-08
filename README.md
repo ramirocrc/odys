@@ -1,6 +1,5 @@
 # odys
 
-[![Release](https://img.shields.io/github/v/release/ramirocrc/odys)](https://img.shields.io/github/v/release/ramirocrc/odys)
 [![Build status](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
 [![Python versions](https://img.shields.io/pypi/pyversions/odys?color=green)](https://pypi.org/project/odys/)
