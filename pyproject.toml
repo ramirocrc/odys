@@ -1,6 +1,6 @@
 [project]
 name = "odys"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python framework for optimizing multi-energy systems."
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
