@@ -1,75 +1,101 @@
 # odys
 
-[![Build status](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
+[![CI](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
 [![Python versions](https://img.shields.io/pypi/pyversions/odys?color=green)](https://pypi.org/project/odys/)
-[![PyPI version](https://img.shields.io/pypi/v/odys)](https://pypi.org/project/odys/)
+[![PyPI](https://img.shields.io/pypi/v/odys)](https://pypi.org/project/odys/)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)
 [![License](https://img.shields.io/github/license/ramirocrc/odys)](https://img.shields.io/github/license/ramirocrc/odys)
 
-Python framework for optimizing multi-energy systems
+---
 
 - **Github repository**: <https://github.com/ramirocrc/odys/>
 - **Documentation** <https://ramirocrc.github.io/odys/>
 
-## Getting started with your project
-
-### 1. Create a New Repository
-
-First, create a repository on GitHub with the same name as this project, and then run the following commands:
-
-```bash
-git init -b main
-git add .
-git commit -m "init commit"
-git remote add origin git@github.com:ramirocrc/odys.git
-git push -u origin main
-```
-
-### 2. Set Up Your Development Environment
-
-Then, install the environment and the pre-commit hooks with
-
-```bash
-make install
-```
-
-This will also generate your `uv.lock` file
-
-### 3. Run the pre-commit hooks
-
-Initially, the CI/CD pipeline might be failing due to formatting issues. To resolve those run:
-
-```bash
-uv run prek run -a
-```
-
-### 4. Commit the changes
-
-Lastly, commit the changes made by the two steps above to your repository.
-
-```bash
-git add .
-git commit -m 'Fix formatting issues'
-git push origin main
-```
-
-You are now ready to start development on your project!
-The CI/CD pipeline will be triggered when you open a pull request, merge to main, or when you create a new release.
-
-To finalize the set-up for publishing to PyPI, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/publishing/#set-up-for-pypi).
-For activating the automatic documentation with MkDocs, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/mkdocs/#enabling-the-documentation-on-github).
-To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/codecov/).
-
-## Releasing a new version
-
-- Create an API Token on [PyPI](https://pypi.org/).
-- Add the API Token to your projects secrets with the name `PYPI_TOKEN` by visiting [this page](https://github.com/ramirocrc/odys/settings/secrets/actions/new).
-- Create a [new release](https://github.com/ramirocrc/odys/releases/new) on Github.
-- Create a new tag in the form `*.*.*`.
-
-For more details, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/cicd/#how-to-trigger-a-release).
-
 ---
 
-Repository initiated with [fpgmaas/cookiecutter-uv](https://github.com/fpgmaas/cookiecutter-uv).
+Odys is a Python package for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization.
+
+**Odys** is powered by <a href="https://pydantic-docs.helpmanual.io/" class="external-link" target="_blank">Pydantic</a>, <a href="https://linopy.readthedocs.io/" class="external-link" target="_blank">linopy</a>, and <a href="https://ergo-code.github.io/HiGHS/" class="external-link" target="_blank">HiGHS</a> .
+
+The key features are:
+
+- **Intuitive to write**: Great editor support. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere. Less time debugging. Designed to be easy to use and learn. Less time reading docs.
+- **Simple API**: Define your energy system (generators, batteries, loads, markets) and call .optimize(). The mathematical model is built and solved for you under the hood.
+- **Pydantic-powered validation**: All models are built on Pydantic with strict typing and validators, catching configuration errors early.
+- **Stochastic optimization**: Optimize across multiple probabilistic scenarios with different prices, capacities, and load profiles to make decisions under uncertainty.
+
+## Requirements
+
+A recent and currently supported <a href="https://www.python.org/downloads/" class="external-link" target="_blank">version of Python</a>.
+
+As **Odys** is based on **Pydantic**, **linopy**, and **HiGHS**, it requires them. They will be automatically installed when you install odys.
+
+## Installation
+
+pip:
+
+```console
+pip install odys
+```
+
+uv:
+
+```console
+uv add odys
+```
+
+## Example
+
+A generator and a battery working together to meet a fixed load over 4 hourly timesteps:
+
+```python
+from datetime import timedelta
+
+from odys.energy_system import EnergySystem
+from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.load import Load
+from odys.energy_system_models.assets.portfolio import AssetPortfolio
+from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.scenarios import Scenario
+
+generator = PowerGenerator(
+    name="gen",
+    nominal_power=100.0,
+    variable_cost=50.0,
+)
+
+battery = Battery(
+    name="battery",
+    capacity=50.0,
+    max_power=25.0,
+    efficiency_charging=0.95,
+    efficiency_discharging=0.95,
+    soc_start=25.0,
+    soc_end=25.0,
+)
+
+load = Load(name="demand")
+
+portfolio = AssetPortfolio()
+portfolio.add_asset(generator)
+portfolio.add_asset(battery)
+portfolio.add_asset(load)
+
+energy_system = EnergySystem(
+    portfolio=portfolio,
+    scenarios=Scenario(
+        load_profiles={"demand": [60, 90, 40, 70]},
+    ),
+    timestep=timedelta(hours=1),
+    number_of_steps=4,
+    power_unit="MW",
+)
+
+result = energy_system.optimize()
+```
+
+## Contributing
+
+For guidance on setting up a development environment and how to make a contribution to odys, see
+[Contributing to odys](https://github.com/ramirocrc/odys/blob/main/CONTRIBUTING.md).
