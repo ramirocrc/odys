@@ -1,126 +1,87 @@
-# Contributing to `odys`
+# Contributing to odys
 
-Contributions are welcome, and they are greatly appreciated!
-Every little bit helps, and credit will always be given.
+Contributions to odys are welcome and appreciated!
 
-You can contribute in many ways:
+## Issues
 
-# Types of Contributions
+Bug reports, feature requests and general questions can all be filed as [issues](https://github.com/ramirocrc/odys/issues/new/choose).
 
-## Report Bugs
-
-Report bugs at https://github.com/ramirocrc/odys/issues
-
-If you are reporting a bug, please include:
-
-- Your operating system name and version.
-- Any details about your local setup that might be helpful in troubleshooting.
-- Detailed steps to reproduce the bug.
-
-## Fix Bugs
-
-Look through the GitHub issues for bugs.
-Anything tagged with "bug" and "help wanted" is open to whoever wants to implement a fix for it.
-
-## Implement Features
-
-Look through the GitHub issues for features.
-Anything tagged with "enhancement" and "help wanted" is open to whoever wants to implement it.
-
-## Write Documentation
-
-odys could always use more documentation, whether as part of the official docs, in docstrings, or even on the web in blog posts, articles, and such.
-
-## Submit Feedback
-
-The best way to send feedback is to file an issue at https://github.com/ramirocrc/odys/issues.
-
-If you are proposing a new feature:
-
-- Explain in detail how it would work.
-- Keep the scope as narrow as possible, to make it easier to implement.
-- Remember that this is a volunteer-driven project, and that contributions
-  are welcome :)
-
-# Get Started!
-
-Ready to contribute? Here's how to set up `odys` for local development.
-Please note this documentation assumes you already have [uv](https://docs.astral.sh/uv/), [just](https://github.com/casey/just?tab=readme-ov-file), and [Git](https://git-scm.com/) installed and ready to go.
-
-1. Fork the `odys` repo on GitHub.
-
-2. Clone your fork locally:
+When reporting a bug, please include the output of the following call so we can reproduce the problem:
 
 ```bash
-cd <directory_in_which_repo_should_be_created>
-git clone git@github.com:YOUR_NAME/odys.git
+python -c "from importlib.metadata import version; print(version('odys'))"
 ```
 
-3. Now we need to install the environment. Navigate into the directory
+## Pull Requests
+
+Getting started with a pull request is straightforward.
+
+For non-trivial changes, please open an issue first to discuss the approach before submitting a PR.
+
+### Prerequisites
+
+Make sure you have the following installed:
+
+- **Python 3.11 to 3.14**
+- [**uv**](https://docs.astral.sh/uv/) for dependency management
+- [**just**](https://github.com/casey/just) for running development commands
+- [**git**](https://git-scm.com/) for version control
+
+### Installation and setup
+
+Fork the repository on GitHub and clone your fork locally.
 
 ```bash
+# Clone your fork and cd into the repo directory
+git clone git@github.com:ramirocrc/odys.git
 cd odys
+
+# Install dependencies and prek hooks
+just install
 ```
 
-Then, install and activate the environment with:
+### Check out a new branch and make your changes
 
 ```bash
-uv sync --all-groups
+git switch -c my-new-feature-branch
+# Make your changes...
 ```
 
-4. Install prek to run linters/formatters at commit time:
+### Run tests and linting
+
+Before opening a PR, verify that formatting, linting and tests all pass locally.
 
 ```bash
-uv run --locked prek install
-```
-
-5. Create a branch for local development:
-
-```bash
-git checkout -b name-of-your-bugfix-or-feature
-```
-
-Now you can make your changes locally.
-
-6. Don't forget to add test cases for your added functionality to the `tests` directory.
-
-7. When you're done making changes, check that your changes pass the formatting tests.
-
-```bash
+# Run automated code formatting and linting
 just check
-```
 
-8. Validate that all unit tests are passing:
-
-```bash
+# Run tests
 just test
 ```
 
-9. Before raising a pull request you should also run nox.
-   This will run the tests across different versions of Python:
+### Build documentation
+
+If your changes touch documentation, verify the build still succeeds.
 
 ```bash
-just nox
+just docs-test
 ```
 
-This requires you to have multiple versions of Python installed.
-This step is also triggered in the CI/CD pipeline, so you could also choose to skip this step locally.
+### Commit and push your changes
 
-10. Commit your changes and push your branch to GitHub:
+Once everything passes, commit and push your branch.
 
 ```bash
 git add .
 git commit -m "Your detailed description of your changes."
-git push origin name-of-your-bugfix-or-feature
+git push origin my-new-feature-branch
 ```
 
-11. Submit a pull request through the GitHub website.
+Then open a pull request on GitHub. Link any related issues and describe what your changes do.
 
-# Pull Request Guidelines
+## Pull Request Guidelines
 
-Before you submit a pull request, check that it meets these guidelines:
+Please make sure your pull request:
 
-1. The pull request should include tests.
-
-2. If the pull request adds functionality, the docs should be updated.
-   Put your new functionality into a function with a docstring, and add the feature to the list in `README.md`.
+1. Includes tests for any new or changed behaviour.
+2. Updates documentation if it adds new functionality.

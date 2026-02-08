@@ -14,9 +14,7 @@
 
 ---
 
-Odys is a Python package for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization.
-
-**Odys** is powered by <a href="https://pydantic-docs.helpmanual.io/" class="external-link" target="_blank">Pydantic</a>, <a href="https://linopy.readthedocs.io/" class="external-link" target="_blank">linopy</a>, and <a href="https://ergo-code.github.io/HiGHS/" class="external-link" target="_blank">HiGHS</a> .
+Odys is a Python package for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization, powered by <a href="https://pydantic-docs.helpmanual.io/" class="external-link" target="_blank">Pydantic</a>, <a href="https://linopy.readthedocs.io/" class="external-link" target="_blank">linopy</a>, and <a href="https://ergo-code.github.io/HiGHS/" class="external-link" target="_blank">HiGHS</a> .
 
 The key features are:
 
@@ -29,7 +27,7 @@ The key features are:
 
 A recent and currently supported <a href="https://www.python.org/downloads/" class="external-link" target="_blank">version of Python</a>.
 
-As **Odys** is based on **Pydantic**, **linopy**, and **HiGHS**, it requires them. They will be automatically installed when you install odys.
+As **Odys** is based on **Pydantic**, **linopy**, and **HiGHS**, they will be automatically installed when you install odys.
 
 ## Installation
 
