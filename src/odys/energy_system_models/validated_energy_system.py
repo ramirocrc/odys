@@ -40,10 +40,10 @@ class ValidatedEnergySystem(BaseModel):
     demand profile, time discretization, and available capacity profiles.
     It performs comprehensive validation to ensure the system is feasible:
 
-    - Validates that capacity profile lengths match demand profile length.
-    - Ensures available capacity profiles are only specified for generators.
-    - Verifies that maximum available power can meet peak demand.
-    - Checks that total energy capacity can meet total energy demand.
+    - Validates that capacity profile lengths match demand profile length
+    - Ensures available capacity profiles are only specified for generators
+    - Verifies that maximum available power can meet peak demand
+    - Checks that total energy capacity can meet total energy demand
 
     Raises:
         ValueError: If the system configuration is infeasible.
