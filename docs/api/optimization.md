@@ -4,8 +4,8 @@ The optimization module provides tools for solving energy system optimization pr
 
 ## Optimization Results
 
-::: odis.optimization.optimization_results
+::: odys.optimization.optimization_results
 
 ## Result Containers
 
-::: odis.optimization.result_containers
+::: odys.optimization.result_containers

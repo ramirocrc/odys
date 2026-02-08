@@ -1,15 +1,15 @@
-# odis
+# odys
 
-[![Release](https://img.shields.io/github/v/release/ramirorcr/odis)](https://img.shields.io/github/v/release/ramirorcr/odis)
-[![Build status](https://img.shields.io/github/actions/workflow/status/ramirorcr/odis/main.yml?branch=main)](https://github.com/ramirorcr/odis/actions/workflows/main.yml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/ramirorcr/odis/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirorcr/odis)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/ramirorcr/odis)](https://img.shields.io/github/commit-activity/m/ramirorcr/odis)
-[![License](https://img.shields.io/github/license/ramirorcr/odis)](https://img.shields.io/github/license/ramirorcr/odis)
+[![Release](https://img.shields.io/github/v/release/ramirocrc/odys)](https://img.shields.io/github/v/release/ramirocrc/odys)
+[![Build status](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
+[![codecov](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)
+[![License](https://img.shields.io/github/license/ramirocrc/odys)](https://img.shields.io/github/license/ramirocrc/odys)
 
 Python framework for optimizing multi-energy systems
 
-- **Github repository**: <https://github.com/ramirorcr/odis/>
-- **Documentation** <https://ramirorcr.github.io/odis/>
+- **Github repository**: <https://github.com/ramirocrc/odys/>
+- **Documentation** <https://ramirocrc.github.io/odys/>
 
 ## Getting started with your project
 
@@ -21,7 +21,7 @@ First, create a repository on GitHub with the same name as this project, and the
 git init -b main
 git add .
 git commit -m "init commit"
-git remote add origin git@github.com:ramirorcr/odis.git
+git remote add origin git@github.com:ramirocrc/odys.git
 git push -u origin main
 ```
 
@@ -63,8 +63,8 @@ To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookie
 ## Releasing a new version
 
 - Create an API Token on [PyPI](https://pypi.org/).
-- Add the API Token to your projects secrets with the name `PYPI_TOKEN` by visiting [this page](https://github.com/ramirorcr/odis/settings/secrets/actions/new).
-- Create a [new release](https://github.com/ramirorcr/odis/releases/new) on Github.
+- Add the API Token to your projects secrets with the name `PYPI_TOKEN` by visiting [this page](https://github.com/ramirocrc/odys/settings/secrets/actions/new).
+- Create a [new release](https://github.com/ramirocrc/odys/releases/new) on Github.
 - Create a new tag in the form `*.*.*`.
 
 For more details, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/cicd/#how-to-trigger-a-release).

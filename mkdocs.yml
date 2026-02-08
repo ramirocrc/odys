@@ -1,12 +1,12 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
-site_name: odis
-repo_url: https://github.com/ramirorcr/optimes
-site_url: https://ramirorcr.github.io/optimes
+site_name: odys
+repo_url: https://github.com/ramirocrc/odys
+site_url: https://ramirocrc.github.io/odys
 site_description: Python framework for optimizing multi-energy systems
 site_author: Ramiro Criach
 edit_uri: edit/main/docs/
-repo_name: ramirorcr/optimes
-copyright: Maintained by <a href="https://ramirorcr.com">ramirorcr</a>.
+repo_name: ramirocrc/odys
+copyright: Maintained by <a href="https://ramirocrc.com">ramirocrc</a>.
 
 nav:
   - Home:
@@ -51,16 +51,16 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/ramirorcr/optimes
+      link: https://github.com/ramirocrc/odys
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/odis
+      link: https://pypi.org/project/odys
 
 plugins:
   - search
   - mkdocstrings:
       handlers:
         python:
-          paths: ["src/odis"]
+          paths: ["src/odys"]
   - exclude:
       glob:
         - __pycache__/*

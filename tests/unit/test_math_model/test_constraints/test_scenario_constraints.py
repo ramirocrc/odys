@@ -7,16 +7,16 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
-from odis._math_model.model_builder import EnergyAlgebraicModelBuilder
-from odis._math_model.model_components.variables import MARKET_VARIABLES
-from odis.energy_system_models.assets.generator import PowerGenerator
-from odis.energy_system_models.assets.load import Load
-from odis.energy_system_models.assets.portfolio import AssetPortfolio
-from odis.energy_system_models.assets.storage import Battery
-from odis.energy_system_models.markets import EnergyMarket
-from odis.energy_system_models.scenarios import Scenario, StochasticScenario
-from odis.energy_system_models.units import PowerUnit
-from odis.energy_system_models.validated_energy_system import ValidatedEnergySystem
+from odys._math_model.model_builder import EnergyAlgebraicModelBuilder
+from odys._math_model.model_components.variables import MARKET_VARIABLES
+from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.load import Load
+from odys.energy_system_models.assets.portfolio import AssetPortfolio
+from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.markets import EnergyMarket
+from odys.energy_system_models.scenarios import Scenario, StochasticScenario
+from odys.energy_system_models.units import PowerUnit
+from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
 
 logger = logging.getLogger(__name__)
 

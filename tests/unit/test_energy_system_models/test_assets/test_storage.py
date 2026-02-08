@@ -2,7 +2,7 @@ from types import MappingProxyType
 
 import pytest
 
-from odis.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Battery
 
 
 @pytest.fixture

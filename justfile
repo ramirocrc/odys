@@ -56,3 +56,8 @@ docs-test:
 docs-deploy:
     @echo "🚀 Deploying docs"
     uv run --locked mkdocs gh-deploy --force
+
+
+
+#  git tag -a v0.1.0 -m "First release"
+# git push origin v0.1.0
