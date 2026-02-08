@@ -77,10 +77,8 @@ ignore = [
   "D",  # Check for missing docstrings
   "F811",  # Redefinition of unsuded variables
 ]
-"experiments/**" = [
+"examples/**" = [
   "INP001",  # Checks for packages that are missing an __init__.py
-  "S101",  # Use of 'assert' detected
-  "D",  # Check for missing docstrings
 ]
 
 [tool.ruff.lint.pydocstyle]

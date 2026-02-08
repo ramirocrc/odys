@@ -1,4 +1,4 @@
-"""Energy system optimization experiment.
+"""Energy system optimization example.
 
 This module demonstrates the usage of the odys library for energy system optimization.
 It creates a simple energy system with generators and batteries, then optimizes
