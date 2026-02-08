@@ -12,8 +12,9 @@ from odys.energy_system_models.assets.generator import PowerGenerator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.scenarios import StochasticScenario
-from odys.utils.logging import get_logger
+from odys.utils.logging import get_logger, setup_rich_logging
 
+setup_rich_logging()
 logger = get_logger(__name__)
 
 if __name__ == "__main__":

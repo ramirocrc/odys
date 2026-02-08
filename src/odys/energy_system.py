@@ -14,9 +14,6 @@ from odys.energy_system_models.scenarios import Scenario, StochasticScenario
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from odys.optimization.optimization_results import OptimizationResults
 from odys.solvers.highs_solver import optimize_algebraic_model
-from odys.utils.logging import get_logger
-
-logger = get_logger(__name__)
 
 
 class EnergySystem:

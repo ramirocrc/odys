@@ -28,9 +28,6 @@ from odys._math_model.model_components.variables import (
     MARKET_VARIABLES,
     ModelVariable,
 )
-from odys.utils.logging import get_logger
-
-logger = get_logger(__name__)
 
 
 class EnergyAlgebraicModelBuilder:
