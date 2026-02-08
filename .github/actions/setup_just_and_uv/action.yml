@@ -4,10 +4,10 @@ runs:
   using: "composite"
   steps:
     - name: Install just
-      uses: extractions/setup-just@v3
+      uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
 
     - name: Setup uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7
       with:
         enable-cache: true
         version: "0.9.16"
