@@ -87,11 +87,9 @@ convention = "google"
 [tool.ruff.format]
 preview = true
 
-[tool.pyright]
-typeCheckingMode = "standard"
-
 [tool.deptry.per_rule_ignores]
 DEP002 = ["highspy"]
+DEP004 = ["rich"]
 
 [tool.coverage.report]
 skip_empty = true
