@@ -3,6 +3,8 @@
 [![Release](https://img.shields.io/github/v/release/ramirocrc/odys)](https://img.shields.io/github/v/release/ramirocrc/odys)
 [![Build status](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
+[![Python versions](https://img.shields.io/pypi/pyversions/odys)](https://pypi.org/project/odys/)
+[![PyPI version](https://img.shields.io/pypi/v/odys)](https://pypi.org/project/odys/)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)
 [![License](https://img.shields.io/github/license/ramirocrc/odys)](https://img.shields.io/github/license/ramirocrc/odys)
 
