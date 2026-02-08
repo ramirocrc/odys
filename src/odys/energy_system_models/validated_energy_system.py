@@ -28,9 +28,6 @@ from odys.energy_system_models.scenarios import (
     validate_sequence_of_stochastic_scenarios,
 )
 from odys.energy_system_models.units import PowerUnit
-from odys.utils.logging import get_logger
-
-logger = get_logger(__name__)
 
 
 class ValidatedEnergySystem(BaseModel):

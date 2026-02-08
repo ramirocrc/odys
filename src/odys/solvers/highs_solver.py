@@ -8,9 +8,6 @@ from linopy.constants import SolverStatus, TerminationCondition
 
 from odys._math_model.milp_model import EnergyMILPModel
 from odys.optimization.optimization_results import OptimizationResults
-from odys.utils.logging import get_logger
-
-logger = get_logger(__name__)
 
 
 def optimize_algebraic_model(milp_model: EnergyMILPModel) -> OptimizationResults:

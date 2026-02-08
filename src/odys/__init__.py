@@ -4,3 +4,7 @@ This package provides tools for modeling and optimizing energy systems with gene
 batteries, and other energy assets using mathematical optimization techniques.
 
 """
+
+import logging
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
