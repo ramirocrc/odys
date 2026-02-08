@@ -31,6 +31,11 @@ jobs:
       - name: Check if documentation can be built
         run: just docs-test
 
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   get-python-versions:
     runs-on: ubuntu-latest
     outputs:

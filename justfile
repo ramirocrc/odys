@@ -23,7 +23,7 @@ check:
 
 test:
     @echo "🚀 Testing code: Running pytest"
-    uv run --locked python -m pytest -n auto --cov-report term-missing:skip-covered --cov=src tests/ --durations=10
+    uv run --locked python -m pytest -n auto --cov=src tests/ --cov-report=xml --cov-report=term-missing:skip-covered --cov-branch --durations=10
 
 nox:
     @echo "🚀 Launching nox sessions"
