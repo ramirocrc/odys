@@ -22,7 +22,7 @@ class ObjectiveFunction:
             profit += self.get_market_revenue()
 
         if self._model.parameters.generators is not None:
-            profit += -self.get_operating_costs()  # ty: ignore
+            profit += -self.get_operating_costs()
 
         if isinstance(profit, int) and profit == 0:
             msg = "No terms added to profit"

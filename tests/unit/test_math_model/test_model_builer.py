@@ -44,8 +44,8 @@ def asset_portfolio_sample(load1: Load) -> AssetPortfolio:
             capacity=100.0,
             efficiency_charging=1,
             efficiency_discharging=1,
-            soc_start=100.0,
-            soc_end=50.0,
+            soc_start=1.0,
+            soc_end=0.5,
         ),
     )
     portfolio.add_asset(load1)

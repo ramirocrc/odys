@@ -40,15 +40,15 @@ class ScenarioConstraints:
             lhs += self.model.generator_power.sum(ModelDimension.Generators)
 
         if self._include_batteries:
-            lhs += self.model.battery_power_out.sum(ModelDimension.Batteries)  # ty: ignore
-            lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)  # ty: ignore
+            lhs += self.model.battery_power_out.sum(ModelDimension.Batteries)
+            lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)
 
         if self._include_markets:
-            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)  # ty: ignore
-            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)  # ty: ignore
+            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)
+            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)
 
         if self.scenario_params.load_profiles is not None:
-            lhs += -self.scenario_params.load_profiles  # ty: ignore
+            lhs += -self.scenario_params.load_profiles
 
         return ModelConstraint(
             name="power_balance_constraint",

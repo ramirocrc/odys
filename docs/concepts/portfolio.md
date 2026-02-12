@@ -131,7 +131,7 @@ def create_sample_portfolio() -> AssetPortfolio:
         max_power=100.0,
         efficiency_charging=0.95,
         efficiency_discharging=0.95,
-        soc_start=250.0
+        soc_start=0.5
     ))
 
     return portfolio

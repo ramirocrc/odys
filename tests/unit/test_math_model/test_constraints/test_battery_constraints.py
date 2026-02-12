@@ -44,10 +44,10 @@ def battery1() -> Battery:
         capacity=100.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.8,
-        soc_start=25.0,
-        soc_end=50.0,
-        soc_min=10.0,
-        soc_max=90.0,
+        soc_start=0.25,
+        soc_end=0.5,
+        soc_min=0.1,
+        soc_max=0.9,
     )
 
 
@@ -152,8 +152,12 @@ class TestBatteryConstraints:
             bat_soc_t_minus_1 = battery_soc.sel(time=str(t - 1), battery="batt1")
             battery_charge_t = battery_charge.sel(time=str(t), battery="batt1")
             battery_discharge_t = battery_discharge.sel(time=str(t), battery="batt1")
+            capacity = self.battery1.capacity
             expected_expr = (
-                bat_soc_t == bat_soc_t_minus_1 + eff_ch * battery_charge_t - 1 / eff_disch * battery_discharge_t
+                bat_soc_t
+                == bat_soc_t_minus_1
+                + eff_ch * battery_charge_t / capacity
+                - 1 / eff_disch * battery_discharge_t / capacity
             )
 
             assert_conequal(expected_expr, actual_t.lhs == actual_t.rhs)
@@ -162,7 +166,7 @@ class TestBatteryConstraints:
         actual_constraint = self.linopy_model.constraints["battery_capacity_constraint"]
 
         battery_soc = self.linopy_model.variables["battery_soc"]
-        expected_expr = battery_soc <= self.battery1.capacity
+        expected_expr = battery_soc <= 1
 
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
@@ -198,8 +202,13 @@ class TestBatteryConstraints:
             },
             dims=["scenario", "battery"],
         )
+        capacity = self.battery1.capacity
         expected_expr = (
-            bat_soc_t0 - battery_soc_start_array - eff_ch * battery_charge_t + 1 / eff_disch * battery_discharge_t == 0
+            bat_soc_t0
+            - battery_soc_start_array
+            - eff_ch * battery_charge_t / capacity
+            + 1 / eff_disch * battery_discharge_t / capacity
+            == 0
         )
 
         assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)

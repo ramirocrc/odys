@@ -47,8 +47,8 @@ def battery1() -> Battery:
         capacity=100.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.8,
-        soc_start=25.0,
-        soc_end=50.0,
+        soc_start=0.25,
+        soc_end=0.5,
     )
 
 

@@ -37,7 +37,7 @@ def sample_battery() -> Battery:
         max_power=50.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.85,
-        soc_start=50.0,
+        soc_start=0.5,
     )
 
 

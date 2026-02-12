@@ -17,17 +17,17 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.16
+    rev: 0.10.2
     hooks:
       - id: uv-lock
 
   - repo: https://github.com/owenlamont/uv-secure
-    rev: 0.15.1
+    rev: 0.15.4
     hooks:
       - id: uv-secure
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.8
+    rev: v0.15.0
     hooks:
       - id: ruff-format
         name: ruff-format (commit)
@@ -46,7 +46,7 @@ repos:
       - id: pyupgrade
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 42.59.1
+    rev: 43.10.1
     hooks:
       - id: renovate-config-validator
         args: [--strict]
