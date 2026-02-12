@@ -54,8 +54,8 @@ battery_1 = Battery(
     capacity=100.0,
     efficiency_charging=1.0,
     efficiency_discharging=1.0,
-    soc_start=100.0,
-    soc_end=50.0,
+    soc_start=1.0,
+    soc_end=0.5,
 )
 ```
 

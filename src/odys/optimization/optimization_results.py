@@ -81,7 +81,8 @@ class OptimizationResults:
                 continue
             var_solution = self._solution[variable_name]
             df = (
-                var_solution.to_series()
+                var_solution
+                .to_series()
                 .reset_index()
                 .rename(columns={variable.asset_dimension: "unit", variable_name: "value"})
                 .assign(variable=variable_name)
@@ -89,7 +90,8 @@ class OptimizationResults:
             dfs.append(df)
 
         return (
-            pd.concat(dfs, ignore_index=True)
+            pd
+            .concat(dfs, ignore_index=True)
             .set_index([
                 ModelDimension.Scenarios,
                 "unit",

@@ -42,9 +42,9 @@ if __name__ == "__main__":
         capacity=100.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.8,
-        soc_start=100.0,
-        soc_end=50.0,
-        soc_min=10.0,
+        soc_start=1.0,
+        soc_end=0.5,
+        soc_min=0.1,
     )
     portfolio = AssetPortfolio()
     portfolio.add_asset(generator_1)

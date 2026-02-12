@@ -54,8 +54,8 @@ class BatteryConstraints:
         time_coords = self.model.battery_soc.coords[ModelDimension.Time.value]
         constraint_expr = self.model.battery_soc - (
             self.model.battery_soc.shift(time=1)
-            + self.params.efficiency_charging * self.model.battery_power_in  # ty: ignore # pyrefly: ignore
-            - 1 / self.params.efficiency_discharging * self.model.battery_power_out  # ty: ignore # pyrefly: ignore
+            + self.params.efficiency_charging * self.model.battery_power_in / self.params.capacity  # ty: ignore # pyrefly: ignore
+            - 1 / self.params.efficiency_discharging * self.model.battery_power_out / self.params.capacity  # ty: ignore # pyrefly: ignore
         )
 
         constraint = constraint_expr.where(time_coords > time_coords[0]) == 0
@@ -75,8 +75,8 @@ class BatteryConstraints:
         constraint_expr = (
             soc_t0
             - self.params.soc_start  # ty: ignore # pyrefly: ignore
-            - self.params.efficiency_charging * charge_t0  # ty: ignore # pyrefly: ignore
-            + 1 / self.params.efficiency_discharging * discharge_t0  # ty: ignore # pyrefly: ignore
+            - self.params.efficiency_charging * charge_t0 / self.params.capacity  # ty: ignore # pyrefly: ignore
+            + 1 / self.params.efficiency_discharging * discharge_t0 / self.params.capacity  # ty: ignore # pyrefly: ignore
         )
 
         constraint = constraint_expr == 0
@@ -114,7 +114,7 @@ class BatteryConstraints:
 
     def _get_battery_capacity_constraint(self) -> ModelConstraint:
         self._validate_battery_parameters_exist()
-        constraint = self.model.battery_soc <= self.params.capacity  # ty: ignore # pyrefly: ignore
+        constraint = self.model.battery_soc <= 1  # pyrefly: ignore
         return ModelConstraint(
             constraint=constraint,
             name="battery_capacity_constraint",

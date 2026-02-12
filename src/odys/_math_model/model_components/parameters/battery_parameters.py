@@ -18,15 +18,29 @@ class BatteryIndex(ModelIndex, frozen=True):
 class BatteryParameters:
     """Parameters for battery assets in the energy system model."""
 
-    def __init__(self, generators: Sequence[Battery]) -> None:
+    def __init__(self, batteries: Sequence[Battery]) -> None:
         """Initialize battery parameters.
 
         Args:
-            generators: Sequence of battery objects.
+            batteries: Sequence of battery objects.
         """
-        self._batteries = generators
         self._index = BatteryIndex(
-            values=tuple(battery.name for battery in self._batteries),
+            values=tuple(battery.name for battery in batteries),
+        )
+        data = {
+            "capacity": [battery.capacity for battery in batteries],
+            "max_power": [battery.max_power for battery in batteries],
+            "efficiency_charging": [battery.efficiency_charging for battery in batteries],
+            "efficiency_discharging": [battery.efficiency_discharging for battery in batteries],
+            "soc_start": [battery.soc_start for battery in batteries],
+            "soc_end": [battery.soc_end for battery in batteries],
+            "soc_min": [battery.soc_min for battery in batteries],
+            "soc_max": [battery.soc_max for battery in batteries],
+        }
+        dim = self._index.dimension
+        self._dataset = xr.Dataset(
+            {name: (dim, values) for name, values in data.items()},
+            coords=self._index.coordinates,
         )
 
     @property
@@ -37,67 +51,39 @@ class BatteryParameters:
     @property
     def capacity(self) -> xr.DataArray:
         """Return battery capacity data."""
-        return xr.DataArray(
-            data=[battery.capacity for battery in self._batteries],
-            coords=self.index.coordinates,
-        )
+        return self._dataset["capacity"]
 
     @property
     def max_power(self) -> xr.DataArray:
         """Return battery maximum power data."""
-        return xr.DataArray(
-            data=[battery.max_power for battery in self._batteries],
-            coords=self.index.coordinates,
-        )
+        return self._dataset["max_power"]
 
     @property
     def efficiency_charging(self) -> xr.DataArray:
         """Return battery charging efficiency data."""
-        return xr.DataArray(
-            data=[battery.efficiency_charging for battery in self._batteries],
-            coords=self.index.coordinates,
-        )
+        return self._dataset["efficiency_charging"]
 
     @property
     def efficiency_discharging(self) -> xr.DataArray:
         """Return battery discharging efficiency data."""
-        return xr.DataArray(
-            data=[battery.efficiency_discharging for battery in self._batteries],
-            coords=self.index.coordinates,
-        )
+        return self._dataset["efficiency_discharging"]
 
     @property
     def soc_start(self) -> xr.DataArray:
         """Return battery initial state of charge data."""
-        return xr.DataArray(
-            data=[battery.soc_start for battery in self._batteries],
-            coords=self.index.coordinates,
-        )
+        return self._dataset["soc_start"]
 
     @property
     def soc_end(self) -> xr.DataArray:
         """Return battery final state of charge data."""
-        return xr.DataArray(
-            data=[battery.soc_end for battery in self._batteries],
-            coords=self.index.coordinates,
-        )
+        return self._dataset["soc_end"]
 
     @property
     def soc_min(self) -> xr.DataArray:
         """Return battery minimum state of charge data."""
-        return xr.DataArray(
-            data=[battery.soc_min for battery in self._batteries],
-            coords=self.index.coordinates,
-        )
+        return self._dataset["soc_min"]
 
     @property
     def soc_max(self) -> xr.DataArray:
         """Return battery maximum state of charge data."""
-        batteries_soc_max = []
-        for battery in self._batteries:
-            battery_soc_max = battery.soc_max if battery.soc_max else battery.capacity
-            batteries_soc_max.append(battery_soc_max)
-        return xr.DataArray(
-            data=batteries_soc_max,
-            coords=self.index.coordinates,
-        )
+        return self._dataset["soc_max"]

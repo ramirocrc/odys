@@ -83,7 +83,7 @@ def perfect_battery() -> Battery:
         efficiency_charging=PERFECT_EFFICIENCY,
         efficiency_discharging=PERFECT_EFFICIENCY,
         soc_start=0.0,
-        soc_end=50.0,
+        soc_end=0.5,
     )
 
 
@@ -244,7 +244,7 @@ def _create_generator_and_battery_system() -> SystemTestCase:
         efficiency_charging=PERFECT_EFFICIENCY,
         efficiency_discharging=PERFECT_EFFICIENCY,
         soc_start=0.0,
-        soc_end=50.0,
+        soc_end=0.5,
     )
 
     load = Load(name="load1")
@@ -257,7 +257,7 @@ def _create_generator_and_battery_system() -> SystemTestCase:
     )
 
     expected_battery_results = _create_expected_dataframe(
-        {battery.name: [50.0, 100.0, 50.0, 0.0, 50.0]},
+        {battery.name: [0.5, 1.0, 0.5, 0.0, 0.5]},
         len(STORAGE_TEST_PROFILE),
         "battery",
     )
@@ -288,7 +288,7 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
         efficiency_charging=HALF_EFFICIENCY,
         efficiency_discharging=HALF_EFFICIENCY,
         soc_start=0.0,
-        soc_end=50.0,
+        soc_end=0.5,
     )
 
     load = Load(name="load1")
@@ -301,7 +301,7 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
     )
 
     expected_battery_results = _create_expected_dataframe(
-        {battery.name: [25.0, 50.0, 50.0]},
+        {battery.name: [0.25, 0.5, 0.5]},
         len(SHORT_STORAGE_PROFILE),
         "battery",
     )

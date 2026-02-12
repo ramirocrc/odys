@@ -69,8 +69,8 @@ battery = Battery(
     max_power=25.0,
     efficiency_charging=0.95,
     efficiency_discharging=0.95,
-    soc_start=25.0,
-    soc_end=25.0,
+    soc_start=0.5,
+    soc_end=0.5,
 )
 
 load = Load(name="demand")

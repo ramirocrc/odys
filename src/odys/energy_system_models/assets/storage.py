@@ -44,25 +44,29 @@ class Battery(EnergyAsset, frozen=True):
     soc_start: float = Field(
         strict=True,
         ge=0,
-        description="Initial state of charge in MWh.",
+        le=1,
+        description="Initial state of charge as a fraction of capacity (0-1).",
     )
     soc_end: float | None = Field(
         default=None,
         strict=True,
         ge=0,
-        description="Final state of charge in MWh.",
+        le=1,
+        description="Final state of charge as a fraction of capacity (0-1).",
     )
-    soc_min: float | None = Field(
-        default=None,
+    soc_min: float = Field(
+        default=0,
         strict=True,
         ge=0,
-        description="Minimum state of charge should be greater than 0.",
+        le=1,
+        description="Minimum state of charge as a fraction of capacity (0-1).",
     )
-    soc_max: float | None = Field(
-        default=None,
+    soc_max: float = Field(
+        default=1,
         strict=True,
         ge=0,
-        description="Maximum state of charge should be greater than 0.",
+        le=1,
+        description="Maximum state of charge as a fraction of capacity (0-1).",
     )
     degradation_cost: float | None = Field(
         default=None,
@@ -77,22 +81,6 @@ class Battery(EnergyAsset, frozen=True):
         le=1,
         description="Self-discharge rate (0-1) per hour.",
     )
-
-    @model_validator(mode="after")
-    def _validate_soc_values_remain_within_capacity(self) -> Self:
-        limits = {
-            "soc_start": self.soc_start,
-            "soc_end": self.soc_end,
-            "soc_min": self.soc_min,
-            "soc_max": self.soc_max,
-        }
-
-        for name, battery_soc in limits.items():
-            if battery_soc is not None and battery_soc > self.capacity:
-                msg = f"{name} ({battery_soc}) must be less than the battery capacity ({self.capacity})."
-                raise ValueError(msg)
-
-        return self
 
     @model_validator(mode="after")
     def _validate_soc_start_and_terminal(self) -> Self:

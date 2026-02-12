@@ -37,8 +37,8 @@ if __name__ == "__main__":
         capacity=100,
         efficiency_charging=0.9,
         efficiency_discharging=0.8,
-        soc_start=100.0,
-        soc_end=50.0,
+        soc_start=1.0,
+        soc_end=0.5,
     )
     load = Load(name="load", type=LoadType.Fixed)
     portfolio = AssetPortfolio()

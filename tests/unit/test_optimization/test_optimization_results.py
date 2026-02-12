@@ -29,8 +29,8 @@ def energy_system_sample() -> EnergySystem:
         capacity=100.0,
         efficiency_charging=1,
         efficiency_discharging=1,
-        soc_start=100.0,
-        soc_end=50.0,
+        soc_start=1.0,
+        soc_end=0.5,
     )
     load_1 = Load(name="load_1")
     portfolio = AssetPortfolio()

@@ -24,8 +24,17 @@ class MarketParameters:
         Args:
             markets: Sequence of energy market objects.
         """
-        self._markets = markets
-        self._index = MarketIndex(values=tuple(market.name for market in self._markets))
+        self._index = MarketIndex(values=tuple(market.name for market in markets))
+        data = {
+            "max_volume": [market.max_trading_volume_per_step for market in markets],
+            "stage_fixed": [market.stage_fixed for market in markets],
+            "trade_direction": [market.trade_direction for market in markets],
+        }
+        dim = self._index.dimension
+        self._dataset = xr.Dataset(
+            {name: (dim, values) for name, values in data.items()},
+            coords=self._index.coordinates,
+        )
 
     @property
     def index(self) -> MarketIndex:
@@ -34,24 +43,12 @@ class MarketParameters:
 
     @property
     def max_volume(self) -> xr.DataArray:
-        market_max_volumes = [market.max_trading_volume_per_step for market in self._markets]
-        return xr.DataArray(
-            data=market_max_volumes,
-            coords=self.index.coordinates,
-        )
+        return self._dataset["max_volume"]
 
     @property
     def stage_fixed(self) -> xr.DataArray:
-        market_stage_fixed = [market.stage_fixed for market in self._markets]
-        return xr.DataArray(
-            data=market_stage_fixed,
-            coords=self.index.coordinates,
-        )
+        return self._dataset["stage_fixed"]
 
     @property
     def trade_direction(self) -> xr.DataArray:
-        market_trade_direction = [market.trade_direction for market in self._markets]
-        return xr.DataArray(
-            data=market_trade_direction,
-            coords=self.index.coordinates,
-        )
+        return self._dataset["trade_direction"]
