@@ -23,6 +23,7 @@ def optimize_algebraic_model(milp_model: EnergyMILPModel) -> OptimizationResults
     solving_status, termination_condition = milp_model.linopy_model.solve(
         solver_name="highs",
         explicit_coordinate_names=True,
+        output_flag=False,
     )
 
     return OptimizationResults(

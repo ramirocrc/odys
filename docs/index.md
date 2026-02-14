@@ -1,87 +1,153 @@
-# odys
+# Odys
 
-[![Release](https://img.shields.io/github/v/release/ramirocrc/odys)](https://img.shields.io/github/v/release/ramirocrc/odys)
-[![Build status](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)](https://github.com/ramirocrc/odys/commit-activity/m/ramirocrc/odys)
+[![CI](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
+[![Python versions](https://img.shields.io/pypi/pyversions/odys?color=green)](https://pypi.org/project/odys/)
+[![PyPI](https://img.shields.io/pypi/v/odys)](https://pypi.org/project/odys/)
 [![License](https://img.shields.io/github/license/ramirocrc/odys)](https://img.shields.io/github/license/ramirocrc/odys)
 
-Python framework for optimizing multi-energy systems
+---
 
-# About The Project
+**Documentation**: [https://ramirocrc.github.io/odys/](https://ramirocrc.github.io/odys/)
 
-**Odys** is a Python framework for modeling and optimizing multi-energy systems using mathematical optimization techniques. It provides tools for creating, configuring, and optimizing energy systems with generators, batteries, and other energy assets.
+**Source Code**: [https://github.com/ramirocrc/odys/](https://github.com/ramirocrc/odys/)
 
-### Why use odys?
+---
 
-odys simplifies energy system optimization by providing:
+## Overview
 
-- :jigsaw: **Seamless integration** with mathematical optimization solvers (HiGHS, Pyomo, etc.).
-- :repeat: **Flexible workflows** that allow for modeling various energy assets and system configurations.
-- :hammer_and_wrench: **Comprehensive tools** for asset modeling, portfolio management, and optimization.
-- :building_construction: **Production-ready models** with clear interfaces for energy system optimization.
+Odys is a Python package for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization. It's built on top of [Pydantic](https://docs.pydantic.dev/), [linopy](https://linopy.readthedocs.io/), and [HiGHS](https://ergo-code.github.io/HiGHS/).
 
-Whether you're building energy system prototypes or deploying optimization models in production, odys ensures a fast, reliable, and scalable experience.
+The key features are:
 
-# Documentation
+- **Simple API** - Define your energy system (generators, batteries, loads, markets) and call `.optimize()`. The mathematical model is built and solved for you under the hood.
+- **Pydantic-powered validation** - All models use Pydantic with strict typing and validators, so configuration errors get caught early.
+- **Stochastic optimization** - Optimize across multiple probabilistic scenarios with different prices, capacities, and load profiles to make decisions under uncertainty.
+- **Great editor support** - Full autocompletion and type checking everywhere, so you spend less time debugging.
 
-Explore the full capabilities of **odys** with our comprehensive documentation:
+## Installation
 
-:books: **https://ramirocrc.github.io/odys/**
+=== "pip"
 
-# Energy System Components
+    ```console
+    pip install odys
+    ```
 
-**Odys** provides a comprehensive framework for modeling and optimizing energy systems. The library offers various components for building energy system models, each tailored to specific requirements such as different asset types, optimization strategies, and system configurations.
+=== "uv"
 
-For a detailed explanation of the main components and concepts in odys—including generators, storage, portfolios, optimization, and results analysis—please visit our [Concepts section](https://ramirocrc.github.io/odys/latest/concepts/).
+    ```console
+    uv add odys
+    ```
 
-This section will help you understand how the different building blocks of odys fit together to model and optimize energy systems effectively.
+Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/).
 
-# Examples and tutorials
+## Minimal Example
 
-Explore our extensive list of examples and tutorials to get you started with odys. You can find them [here](https://ramirocrc.github.io/odys/latest/examples/).
+A generator and a battery working together to meet a fixed load over 4 hourly timesteps.
 
-# How to contribute
+### Create it
 
-We value your input! Here are a few ways you can participate:
+```python
+from datetime import timedelta
 
-- **Report bugs** and suggest new features on our [GitHub Issues page](https://github.com/ramirocrc/odys/issues).
-- **Contribute** to the project by [submitting code](https://github.com/ramirocrc/odys/blob/main/CONTRIBUTING.md), adding new features, or improving the documentation.
-- **Share your feedback** to help spread the word about odys!
+from odys.energy_system import EnergySystem
+from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.load import Load
+from odys.energy_system_models.assets.portfolio import AssetPortfolio
+from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.scenarios import Scenario
 
-Together, we can make energy system optimization accessible to everyone.
+# Define assets
+generator = PowerGenerator(
+    name="gen",
+    nominal_power=100.0,
+    variable_cost=50.0,
+)
 
-# Citation
+battery = Battery(
+    name="battery",
+    capacity=50.0,
+    max_power=25.0,
+    efficiency_charging=0.95,
+    efficiency_discharging=0.95,
+    soc_start=0.5,
+    soc_end=0.5,
+)
 
-If you use odys for a scientific publication, we would appreciate citations to the published software.
+load = Load(name="demand")
 
-**Zenodo**
+# Build the portfolio
+portfolio = AssetPortfolio()
+portfolio.add_asset(generator)
+portfolio.add_asset(battery)
+portfolio.add_asset(load)
 
+# Set up the energy system
+energy_system = EnergySystem(
+    portfolio=portfolio,
+    scenarios=Scenario(
+        load_profiles={"demand": [60, 90, 40, 70]},
+    ),
+    timestep=timedelta(hours=1),
+    number_of_steps=4,
+    power_unit="MW",
+)
 ```
-Criach, Ramiro. (2024). odys (v0.0.1). Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
+
+### Run it
+
+```python
+result = energy_system.optimize()
 ```
 
-**APA**:
+### Check it
 
+```python
+# Solver status
+print(result.solver_status)        # "ok"
+print(result.termination_condition) # "optimal"
+
+# Generator dispatch
+print(result.generators.power)
+
+# Battery behavior
+print(result.batteries.net_power)
+print(result.batteries.state_of_charge)
+
+# Everything in one DataFrame
+print(result.to_dataframe)
 ```
-Criach, R. (2024). odys (Version 0.0.1) [Computer software]. https://doi.org/10.5281/zenodo.XXXXXXX
-```
+
+## Dependencies
+
+Odys is built on top of these great projects:
+
+- [Pydantic](https://docs.pydantic.dev/) - Data validation and settings management
+- [linopy](https://linopy.readthedocs.io/) - Linear optimization modeling
+- [HiGHS](https://ergo-code.github.io/HiGHS/) - High-performance optimization solver
+- [pandas](https://pandas.pydata.org/) - Data analysis and manipulation
+- [xarray](https://docs.xarray.dev/) - Multi-dimensional arrays
+
+All dependencies are installed automatically when you install odys.
+
+## License
+
+Odys is licensed under the [MIT License](https://github.com/ramirocrc/odys/blob/main/LICENSE).
+
+## Citation
+
+If you use odys for a scientific publication, we'd appreciate a citation.
 
 **BibTeX**:
 
-```
+```bibtex
 @software{odys,
   author  = {Criach, Ramiro},
   title   = {odys},
-  version = {0.0.1},
+  version = {0.1.1},
   month   = {12},
   year    = {2024},
   license = {MIT},
   url     = {https://ramirocrc.github.io/odys/},
-  doi     = {10.5281/zenodo.XXXXXXX}
 }
 ```
-
-# License
-
-**Odys software**: [MIT License](https://github.com/ramirocrc/odys/blob/main/LICENSE)
