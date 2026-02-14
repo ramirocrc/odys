@@ -37,13 +37,13 @@ class ObjectiveFunction:
         """Calculate expected market revenue across all scenarios."""
         return (
             (self._model.market_sell_volume - self._model.market_buy_volume)  # pyrefly: ignore
-            * self._model.parameters.scenarios.market_prices  # ty: ignore # pyrefly: ignore
+            * self._model.parameters.scenarios.market_prices  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOperatorIssue]
             * self._model.parameters.scenarios.scenario_probabilities
         ).sum([ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets])
 
     def get_operating_costs(self) -> linopy.LinearExpression:
         """Calculate total generator operating costs (variable + startup)."""
         return (
-            self._model.generator_power * self._model.parameters.generators.variable_cost  # ty: ignore # pyrefly: ignore
-            + self._model.generator_startup * self._model.parameters.generators.startup_cost  # ty: ignore # pyrefly: ignore
+            self._model.generator_power * self._model.parameters.generators.variable_cost  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            + self._model.generator_startup * self._model.parameters.generators.startup_cost  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         ).sum([ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators])

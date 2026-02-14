@@ -14,13 +14,13 @@ from odys.math_model.model_components.parameters.market_parameters import Market
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
-class TimeIndex(ModelIndex, frozen=True):
+class TimeIndex(ModelIndex):
     """Index for time components in the optimization model."""
 
     dimension: ClassVar[ModelDimension] = ModelDimension.Time
 
 
-class ScenarioIndex(ModelIndex, frozen=True):
+class ScenarioIndex(ModelIndex):
     """Index for scenario components in the optimization model."""
 
     dimension: ClassVar[ModelDimension] = ModelDimension.Scenarios

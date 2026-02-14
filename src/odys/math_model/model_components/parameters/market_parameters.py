@@ -9,7 +9,7 @@ from odys.energy_system_models.markets import EnergyMarket
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
-class MarketIndex(ModelIndex, frozen=True):
+class MarketIndex(ModelIndex):
     """Index for market components in the optimization model."""
 
     dimension: ClassVar[ModelDimension] = ModelDimension.Markets

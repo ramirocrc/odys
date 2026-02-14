@@ -9,7 +9,7 @@ from odys.energy_system_models.assets.storage import Battery
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
-class BatteryIndex(ModelIndex, frozen=True):
+class BatteryIndex(ModelIndex):
     """Index for battery components in the optimization model."""
 
     dimension: ClassVar[ModelDimension] = ModelDimension.Batteries

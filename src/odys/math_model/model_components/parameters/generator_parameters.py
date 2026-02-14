@@ -9,7 +9,7 @@ from odys.energy_system_models.assets.generator import PowerGenerator
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
-class GeneratorIndex(ModelIndex, frozen=True):
+class GeneratorIndex(ModelIndex):
     """Index for generator components in the optimization model."""
 
     dimension: ClassVar[ModelDimension] = ModelDimension.Generators

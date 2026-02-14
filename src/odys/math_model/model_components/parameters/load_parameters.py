@@ -7,7 +7,7 @@ from odys.energy_system_models.assets.load import Load
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
-class LoadIndex(ModelIndex, frozen=True):
+class LoadIndex(ModelIndex):
     """Index for load components in the optimization model."""
 
     dimension: ClassVar[ModelDimension] = ModelDimension.Loads

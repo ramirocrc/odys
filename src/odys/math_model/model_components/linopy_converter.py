@@ -17,7 +17,7 @@ class LinopyVariableParameters(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str
-    coords: Mapping
+    coords: Mapping[str, list[str]]
     dims: Sequence[str]
     lower: np.ndarray | float
     binary: bool

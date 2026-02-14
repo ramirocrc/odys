@@ -11,7 +11,7 @@ from pydantic import Field, model_validator
 from odys.energy_system_models.assets.base import EnergyAsset
 
 
-class Battery(EnergyAsset, frozen=True):
+class Battery(EnergyAsset):
     """Represents a battery storage system in the energy system.
 
     This class models batteries with various operational constraints
@@ -89,10 +89,10 @@ class Battery(EnergyAsset, frozen=True):
             if battery_soc is None:
                 continue
 
-            if self.soc_min is not None and battery_soc < self.soc_min:
+            if battery_soc < self.soc_min:
                 msg = f"{name} ({battery_soc}) must be ≥ soc_min ({self.soc_min})."
                 raise ValueError(msg)
-            if self.soc_max is not None and battery_soc > self.soc_max:
+            if battery_soc > self.soc_max:
                 msg = f"{name} ({battery_soc}) must be ≤ soc_max ({self.soc_max})."
                 raise ValueError(msg)
 
@@ -100,8 +100,6 @@ class Battery(EnergyAsset, frozen=True):
 
     @model_validator(mode="after")
     def _validate_soc_min_less_than_max(self) -> Self:
-        if self.soc_min is None or self.soc_max is None:
-            return self
         if self.soc_min >= self.soc_max:
             msg = f"soc_min ({self.soc_min}) must be < soc_max ({self.soc_max})."
             raise ValueError(msg)
