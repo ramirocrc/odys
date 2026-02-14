@@ -6,7 +6,7 @@ optimization problems using the HiGHS linear programming solver.
 
 from linopy.constants import SolverStatus, TerminationCondition
 
-from odys._math_model.milp_model import EnergyMILPModel
+from odys.math_model.milp_model import EnergyMILPModel
 from odys.optimization.optimization_results import OptimizationResults
 
 

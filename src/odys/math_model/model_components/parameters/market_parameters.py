@@ -5,8 +5,8 @@ from typing import ClassVar
 
 import xarray as xr
 
-from odys._math_model.model_components.sets import ModelDimension, ModelIndex
 from odys.energy_system_models.markets import EnergyMarket
+from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
 class MarketIndex(ModelIndex, frozen=True):
@@ -43,12 +43,15 @@ class MarketParameters:
 
     @property
     def max_volume(self) -> xr.DataArray:
+        """Return maximum trading volume per time step."""
         return self._dataset["max_volume"]
 
     @property
     def stage_fixed(self) -> xr.DataArray:
+        """Return whether each market's variables are fixed across scenarios."""
         return self._dataset["stage_fixed"]
 
     @property
     def trade_direction(self) -> xr.DataArray:
+        """Return the allowed trade direction (buy, sell, or both) per market."""
         return self._dataset["trade_direction"]

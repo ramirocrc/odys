@@ -3,7 +3,6 @@ from datetime import timedelta
 
 import pytest
 
-from odys._math_model.model_builder import EnergyAlgebraicModelBuilder
 from odys.energy_system_models.assets.generator import PowerGenerator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
@@ -11,6 +10,7 @@ from odys.energy_system_models.assets.storage import Battery
 from odys.energy_system_models.scenarios import Scenario
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
+from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
 
 logger = logging.getLogger(__name__)
 

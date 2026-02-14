@@ -6,13 +6,13 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
-from odys._math_model.model_builder import EnergyAlgebraicModelBuilder
 from odys.energy_system_models.assets.generator import PowerGenerator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.scenarios import Scenario
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
+from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
 
 logger = logging.getLogger(__name__)
 

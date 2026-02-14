@@ -18,18 +18,18 @@ That's really all you need. The optimizer will figure out the dispatch (how much
 
 ## Fields
 
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `name` | `str` | Yes | - | Unique identifier for the generator |
-| `nominal_power` | `float` | Yes | - | Maximum power output (in your chosen power unit) |
-| `variable_cost` | `float` | Yes | - | Cost per unit of energy produced (currency/MWh) |
-| `min_power` | `float` | No | `0.0` | Minimum power output when the generator is on |
-| `ramp_up` | `float` | No | `None` | Max increase in power per hour |
-| `ramp_down` | `float` | No | `None` | Max decrease in power per hour |
-| `min_up_time` | `int` | No | `1` | Minimum number of timesteps the generator must stay on |
-| `min_down_time` | `int` | No | `1` | Minimum number of timesteps the generator must stay off |
-| `startup_cost` | `float` | No | `0.0` | Cost incurred each time the generator starts up |
-| `shutdown_cost` | `float` | No | `None` | Cost incurred each time the generator shuts down |
+| Field           | Type    | Required | Default | Description                                             |
+| --------------- | ------- | -------- | ------- | ------------------------------------------------------- |
+| `name`          | `str`   | Yes      | -       | Unique identifier for the generator                     |
+| `nominal_power` | `float` | Yes      | -       | Maximum power output (in your chosen power unit)        |
+| `variable_cost` | `float` | Yes      | -       | Cost per unit of energy produced (currency/MWh)         |
+| `min_power`     | `float` | No       | `0.0`   | Minimum power output when the generator is on           |
+| `ramp_up`       | `float` | No       | `None`  | Max increase in power per hour                          |
+| `ramp_down`     | `float` | No       | `None`  | Max decrease in power per hour                          |
+| `min_up_time`   | `int`   | No       | `1`     | Minimum number of timesteps the generator must stay on  |
+| `min_down_time` | `int`   | No       | `1`     | Minimum number of timesteps the generator must stay off |
+| `startup_cost`  | `float` | No       | `0.0`   | Cost incurred each time the generator starts up         |
+| `shutdown_cost` | `float` | No       | `None`  | Cost incurred each time the generator shuts down        |
 
 ## Ramp constraints
 

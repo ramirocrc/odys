@@ -1,14 +1,19 @@
-from odys._math_model.milp_model import EnergyMILPModel
-from odys._math_model.model_components.constraints.model_constraint import ModelConstraint
-from odys._math_model.model_components.sets import ModelDimension
-from odys._math_model.model_components.variables import MARKET_VARIABLES
+"""Scenario-level constraints for the optimization model."""
+
+from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
+from odys.math_model.model_components.sets import ModelDimension
+from odys.math_model.model_components.variables import MARKET_VARIABLES
 
 
 class ScenarioConstraints:
+    """Builds power balance, available capacity, and non-anticipativity constraints."""
+
     def __init__(
         self,
         milp_model: EnergyMILPModel,
     ) -> None:
+        """Initialize with the MILP model containing scenario-level variables and parameters."""
         self.model = milp_model
         self.scenario_params = milp_model.parameters.scenarios
         self.market_params = milp_model.parameters.markets
@@ -18,6 +23,7 @@ class ScenarioConstraints:
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
+        """Return all scenario-level constraints (power balance, capacity, non-anticipativity)."""
         constraints = [
             self._get_power_balance_constraint(),
         ]

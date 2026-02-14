@@ -6,11 +6,11 @@ optimization models.
 
 from pydantic import BaseModel, ConfigDict
 
-from odys._math_model.model_components.parameters.battery_parameters import BatteryParameters
-from odys._math_model.model_components.parameters.generator_parameters import GeneratorParameters
-from odys._math_model.model_components.parameters.load_parameters import LoadParameters
-from odys._math_model.model_components.parameters.market_parameters import MarketParameters
-from odys._math_model.model_components.parameters.scenario_parameters import ScenarioParameters
+from odys.math_model.model_components.parameters.battery_parameters import BatteryParameters
+from odys.math_model.model_components.parameters.generator_parameters import GeneratorParameters
+from odys.math_model.model_components.parameters.load_parameters import LoadParameters
+from odys.math_model.model_components.parameters.market_parameters import MarketParameters
+from odys.math_model.model_components.parameters.scenario_parameters import ScenarioParameters
 
 
 class EnergySystemParameters(BaseModel):

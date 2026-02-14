@@ -1,9 +1,14 @@
-from odys._math_model.milp_model import EnergyMILPModel
-from odys._math_model.model_components.constraints.model_constraint import ModelConstraint
+"""Generator-related constraints for the optimization model."""
+
+from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
 
 
 class GeneratorConstraints:
+    """Builds constraints for generator power limits, ramping, startup/shutdown, and min uptime."""
+
     def __init__(self, milp_model: EnergyMILPModel) -> None:
+        """Initialize with the MILP model containing generator variables and parameters."""
         self.model = milp_model
         self.params = milp_model.parameters.generators
 
@@ -14,6 +19,7 @@ class GeneratorConstraints:
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
+        """Return all generator constraints, or an empty tuple if no generators exist."""
         if self.params is None:
             return ()
         return (

@@ -6,12 +6,12 @@ from typing import ClassVar
 import numpy as np
 import xarray as xr
 
-from odys._math_model.model_components.parameters.battery_parameters import BatteryIndex
-from odys._math_model.model_components.parameters.generator_parameters import GeneratorIndex
-from odys._math_model.model_components.parameters.load_parameters import LoadIndex
-from odys._math_model.model_components.parameters.market_parameters import MarketIndex
-from odys._math_model.model_components.sets import ModelDimension, ModelIndex
 from odys.energy_system_models.scenarios import StochasticScenario
+from odys.math_model.model_components.parameters.battery_parameters import BatteryIndex
+from odys.math_model.model_components.parameters.generator_parameters import GeneratorIndex
+from odys.math_model.model_components.parameters.load_parameters import LoadIndex
+from odys.math_model.model_components.parameters.market_parameters import MarketIndex
+from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
 class TimeIndex(ModelIndex, frozen=True):

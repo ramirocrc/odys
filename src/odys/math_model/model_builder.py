@@ -1,28 +1,34 @@
+"""Builder for constructing linopy optimization models from energy system parameters.
+
+This module provides the EnergyAlgebraicModelBuilder that assembles
+variables, constraints, and objectives into a solvable MILP model.
+"""
+
 from collections.abc import Iterable
 from functools import cached_property
 
-from odys._math_model.milp_model import EnergyMILPModel
-from odys._math_model.model_components.constraints.battery_constraints import (
+from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.battery_constraints import (
     BatteryConstraints,
 )
-from odys._math_model.model_components.constraints.generator_constraints import (
+from odys.math_model.model_components.constraints.generator_constraints import (
     GeneratorConstraints,
 )
-from odys._math_model.model_components.constraints.market_constraints import MarketConstraints
-from odys._math_model.model_components.constraints.model_constraint import ModelConstraint
-from odys._math_model.model_components.constraints.scenario_constraints import (
+from odys.math_model.model_components.constraints.market_constraints import MarketConstraints
+from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
+from odys.math_model.model_components.constraints.scenario_constraints import (
     ScenarioConstraints,
 )
-from odys._math_model.model_components.linopy_converter import (
+from odys.math_model.model_components.linopy_converter import (
     LinopyVariableParameters,
     get_variable_lower_bound,
 )
-from odys._math_model.model_components.objectives import (
+from odys.math_model.model_components.objectives import (
     ObjectiveFunction,
 )
-from odys._math_model.model_components.parameters.parameters import EnergySystemParameters
-from odys._math_model.model_components.sets import ModelDimension, ModelIndex
-from odys._math_model.model_components.variables import (
+from odys.math_model.model_components.parameters.parameters import EnergySystemParameters
+from odys.math_model.model_components.sets import ModelDimension, ModelIndex
+from odys.math_model.model_components.variables import (
     BATTERY_VARIABLES,
     GENERATOR_VARIABLES,
     MARKET_VARIABLES,
@@ -48,13 +54,22 @@ class EnergyAlgebraicModelBuilder:
         """Initialize the model builder with validated energy system.
 
         Args:
-            energy_system_parameters:  Paramteres of the energy system,
+            energy_system_parameters: Parameters of the energy system,
                 containing all assets, demand profiles, and constraints.
         """
         self._milp_model = EnergyMILPModel(energy_system_parameters)
         self._model_is_built: bool = False
 
     def build(self) -> EnergyMILPModel:
+        """Build the complete optimization model with variables, constraints, and objective.
+
+        Returns:
+            The fully constructed EnergyMILPModel ready for solving.
+
+        Raises:
+            AttributeError: If the model has already been built.
+
+        """
         if self._model_is_built:
             msg = "Model has already been built."
             raise AttributeError(msg)
@@ -104,6 +119,15 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def get_index_for_dimension(self, dimension: ModelDimension) -> ModelIndex:
+        """Return the model index corresponding to a given dimension.
+
+        Args:
+            dimension: The model dimension to look up.
+
+        Raises:
+            ValueError: If no index exists for the given dimension.
+
+        """
         index = self._dimension_to_index_mapping.get(dimension)
         if index is None:
             msg = f"No index found for dimension '{dimension}'."
@@ -122,6 +146,7 @@ class EnergyAlgebraicModelBuilder:
         }
 
     def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
+        """Add a variable to the underlying linopy model."""
         self._milp_model.linopy_model.add_variables(
             name=variable.name,
             coords=variable.coords,

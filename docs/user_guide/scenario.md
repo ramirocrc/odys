@@ -16,11 +16,11 @@ This tells the optimizer: "here's what demand looks like over four timesteps." T
 
 ## Fields
 
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `load_profiles` | `dict[str, list[float]]` | No | `None` | Load values per timestep, keyed by load name |
-| `available_capacity_profiles` | `dict[str, list[float]]` | No | `None` | Max available capacity per timestep, keyed by generator name |
-| `market_prices` | `dict[str, list[float]]` | No | `None` | Market prices per timestep, keyed by market name |
+| Field                         | Type                     | Required | Default | Description                                                  |
+| ----------------------------- | ------------------------ | -------- | ------- | ------------------------------------------------------------ |
+| `load_profiles`               | `dict[str, list[float]]` | No       | `None`  | Load values per timestep, keyed by load name                 |
+| `available_capacity_profiles` | `dict[str, list[float]]` | No       | `None`  | Max available capacity per timestep, keyed by generator name |
+| `market_prices`               | `dict[str, list[float]]` | No       | `None`  | Market prices per timestep, keyed by market name             |
 
 All fields are optional -- you only include what you need. If a field is omitted, the optimizer won't apply that constraint (e.g., generators without an `available_capacity_profiles` entry can produce up to their `nominal_power`).
 

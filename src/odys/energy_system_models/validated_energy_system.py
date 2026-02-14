@@ -1,7 +1,8 @@
-"""Energy system conditions and data structures.
+"""Validated energy system configuration.
 
-This module provides classes for representing energy system conditions,
-including demand profiles and system configurations.
+This module provides the ValidatedEnergySystem class which validates
+and transforms user-provided energy system configurations into
+parameters suitable for the optimization model.
 """
 
 from collections.abc import Sequence
@@ -11,14 +12,6 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from odys._math_model.model_components.parameters.battery_parameters import BatteryParameters
-from odys._math_model.model_components.parameters.generator_parameters import GeneratorParameters
-from odys._math_model.model_components.parameters.load_parameters import LoadParameters
-from odys._math_model.model_components.parameters.market_parameters import MarketParameters
-from odys._math_model.model_components.parameters.parameters import (
-    EnergySystemParameters,
-)
-from odys._math_model.model_components.parameters.scenario_parameters import ScenarioParameters
 from odys.energy_system_models.assets.generator import PowerGenerator
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.markets import EnergyMarket
@@ -28,6 +21,14 @@ from odys.energy_system_models.scenarios import (
     validate_sequence_of_stochastic_scenarios,
 )
 from odys.energy_system_models.units import PowerUnit
+from odys.math_model.model_components.parameters.battery_parameters import BatteryParameters
+from odys.math_model.model_components.parameters.generator_parameters import GeneratorParameters
+from odys.math_model.model_components.parameters.load_parameters import LoadParameters
+from odys.math_model.model_components.parameters.market_parameters import MarketParameters
+from odys.math_model.model_components.parameters.parameters import (
+    EnergySystemParameters,
+)
+from odys.math_model.model_components.parameters.scenario_parameters import ScenarioParameters
 
 
 class ValidatedEnergySystem(BaseModel):
@@ -241,11 +242,10 @@ class ValidatedEnergySystem(BaseModel):
                 raise ValueError(msg)
 
     def _validate_load_profiles(self, scenario: Scenario) -> None:
-        """Validate that available capacity profiles are only for generators.
+        """Validate that load profile lengths match the number of time steps.
 
         Raises:
-            TypeError: If available capacity is specified for non-generator assets.
-            ValueError: If capacity profile length doesn't match demand profile.
+            ValueError: If a load profile length doesn't match the number of time steps.
 
         """
         if scenario.load_profiles is None:

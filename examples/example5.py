@@ -96,4 +96,4 @@ if __name__ == "__main__":
     logger.info("volume sold to markets")
     logger.info(result.markets.sell_volume)
     logger.info(result.markets.buy_volume)
-    logger.info(result.to_dataframe)
+    logger.info(result.to_dataframe())

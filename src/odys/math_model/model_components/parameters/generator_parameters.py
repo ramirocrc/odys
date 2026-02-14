@@ -5,8 +5,8 @@ from typing import ClassVar
 
 import xarray as xr
 
-from odys._math_model.model_components.sets import ModelDimension, ModelIndex
 from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
 class GeneratorIndex(ModelIndex, frozen=True):
