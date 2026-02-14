@@ -9,7 +9,7 @@ from pydantic import Field
 from odys.energy_system_models.assets.base import EnergyAsset
 
 
-class PowerGenerator(EnergyAsset, frozen=True):
+class PowerGenerator(EnergyAsset):
     """Represents a power generator in the energy system.
 
     This class models generators with various operational constraints

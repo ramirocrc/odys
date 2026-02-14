@@ -58,12 +58,12 @@ class ScenarioConstraints:
 
         return ModelConstraint(
             name="power_balance_constraint",
-            constraint=lhs == 0,  # ty: ignore
+            constraint=lhs == 0,  # ty: ignore  # pyright: ignore[reportArgumentType]
         )
 
     def _get_available_capacity_profiles_constraint(self) -> ModelConstraint:
         var_generator_power = self.model.generator_power
-        expression = var_generator_power <= self.scenario_params.available_capacity_profiles  # ty: ignore # pyrefly: ignore
+        expression = var_generator_power <= self.scenario_params.available_capacity_profiles  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOperatorIssue]
         return ModelConstraint(
             name="available_capacity_constraint",
             constraint=expression,
@@ -77,7 +77,7 @@ class ScenarioConstraints:
         Only applies to markets where stage_fixed is True.
         """
         constraints = []
-        stage_fixed_markets = self.market_params.stage_fixed  # ty: ignore # pyrefly: ignore
+        stage_fixed_markets = self.market_params.stage_fixed  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
 
         for market_var in MARKET_VARIABLES:
             linopy_var = self.model.linopy_model.variables[market_var.var_name]

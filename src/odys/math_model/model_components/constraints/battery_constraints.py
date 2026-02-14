@@ -37,7 +37,7 @@ class BatteryConstraints:
 
     def _get_battery_max_charge_constraint(self) -> ModelConstraint:
         # var_battery_discharge <= (1 - var_battery_mode) * param_battery_max_power # noqa: ERA001
-        constraint = self.model.battery_power_in <= self.model.battery_charge_mode * self.params.max_power  # ty: ignore # pyrefly: ignore
+        constraint = self.model.battery_power_in <= self.model.battery_charge_mode * self.params.max_power  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         return ModelConstraint(
             constraint=constraint,
             name="battery_max_charge_constraint",
@@ -47,8 +47,8 @@ class BatteryConstraints:
         # var_battery_discharge <= (1 - var_battery_mode) * param_battery_max_power # noqa: ERA001
         self._validate_battery_parameters_exist()
         constraint = (
-            self.model.battery_power_out + self.model.battery_charge_mode * self.params.max_power  # ty: ignore # pyrefly: ignore
-            <= self.params.max_power  # ty: ignore # pyrefly: ignore
+            self.model.battery_power_out + self.model.battery_charge_mode * self.params.max_power  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            <= self.params.max_power  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         )
         return ModelConstraint(
             constraint=constraint,
@@ -60,8 +60,8 @@ class BatteryConstraints:
         time_coords = self.model.battery_soc.coords[ModelDimension.Time.value]
         constraint_expr = self.model.battery_soc - (
             self.model.battery_soc.shift(time=1)
-            + self.params.efficiency_charging * self.model.battery_power_in / self.params.capacity  # ty: ignore # pyrefly: ignore
-            - 1 / self.params.efficiency_discharging * self.model.battery_power_out / self.params.capacity  # ty: ignore # pyrefly: ignore
+            + self.params.efficiency_charging * self.model.battery_power_in / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            - 1 / self.params.efficiency_discharging * self.model.battery_power_out / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         )
 
         constraint = constraint_expr.where(time_coords > time_coords[0]) == 0
@@ -80,9 +80,9 @@ class BatteryConstraints:
 
         constraint_expr = (
             soc_t0
-            - self.params.soc_start  # ty: ignore # pyrefly: ignore
-            - self.params.efficiency_charging * charge_t0 / self.params.capacity  # ty: ignore # pyrefly: ignore
-            + 1 / self.params.efficiency_discharging * discharge_t0 / self.params.capacity  # ty: ignore # pyrefly: ignore
+            - self.params.soc_start  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            - self.params.efficiency_charging * charge_t0 / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            + 1 / self.params.efficiency_discharging * discharge_t0 / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         )
 
         constraint = constraint_expr == 0
@@ -95,7 +95,7 @@ class BatteryConstraints:
         self._validate_battery_parameters_exist()
         time_coords = self.model.battery_soc.coords[ModelDimension.Time.value]
         last_time = time_coords.values[-1]
-        constr_expression = self.model.battery_soc.sel(time=last_time) - self.params.soc_end  # ty: ignore # pyrefly: ignore
+        constr_expression = self.model.battery_soc.sel(time=last_time) - self.params.soc_end  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         constraint = constr_expression == 0
         return ModelConstraint(
             constraint=constraint,
@@ -104,7 +104,7 @@ class BatteryConstraints:
 
     def _get_battery_soc_min_constriant(self) -> ModelConstraint:
         self._validate_battery_parameters_exist()
-        expression = self.model.battery_soc >= self.params.soc_min  # ty: ignore # pyrefly: ignore
+        expression = self.model.battery_soc >= self.params.soc_min  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         return ModelConstraint(
             constraint=expression,
             name="batter_soc_min_constraint",
@@ -112,7 +112,7 @@ class BatteryConstraints:
 
     def _get_battery_soc_max_constriant(self) -> ModelConstraint:
         self._validate_battery_parameters_exist()
-        expression = self.model.battery_soc <= self.params.soc_max  # ty: ignore # pyrefly: ignore
+        expression = self.model.battery_soc <= self.params.soc_max  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         return ModelConstraint(
             constraint=expression,
             name="batter_soc_max_constraint",

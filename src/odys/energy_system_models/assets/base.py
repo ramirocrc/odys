@@ -9,7 +9,7 @@ from abc import ABC
 from pydantic import BaseModel, ConfigDict
 
 
-class EnergyAsset(BaseModel, ABC):
+class EnergyAsset(BaseModel, ABC):  # pyright: ignore[reportUnsafeMultipleInheritance]
     """Base class for all energy system assets.
 
     This abstract class defines the common interface for energy assets

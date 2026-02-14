@@ -41,9 +41,6 @@ class AssetPortfolio:
         if asset.name in self._assets:
             msg = f"Asset with name '{asset.name}' already exists."
             raise ValueError(msg)
-        if not isinstance(asset, EnergyAsset):
-            msg = f"Expected an instance of EnergyAsset, got {type(asset)}."
-            raise TypeError(msg)
         self._assets[asset.name] = asset
 
     def get_asset(self, name: str) -> EnergyAsset:
@@ -68,7 +65,7 @@ class AssetPortfolio:
         return tuple(asset for asset in self._assets.values() if isinstance(asset, asset_type))
 
     @property
-    def assets(self) -> MappingProxyType:
+    def assets(self) -> MappingProxyType[str, EnergyAsset]:
         """Get a read-only view of all assets in the portfolio.
 
         Returns:

@@ -15,7 +15,7 @@ class LoadType(StrEnum):
     Flexible = "flexible"
 
 
-class Load(EnergyAsset, frozen=True):
+class Load(EnergyAsset):
     """Represents a load asset in the energy system."""
 
     type: LoadType = Field(
