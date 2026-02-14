@@ -17,6 +17,8 @@ nav:
           - Load: user_guide/load.md
           - Market: user_guide/market.md
           - AssetPortfolio: user_guide/asset_portfolio.md
+          - Scenario: user_guide/scenario.md
+          - StochasticScenario: user_guide/stochastic_scenario.md
           - EnergySystem: user_guide/energy_system.md
       - Optimization: user_guide/optimization.md
       - Stochastic Optimization: user_guide/stochastic.md
