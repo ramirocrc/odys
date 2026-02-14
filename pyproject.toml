@@ -33,7 +33,6 @@ dev = [
   "basedpyright>=1.38.0",
   "deptry>=0.24.0",
   "nox>=2025.5.12",
-  "pandas-stubs>=3.0.0.260204",
   "prek>=0.2.30",
   "pyrefly>=0.49.0",
   "pytest>=9.0.2",
@@ -114,4 +113,4 @@ min_confidence = 80
 paths = ["src/"]
 
 [tool.pyrefly]
-kkkkkkkkkkkkkkkkkkkinfer-with-first-use = false
+infer-with-first-use = false
