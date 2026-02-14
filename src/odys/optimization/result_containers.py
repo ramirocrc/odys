@@ -1,4 +1,4 @@
-"""This module provide the containers for storing asset results."""
+"""Containers for storing per-asset optimization results."""
 
 import pandas as pd
 from pydantic import BaseModel, ConfigDict

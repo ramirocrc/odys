@@ -19,19 +19,19 @@ battery = Battery(
 
 ## Fields
 
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `name` | `str` | Yes | - | Unique identifier for the battery |
-| `capacity` | `float` | Yes | - | Total energy capacity (MWh) |
-| `max_power` | `float` | Yes | - | Maximum charge/discharge power (MW) |
-| `efficiency_charging` | `float` | Yes | - | Charging efficiency, between 0 and 1 |
-| `efficiency_discharging` | `float` | Yes | - | Discharging efficiency, between 0 and 1 |
-| `soc_start` | `float` | Yes | - | Initial state of charge, as a fraction of capacity (0-1) |
-| `soc_end` | `float` | No | `None` | Required final state of charge (0-1). If `None`, the optimizer is free to choose |
-| `soc_min` | `float` | No | `0.0` | Minimum allowed state of charge (0-1) |
-| `soc_max` | `float` | No | `1.0` | Maximum allowed state of charge (0-1) |
-| `degradation_cost` | `float` | No | `None` | Cost per MWh cycled through the battery |
-| `self_discharge_rate` | `float` | No | `None` | Fraction of stored energy lost per hour (0-1) |
+| Field                    | Type    | Required | Default | Description                                                                      |
+| ------------------------ | ------- | -------- | ------- | -------------------------------------------------------------------------------- |
+| `name`                   | `str`   | Yes      | -       | Unique identifier for the battery                                                |
+| `capacity`               | `float` | Yes      | -       | Total energy capacity (MWh)                                                      |
+| `max_power`              | `float` | Yes      | -       | Maximum charge/discharge power (MW)                                              |
+| `efficiency_charging`    | `float` | Yes      | -       | Charging efficiency, between 0 and 1                                             |
+| `efficiency_discharging` | `float` | Yes      | -       | Discharging efficiency, between 0 and 1                                          |
+| `soc_start`              | `float` | Yes      | -       | Initial state of charge, as a fraction of capacity (0-1)                         |
+| `soc_end`                | `float` | No       | `None`  | Required final state of charge (0-1). If `None`, the optimizer is free to choose |
+| `soc_min`                | `float` | No       | `0.0`   | Minimum allowed state of charge (0-1)                                            |
+| `soc_max`                | `float` | No       | `1.0`   | Maximum allowed state of charge (0-1)                                            |
+| `degradation_cost`       | `float` | No       | `None`  | Cost per MWh cycled through the battery                                          |
+| `self_discharge_rate`    | `float` | No       | `None`  | Fraction of stored energy lost per hour (0-1)                                    |
 
 ## State of charge (SOC)
 
@@ -56,7 +56,7 @@ battery = Battery(
 ```
 
 !!! note
-    `soc_start` and `soc_end` must fall within the `[soc_min, soc_max]` range. Pydantic validation will catch this if you get it wrong.
+`soc_start` and `soc_end` must fall within the `[soc_min, soc_max]` range. Pydantic validation will catch this if you get it wrong.
 
 ## Efficiency
 

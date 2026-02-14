@@ -76,4 +76,4 @@ if __name__ == "__main__":
     logger.info(result.batteries.net_power)
 
     logger.info("results summary dataframe")
-    logger.info(result.to_dataframe)
+    logger.info(result.to_dataframe())

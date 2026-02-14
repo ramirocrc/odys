@@ -16,12 +16,12 @@ That's it. The actual demand values are specified later in the `Scenario` via `l
 
 ## Fields
 
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `name` | `str` | Yes | - | Unique identifier for the load |
-| `type` | `LoadType` | No | `"fixed"` | Either `"fixed"` or `"flexible"` |
-| `variable_cost_to_increase` | `float` | No | `None` | Cost per MWh for increasing load above baseline (flexible only) |
-| `variable_cost_to_decrease` | `float` | No | `None` | Cost per MWh for decreasing load below baseline (flexible only) |
+| Field                       | Type       | Required | Default   | Description                                                     |
+| --------------------------- | ---------- | -------- | --------- | --------------------------------------------------------------- |
+| `name`                      | `str`      | Yes      | -         | Unique identifier for the load                                  |
+| `type`                      | `LoadType` | No       | `"fixed"` | Either `"fixed"` or `"flexible"`                                |
+| `variable_cost_to_increase` | `float`    | No       | `None`    | Cost per MWh for increasing load above baseline (flexible only) |
+| `variable_cost_to_decrease` | `float`    | No       | `None`    | Cost per MWh for decreasing load below baseline (flexible only) |
 
 ## Fixed loads
 
@@ -59,7 +59,7 @@ flexible_load = Load(
 ```
 
 !!! warning
-    For flexible loads, both `variable_cost_to_increase` and `variable_cost_to_decrease` are required. Pydantic will raise a validation error if you set the type to `"flexible"` without providing both costs.
+For flexible loads, both `variable_cost_to_increase` and `variable_cost_to_decrease` are required. Pydantic will raise a validation error if you set the type to `"flexible"` without providing both costs.
 
 ## Load profiles
 

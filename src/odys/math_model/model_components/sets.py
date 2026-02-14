@@ -1,3 +1,5 @@
+"""Set and index definitions for the optimization model dimensions."""
+
 from abc import ABC
 from enum import StrEnum
 from typing import ClassVar
@@ -6,6 +8,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ModelDimension(StrEnum):
+    """Dimension names used as axes in the optimization model."""
+
     Scenarios = "scenario"
     Time = "time"
     Generators = "generator"

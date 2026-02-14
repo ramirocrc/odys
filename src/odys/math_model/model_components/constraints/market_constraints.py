@@ -1,10 +1,15 @@
-from odys._math_model.milp_model import EnergyMILPModel
-from odys._math_model.model_components.constraints.model_constraint import ModelConstraint
+"""Market-related constraints for the optimization model."""
+
 from odys.energy_system_models.markets import TradeDirection
+from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
 
 
 class MarketConstraints:
+    """Builds constraints for market trading volumes, mutual exclusivity, and trade direction."""
+
     def __init__(self, milp_model: EnergyMILPModel) -> None:
+        """Initialize with the MILP model containing market variables and parameters."""
         self.model = milp_model
         self.params = milp_model.parameters.markets
 
@@ -15,6 +20,7 @@ class MarketConstraints:
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
+        """Return all market constraints, or an empty tuple if no markets exist."""
         if self.params is None:
             return ()
         constraints = [

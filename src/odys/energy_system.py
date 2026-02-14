@@ -1,17 +1,17 @@
-"""Model optimizer for energy system optimization.
+"""Energy system configuration and optimization.
 
-This module provides the EnergySystemOptimizer class for solving
-energy system optimization problems.
+This module provides the EnergySystem class, the main entry point
+for configuring and optimizing energy systems.
 """
 
 from collections.abc import Sequence
 from datetime import timedelta
 
-from odys._math_model.model_builder import EnergyAlgebraicModelBuilder
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
+from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
 from odys.optimization.optimization_results import OptimizationResults
 from odys.solvers.highs_solver import optimize_algebraic_model
 

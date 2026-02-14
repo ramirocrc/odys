@@ -35,14 +35,14 @@ result = energy_system.optimize()
 
 ## Constructor parameters
 
-| Parameter | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `portfolio` | `AssetPortfolio` | Yes | - | The collection of energy assets |
-| `scenarios` | `Scenario` or `list[StochasticScenario]` | Yes | - | Scenario data (load profiles, prices, capacity profiles) |
-| `timestep` | `timedelta` | Yes | - | Duration of each time period |
-| `number_of_steps` | `int` | Yes | - | How many timesteps to optimize over |
-| `power_unit` | `str` | Yes | - | Unit for power values: `"W"`, `"kW"`, or `"MW"` |
-| `markets` | `EnergyMarket` or `list[EnergyMarket]` or `None` | No | `None` | Energy markets for buying/selling |
+| Parameter         | Type                                             | Required | Default | Description                                              |
+| ----------------- | ------------------------------------------------ | -------- | ------- | -------------------------------------------------------- |
+| `portfolio`       | `AssetPortfolio`                                 | Yes      | -       | The collection of energy assets                          |
+| `scenarios`       | `Scenario` or `list[StochasticScenario]`         | Yes      | -       | Scenario data (load profiles, prices, capacity profiles) |
+| `timestep`        | `timedelta`                                      | Yes      | -       | Duration of each time period                             |
+| `number_of_steps` | `int`                                            | Yes      | -       | How many timesteps to optimize over                      |
+| `power_unit`      | `str`                                            | Yes      | -       | Unit for power values: `"W"`, `"kW"`, or `"MW"`          |
+| `markets`         | `EnergyMarket` or `list[EnergyMarket]` or `None` | No       | `None`  | Energy markets for buying/selling                        |
 
 ## Scenarios
 

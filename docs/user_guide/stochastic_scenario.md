@@ -30,13 +30,13 @@ high_wind = StochasticScenario(
 
 `StochasticScenario` inherits all fields from [Scenario](scenario.md) and adds two:
 
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `name` | `str` | Yes | - | Unique identifier for the scenario |
-| `probability` | `float` | Yes | - | Probability (0-1) of this scenario occurring |
-| `load_profiles` | `dict[str, list[float]]` | No | `None` | Load values per timestep, keyed by load name |
-| `available_capacity_profiles` | `dict[str, list[float]]` | No | `None` | Max available capacity per timestep, keyed by generator name |
-| `market_prices` | `dict[str, list[float]]` | No | `None` | Market prices per timestep, keyed by market name |
+| Field                         | Type                     | Required | Default | Description                                                  |
+| ----------------------------- | ------------------------ | -------- | ------- | ------------------------------------------------------------ |
+| `name`                        | `str`                    | Yes      | -       | Unique identifier for the scenario                           |
+| `probability`                 | `float`                  | Yes      | -       | Probability (0-1) of this scenario occurring                 |
+| `load_profiles`               | `dict[str, list[float]]` | No       | `None`  | Load values per timestep, keyed by load name                 |
+| `available_capacity_profiles` | `dict[str, list[float]]` | No       | `None`  | Max available capacity per timestep, keyed by generator name |
+| `market_prices`               | `dict[str, list[float]]` | No       | `None`  | Market prices per timestep, keyed by market name             |
 
 ## Validation rules
 
@@ -93,12 +93,12 @@ This means you can capture several types of uncertainty in a single optimization
 
 ## Scenario vs StochasticScenario
 
-| | `Scenario` | `StochasticScenario` |
-|---|---|---|
-| Number | Exactly one | Two or more in a list |
-| Probability | Implicit 1.0 | Explicit, must sum to 1.0 |
-| Name | Not needed | Required, must be unique |
-| Use case | Deterministic dispatch | Decisions under uncertainty |
+|             | `Scenario`             | `StochasticScenario`        |
+| ----------- | ---------------------- | --------------------------- |
+| Number      | Exactly one            | Two or more in a list       |
+| Probability | Implicit 1.0           | Explicit, must sum to 1.0   |
+| Name        | Not needed             | Required, must be unique    |
+| Use case    | Deterministic dispatch | Decisions under uncertainty |
 
 ## Next steps
 

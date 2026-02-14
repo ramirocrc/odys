@@ -8,15 +8,19 @@ from enum import Enum, unique
 
 from pydantic import BaseModel, ConfigDict
 
-from odys._math_model.model_components.sets import ModelDimension
+from odys.math_model.model_components.sets import ModelDimension
 
 
 class BoundType(Enum):
+    """Lower bound type for optimization variables."""
+
     NON_NEGATIVE = "non_negative"
     UNBOUNDED = "unbounded"
 
 
 class VariableSpec(BaseModel):
+    """Specification for an optimization variable (name, type, dimensions, bounds)."""
+
     model_config = ConfigDict()
 
     name: str
@@ -27,6 +31,8 @@ class VariableSpec(BaseModel):
 
 @unique
 class ModelVariable(Enum):
+    """All decision variables in the energy system optimization model."""
+
     GENERATOR_POWER = VariableSpec(
         name="generator_power",
         is_binary=False,
@@ -102,10 +108,12 @@ class ModelVariable(Enum):
 
     @property
     def var_name(self) -> str:
+        """Return the variable name used in the linopy model."""
         return self.value.name
 
     @property
     def dimensions(self) -> list[ModelDimension]:
+        """Return the dimensions this variable is defined over."""
         return self.value.dimensions
 
     @property
@@ -118,10 +126,12 @@ class ModelVariable(Enum):
 
     @property
     def lower_bound_type(self) -> BoundType:
+        """Return the lower bound type for this variable."""
         return self.value.lower_bound_type
 
     @property
     def is_binary(self) -> bool:
+        """Return whether this variable is binary."""
         return self.value.is_binary
 
 

@@ -1,15 +1,19 @@
+"""Utilities for converting model variables into linopy-compatible parameters."""
+
 from collections.abc import Mapping, Sequence
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 
-from odys._math_model.model_components.sets import (
+from odys.math_model.model_components.sets import (
     ModelIndex,
 )
-from odys._math_model.model_components.variables import BoundType
+from odys.math_model.model_components.variables import BoundType
 
 
 class LinopyVariableParameters(BaseModel):
+    """Parameters needed to add a variable to a linopy model."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str

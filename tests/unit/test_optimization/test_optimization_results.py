@@ -61,7 +61,7 @@ def test_solving_and_termination_condition(energy_system_sample: EnergySystem) -
 def test_detailed_results_format(energy_system_sample: EnergySystem) -> None:
     result = energy_system_sample.optimize()
 
-    detailed_results = result.to_dataframe
+    detailed_results = result.to_dataframe()
     expected_columns = pd.Index(["value"])
     expected_index = pd.MultiIndex.from_tuples(
         [

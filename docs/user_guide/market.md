@@ -17,12 +17,12 @@ By default, the market allows both buying and selling up to the specified volume
 
 ## Fields
 
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `name` | `str` | Yes | - | Unique identifier for the market |
-| `max_trading_volume_per_step` | `float` | Yes | - | Maximum volume that can be traded per timestep (MW) |
-| `trade_direction` | `TradeDirection` | No | `"both"` | Allowed trade directions: `"buy"`, `"sell"`, or `"both"` |
-| `stage_fixed` | `bool` | No | `False` | If `True`, trading decisions are fixed across all scenarios |
+| Field                         | Type             | Required | Default  | Description                                                 |
+| ----------------------------- | ---------------- | -------- | -------- | ----------------------------------------------------------- |
+| `name`                        | `str`            | Yes      | -        | Unique identifier for the market                            |
+| `max_trading_volume_per_step` | `float`          | Yes      | -        | Maximum volume that can be traded per timestep (MW)         |
+| `trade_direction`             | `TradeDirection` | No       | `"both"` | Allowed trade directions: `"buy"`, `"sell"`, or `"both"`    |
+| `stage_fixed`                 | `bool`           | No       | `False`  | If `True`, trading decisions are fixed across all scenarios |
 
 ## Trade direction
 

@@ -23,5 +23,5 @@ class EnergyMarket(BaseModel):
     trade_direction: TradeDirection = TradeDirection.BOTH
     stage_fixed: bool = Field(
         default=False,
-        description="If true, the associated varialbes are fixed accross scenarios.",
+        description="If true, the associated variables are fixed across scenarios.",
     )

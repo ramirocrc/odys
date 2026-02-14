@@ -1,10 +1,15 @@
-from odys._math_model.milp_model import EnergyMILPModel
-from odys._math_model.model_components.constraints.model_constraint import ModelConstraint
-from odys._math_model.model_components.sets import ModelDimension
+"""Battery-related constraints for the optimization model."""
+
+from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
+from odys.math_model.model_components.sets import ModelDimension
 
 
 class BatteryConstraints:
+    """Builds constraints for battery charge/discharge, SOC dynamics, and power limits."""
+
     def __init__(self, milp_model: EnergyMILPModel) -> None:
+        """Initialize with the MILP model containing battery variables and parameters."""
         self.model = milp_model
         self.params = milp_model.parameters.batteries
 
@@ -15,6 +20,7 @@ class BatteryConstraints:
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
+        """Return all battery constraints, or an empty tuple if no batteries exist."""
         if self.params is None:
             return ()
         return (

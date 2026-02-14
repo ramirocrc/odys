@@ -10,9 +10,9 @@ import pandas as pd
 import xarray as xr
 from linopy.constants import SolverStatus, TerminationCondition
 
-from odys._math_model.milp_model import EnergyMILPModel
-from odys._math_model.model_components.sets import ModelDimension
-from odys._math_model.model_components.variables import ModelVariable
+from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.sets import ModelDimension
+from odys.math_model.model_components.variables import ModelVariable
 from odys.optimization.result_containers import BatteryResults, GeneratorResults, MarketResults
 
 
@@ -65,7 +65,6 @@ class OptimizationResults:
         self._validate_terminated_successfully()
         return self._milp_model.linopy_model.solution
 
-    @cached_property
     def to_dataframe(self) -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
 
@@ -127,7 +126,7 @@ class OptimizationResults:
 
     @cached_property
     def markets(self) -> MarketResults:
-        """Get battery results."""
+        """Get market results."""
         self._validate_terminated_successfully()
         if self._milp_model.parameters.markets is None:
             msg = "This model does not contain market results"

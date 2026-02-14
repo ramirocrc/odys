@@ -88,4 +88,4 @@ if __name__ == "__main__":
     logger.info("battery net power")
     logger.info(result.batteries.net_power)
 
-    logger.info(result.to_dataframe)
+    logger.info(result.to_dataframe())

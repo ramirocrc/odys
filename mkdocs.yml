@@ -34,6 +34,7 @@ nav:
       - Overview: api/index.md
       - Energy System: api/energy_system.md
       - Optimization: api/optimization.md
+      - Math Model: api/math_model.md
       - Solvers: api/solvers.md
   - Contributing: contributing.md
 
