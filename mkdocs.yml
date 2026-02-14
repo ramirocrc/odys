@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
-site_name: odys
+site_name: Odys
 repo_url: https://github.com/ramirocrc/odys
 site_url: https://ramirocrc.github.io/odys
 site_description: Python framework for optimizing multi-energy systems
@@ -9,21 +9,32 @@ repo_name: ramirocrc/odys
 copyright: Maintained by <a href="https://ramirocrc.com">ramirocrc</a>.
 
 nav:
-  - Home:
-      - Welcome to OptimMES: index.md
-  - Getting Started:
-      - Installation: getting_started/installation.md
-      - Minimal Example: getting_started/minimal_example.md
-  - Concepts:
-      - Assets: concepts/assets.md
-      - Portfolio: concepts/portfolio.md
-      - Energy System: concepts/energy_system.md
-      - Optimizer: concepts/optimizer.md
+  - Home: index.md
+  - User Guide:
+      - Models:
+          - PowerGenerator: user_guide/power_generator.md
+          - Battery: user_guide/battery.md
+          - Load: user_guide/load.md
+          - Market: user_guide/market.md
+          - AssetPortfolio: user_guide/asset_portfolio.md
+          - EnergySystem: user_guide/energy_system.md
+      - Optimization: user_guide/optimization.md
+      - Stochastic Optimization: user_guide/stochastic.md
+      - Multi-stage Optimization: user_guide/multi_stage.md
+  - Examples:
+      - Overview: examples/index.md
+      - Basic Dispatch: examples/basic_dispatch.md
+      - Stochastic Scenarios: examples/stochastic.md
+      - Stochastic Without Batteries: examples/stochastic_no_batteries.md
+      - Markets: examples/markets.md
+      - Markets + Stochastic: examples/markets_stochastic.md
   - API Reference:
-      - Overview: api/main.md
+      - Overview: api/index.md
       - Energy System: api/energy_system.md
       - Optimization: api/optimization.md
       - Solvers: api/solvers.md
+  - Contributing: contributing.md
+
 theme:
   name: material
   palette:
@@ -32,7 +43,7 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Dark mode
-      primary: green
+      primary: blue
       accent: deep purple
 
     # Light Mode
@@ -41,7 +52,7 @@ theme:
         icon: material/weather-night
         name: Light mode
       primary: blue
-      accent: deep orange
+      accent: deep purple
   font:
     text: Roboto
     code: Roboto Mono

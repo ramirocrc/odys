@@ -1,8 +1,6 @@
 # Optimization API
 
-The optimization module provides tools for solving energy system optimization problems.
-
-## Optimization Results
+## OptimizationResults
 
 ::: odys.optimization.optimization_results
 

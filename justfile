@@ -1,3 +1,7 @@
+set unstable
+
+set script-interpreter := ['uv', 'run', '--script']
+
 install:
     @echo "🚀 Creating virtual environment using uv"
     uv sync --python 3.14 --all-groups
@@ -56,6 +60,10 @@ docs-test:
 docs-deploy:
     @echo "🚀 Deploying docs"
     uv run --locked mkdocs gh-deploy --force
+
+examples:
+    @echo "🚀 Running all examples"
+    for f in examples/*.py; do echo "▶ Running $f"; uv run --locked python "$f"; done
 
 
 

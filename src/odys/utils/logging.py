@@ -5,6 +5,8 @@ import logging
 from rich.logging import RichHandler
 from rich.traceback import install as install_rich_traceback
 
+logging.getLogger("linopy").setLevel(logging.WARNING)
+
 
 def get_logger(name: str) -> logging.Logger:
     """Get a logger with the given name."""
