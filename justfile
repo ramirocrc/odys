@@ -23,7 +23,7 @@ check:
     @echo "🚀 Static type checking: Running pyrefly"
     uv run --locked pyrefly check
     @echo "🚀 Static type checking: Running basedpyright"
-    uv run --locked basedpyright --level error
+    uv run --locked basedpyright
     @echo "🚀 Checking for obsolete dependencies: Running deptry"
     uv run --locked deptry src
 
