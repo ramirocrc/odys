@@ -144,7 +144,7 @@ If you use odys for a scientific publication, we'd appreciate a citation.
 @software{odys,
   author  = {Criach, Ramiro},
   title   = {odys},
-  version = {0.1.1},
+  version = {0.1.2},
   month   = {12},
   year    = {2024},
   license = {MIT},
