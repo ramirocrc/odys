@@ -94,7 +94,7 @@ preview = true
 [tool.basedpyright]
 include = ["src/"]
 pythonVersion = "3.11"
-typeCheckingMode = "recommended"
+typeCheckingMode = "standard"
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["highspy"]
