@@ -40,15 +40,16 @@ high_wind = StochasticScenario(
 
 Each `StochasticScenario` has:
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `name` | `str` | Yes | Unique name for the scenario |
-| `probability` | `float` | Yes | Probability (0-1) of this scenario occurring |
-| `load_profiles` | `dict[str, list[float]]` | No | Load values per timestep, keyed by load name |
-| `available_capacity_profiles` | `dict[str, list[float]]` | No | Max available capacity per timestep, keyed by generator name |
-| `market_prices` | `dict[str, list[float]]` | No | Market prices per timestep, keyed by market name |
+| Field                         | Type                     | Required | Description                                                  |
+| ----------------------------- | ------------------------ | -------- | ------------------------------------------------------------ |
+| `name`                        | `str`                    | Yes      | Unique name for the scenario                                 |
+| `probability`                 | `float`                  | Yes      | Probability (0-1) of this scenario occurring                 |
+| `load_profiles`               | `dict[str, list[float]]` | No       | Load values per timestep, keyed by load name                 |
+| `available_capacity_profiles` | `dict[str, list[float]]` | No       | Max available capacity per timestep, keyed by generator name |
+| `market_prices`               | `dict[str, list[float]]` | No       | Market prices per timestep, keyed by market name             |
 
 !!! warning
+
     Probabilities across all scenarios must sum to exactly 1.0. Scenario names must be unique. Odys validates both of these and raises a `ValueError` if they don't hold.
 
 ## Using stochastic scenarios
@@ -85,12 +86,12 @@ Anything you don't include in a scenario stays unconstrained (e.g., if you don't
 
 ## Scenario vs StochasticScenario
 
-| | `Scenario` | `StochasticScenario` |
-|---|---|---|
-| Number | Exactly one | Two or more in a list |
-| Probability | Implicit 1.0 | Explicit, must sum to 1.0 |
-| Name | Not needed | Required, must be unique |
-| Use case | Deterministic dispatch | Decisions under uncertainty |
+|             | `Scenario`             | `StochasticScenario`        |
+| ----------- | ---------------------- | --------------------------- |
+| Number      | Exactly one            | Two or more in a list       |
+| Probability | Implicit 1.0           | Explicit, must sum to 1.0   |
+| Name        | Not needed             | Required, must be unique    |
+| Use case    | Deterministic dispatch | Decisions under uncertainty |
 
 ## Stage-fixed decisions
 

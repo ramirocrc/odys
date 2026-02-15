@@ -31,6 +31,7 @@ portfolio.add_asset(load)
 ```
 
 !!! warning
+
     Asset names must be unique within a portfolio. Adding two assets with the same `name` raises a `ValueError`.
 
 ## Accessing assets

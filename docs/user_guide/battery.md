@@ -56,7 +56,8 @@ battery = Battery(
 ```
 
 !!! note
-`soc_start` and `soc_end` must fall within the `[soc_min, soc_max]` range. Pydantic validation will catch this if you get it wrong.
+
+    `soc_start` and `soc_end` must fall within the `[soc_min, soc_max]` range. Pydantic validation will catch this if you get it wrong.
 
 ## Efficiency
 

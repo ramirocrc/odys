@@ -103,4 +103,5 @@ df = result.to_dataframe
 This gives you a multi-indexed DataFrame with all variables, units, and timesteps. For deterministic scenarios, the scenario index level is dropped automatically.
 
 !!! tip
+
     If you're working in a notebook, `result.to_dataframe` is usually the quickest way to see what the optimizer did. You can export it with `.to_csv()` or plot it directly.
