@@ -59,7 +59,8 @@ flexible_load = Load(
 ```
 
 !!! warning
-For flexible loads, both `variable_cost_to_increase` and `variable_cost_to_decrease` are required. Pydantic will raise a validation error if you set the type to `"flexible"` without providing both costs.
+
+    For flexible loads, both `variable_cost_to_increase` and `variable_cost_to_decrease` are required. Pydantic will raise a validation error if you set the type to `"flexible"` without providing both costs.
 
 ## Load profiles
 

@@ -1,6 +1,7 @@
 # Multi-stage Optimization
 
 !!! note "Coming soon"
+
     Multi-stage optimization is planned but not yet implemented. This page describes the concept for context.
 
 ## What is multi-stage optimization?
