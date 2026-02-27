@@ -7,7 +7,7 @@ runs:
       uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
 
     - name: Setup uv
-      uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7
+      uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7
       with:
         enable-cache: true
         version: "0.10.2"
