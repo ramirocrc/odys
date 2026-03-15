@@ -1,6 +1,6 @@
 # Stochastic Scenarios
 
-This example shows how to optimize across multiple scenarios with different wind outputs, using generators and a battery.
+This example shows how to optimize across multiple scenarios with different wind outputs, using generators and a storage.
 
 **Source**: [`examples/example2.py`](https://github.com/ramirocrc/odys/blob/main/examples/example2.py)
 
@@ -17,7 +17,7 @@ Two generators:
 - **gen1**: A conventional generator (100 MW, 200 $/MWh)
 - **wind_farm**: A wind generator (150 MW, 100 $/MWh) with variable output
 
-Plus a battery (200 MW, 100 MWh) and a fixed load.
+Plus a storage (200 MW, 100 MWh) and a fixed load.
 
 We define two equally likely scenarios:
 
@@ -29,26 +29,21 @@ We define two equally likely scenarios:
 ```python
 from datetime import timedelta
 
-from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import PowerGenerator
-from odys.energy_system_models.assets.load import Load, LoadType
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
-from odys.energy_system_models.scenarios import StochasticScenario
+from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, StochasticScenario, Storage
 
-generator_1 = PowerGenerator(
+generator_1 = Generator(
     name="gen1",
     nominal_power=100.0,
     variable_cost=200.0,
     min_up_time=1,
     ramp_down=100,
 )
-generator_2 = PowerGenerator(
+generator_2 = Generator(
     name="wind_farm",
     nominal_power=150.0,
     variable_cost=100.0,
 )
-battery_1 = Battery(
+battery_1 = Storage(
     name="battery1",
     max_power=200.0,
     capacity=100,
@@ -105,7 +100,7 @@ result = energy_system.optimize()
 
 ```python
 print(result.generators.power)      # dispatch per scenario
-print(result.batteries.net_power)    # battery behavior per scenario
+print(result.storages.net_power)     # storage behavior per scenario
 print(result.to_dataframe)           # everything combined
 ```
 
@@ -114,5 +109,5 @@ Since we have two scenarios, the results include a scenario dimension. You can c
 ## What to look for
 
 - The **wind_farm** is cheaper, so the optimizer uses it first. In the high_wind scenario, it can produce more.
-- **gen1** is expensive (200 $/MWh) and only runs when the wind farm and battery can't cover the load.
-- The **battery** shifts energy across timesteps to minimize total cost, considering both scenarios.
+- **gen1** is expensive (200 $/MWh) and only runs when the wind farm and storage can't cover the load.
+- The **storage** shifts energy across timesteps to minimize total cost, considering both scenarios.

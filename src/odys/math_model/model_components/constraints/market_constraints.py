@@ -68,7 +68,7 @@ class MarketConstraints:
         """Generate constraints based on trade_direction parameter for each market."""
         constraints = []
 
-        buy_only_mask = self.params.trade_direction == TradeDirection.BUY  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+        buy_only_mask = self.params.trade_direction == TradeDirection.BUY_ONLY  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         sell_constraint = self.model.market_sell_volume.where(buy_only_mask, drop=True) == 0  # pyrefly: ignore
         constraints.append(
             ModelConstraint(
@@ -77,7 +77,7 @@ class MarketConstraints:
             ),
         )
 
-        sell_only_mask = self.params.trade_direction == TradeDirection.SELL  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+        sell_only_mask = self.params.trade_direction == TradeDirection.SELL_ONLY  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         buy_constraint = self.model.market_buy_volume.where(sell_only_mask, drop=True) == 0  # pyrefly: ignore
         constraints.append(
             ModelConstraint(

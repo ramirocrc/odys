@@ -1,6 +1,6 @@
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 
-generator_1 = PowerGenerator(
+generator_1 = Generator(
     name="gen1",
     nominal_power=100.0,
     variable_cost=20.0,

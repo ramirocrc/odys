@@ -5,7 +5,7 @@ An `EnergyMarket` represents an electricity market where your portfolio can buy 
 ## Basic usage
 
 ```python
-from odys.energy_system_models.markets import EnergyMarket
+from odys import EnergyMarket
 
 market = EnergyMarket(
     name="day_ahead",
@@ -29,7 +29,7 @@ By default, the market allows both buying and selling up to the specified volume
 You can restrict which way the market trades:
 
 ```python
-from odys.energy_system_models.markets import EnergyMarket, TradeDirection
+from odys import EnergyMarket, TradeDirection
 
 # Can only sell into this market
 sell_only = EnergyMarket(
@@ -71,7 +71,7 @@ This is particularly useful in [stochastic optimization](stochastic.md) setups.
 Prices are provided through the `Scenario` (or `StochasticScenario`), not on the market object itself:
 
 ```python
-from odys.energy_system_models.scenarios import Scenario
+from odys import Scenario
 
 scenario = Scenario(
     market_prices={
@@ -88,7 +88,7 @@ The key must match the market's `name`.
 You can pass multiple markets to the `EnergySystem`:
 
 ```python
-from odys.energy_system import EnergySystem
+from odys import EnergySystem
 
 energy_system = EnergySystem(
     portfolio=portfolio,

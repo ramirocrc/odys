@@ -37,6 +37,8 @@
   - [x] Review ValidatedEnergySystem.\_validate_inputs
 - [ ] Evaluate other uses cases (e.g. optimze bids based on day-ahead price forecast)
 - [ ] Implement cusomt Exceptions
+- [ ] Split max_power into max_power_charing and max_power_discharging to represent pump_hydro
+- [ ] Specify initial conditions of assets (e.g. generator output at t_minus_1)
 
 - [ ] . Demand-Side Assets
   - FlexibleLoad: Demand response, load shifting
@@ -59,6 +61,8 @@
 # Codebase refactoring
 
 - [x] Move Scenario specific configuration (e.g. battery soc_initial soc_terminal to EnergySystem class)
-- [ ] Check how other libraries implement logging
-- [ ] Show independent variables only in results
-- [ ] Skip creation of variables if not necessary (e.g. do not create battery variables if no batteries in the porfolio)
+- [x] Check how other libraries implement logging
+- [x] Show independent variables only in results
+- [x] Skip creation of variables if not necessary (e.g. do not create battery variables if no batteries in the porfolio)
+- [x] Rename PowerGenerator and Battery
+- [ ] Group imports for user

@@ -7,10 +7,10 @@ import numpy as np
 import xarray as xr
 
 from odys.energy_system_models.scenarios import StochasticScenario
-from odys.math_model.model_components.parameters.battery_parameters import BatteryIndex
 from odys.math_model.model_components.parameters.generator_parameters import GeneratorIndex
 from odys.math_model.model_components.parameters.load_parameters import LoadIndex
 from odys.math_model.model_components.parameters.market_parameters import MarketIndex
+from odys.math_model.model_components.parameters.storage_parameters import StorageIndex
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
@@ -34,7 +34,7 @@ class ScenarioParameters:
         number_of_timesteps: int,
         scenarios: Sequence[StochasticScenario],
         generators_index: GeneratorIndex | None,
-        batteries_index: BatteryIndex | None,
+        storages_index: StorageIndex | None,
         markets_index: MarketIndex | None,
         loads_index: LoadIndex | None,
     ) -> None:
@@ -44,14 +44,14 @@ class ScenarioParameters:
             number_of_timesteps: Number of time steps in the scenarios.
             scenarios: Sequence of stochastic scenario objects.
             generators_index: Optional generator index.
-            batteries_index: Optional battery index.
+            storages_index: Optional storage index.
             markets_index: Optional market index.
             loads_index: Optional load index.
         """
         self._number_of_timesteps = number_of_timesteps
         self._scenarios = scenarios
         self._generators_index = generators_index
-        self._batteries_index = batteries_index
+        self._storages_index = storages_index
         self._markets_index = markets_index
         self._loads_index = loads_index
         self._time_index = TimeIndex(values=tuple(str(time_step) for time_step in range(number_of_timesteps)))

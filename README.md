@@ -19,7 +19,7 @@ Odys is a Python package for optimizing multi-asset energy portfolios across mul
 The key features are:
 
 - **Intuitive to write**: Great editor support. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere. Less time debugging. Designed to be easy to use and learn. Less time reading docs.
-- **Simple API**: Define your energy system (generators, batteries, loads, markets) and call .optimize(). The mathematical model is built and solved for you under the hood.
+- **Simple API**: Define your energy system (generators, storages, loads, markets) and call .optimize(). The mathematical model is built and solved for you under the hood.
 - **Pydantic-powered validation**: All models are built on Pydantic with strict typing and validators, catching configuration errors early.
 - **Stochastic optimization**: Optimize across multiple probabilistic scenarios with different prices, capacities, and load profiles to make decisions under uncertainty.
 
@@ -45,26 +45,21 @@ uv add odys
 
 ## Example
 
-A generator and a battery working together to meet a fixed load over 4 hourly timesteps:
+A generator and a storage working together to meet a fixed load over 4 hourly timesteps:
 
 ```python
 from datetime import timedelta
 
-from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import PowerGenerator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
-from odys.energy_system_models.scenarios import Scenario
+from odys import AssetPortfolio, EnergySystem, Generator, Load, Scenario, Storage
 
-generator = PowerGenerator(
+generator = Generator(
     name="gen",
     nominal_power=100.0,
     variable_cost=50.0,
 )
 
-battery = Battery(
-    name="battery",
+storage = Storage(
+    name="bess",
     capacity=50.0,
     max_power=25.0,
     efficiency_charging=0.95,
@@ -77,7 +72,7 @@ load = Load(name="demand")
 
 portfolio = AssetPortfolio()
 portfolio.add_asset(generator)
-portfolio.add_asset(battery)
+portfolio.add_asset(storage)
 portfolio.add_asset(load)
 
 energy_system = EnergySystem(

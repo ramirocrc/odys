@@ -18,7 +18,7 @@ class ScenarioConstraints:
         self.scenario_params = milp_model.parameters.scenarios
         self.market_params = milp_model.parameters.markets
         self._include_generators = bool(milp_model.parameters.generators)
-        self._include_batteries = bool(milp_model.parameters.batteries)
+        self._include_storages = bool(milp_model.parameters.storages)
         self._include_markets = bool(milp_model.parameters.markets)
 
     @property
@@ -45,9 +45,9 @@ class ScenarioConstraints:
         if self._include_generators:
             lhs += self.model.generator_power.sum(ModelDimension.Generators)
 
-        if self._include_batteries:
-            lhs += self.model.battery_power_out.sum(ModelDimension.Batteries)
-            lhs += -self.model.battery_power_in.sum(ModelDimension.Batteries)
+        if self._include_storages:
+            lhs += self.model.storage_power_out.sum(ModelDimension.Storages)
+            lhs += -self.model.storage_power_in.sum(ModelDimension.Storages)
 
         if self._include_markets:
             lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)

@@ -2,7 +2,7 @@ from types import MappingProxyType
 
 import pytest
 
-from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Storage
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def test_battery_creation_with_invalid_parameters_raises_error(
     base_params = dict(battery_base_params)
     base_params[param_name] = invalid_value
     with pytest.raises(ValueError, match=expected_match):
-        Battery(**base_params)
+        Storage(**base_params)
 
 
 @pytest.mark.parametrize(
@@ -69,4 +69,4 @@ def test_soc_values_outside_bounds_raises_error(
     invalid_battery_params = base_params | invalid_parameters  # The latter takes priority when same key exists
 
     with pytest.raises(ValueError, match=expected_match):
-        Battery(**invalid_battery_params)
+        Storage(**invalid_battery_params)

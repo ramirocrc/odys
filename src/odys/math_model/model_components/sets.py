@@ -13,7 +13,7 @@ class ModelDimension(StrEnum):
     Scenarios = "scenario"
     Time = "time"
     Generators = "generator"
-    Batteries = "battery"
+    Storages = "storage"
     Loads = "load"
     Markets = "market"
 

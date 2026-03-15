@@ -11,7 +11,7 @@ Instead of optimizing for a single forecast, you define multiple **scenarios**, 
 Each scenario extends the base `Scenario` with a name and a probability:
 
 ```python
-from odys.energy_system_models.scenarios import StochasticScenario
+from odys import StochasticScenario
 
 low_wind = StochasticScenario(
     name="low_wind",
@@ -59,7 +59,7 @@ Pass a list of scenarios instead of a single `Scenario`:
 ```python
 from datetime import timedelta
 
-from odys.energy_system import EnergySystem
+from odys import EnergySystem
 
 energy_system = EnergySystem(
     portfolio=portfolio,
@@ -98,7 +98,7 @@ Anything you don't include in a scenario stays unconstrained (e.g., if you don't
 When using stochastic optimization with markets, you can mark certain markets as `stage_fixed=True`. This means the optimizer must commit to the same trading volumes in that market across all scenarios -- modeling situations where you lock in a position before uncertainty resolves.
 
 ```python
-from odys.energy_system_models.markets import EnergyMarket
+from odys import EnergyMarket
 
 day_ahead = EnergyMarket(
     name="day_ahead",

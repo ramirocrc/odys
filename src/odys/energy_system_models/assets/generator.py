@@ -1,6 +1,6 @@
-"""Power generator asset implementation.
+"""Generator asset implementation.
 
-This module provides the PowerGenerator class for modeling electrical generators
+This module provides the Generator class for modeling electrical generators
 in energy system optimization problems.
 """
 
@@ -9,7 +9,7 @@ from pydantic import Field
 from odys.energy_system_models.assets.base import EnergyAsset
 
 
-class PowerGenerator(EnergyAsset):
+class Generator(EnergyAsset):
     """Represents a power generator in the energy system.
 
     This class models generators with various operational constraints
@@ -24,7 +24,7 @@ class PowerGenerator(EnergyAsset):
 
     variable_cost: float = Field(
         strict=True,
-        gt=0,
+        ge=0,
         description="Variable cost of the generator in currency per MWh.",
     )
 

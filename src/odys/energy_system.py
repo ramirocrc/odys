@@ -12,6 +12,7 @@ from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
+from odys.optimization.cvar_config import CVaRConfig
 from odys.optimization.optimization_results import OptimizationResults
 from odys.solvers.highs_solver import optimize_algebraic_model
 
@@ -31,6 +32,7 @@ class EnergySystem:
         number_of_steps: int,
         power_unit: str,
         scenarios: Scenario | Sequence[StochasticScenario],
+        cvar_config: CVaRConfig | None = None,
         markets: EnergyMarket | Sequence[EnergyMarket] | None = None,
     ) -> None:
         """Initialize the energy system configuration and optimizer.
@@ -42,6 +44,7 @@ class EnergySystem:
             power_unit: Unit used for power quantities ('W', 'kW', or 'MW').
             scenarios: Sequence of stochastic scenarios. Probabilities must add up to 1.
             markets: Optional energy markets in which assets can participate.
+            cvar_config: CVaR congiguration parameters.
 
         """
         self._validated_model = ValidatedEnergySystem(
@@ -51,6 +54,7 @@ class EnergySystem:
             number_of_steps=number_of_steps,
             power_unit=power_unit,  # ty: ignore  # pyright: ignore[reportArgumentType]
             scenarios=scenarios,
+            cvar_config=cvar_config,
         )
 
     def optimize(self) -> OptimizationResults:

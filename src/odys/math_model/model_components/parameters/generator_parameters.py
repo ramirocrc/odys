@@ -5,7 +5,7 @@ from typing import ClassVar
 
 import xarray as xr
 
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 
 
@@ -18,7 +18,7 @@ class GeneratorIndex(ModelIndex):
 class GeneratorParameters:
     """Parameters for generator assets in the energy system model."""
 
-    def __init__(self, generators: Sequence[PowerGenerator]) -> None:
+    def __init__(self, generators: Sequence[Generator]) -> None:
         """Initialize generator parameters.
 
         Args:

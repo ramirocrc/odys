@@ -5,7 +5,7 @@ A `Scenario` defines the operating conditions for your energy system -- load dem
 ## Basic usage
 
 ```python
-from odys.energy_system_models.scenarios import Scenario
+from odys import Scenario
 
 scenario = Scenario(
     load_profiles={"demand": [60, 90, 40, 70]},
@@ -53,7 +53,7 @@ scenario = Scenario(
 )
 ```
 
-The keys must match the `name` of a [PowerGenerator](power_generator.md) in your portfolio. At each timestep, the generator can't produce more than the value specified here (or its `nominal_power`, whichever is lower).
+The keys must match the `name` of a [Generator](generator.md) in your portfolio. At each timestep, the generator can't produce more than the value specified here (or its `nominal_power`, whichever is lower).
 
 ## Market prices
 
@@ -75,7 +75,7 @@ The keys must match the `name` of an `EnergyMarket` passed to the `EnergySystem`
 A scenario with all three fields might look like:
 
 ```python
-from odys.energy_system_models.scenarios import Scenario
+from odys import Scenario
 
 scenario = Scenario(
     load_profiles={

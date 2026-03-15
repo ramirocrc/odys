@@ -12,8 +12,8 @@ nav:
   - Home: index.md
   - User Guide:
       - Models:
-          - PowerGenerator: user_guide/power_generator.md
-          - Battery: user_guide/battery.md
+          - Generator: user_guide/generator.md
+          - Storage: user_guide/storage.md
           - Load: user_guide/load.md
           - Market: user_guide/market.md
           - AssetPortfolio: user_guide/asset_portfolio.md
@@ -27,7 +27,7 @@ nav:
       - Overview: examples/index.md
       - Basic Dispatch: examples/basic_dispatch.md
       - Stochastic Scenarios: examples/stochastic.md
-      - Stochastic Without Batteries: examples/stochastic_no_batteries.md
+      - Stochastic Without Storage: examples/stochastic_no_batteries.md
       - Markets: examples/markets.md
       - Markets + Stochastic: examples/markets_stochastic.md
   - API Reference:

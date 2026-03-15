@@ -1,13 +1,13 @@
-# PowerGenerator
+# Generator
 
-A `PowerGenerator` represents any dispatchable power source in your energy system -- think gas turbines, diesel generators, or even a simplified solar/wind unit with a fixed capacity.
+A `Generator` represents any dispatchable power source in your energy system -- think gas turbines, diesel generators, or even a simplified solar/wind unit with a fixed capacity.
 
 ## Basic usage
 
 ```python
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys import Generator
 
-gen = PowerGenerator(
+gen = Generator(
     name="gas_turbine",
     nominal_power=100.0,
     variable_cost=50.0,
@@ -36,7 +36,7 @@ That's really all you need. The optimizer will figure out the dispatch (how much
 If your generator can't change output instantly, set ramp limits:
 
 ```python
-gen = PowerGenerator(
+gen = Generator(
     name="slow_gen",
     nominal_power=200.0,
     variable_cost=30.0,
@@ -52,7 +52,7 @@ When `ramp_up` or `ramp_down` is `None` (the default), there's no ramp constrain
 These prevent the optimizer from toggling the generator on and off every timestep:
 
 ```python
-gen = PowerGenerator(
+gen = Generator(
     name="coal_plant",
     nominal_power=500.0,
     variable_cost=25.0,
@@ -66,7 +66,7 @@ gen = PowerGenerator(
 You can penalize switching the generator on or off:
 
 ```python
-gen = PowerGenerator(
+gen = Generator(
     name="peaker",
     nominal_power=50.0,
     variable_cost=80.0,
@@ -82,7 +82,7 @@ This makes the optimizer think twice before toggling the generator, which is rea
 In a `Scenario`, you can limit the generator's available capacity per timestep using `available_capacity_profiles`. This is useful for modeling things like planned maintenance or variable renewable output:
 
 ```python
-from odys.energy_system_models.scenarios import Scenario
+from odys import Scenario
 
 scenario = Scenario(
     available_capacity_profiles={

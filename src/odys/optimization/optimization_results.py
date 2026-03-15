@@ -13,7 +13,7 @@ from linopy.constants import SolverStatus, TerminationCondition
 from odys.math_model.milp_model import EnergyMILPModel
 from odys.math_model.model_components.sets import ModelDimension
 from odys.math_model.model_components.variables import ModelVariable
-from odys.optimization.result_containers import BatteryResults, GeneratorResults, MarketResults
+from odys.optimization.result_containers import CVaRResults, GeneratorResults, MarketResults, StorageResults
 
 
 class OptimizationResults:
@@ -75,8 +75,11 @@ class OptimizationResults:
         dfs = []
         for variable in ModelVariable:
             variable_name = variable.var_name
-            # Skip if there is this variable is not populated (eg skip battery varialbes if no batteries in the system)
+            # Skip if this variable is not populated (eg skip storage variables if no storages in the system)
             if variable_name not in self._milp_model.linopy_model.variables.labels:
+                continue
+            # Skip variables without a Time dimension — they can't be reshaped into the standard format
+            if variable.dimensions is None or ModelDimension.Time not in variable.dimensions:
                 continue
             var_solution = self._solution[variable_name]
             df = (
@@ -113,15 +116,15 @@ class OptimizationResults:
             raise ValueError(msg)
 
     @cached_property
-    def batteries(self) -> BatteryResults:
-        """Get battery results."""
+    def storages(self) -> StorageResults:
+        """Get storage results."""
         self._validate_terminated_successfully()
-        if self._milp_model.parameters.batteries is None:
-            msg = "This model does not contain battery results"
+        if self._milp_model.parameters.storages is None:
+            msg = "This model does not contain storage results"
             raise ValueError(msg)
-        return BatteryResults(
-            net_power=self._get_variable_results(ModelVariable.BATTERY_POWER_NET),
-            state_of_charge=self._get_variable_results(ModelVariable.BATTERY_SOC),
+        return StorageResults(
+            net_power=self._get_variable_results(ModelVariable.STORAGE_POWER_NET),
+            state_of_charge=self._get_variable_results(ModelVariable.STORAGE_SOC),
         )
 
     @cached_property
@@ -150,6 +153,20 @@ class OptimizationResults:
             startup=self._get_variable_results(ModelVariable.GENERATOR_STARTUP),
             shutdown=self._get_variable_results(ModelVariable.GENERATOR_SHUTDOWN),
         )
+
+    @cached_property
+    def cvar(self) -> CVaRResults:
+        """Get CVaR results."""
+        self._validate_terminated_successfully()
+        if self._milp_model.parameters.cvar_config is None:
+            msg = "This model was not optimized with a CVaR configuration"
+            raise ValueError(msg)
+        cvar_config = self._milp_model.parameters.cvar_config
+        eta = float(self._solution[ModelVariable.VALUE_AT_RISK.var_name].item())
+        z = self._solution[ModelVariable.SHORTFALL_REVENUE.var_name].to_series()
+        probs = self._milp_model.parameters.scenarios.scenario_probabilities.to_series()
+        cvar_value = eta - (1 / (1 - cvar_config.confidence_level)) * (probs * z).sum()
+        return CVaRResults(value_at_risk=eta, cvar=float(cvar_value), shortfall_per_scenario=z)
 
     def _get_variable_results(self, variable: ModelVariable) -> pd.DataFrame:
         var_timeseries = self._solution[variable.var_name].to_series()

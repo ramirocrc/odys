@@ -6,7 +6,7 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.scenarios import Scenario
@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def generator1() -> PowerGenerator:
-    return PowerGenerator(
+def generator1() -> Generator:
+    return Generator(
         name="gen1",
         nominal_power=100.0,
         variable_cost=20.0,
@@ -31,8 +31,8 @@ def generator1() -> PowerGenerator:
 
 
 @pytest.fixture
-def generator2() -> PowerGenerator:
-    return PowerGenerator(
+def generator2() -> Generator:
+    return Generator(
         name="gen2",
         nominal_power=150.0,
         variable_cost=25.0,
@@ -50,8 +50,8 @@ def load1() -> Load:
 
 @pytest.fixture
 def asset_portfolio_sample(
-    generator1: PowerGenerator,
-    generator2: PowerGenerator,
+    generator1: Generator,
+    generator2: Generator,
     load1: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
@@ -107,8 +107,8 @@ class TestGeneratorConstraints:
     def setup(
         self,
         linopy_model: linopy.Model,
-        generator1: PowerGenerator,
-        generator2: PowerGenerator,
+        generator1: Generator,
+        generator2: Generator,
         time_index: list[int],
     ) -> None:
         self.linopy_model = linopy_model
@@ -251,7 +251,7 @@ class TestGeneratorConstraints:
             coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
-        expected_expr = generator_power - generator_power.shift(time=1) <= max_ramp_up_array
+        expected_expr = (generator_power - generator_power.shift(time=1)).isel(time=slice(1, None)) <= max_ramp_up_array
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
     def test_constraint_generator_max_ramp_down(self) -> None:
@@ -265,5 +265,7 @@ class TestGeneratorConstraints:
             coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
-        expected_expr = generator_power.shift(time=1) - generator_power <= max_ramp_down_array
+        expected_expr = (generator_power.shift(time=1) - generator_power).isel(
+            time=slice(1, None),
+        ) <= max_ramp_down_array
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)

@@ -17,33 +17,27 @@ class ObjectiveFunction:
         """Initialize with the MILP model to build the objective from."""
         self._model = milp_model
 
-    @property
-    def profit(self) -> linopy.LinearExpression:
-        """Build the total profit expression (market revenue minus operating costs)."""
-        profit = 0
+    def profit_term(self) -> linopy.LinearExpression:
+        """Build the profit expression."""
+        scenario_probability = self._model.parameters.scenarios.scenario_probabilities
+        return (self._model.per_scenario_profit() * scenario_probability).sum(ModelDimension.Scenarios)
 
-        if self._model.parameters.scenarios.market_prices is not None:
-            profit += self.get_market_revenue()
+    def cvar_term(self) -> linopy.LinearExpression:
+        """Build the CVaR expression: η - 1/(1-alpha) * Σ_s p_s * z_s."""
+        confidence_level = self._model.parameters.cvar_config.confidence_level  # type: ignore[union-attr]
+        probs = self._model.parameters.scenarios.scenario_probabilities
+        expected_shortfall = (probs * self._model.cvar_shortfall).sum(ModelDimension.Scenarios)
+        return self._model.cvar_value_at_risk - (1 / (1 - confidence_level)) * expected_shortfall
 
-        if self._model.parameters.generators is not None:
-            profit += -self.get_operating_costs()
 
-        if isinstance(profit, int) and profit == 0:
-            msg = "No terms added to profit"
-            raise ValueError(msg)
-        return profit
+def build_objective(milp_model: EnergyMILPModel) -> linopy.LinearExpression:
+    """Build the full objective function, including the CVaR term if configured."""
+    obj_fn = ObjectiveFunction(milp_model)
+    objective = obj_fn.profit_term()
 
-    def get_market_revenue(self) -> linopy.LinearExpression:
-        """Calculate expected market revenue across all scenarios."""
-        return (
-            (self._model.market_sell_volume - self._model.market_buy_volume)  # pyrefly: ignore
-            * self._model.parameters.scenarios.market_prices  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOperatorIssue]
-            * self._model.parameters.scenarios.scenario_probabilities
-        ).sum([ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets])
+    cvar_config = milp_model.parameters.cvar_config
 
-    def get_operating_costs(self) -> linopy.LinearExpression:
-        """Calculate total generator operating costs (variable + startup)."""
-        return (
-            self._model.generator_power * self._model.parameters.generators.variable_cost  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
-            + self._model.generator_startup * self._model.parameters.generators.startup_cost  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
-        ).sum([ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators])
+    if cvar_config is None:
+        return objective
+
+    return objective + cvar_config.weight * obj_fn.cvar_term()

@@ -7,13 +7,9 @@
 ```python
 from datetime import timedelta
 
-from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import PowerGenerator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.scenarios import Scenario
+from odys import AssetPortfolio, EnergySystem, Generator, Load, Scenario
 
-generator = PowerGenerator(name="gen", nominal_power=100.0, variable_cost=50.0)
+generator = Generator(name="gen", nominal_power=100.0, variable_cost=50.0)
 load = Load(name="demand")
 
 portfolio = AssetPortfolio()
@@ -49,7 +45,7 @@ result = energy_system.optimize()
 For a single deterministic scenario, use `Scenario`:
 
 ```python
-from odys.energy_system_models.scenarios import Scenario
+from odys import Scenario
 
 scenario = Scenario(
     load_profiles={"demand": [60, 90, 40, 70]},
@@ -60,7 +56,7 @@ scenario = Scenario(
 For stochastic optimization with multiple scenarios, pass a list of `StochasticScenario`:
 
 ```python
-from odys.energy_system_models.scenarios import StochasticScenario
+from odys import StochasticScenario
 
 scenarios = [
     StochasticScenario(
@@ -85,7 +81,7 @@ See [Stochastic Optimization](stochastic.md) for more details.
 To include energy markets, pass them via the `markets` parameter:
 
 ```python
-from odys.energy_system_models.markets import EnergyMarket
+from odys import EnergyMarket
 
 energy_system = EnergySystem(
     portfolio=portfolio,

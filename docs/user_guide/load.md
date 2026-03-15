@@ -7,7 +7,7 @@ A `Load` represents a demand that the energy system needs to satisfy. Loads come
 The simplest case is a fixed load -- the system must produce exactly this much power at each timestep:
 
 ```python
-from odys.energy_system_models.assets.load import Load
+from odys import Load
 
 load = Load(name="demand")
 ```
@@ -34,7 +34,7 @@ load = Load(name="factory_demand")
 Then in your scenario:
 
 ```python
-from odys.energy_system_models.scenarios import Scenario
+from odys import Scenario
 
 scenario = Scenario(
     load_profiles={"factory_demand": [100, 120, 80, 90]},
@@ -48,7 +48,7 @@ The key in `load_profiles` must match the load's `name`.
 A flexible load gives the optimizer some room to adjust demand up or down, but at a cost:
 
 ```python
-from odys.energy_system_models.assets.load import Load, LoadType
+from odys import Load, LoadType
 
 flexible_load = Load(
     name="adjustable_demand",
@@ -67,7 +67,7 @@ flexible_load = Load(
 The actual demand timeseries is always provided through a `Scenario`, not on the `Load` object itself. This keeps the asset definition clean and lets you reuse the same load across different scenarios:
 
 ```python
-from odys.energy_system_models.scenarios import Scenario
+from odys import Scenario
 
 scenario = Scenario(
     load_profiles={
