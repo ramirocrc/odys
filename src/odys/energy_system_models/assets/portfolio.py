@@ -1,16 +1,16 @@
 """Asset portfolio management for energy systems.
 
 This module provides the AssetPortfolio class for managing collections
-of energy system assets including generators, batteries, and other components.
+of energy system assets including generators, storages, and other components.
 """
 
 from types import MappingProxyType
 from typing import TypeVar
 
 from odys.energy_system_models.assets.base import EnergyAsset
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Storage
 
 T = TypeVar("T", bound=EnergyAsset)
 
@@ -19,7 +19,7 @@ class AssetPortfolio:
     """A collection of energy system assets.
 
     This class manages a portfolio of energy assets including generators,
-    batteries, and other energy system components. It provides methods
+    storages, and other energy system components. It provides methods
     to add, retrieve, and filter assets by type.
     """
 
@@ -75,24 +75,24 @@ class AssetPortfolio:
         return MappingProxyType(self._assets)
 
     @property
-    def generators(self) -> tuple[PowerGenerator, ...]:
-        """Get all power generators in the portfolio.
+    def generators(self) -> tuple[Generator, ...]:
+        """Get all generators in the portfolio.
 
         Returns:
-            A tuple containing all PowerGenerator assets.
+            A tuple containing all Generator assets.
 
         """
-        return self._get_assets_by_type(PowerGenerator)
+        return self._get_assets_by_type(Generator)
 
     @property
-    def batteries(self) -> tuple[Battery, ...]:
-        """Get all batteries in the portfolio.
+    def storages(self) -> tuple[Storage, ...]:
+        """Get all storages in the portfolio.
 
         Returns:
-            A tuple containing all Battery assets.
+            A tuple containing all Storage assets.
 
         """
-        return self._get_assets_by_type(Battery)
+        return self._get_assets_by_type(Storage)
 
     @property
     def loads(self) -> tuple[Load, ...]:

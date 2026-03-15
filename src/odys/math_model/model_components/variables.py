@@ -6,7 +6,7 @@ optimization models.
 
 from enum import Enum, unique
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from odys.math_model.model_components.sets import ModelDimension
 
@@ -21,11 +21,9 @@ class BoundType(Enum):
 class VariableSpec(BaseModel):
     """Specification for an optimization variable (name, type, dimensions, bounds)."""
 
-    model_config = ConfigDict()
-
     name: str
     is_binary: bool
-    dimensions: list[ModelDimension]
+    dimensions: list[ModelDimension] | None
     lower_bound_type: BoundType
 
 
@@ -57,34 +55,34 @@ class ModelVariable(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
         lower_bound_type=BoundType.UNBOUNDED,
     )
-    BATTERY_POWER_IN = VariableSpec(
-        name="battery_power_in",
+    STORAGE_POWER_IN = VariableSpec(
+        name="storage_power_in",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    BATTERY_POWER_NET = VariableSpec(
-        name="battery_net_power",
+    STORAGE_POWER_NET = VariableSpec(
+        name="storage_net_power",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
         lower_bound_type=BoundType.UNBOUNDED,
     )
-    BATTERY_POWER_OUT = VariableSpec(
-        name="battery_power_out",
+    STORAGE_POWER_OUT = VariableSpec(
+        name="storage_power_out",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    BATTERY_SOC = VariableSpec(
-        name="battery_soc",
+    STORAGE_SOC = VariableSpec(
+        name="storage_soc",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    BATTERY_CHARGE_MODE = VariableSpec(
-        name="battery_charge_mode",
+    STORAGE_CHARGE_MODE = VariableSpec(
+        name="storage_charge_mode",
         is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Batteries],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
         lower_bound_type=BoundType.UNBOUNDED,
     )
     MARKET_SELL = VariableSpec(
@@ -105,6 +103,18 @@ class ModelVariable(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
         lower_bound_type=BoundType.UNBOUNDED,
     )
+    VALUE_AT_RISK = VariableSpec(
+        name="value_at_risk",
+        is_binary=False,
+        dimensions=None,
+        lower_bound_type=BoundType.UNBOUNDED,
+    )
+    SHORTFALL_REVENUE = VariableSpec(
+        name="shortfall_revenue",
+        is_binary=False,
+        dimensions=[ModelDimension.Scenarios],
+        lower_bound_type=BoundType.NON_NEGATIVE,
+    )
 
     @property
     def var_name(self) -> str:
@@ -112,15 +122,17 @@ class ModelVariable(Enum):
         return self.value.name
 
     @property
-    def dimensions(self) -> list[ModelDimension]:
+    def dimensions(self) -> list[ModelDimension] | None:
         """Return the dimensions this variable is defined over."""
         return self.value.dimensions
 
     @property
     def asset_dimension(self) -> ModelDimension | None:
-        """Get the asset dimension (Generators or Batteries) if present."""
+        """Get the asset dimension (Generators or Storages) if present."""
+        if self.value.dimensions is None:
+            return None
         for dim in self.value.dimensions:
-            if dim in (ModelDimension.Generators, ModelDimension.Batteries):
+            if dim in (ModelDimension.Generators, ModelDimension.Storages):
                 return dim
         return None
 
@@ -135,6 +147,13 @@ class ModelVariable(Enum):
         return self.value.is_binary
 
 
-GENERATOR_VARIABLES = [var for var in ModelVariable if ModelDimension.Generators in var.value.dimensions]
-BATTERY_VARIABLES = [var for var in ModelVariable if ModelDimension.Batteries in var.value.dimensions]
-MARKET_VARIABLES = [var for var in ModelVariable if ModelDimension.Markets in var.value.dimensions]
+GENERATOR_VARIABLES = [
+    var for var in ModelVariable if var.value.dimensions and ModelDimension.Generators in var.value.dimensions
+]
+STORAGE_VARIABLES = [
+    var for var in ModelVariable if var.value.dimensions and ModelDimension.Storages in var.value.dimensions
+]
+MARKET_VARIABLES = [
+    var for var in ModelVariable if var.value.dimensions and ModelDimension.Markets in var.value.dimensions
+]
+CVAR_VARIABLES = [ModelVariable.VALUE_AT_RISK, ModelVariable.SHORTFALL_REVENUE]

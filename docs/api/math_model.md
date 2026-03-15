@@ -32,9 +32,9 @@ The `math_model` module contains the internals for building and solving the mixe
 
 ::: odys.math_model.model_components.constraints.generator_constraints
 
-### Battery Constraints
+### Storage Constraints
 
-::: odys.math_model.model_components.constraints.battery_constraints
+::: odys.math_model.model_components.constraints.storage_constraints
 
 ### Scenario Constraints
 
@@ -54,9 +54,9 @@ The `math_model` module contains the internals for building and solving the mixe
 
 ::: odys.math_model.model_components.parameters.generator_parameters
 
-### Battery Parameters
+### Storage Parameters
 
-::: odys.math_model.model_components.parameters.battery_parameters
+::: odys.math_model.model_components.parameters.storage_parameters
 
 ### Load Parameters
 

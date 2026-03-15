@@ -3,15 +3,15 @@
 import pytest
 
 from odys.energy_system_models.assets.base import EnergyAsset
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Storage
 
 
 @pytest.fixture
-def sample_generator_1() -> PowerGenerator:
+def sample_generator_1() -> Generator:
     """Create a sample power generator for testing."""
-    return PowerGenerator(
+    return Generator(
         name="test_generator_1",
         nominal_power=100.0,
         variable_cost=50.0,
@@ -19,9 +19,9 @@ def sample_generator_1() -> PowerGenerator:
 
 
 @pytest.fixture
-def sample_generator_2() -> PowerGenerator:
+def sample_generator_2() -> Generator:
     """Create a sample power generator for testing."""
-    return PowerGenerator(
+    return Generator(
         name="test_generator_2",
         nominal_power=120.0,
         variable_cost=20.0,
@@ -29,9 +29,9 @@ def sample_generator_2() -> PowerGenerator:
 
 
 @pytest.fixture
-def sample_battery() -> Battery:
+def sample_battery() -> Storage:
     """Create a sample battery for testing."""
-    return Battery(
+    return Storage(
         name="test_battery",
         capacity=100.0,
         max_power=50.0,
@@ -43,9 +43,9 @@ def sample_battery() -> Battery:
 
 @pytest.fixture
 def portfolio_with_assets(
-    sample_generator_1: PowerGenerator,
-    sample_generator_2: PowerGenerator,
-    sample_battery: Battery,
+    sample_generator_1: Generator,
+    sample_generator_2: Generator,
+    sample_battery: Storage,
 ) -> AssetPortfolio:
     """Create a portfolio with sample assets for testing."""
     portfolio = AssetPortfolio()
@@ -56,7 +56,7 @@ def portfolio_with_assets(
 
 
 def test_add_asset_raises_errors(
-    sample_generator_1: PowerGenerator,
+    sample_generator_1: Generator,
 ) -> None:
     """Test that add_asset raises appropriate errors for invalid inputs."""
     portfolio = AssetPortfolio()
@@ -69,8 +69,8 @@ def test_add_asset_raises_errors(
 @pytest.mark.parametrize(
     ("asset_name", "expected_asset_type"),
     [
-        ("test_generator_1", PowerGenerator),
-        ("test_battery", Battery),
+        ("test_generator_1", Generator),
+        ("test_battery", Storage),
     ],
 )
 def test_get_asset_returns_correct_asset(
@@ -91,9 +91,9 @@ def test_get_asset_raises_key_error_for_nonexistent_asset(portfolio_with_assets:
 
 
 def test_portfolio_properties_return_correct_assets(
-    sample_generator_1: PowerGenerator,
-    sample_generator_2: PowerGenerator,
-    sample_battery: Battery,
+    sample_generator_1: Generator,
+    sample_generator_2: Generator,
+    sample_battery: Storage,
 ) -> None:
     portfolio = AssetPortfolio()
     portfolio.add_asset(sample_generator_1)
@@ -101,9 +101,9 @@ def test_portfolio_properties_return_correct_assets(
     portfolio.add_asset(sample_battery)
 
     generators = portfolio.generators
-    batteries = portfolio.batteries
+    storages = portfolio.storages
     assert sample_generator_1 is generators[0]
     assert sample_generator_2 is generators[1]
-    assert sample_battery is batteries[0]
+    assert sample_battery is storages[0]
 
-    assert (generators + batteries) == (sample_generator_1, sample_generator_2, sample_battery)
+    assert (generators + storages) == (sample_generator_1, sample_generator_2, sample_battery)

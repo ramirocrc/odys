@@ -9,10 +9,10 @@ from datetime import timedelta
 
 import pytest
 
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import Scenario
 from odys.energy_system_models.units import PowerUnit
@@ -20,8 +20,8 @@ from odys.energy_system_models.validated_energy_system import ValidatedEnergySys
 
 
 @pytest.fixture
-def testing_generator() -> PowerGenerator:
-    return PowerGenerator(
+def testing_generator() -> Generator:
+    return Generator(
         name="test_generator",
         nominal_power=100.0,  # 100 MW
         variable_cost=50.0,  # 50 currency/MWh
@@ -29,8 +29,8 @@ def testing_generator() -> PowerGenerator:
 
 
 @pytest.fixture
-def testing_battery() -> Battery:
-    return Battery(
+def testing_battery() -> Storage:
+    return Storage(
         name="test_battery",
         capacity=50.0,
         max_power=25.0,
@@ -47,8 +47,8 @@ def testing_load() -> Load:
 
 @pytest.fixture
 def testing_portfolio(
-    testing_generator: PowerGenerator,
-    testing_battery: Battery,
+    testing_generator: Generator,
+    testing_battery: Storage,
     testing_load: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
@@ -180,7 +180,7 @@ def testing_market() -> EnergyMarket:
 @pytest.fixture
 def portfolio_without_loads() -> AssetPortfolio:
     portfolio = AssetPortfolio()
-    portfolio.add_asset(PowerGenerator(name="gen", nominal_power=100.0, variable_cost=50.0))
+    portfolio.add_asset(Generator(name="gen", nominal_power=100.0, variable_cost=50.0))
     return portfolio
 
 
@@ -188,7 +188,7 @@ def portfolio_without_loads() -> AssetPortfolio:
 def portfolio_without_generators() -> AssetPortfolio:
     portfolio = AssetPortfolio()
     portfolio.add_asset(
-        Battery(
+        Storage(
             name="battery",
             capacity=50.0,
             max_power=25.0,
@@ -331,7 +331,7 @@ def test_market_validation_extra_market_prices(testing_portfolio: AssetPortfolio
 
 def test_market_validation_no_markets_but_has_prices(portfolio_without_loads: AssetPortfolio) -> None:
     """Test validation when portfolio has no markets but scenario has market prices."""
-    with pytest.raises(ValueError, match=r"Portfolio contains no markets.*but scenario.*has market prices"):
+    with pytest.raises(ValueError, match=r"EnergySystem contains no markets.*but scenario.*has market prices"):
         ValidatedEnergySystem(
             portfolio=portfolio_without_loads,
             number_of_steps=4,

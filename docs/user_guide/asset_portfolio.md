@@ -1,18 +1,15 @@
 # AssetPortfolio
 
-An `AssetPortfolio` is the container that holds all your energy assets. You add generators, batteries, and loads to it, then pass it to the `EnergySystem`.
+An `AssetPortfolio` is the container that holds all your energy assets. You add generators, storages, and loads to it, then pass it to the `EnergySystem`.
 
 ## Basic usage
 
 ```python
-from odys.energy_system_models.assets.generator import PowerGenerator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
+from odys import AssetPortfolio, Generator, Load, Storage
 
 portfolio = AssetPortfolio()
-portfolio.add_asset(PowerGenerator(name="gen", nominal_power=100.0, variable_cost=50.0))
-portfolio.add_asset(Battery(
+portfolio.add_asset(Generator(name="gen", nominal_power=100.0, variable_cost=50.0))
+portfolio.add_asset(Storage(
     name="bess", capacity=50.0, max_power=25.0,
     efficiency_charging=0.95, efficiency_discharging=0.95, soc_start=0.5,
 ))
@@ -21,7 +18,7 @@ portfolio.add_asset(Load(name="demand"))
 
 ## Adding assets
 
-Use `add_asset()` to add any `EnergyAsset` (generators, batteries, loads):
+Use `add_asset()` to add any `EnergyAsset` (generators, storages, loads):
 
 ```python
 portfolio = AssetPortfolio()
@@ -53,8 +50,8 @@ all_assets = portfolio.assets  # MappingProxyType (read-only dict)
 The portfolio has convenience properties to get assets by type:
 
 ```python
-portfolio.generators  # tuple of all PowerGenerator assets
-portfolio.batteries   # tuple of all Battery assets
+portfolio.generators  # tuple of all Generator assets
+portfolio.storages    # tuple of all Storage assets
 portfolio.loads       # tuple of all Load assets
 ```
 

@@ -7,26 +7,21 @@ the system operation to meet demand at minimum cost.
 
 from datetime import timedelta
 
-from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import PowerGenerator
-from odys.energy_system_models.assets.load import Load, LoadType
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
-from odys.energy_system_models.scenarios import Scenario
+from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario, Storage
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
 
 if __name__ == "__main__":
-    generator_1 = PowerGenerator(
+    generator_1 = Generator(
         name="gen1",
         nominal_power=100.0,
         variable_cost=20.0,
         min_up_time=1,
         ramp_down=100,
     )
-    generator_2 = PowerGenerator(
+    generator_2 = Generator(
         name="gen2",
         nominal_power=150.0,
         variable_cost=100.0,
@@ -36,7 +31,7 @@ if __name__ == "__main__":
         ramp_up=140,
         ramp_down=100,
     )
-    battery_1 = Battery(
+    battery_1 = Storage(
         name="battery1",
         max_power=200.0,
         capacity=100.0,
@@ -69,11 +64,11 @@ if __name__ == "__main__":
     result = energy_system.optimize()
     logger.info(result.termination_condition)
     logger.info(result.solver_status)
-    battery_results = result.batteries
+    battery_results = result.storages
     logger.info("generators power")
     logger.info(result.generators.power)
     logger.info("battery")
-    logger.info(result.batteries.net_power)
+    logger.info(result.storages.net_power)
 
     logger.info("results summary dataframe")
     logger.info(result.to_dataframe())

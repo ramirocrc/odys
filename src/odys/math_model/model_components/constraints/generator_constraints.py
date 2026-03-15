@@ -130,8 +130,10 @@ class GeneratorConstraints:
     def _get_max_ramp_up_constraint(self) -> ModelConstraint:
         self._validate_generator_parameters_exist()
         max_ramp_up = self.params.max_ramp_up.fillna(self.params.nominal_power)  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+        constraint = self.model.generator_power - self.model.generator_power.shift(time=1) <= max_ramp_up
+        constraint_skip_t0 = constraint.isel(time=slice(1, None))
         return ModelConstraint(
-            constraint=self.model.generator_power - self.model.generator_power.shift(time=1) <= max_ramp_up,
+            constraint=constraint_skip_t0,
             name="generator_max_ramp_up_constraint",
         )
 
@@ -139,8 +141,9 @@ class GeneratorConstraints:
         self._validate_generator_parameters_exist()
         max_ramp_down = self.params.max_ramp_down.fillna(self.params.nominal_power)  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         constraint = self.model.generator_power.shift(time=1) - self.model.generator_power <= max_ramp_down
+        constraint_skip_t0 = constraint.isel(time=slice(1, None))
 
         return ModelConstraint(
-            constraint=constraint,
+            constraint=constraint_skip_t0,
             name="generator_max_ramp_down_constraint",
         )

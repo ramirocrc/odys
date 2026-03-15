@@ -6,11 +6,12 @@ optimization models.
 
 from pydantic import BaseModel, ConfigDict
 
-from odys.math_model.model_components.parameters.battery_parameters import BatteryParameters
 from odys.math_model.model_components.parameters.generator_parameters import GeneratorParameters
 from odys.math_model.model_components.parameters.load_parameters import LoadParameters
 from odys.math_model.model_components.parameters.market_parameters import MarketParameters
 from odys.math_model.model_components.parameters.scenario_parameters import ScenarioParameters
+from odys.math_model.model_components.parameters.storage_parameters import StorageParameters
+from odys.optimization.cvar_config import CVaRConfig
 
 
 class EnergySystemParameters(BaseModel):
@@ -19,7 +20,8 @@ class EnergySystemParameters(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
 
     generators: GeneratorParameters | None
-    batteries: BatteryParameters | None
+    storages: StorageParameters | None
     loads: LoadParameters | None
     markets: MarketParameters | None
     scenarios: ScenarioParameters
+    cvar_config: CVaRConfig | None = None

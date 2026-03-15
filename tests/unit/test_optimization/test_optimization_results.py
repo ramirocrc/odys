@@ -4,26 +4,26 @@ import pandas as pd
 import pytest
 
 from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.scenarios import Scenario
 
 
 @pytest.fixture
 def energy_system_sample() -> EnergySystem:
-    generator_1 = PowerGenerator(
+    generator_1 = Generator(
         name="generator_1",
         nominal_power=100.0,
         variable_cost=20.0,
     )
-    generator_2 = PowerGenerator(
+    generator_2 = Generator(
         name="generator_2",
         nominal_power=150.0,
         variable_cost=25.0,
     )
-    battery_1 = Battery(
+    battery_1 = Storage(
         name="battery_1",
         max_power=200.0,
         capacity=100.0,
@@ -65,31 +65,31 @@ def test_detailed_results_format(energy_system_sample: EnergySystem) -> None:
     expected_columns = pd.Index(["value"])
     expected_index = pd.MultiIndex.from_tuples(
         [
-            ("battery_1", "battery_charge_mode", "0"),
-            ("battery_1", "battery_charge_mode", "1"),
-            ("battery_1", "battery_charge_mode", "2"),
-            ("battery_1", "battery_charge_mode", "3"),
-            ("battery_1", "battery_charge_mode", "4"),
-            ("battery_1", "battery_net_power", "0"),
-            ("battery_1", "battery_net_power", "1"),
-            ("battery_1", "battery_net_power", "2"),
-            ("battery_1", "battery_net_power", "3"),
-            ("battery_1", "battery_net_power", "4"),
-            ("battery_1", "battery_power_in", "0"),
-            ("battery_1", "battery_power_in", "1"),
-            ("battery_1", "battery_power_in", "2"),
-            ("battery_1", "battery_power_in", "3"),
-            ("battery_1", "battery_power_in", "4"),
-            ("battery_1", "battery_power_out", "0"),
-            ("battery_1", "battery_power_out", "1"),
-            ("battery_1", "battery_power_out", "2"),
-            ("battery_1", "battery_power_out", "3"),
-            ("battery_1", "battery_power_out", "4"),
-            ("battery_1", "battery_soc", "0"),
-            ("battery_1", "battery_soc", "1"),
-            ("battery_1", "battery_soc", "2"),
-            ("battery_1", "battery_soc", "3"),
-            ("battery_1", "battery_soc", "4"),
+            ("battery_1", "storage_charge_mode", "0"),
+            ("battery_1", "storage_charge_mode", "1"),
+            ("battery_1", "storage_charge_mode", "2"),
+            ("battery_1", "storage_charge_mode", "3"),
+            ("battery_1", "storage_charge_mode", "4"),
+            ("battery_1", "storage_net_power", "0"),
+            ("battery_1", "storage_net_power", "1"),
+            ("battery_1", "storage_net_power", "2"),
+            ("battery_1", "storage_net_power", "3"),
+            ("battery_1", "storage_net_power", "4"),
+            ("battery_1", "storage_power_in", "0"),
+            ("battery_1", "storage_power_in", "1"),
+            ("battery_1", "storage_power_in", "2"),
+            ("battery_1", "storage_power_in", "3"),
+            ("battery_1", "storage_power_in", "4"),
+            ("battery_1", "storage_power_out", "0"),
+            ("battery_1", "storage_power_out", "1"),
+            ("battery_1", "storage_power_out", "2"),
+            ("battery_1", "storage_power_out", "3"),
+            ("battery_1", "storage_power_out", "4"),
+            ("battery_1", "storage_soc", "0"),
+            ("battery_1", "storage_soc", "1"),
+            ("battery_1", "storage_soc", "2"),
+            ("battery_1", "storage_soc", "3"),
+            ("battery_1", "storage_soc", "4"),
             ("generator_1", "generator_power", "0"),
             ("generator_1", "generator_power", "1"),
             ("generator_1", "generator_power", "2"),

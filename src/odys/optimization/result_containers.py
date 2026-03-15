@@ -1,7 +1,7 @@
 """Containers for storing per-asset optimization results."""
 
 import pandas as pd
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class GeneratorResults(BaseModel):
@@ -15,8 +15,8 @@ class GeneratorResults(BaseModel):
     shutdown: pd.DataFrame
 
 
-class BatteryResults(BaseModel):
-    """Class to store battery results."""
+class StorageResults(BaseModel):
+    """Class to store storage results."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -31,3 +31,13 @@ class MarketResults(BaseModel):
 
     sell_volume: pd.DataFrame
     buy_volume: pd.DataFrame
+
+
+class CVaRResults(BaseModel):
+    """CVaR optimization results: value at risk, CVaR value, and per-scenario shortfalls."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    value_at_risk: float = Field(description="The VaR threshold η.")
+    cvar: float = Field(description="The CVaR value: η - 1/(1-alpha) * Σ_s p_s * z_s.")
+    shortfall_per_scenario: pd.Series = Field(description="Per-scenario revenue shortfall z_s.")

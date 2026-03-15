@@ -14,11 +14,11 @@
 
 ::: odys.energy_system_models.assets.base
 
-### PowerGenerator
+### Generator
 
 ::: odys.energy_system_models.assets.generator
 
-### Battery
+### Storage
 
 ::: odys.energy_system_models.assets.storage
 

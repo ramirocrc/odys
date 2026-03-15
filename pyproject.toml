@@ -81,6 +81,9 @@ ignore = [
   "D",  # Check for missing docstrings
   "F811",  # Redefinition of unsuded variables
 ]
+"__init__.py" = [
+  "F401",
+]
 "examples/**" = [
   "INP001",  # Checks for packages that are missing an __init__.py
 ]

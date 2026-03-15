@@ -7,26 +7,21 @@ the system operation to meet demand at minimum cost.
 
 from datetime import timedelta
 
-from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import PowerGenerator
-from odys.energy_system_models.assets.load import Load, LoadType
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.markets import EnergyMarket
-from odys.energy_system_models.scenarios import Scenario
+from odys import AssetPortfolio, EnergyMarket, EnergySystem, Generator, Load, LoadType, Scenario
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
 
 if __name__ == "__main__":
-    generator_1 = PowerGenerator(
+    generator_1 = Generator(
         name="gen1",
         nominal_power=100.0,
         variable_cost=20.0,
         min_up_time=1,
         ramp_down=100,
     )
-    generator_2 = PowerGenerator(
+    generator_2 = Generator(
         name="gen2",
         nominal_power=150.0,
         variable_cost=100.0,

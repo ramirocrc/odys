@@ -12,7 +12,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import (
@@ -21,7 +21,6 @@ from odys.energy_system_models.scenarios import (
     validate_sequence_of_stochastic_scenarios,
 )
 from odys.energy_system_models.units import PowerUnit
-from odys.math_model.model_components.parameters.battery_parameters import BatteryParameters
 from odys.math_model.model_components.parameters.generator_parameters import GeneratorParameters
 from odys.math_model.model_components.parameters.load_parameters import LoadParameters
 from odys.math_model.model_components.parameters.market_parameters import MarketParameters
@@ -29,6 +28,8 @@ from odys.math_model.model_components.parameters.parameters import (
     EnergySystemParameters,
 )
 from odys.math_model.model_components.parameters.scenario_parameters import ScenarioParameters
+from odys.math_model.model_components.parameters.storage_parameters import StorageParameters
+from odys.optimization.cvar_config import CVaRConfig
 
 
 class ValidatedEnergySystem(BaseModel):
@@ -54,6 +55,7 @@ class ValidatedEnergySystem(BaseModel):
     timestep: timedelta
     number_of_steps: int
     power_unit: PowerUnit
+    cvar_config: CVaRConfig | None = None
     markets: EnergyMarket | Sequence[EnergyMarket] | None = Field(default=None, init_var=True)
     scenarios: Scenario | Sequence[StochasticScenario] = Field(init_var=True)
 
@@ -96,16 +98,17 @@ class ValidatedEnergySystem(BaseModel):
         """Parameters of the energy system."""
         return EnergySystemParameters(
             generators=self._generator_parameters,
-            batteries=self._battery_parameters,
+            storages=self._storage_parameters,
             loads=self._load_parameters,
             markets=self._market_parameters,
             scenarios=self._scenario_parameters,
+            cvar_config=self.cvar_config,
         )
 
     @cached_property
     def _scenario_parameters(self) -> ScenarioParameters:
         generators_index = self._generator_parameters.index if self._generator_parameters else None
-        batteries_index = self._battery_parameters.index if self._battery_parameters else None
+        storages_index = self._storage_parameters.index if self._storage_parameters else None
         loads_index = self._load_parameters.index if self._load_parameters else None
         markets_index = self._market_parameters.index if self._market_parameters else None
 
@@ -113,7 +116,7 @@ class ValidatedEnergySystem(BaseModel):
             number_of_timesteps=self.number_of_steps,
             scenarios=self._collection_of_scenarios,
             generators_index=generators_index,
-            batteries_index=batteries_index,
+            storages_index=storages_index,
             loads_index=loads_index,
             markets_index=markets_index,
         )
@@ -125,10 +128,10 @@ class ValidatedEnergySystem(BaseModel):
         return GeneratorParameters(generators=self.portfolio.generators)
 
     @property
-    def _battery_parameters(self) -> BatteryParameters | None:
-        if len(self.portfolio.batteries) == 0:
+    def _storage_parameters(self) -> StorageParameters | None:
+        if len(self.portfolio.storages) == 0:
             return None
-        return BatteryParameters(self.portfolio.batteries)
+        return StorageParameters(self.portfolio.storages)
 
     @property
     def _load_parameters(self) -> LoadParameters | None:
@@ -236,7 +239,7 @@ class ValidatedEnergySystem(BaseModel):
                     raise ValueError(msg)
             elif scenario.market_prices is not None:
                 msg = (
-                    f"Portfolio contains no markets, but scenario '{scenario.name}' "
+                    f"EnergySystem contains no markets, but scenario '{scenario.name}' "
                     f"has market prices: {list(scenario.market_prices.keys())}"
                 )
                 raise ValueError(msg)
@@ -272,7 +275,7 @@ class ValidatedEnergySystem(BaseModel):
 
         for asset_name, capacity_profile in scenario.available_capacity_profiles.items():
             asset = self.portfolio.get_asset(asset_name)
-            if not isinstance(asset, PowerGenerator):
+            if not isinstance(asset, Generator):
                 msg = (
                     "Available capacity can only be specified for generators, "
                     f"but got '{asset_name}' of type {type(asset)}."
@@ -296,7 +299,7 @@ class ValidatedEnergySystem(BaseModel):
         """Validate that maximum available power can meet peak demand.
 
         This method checks that the sum of generator nominal power and
-        battery capacity can meet the maximum demand at any time period.
+        storage capacity can meet the maximum demand at any time period.
 
         Raises:
             ValueError: If maximum available power is insufficient for peak demand.
@@ -308,15 +311,15 @@ class ValidatedEnergySystem(BaseModel):
 
         cumulative_generators_power = sum(gen.nominal_power for gen in self.portfolio.generators)
         # TODO: We assume full capacity can be discharged -> Needs to be limited by max power
-        cumulative_battery_capacities = sum(bat.capacity for bat in self.portfolio.batteries)
-        max_available_power = cumulative_generators_power + cumulative_battery_capacities
+        cumulative_storage_capacities = sum(storage.capacity for storage in self.portfolio.storages)
+        max_available_power = cumulative_generators_power + cumulative_storage_capacities
 
         for load_name, load_profile in scenario.load_profiles.items():
             for t, demand_t in enumerate(load_profile):
                 if max_available_power < demand_t:
                     msg = (
                         f"Infeasible problem in scenario '{scenario.name}' for load '{load_name}' at time index {t}: "
-                        f"Demand = {demand_t}, but maximum available generation + battery = {max_available_power}."
+                        f"Demand = {demand_t}, but maximum available generation + storage = {max_available_power}."
                     )
                     raise ValueError(msg)
 

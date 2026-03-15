@@ -27,8 +27,8 @@ The optimizer respects these constraints:
 At every timestep, supply must equal demand:
 
 ```
-generator_output + battery_discharge + market_buys
-= load + battery_charge + market_sells
+generator_output + storage_discharge + market_buys
+= load + storage_charge + market_sells
 ```
 
 This is the fundamental constraint -- the system has to balance.
@@ -42,11 +42,11 @@ This is the fundamental constraint -- the system has to balance.
 - **Startup/shutdown logic**: Binary variables track when generators turn on and off
 - **Available capacity**: If `available_capacity_profiles` is provided, output is capped per timestep
 
-### Battery constraints
+### Storage constraints
 
 - **SOC tracking**: State of charge is updated based on charge/discharge and efficiency
 - **SOC bounds**: SOC stays within `[soc_min, soc_max]`
-- **Initial/final SOC**: Honored as set on the `Battery` object
+- **Initial/final SOC**: Honored as set on the `Storage` object
 - **Power limits**: Charge and discharge can't exceed `max_power`
 
 ### Market constraints
@@ -81,9 +81,9 @@ result.generators.status    # on/off (1/0)
 result.generators.startup   # startup events
 result.generators.shutdown  # shutdown events
 
-# Batteries
-result.batteries.net_power        # positive = discharging, negative = charging
-result.batteries.state_of_charge  # SOC at each timestep
+# Storages
+result.storages.net_power        # positive = discharging, negative = charging
+result.storages.state_of_charge  # SOC at each timestep
 
 # Markets
 result.markets.sell_volume  # MW sold per market per timestep

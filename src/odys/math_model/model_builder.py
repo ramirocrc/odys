@@ -8,9 +8,7 @@ from collections.abc import Iterable
 from functools import cached_property
 
 from odys.math_model.milp_model import EnergyMILPModel
-from odys.math_model.model_components.constraints.battery_constraints import (
-    BatteryConstraints,
-)
+from odys.math_model.model_components.constraints.cvar_constraints import CVaRConstraints
 from odys.math_model.model_components.constraints.generator_constraints import (
     GeneratorConstraints,
 )
@@ -19,19 +17,21 @@ from odys.math_model.model_components.constraints.model_constraint import ModelC
 from odys.math_model.model_components.constraints.scenario_constraints import (
     ScenarioConstraints,
 )
+from odys.math_model.model_components.constraints.storage_constraints import (
+    StorageConstraints,
+)
 from odys.math_model.model_components.linopy_converter import (
     LinopyVariableParameters,
     get_variable_lower_bound,
 )
-from odys.math_model.model_components.objectives import (
-    ObjectiveFunction,
-)
+from odys.math_model.model_components.objectives import build_objective
 from odys.math_model.model_components.parameters.parameters import EnergySystemParameters
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
 from odys.math_model.model_components.variables import (
-    BATTERY_VARIABLES,
+    CVAR_VARIABLES,
     GENERATOR_VARIABLES,
     MARKET_VARIABLES,
+    STORAGE_VARIABLES,
     ModelVariable,
 )
 
@@ -85,11 +85,14 @@ class EnergyAlgebraicModelBuilder:
         if self._milp_model.parameters.generators:
             variables_to_add.extend(GENERATOR_VARIABLES)
 
-        if self._milp_model.parameters.batteries:
-            variables_to_add.extend(BATTERY_VARIABLES)
+        if self._milp_model.parameters.storages:
+            variables_to_add.extend(STORAGE_VARIABLES)
 
         if self._milp_model.parameters.markets:
             variables_to_add.extend(MARKET_VARIABLES)
+
+        if self._milp_model.parameters.cvar_config:
+            variables_to_add.extend(CVAR_VARIABLES)
 
         for variable in variables_to_add:
             linopy_variable = self._get_linopy_variable_params(variable)
@@ -100,11 +103,12 @@ class EnergyAlgebraicModelBuilder:
         dimensions = []
         indeces = []
 
-        for dimension in variable.dimensions:
-            index = self.get_index_for_dimension(dimension)
-            coordinates |= index.coordinates
-            dimensions.append(index.dimension)
-            indeces.append(index)
+        if variable.dimensions is not None:
+            for dimension in variable.dimensions:
+                index = self.get_index_for_dimension(dimension)
+                coordinates |= index.coordinates
+                dimensions.append(index.dimension)
+                indeces.append(index)
 
         return LinopyVariableParameters(
             name=variable.var_name,
@@ -140,7 +144,7 @@ class EnergyAlgebraicModelBuilder:
             ModelDimension.Scenarios: self._milp_model.indices.scenarios,
             ModelDimension.Time: self._milp_model.indices.time,
             ModelDimension.Generators: self._milp_model.indices.generators,
-            ModelDimension.Batteries: self._milp_model.indices.batteries,
+            ModelDimension.Storages: self._milp_model.indices.storages,
             ModelDimension.Loads: self._milp_model.indices.loads,
             ModelDimension.Markets: self._milp_model.indices.markets,
         }
@@ -157,12 +161,14 @@ class EnergyAlgebraicModelBuilder:
 
     def _add_model_constraints(self) -> None:
         self._add_generator_constraints()
-        self._add_battery_constraints()
+        self._add_storage_constraints()
         self._add_market_constraints()
         self._add_scenario_constraints()
+        if self._milp_model.parameters.cvar_config:
+            self._add_cvar_constraints()
 
-    def _add_battery_constraints(self) -> None:
-        constraints = BatteryConstraints(milp_model=self._milp_model).all
+    def _add_storage_constraints(self) -> None:
+        constraints = StorageConstraints(milp_model=self._milp_model).all
         self._add_set_of_contraints_to_model(constraints)
 
     def _add_generator_constraints(self) -> None:
@@ -179,6 +185,10 @@ class EnergyAlgebraicModelBuilder:
         ).all
         self._add_set_of_contraints_to_model(constraints)
 
+    def _add_cvar_constraints(self) -> None:
+        constraints = CVaRConstraints(milp_model=self._milp_model).all
+        self._add_set_of_contraints_to_model(constraints)
+
     def _add_set_of_contraints_to_model(self, constraints: Iterable[ModelConstraint]) -> None:
         for constraint in constraints:
             self._milp_model.linopy_model.add_constraints(
@@ -187,5 +197,5 @@ class EnergyAlgebraicModelBuilder:
             )
 
     def _add_model_objective(self) -> None:
-        objective = ObjectiveFunction(milp_model=self._milp_model).profit
+        objective = build_objective(self._milp_model)
         self._milp_model.linopy_model.add_objective(objective, sense="max")

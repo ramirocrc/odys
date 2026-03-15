@@ -3,16 +3,16 @@ from datetime import timedelta
 import pytest
 
 from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.scenarios import StochasticScenario
 
 
 @pytest.fixture
-def wind_generator() -> PowerGenerator:
-    return PowerGenerator(
+def wind_generator() -> Generator:
+    return Generator(
         name="wind_farm",
         nominal_power=150.0,
         variable_cost=10.0,
@@ -20,8 +20,8 @@ def wind_generator() -> PowerGenerator:
 
 
 @pytest.fixture
-def gas_generator() -> PowerGenerator:
-    return PowerGenerator(
+def gas_generator() -> Generator:
+    return Generator(
         name="gas_plant",
         nominal_power=100.0,
         variable_cost=50.0,
@@ -29,8 +29,8 @@ def gas_generator() -> PowerGenerator:
 
 
 @pytest.fixture
-def battery() -> Battery:
-    return Battery(
+def battery() -> Storage:
+    return Storage(
         name="storage",
         capacity=100.0,
         max_power=80.0,
@@ -48,9 +48,9 @@ def load() -> Load:
 
 @pytest.fixture
 def portfolio_with_battery(
-    wind_generator: PowerGenerator,
-    gas_generator: PowerGenerator,
-    battery: Battery,
+    wind_generator: Generator,
+    gas_generator: Generator,
+    battery: Storage,
     load: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
@@ -63,8 +63,8 @@ def portfolio_with_battery(
 
 @pytest.fixture
 def portfolio_without_battery(
-    wind_generator: PowerGenerator,
-    gas_generator: PowerGenerator,
+    wind_generator: Generator,
+    gas_generator: Generator,
     load: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()

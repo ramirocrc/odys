@@ -5,7 +5,7 @@ A `StochasticScenario` extends [Scenario](scenario.md) with a name and a probabi
 ## Basic usage
 
 ```python
-from odys.energy_system_models.scenarios import StochasticScenario
+from odys import StochasticScenario
 
 low_wind = StochasticScenario(
     name="low_wind",
@@ -66,7 +66,7 @@ Pass a list of scenarios to the [EnergySystem](energy_system.md) instead of a si
 ```python
 from datetime import timedelta
 
-from odys.energy_system import EnergySystem
+from odys import EnergySystem
 
 energy_system = EnergySystem(
     portfolio=portfolio,

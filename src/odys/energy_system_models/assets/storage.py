@@ -1,6 +1,6 @@
 """Energy storage asset implementation.
 
-This module provides the Battery class for modeling energy storage devices
+This module provides the Storage class for modeling energy storage devices
 in energy system optimization problems.
 """
 
@@ -11,10 +11,10 @@ from pydantic import Field, model_validator
 from odys.energy_system_models.assets.base import EnergyAsset
 
 
-class Battery(EnergyAsset):
-    """Represents a battery storage system in the energy system.
+class Storage(EnergyAsset):
+    """Represents a storage system in the energy system.
 
-    This class models batteries with various operational constraints
+    This class models storage assets with various operational constraints
     including capacity, power limits, efficiency, state of charge,
     and degradation characteristics.
     """
@@ -22,7 +22,7 @@ class Battery(EnergyAsset):
     capacity: float = Field(
         strict=True,
         gt=0,
-        description="Battery capacity in MWh.",
+        description="Storage capacity in MWh.",
     )
     max_power: float = Field(
         strict=True,
@@ -30,12 +30,14 @@ class Battery(EnergyAsset):
         description="Maximum power in MW.",
     )
     efficiency_charging: float = Field(
+        default=1,
         strict=True,
         gt=0,
         le=1,
         description="Charging efficiency (0-1).",
     )
     efficiency_discharging: float = Field(
+        default=1,
         strict=True,
         gt=0,
         le=1,

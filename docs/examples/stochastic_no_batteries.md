@@ -1,6 +1,6 @@
 # Stochastic Without Batteries
 
-This example shows stochastic optimization with generators only -- no battery storage.
+This example shows stochastic optimization with generators only -- no storage.
 
 **Source**: [`examples/example3.py`](https://github.com/ramirocrc/odys/blob/main/examples/example3.py)
 
@@ -17,7 +17,7 @@ Two generators:
 - **gen1**: Conventional (100 MW, 200 $/MWh) with a ramp-down limit
 - **wind_farm**: Wind-based (150 MW, 100 $/MWh) with variable availability
 
-No battery this time -- the generators have to handle everything.
+No storage this time -- the generators have to handle everything.
 
 Two scenarios with asymmetric probabilities:
 
@@ -29,20 +29,16 @@ Two scenarios with asymmetric probabilities:
 ```python
 from datetime import timedelta
 
-from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import PowerGenerator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.scenarios import StochasticScenario
+from odys import AssetPortfolio, EnergySystem, Generator, Load, StochasticScenario
 
-generator_1 = PowerGenerator(
+generator_1 = Generator(
     name="gen1",
     nominal_power=100.0,
     variable_cost=200.0,
     min_up_time=1,
     ramp_down=100,
 )
-generator_2 = PowerGenerator(
+generator_2 = Generator(
     name="wind_farm",
     nominal_power=150.0,
     variable_cost=100.0,
@@ -99,5 +95,5 @@ print(result.to_dataframe)
 ## What to look for
 
 - With 90% probability on high wind, the optimizer leans heavily toward the wind scenario.
-- Without a battery, there's no way to shift energy across timesteps -- each step has to balance on its own.
-- Compare this to the [Stochastic Scenarios](stochastic.md) example to see how a battery changes the solution.
+- Without a storage, there's no way to shift energy across timesteps -- each step has to balance on its own.
+- Compare this to the [Stochastic Scenarios](stochastic.md) example to see how a storage changes the solution.

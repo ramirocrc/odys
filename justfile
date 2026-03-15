@@ -1,7 +1,3 @@
-set unstable
-
-set script-interpreter := ['uv', 'run', '--script']
-
 install:
     @echo "🚀 Creating virtual environment using uv"
     uv sync --python 3.14 --all-groups
@@ -66,8 +62,3 @@ docs-deploy:
 examples:
     @echo "🚀 Running all examples"
     for f in examples/*.py; do echo "▶ Running $f"; uv run --locked python "$f"; done
-
-
-
-#  git tag -a v0.1.0 -m "First release"
-# git push origin v0.1.0

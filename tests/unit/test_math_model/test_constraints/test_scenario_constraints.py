@@ -7,10 +7,10 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
 from odys.energy_system_models.units import PowerUnit
@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def generator1() -> PowerGenerator:
-    return PowerGenerator(
+def generator1() -> Generator:
+    return Generator(
         name="gen1",
         nominal_power=100.0,
         variable_cost=20.0,
@@ -31,8 +31,8 @@ def generator1() -> PowerGenerator:
 
 
 @pytest.fixture
-def generator2() -> PowerGenerator:
-    return PowerGenerator(
+def generator2() -> Generator:
+    return Generator(
         name="gen2",
         nominal_power=150.0,
         variable_cost=25.0,
@@ -40,8 +40,8 @@ def generator2() -> PowerGenerator:
 
 
 @pytest.fixture
-def battery1() -> Battery:
-    return Battery(
+def battery1() -> Storage:
+    return Storage(
         name="batt1",
         max_power=200.0,
         capacity=100.0,
@@ -59,9 +59,9 @@ def load1() -> Load:
 
 @pytest.fixture
 def asset_portfolio_sample(
-    generator1: PowerGenerator,
-    generator2: PowerGenerator,
-    battery1: Battery,
+    generator1: Generator,
+    generator2: Generator,
+    battery1: Storage,
     load1: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
@@ -187,8 +187,8 @@ class TestScenarioConstraints:
         actual_constraint = self.linopy_model.constraints["power_balance_constraint"]
 
         generation_total = self.linopy_model.variables["generator_power"].sum("generator")
-        discharge_total = self.linopy_model.variables["battery_power_out"].sum("battery")
-        charge_total = self.linopy_model.variables["battery_power_in"].sum("battery")
+        discharge_total = self.linopy_model.variables["storage_power_out"].sum("storage")
+        charge_total = self.linopy_model.variables["storage_power_in"].sum("storage")
 
         # Create demand array with the proper dimensions to match actual constraint
         demand_data = [

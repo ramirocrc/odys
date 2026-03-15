@@ -7,10 +7,10 @@ import pytest
 
 from odys.energy_system import EnergySystem
 from odys.energy_system_models.assets.base import EnergyAsset
-from odys.energy_system_models.assets.generator import PowerGenerator
+from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Battery
+from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import Scenario
 from odys.energy_system_models.units import PowerUnit
@@ -23,7 +23,7 @@ MEDIUM_COST = 25.0
 EXPENSIVE_COST = 30.0
 VERY_EXPENSIVE_COST = 40.0
 
-STANDARD_BATTERY_CAPACITY = 100.0
+STANDARD_STORAGE_CAPACITY = 100.0
 
 PERFECT_EFFICIENCY = 1.0
 HALF_EFFICIENCY = 0.5
@@ -44,9 +44,9 @@ def standard_load() -> Load:
 
 
 @pytest.fixture
-def cheap_generator() -> PowerGenerator:
+def cheap_generator() -> Generator:
     """Cheap generator fixture."""
-    return PowerGenerator(
+    return Generator(
         name="generator_100mw_cheap",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=CHEAP_COST,
@@ -54,9 +54,9 @@ def cheap_generator() -> PowerGenerator:
 
 
 @pytest.fixture
-def medium_generator() -> PowerGenerator:
+def medium_generator() -> Generator:
     """Medium cost generator fixture."""
-    return PowerGenerator(
+    return Generator(
         name="generator_100mw_medium",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=EXPENSIVE_COST,
@@ -64,9 +64,9 @@ def medium_generator() -> PowerGenerator:
 
 
 @pytest.fixture
-def expensive_generator() -> PowerGenerator:
+def expensive_generator() -> Generator:
     """Expensive generator fixture."""
-    return PowerGenerator(
+    return Generator(
         name="generator_100mw_expensive",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=VERY_EXPENSIVE_COST,
@@ -74,11 +74,11 @@ def expensive_generator() -> PowerGenerator:
 
 
 @pytest.fixture
-def perfect_battery() -> Battery:
+def perfect_battery() -> Storage:
     """Battery with perfect efficiency fixture."""
-    return Battery(
+    return Storage(
         name="energy_storage",
-        capacity=STANDARD_BATTERY_CAPACITY,
+        capacity=STANDARD_STORAGE_CAPACITY,
         max_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=PERFECT_EFFICIENCY,
         efficiency_discharging=PERFECT_EFFICIENCY,
@@ -104,7 +104,7 @@ class SystemTestCase:
 
     energy_system: EnergySystem
     expected_generator_results: pd.DataFrame | None = None
-    expected_battery_results: pd.DataFrame | None = None
+    expected_storage_results: pd.DataFrame | None = None
     description: str = ""
 
 
@@ -158,7 +158,7 @@ def _create_single_generator_system() -> SystemTestCase:
     Tests basic optimization where one generator with sufficient capacity
     serves the entire load profile.
     """
-    generator = PowerGenerator(
+    generator = Generator(
         name="gen1",
         nominal_power=LARGE_GENERATOR_POWER,
         variable_cost=EXPENSIVE_COST,
@@ -186,17 +186,17 @@ def _create_three_generators_system() -> SystemTestCase:
     Tests merit order dispatch where cheaper generators are used first,
     then more expensive ones as load increases.
     """
-    generator_cheap = PowerGenerator(
+    generator_cheap = Generator(
         name="generator_100mw_cheap",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=CHEAP_COST,
     )
-    generator_medium = PowerGenerator(
+    generator_medium = Generator(
         name="generator_100mw_medium",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=EXPENSIVE_COST,
     )
-    generator_expensive = PowerGenerator(
+    generator_expensive = Generator(
         name="generator_100mw_expensive",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=VERY_EXPENSIVE_COST,
@@ -232,14 +232,14 @@ def _create_generator_and_battery_system() -> SystemTestCase:
     Tests energy storage optimization where battery stores excess generation
     during low load and discharges during high demand periods.
     """
-    generator = PowerGenerator(
+    generator = Generator(
         name="base_generator",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=MEDIUM_COST,
     )
-    battery = Battery(
+    battery = Storage(
         name="energy_storage",
-        capacity=STANDARD_BATTERY_CAPACITY,
+        capacity=STANDARD_STORAGE_CAPACITY,
         max_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=PERFECT_EFFICIENCY,
         efficiency_discharging=PERFECT_EFFICIENCY,
@@ -256,16 +256,16 @@ def _create_generator_and_battery_system() -> SystemTestCase:
         "generator",
     )
 
-    expected_battery_results = _create_expected_dataframe(
+    expected_storage_results = _create_expected_dataframe(
         {battery.name: [0.5, 1.0, 0.5, 0.0, 0.5]},
         len(STORAGE_TEST_PROFILE),
-        "battery",
+        "storage",
     )
 
     return SystemTestCase(
         energy_system,
         expected_generator_results=expected_generator_results,
-        expected_battery_results=expected_battery_results,
+        expected_storage_results=expected_storage_results,
         description="Generator with perfect efficiency battery storage",
     )
 
@@ -276,14 +276,14 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
     Tests energy storage optimization with realistic efficiency losses,
     demonstrating how charging/discharging inefficiencies affect the solution.
     """
-    generator = PowerGenerator(
+    generator = Generator(
         name="generator",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=MEDIUM_COST,
     )
-    battery = Battery(
+    battery = Storage(
         name="battery",
-        capacity=STANDARD_BATTERY_CAPACITY,
+        capacity=STANDARD_STORAGE_CAPACITY,
         max_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=HALF_EFFICIENCY,
         efficiency_discharging=HALF_EFFICIENCY,
@@ -300,16 +300,16 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
         "generator",
     )
 
-    expected_battery_results = _create_expected_dataframe(
+    expected_storage_results = _create_expected_dataframe(
         {battery.name: [0.25, 0.5, 0.5]},
         len(SHORT_STORAGE_PROFILE),
-        "battery",
+        "storage",
     )
 
     return SystemTestCase(
         energy_system,
         expected_generator_results=expected_generator_results,
-        expected_battery_results=expected_battery_results,
+        expected_storage_results=expected_storage_results,
         description="Generator with battery efficiency losses",
     )
 
@@ -320,7 +320,7 @@ def _create_generator_load_and_market_system() -> SystemTestCase:
     Tests market participation where excess generation can be sold
     and the optimizer balances generation cost vs market revenue.
     """
-    generator = PowerGenerator(
+    generator = Generator(
         name="market_generator",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=EXPENSIVE_COST,
@@ -361,7 +361,7 @@ def _create_generator_and_two_markets_system() -> SystemTestCase:
     Tests market arbitrage where the optimizer chooses between
     selling to different markets based on price differences.
     """
-    generator = PowerGenerator(
+    generator = Generator(
         name="arbitrage_generator",
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=CHEAP_COST,
@@ -483,9 +483,9 @@ def test_energy_system_optimization(test_id: str, system_factory: Callable[[], S
             check_names=True,
         )
 
-    if test_system.expected_battery_results is not None:
+    if test_system.expected_storage_results is not None:
         pd.testing.assert_frame_equal(
-            result.batteries.state_of_charge,
-            test_system.expected_battery_results,
+            result.storages.state_of_charge,
+            test_system.expected_storage_results,
             check_names=True,
         )
