@@ -42,6 +42,7 @@ dev = [
   "rich>=14.2.0",
   "ruff>=0.14.13",
   "ty>=0.0.12",
+  "zuban>=0.6.1",
 ]
 docs = [
   "mkdocs>=1.6.1",
@@ -117,3 +118,6 @@ paths = ["src/"]
 
 [tool.pyrefly]
 infer-with-first-use = false
+
+[tool.zuban]
+strict = true
