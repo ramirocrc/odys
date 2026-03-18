@@ -9,6 +9,7 @@ from typing import Self
 from pydantic import Field, model_validator
 
 from odys.energy_system_models.assets.base import EnergyAsset
+from odys.exceptions import OdysValidationError
 
 
 class Storage(EnergyAsset):
@@ -93,10 +94,10 @@ class Storage(EnergyAsset):
 
             if battery_soc < self.soc_min:
                 msg = f"{name} ({battery_soc}) must be ≥ soc_min ({self.soc_min})."
-                raise ValueError(msg)
+                raise OdysValidationError(msg)
             if battery_soc > self.soc_max:
                 msg = f"{name} ({battery_soc}) must be ≤ soc_max ({self.soc_max})."
-                raise ValueError(msg)
+                raise OdysValidationError(msg)
 
         return self
 
@@ -104,5 +105,5 @@ class Storage(EnergyAsset):
     def _validate_soc_min_less_than_max(self) -> Self:
         if self.soc_min >= self.soc_max:
             msg = f"soc_min ({self.soc_min}) must be < soc_max ({self.soc_max})."
-            raise ValueError(msg)
+            raise OdysValidationError(msg)
         return self

@@ -6,34 +6,15 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
+from odys import Scenario
 from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.assets.storage import Storage
-from odys.energy_system_models.scenarios import Scenario
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
-from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
 
 logger = logging.getLogger(__name__)
-
-
-@pytest.fixture
-def generator1() -> Generator:
-    return Generator(
-        name="gen1",
-        nominal_power=100.0,
-        variable_cost=20.0,
-    )
-
-
-@pytest.fixture
-def generator2() -> Generator:
-    return Generator(
-        name="gen2",
-        nominal_power=150.0,
-        variable_cost=25.0,
-    )
 
 
 @pytest.fixture
@@ -52,11 +33,6 @@ def storage1() -> Storage:
 
 
 @pytest.fixture
-def load1() -> Load:
-    return Load(name="load1")
-
-
-@pytest.fixture
 def asset_portfolio_sample(
     generator1: Generator,
     generator2: Generator,
@@ -64,21 +40,11 @@ def asset_portfolio_sample(
     load1: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
-    portfolio.add_asset(generator1)
-    portfolio.add_asset(generator2)
-    portfolio.add_asset(storage1)
-    portfolio.add_asset(load1)
+    portfolio.add_assets(generator1)
+    portfolio.add_assets(generator2)
+    portfolio.add_assets(storage1)
+    portfolio.add_assets(load1)
     return portfolio
-
-
-@pytest.fixture
-def demand_profile_sample() -> list[float]:
-    return [150, 200, 150]
-
-
-@pytest.fixture
-def time_index(demand_profile_sample: list[float]) -> list[int]:
-    return list(range(len(demand_profile_sample)))
 
 
 @pytest.fixture
@@ -96,16 +62,6 @@ def energy_system_sample(
             load_profiles={"load1": demand_profile_sample},
         ),
     )
-
-
-@pytest.fixture
-def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
-    model_builder = EnergyAlgebraicModelBuilder(
-        energy_system_sample.energy_system_parameters,
-    )
-
-    energy_milp_model = model_builder.build()
-    return energy_milp_model.linopy_model
 
 
 class TestStorageConstraints:

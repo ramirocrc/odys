@@ -23,21 +23,21 @@ def load1() -> Load:
 @pytest.fixture
 def asset_portfolio_sample(load1: Load) -> AssetPortfolio:
     portfolio = AssetPortfolio()
-    portfolio.add_asset(
+    portfolio.add_assets(
         Generator(
             name="gen1",
             nominal_power=100.0,
             variable_cost=20.0,
         ),
     )
-    portfolio.add_asset(
+    portfolio.add_assets(
         Generator(
             name="gen2",
             nominal_power=150.0,
             variable_cost=25.0,
         ),
     )
-    portfolio.add_asset(
+    portfolio.add_assets(
         Storage(
             name="battery1",
             max_power=200.0,
@@ -48,7 +48,7 @@ def asset_portfolio_sample(load1: Load) -> AssetPortfolio:
             soc_end=0.5,
         ),
     )
-    portfolio.add_asset(load1)
+    portfolio.add_assets(load1)
     return portfolio
 
 

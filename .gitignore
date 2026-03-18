@@ -66,5 +66,5 @@ docs/_build/
 
 
 # === Other ===
-experiments_ignored/
+ignored/
 CLAUDE.md

@@ -1,10 +1,11 @@
 """Generator-related constraints for the optimization model."""
 
 from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
 from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
 
 
-class GeneratorConstraints:
+class GeneratorConstraints(ConstraintGroup):
     """Builds constraints for generator power limits, ramping, startup/shutdown, and min uptime."""
 
     def __init__(self, milp_model: EnergyMILPModel) -> None:

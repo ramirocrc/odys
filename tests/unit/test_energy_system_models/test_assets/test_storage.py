@@ -1,8 +1,10 @@
 from types import MappingProxyType
 
 import pytest
+from pydantic import ValidationError
 
 from odys.energy_system_models.assets.storage import Storage
+from odys.exceptions import OdysValidationError
 
 
 @pytest.fixture
@@ -46,7 +48,7 @@ def test_battery_creation_with_invalid_parameters_raises_error(
 ) -> None:
     base_params = dict(battery_base_params)
     base_params[param_name] = invalid_value
-    with pytest.raises(ValueError, match=expected_match):
+    with pytest.raises(ValidationError, match=expected_match):
         Storage(**base_params)
 
 
@@ -68,5 +70,5 @@ def test_soc_values_outside_bounds_raises_error(
     base_params = dict(battery_base_params)
     invalid_battery_params = base_params | invalid_parameters  # The latter takes priority when same key exists
 
-    with pytest.raises(ValueError, match=expected_match):
+    with pytest.raises(OdysValidationError, match=expected_match):
         Storage(**invalid_battery_params)

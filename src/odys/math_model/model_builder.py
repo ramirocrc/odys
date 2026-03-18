@@ -101,21 +101,21 @@ class EnergyAlgebraicModelBuilder:
     def _get_linopy_variable_params(self, variable: ModelVariable) -> LinopyVariableParameters:
         coordinates = {}
         dimensions = []
-        indeces = []
+        indices = []
 
         if variable.dimensions is not None:
             for dimension in variable.dimensions:
                 index = self.get_index_for_dimension(dimension)
                 coordinates |= index.coordinates
                 dimensions.append(index.dimension)
-                indeces.append(index)
+                indices.append(index)
 
         return LinopyVariableParameters(
             name=variable.var_name,
             coords=coordinates,
             dims=dimensions,
             lower=get_variable_lower_bound(
-                indeces=indeces,
+                indeces=indices,
                 lower_bound_type=variable.lower_bound_type,
                 is_binary=variable.is_binary,
             ),
@@ -169,27 +169,27 @@ class EnergyAlgebraicModelBuilder:
 
     def _add_storage_constraints(self) -> None:
         constraints = StorageConstraints(milp_model=self._milp_model).all
-        self._add_set_of_contraints_to_model(constraints)
+        self._add_set_of_constraints_to_model(constraints)
 
     def _add_generator_constraints(self) -> None:
         constraints = GeneratorConstraints(self._milp_model).all
-        self._add_set_of_contraints_to_model(constraints)
+        self._add_set_of_constraints_to_model(constraints)
 
     def _add_market_constraints(self) -> None:
         constraints = MarketConstraints(milp_model=self._milp_model).all
-        self._add_set_of_contraints_to_model(constraints)
+        self._add_set_of_constraints_to_model(constraints)
 
     def _add_scenario_constraints(self) -> None:
         constraints = ScenarioConstraints(
             milp_model=self._milp_model,
         ).all
-        self._add_set_of_contraints_to_model(constraints)
+        self._add_set_of_constraints_to_model(constraints)
 
     def _add_cvar_constraints(self) -> None:
         constraints = CVaRConstraints(milp_model=self._milp_model).all
-        self._add_set_of_contraints_to_model(constraints)
+        self._add_set_of_constraints_to_model(constraints)
 
-    def _add_set_of_contraints_to_model(self, constraints: Iterable[ModelConstraint]) -> None:
+    def _add_set_of_constraints_to_model(self, constraints: Iterable[ModelConstraint]) -> None:
         for constraint in constraints:
             self._milp_model.linopy_model.add_constraints(
                 constraint.constraint,

@@ -44,7 +44,7 @@ class EnergySystem:
             power_unit: Unit used for power quantities ('W', 'kW', or 'MW').
             scenarios: Sequence of stochastic scenarios. Probabilities must add up to 1.
             markets: Optional energy markets in which assets can participate.
-            cvar_config: CVaR congiguration parameters.
+            cvar_config: CVaR configuration parameters.
 
         """
         self._validated_model = ValidatedEnergySystem(

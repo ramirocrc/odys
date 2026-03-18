@@ -807,7 +807,7 @@ wheels = [
 
 [[package]]
 name = "linopy"
-version = "0.6.3"
+version = "0.6.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bottleneck" },
@@ -824,9 +824,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "xarray" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/5a/82af7ba72b9f907e1617bbad8f61b0209db208532b28c89b8035cd8037b0/linopy-0.6.3.tar.gz", hash = "sha256:3b7debf2d5d23a6aeca208253a60401cb19ab073f31429c727cbd0da6776db85", size = 1266486, upload-time = "2026-02-11T09:59:39.214Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/0c/69e62f979ee02c3396632304c38e8e4ff8d5bfcd145c4eb22a27d6f23e97/linopy-0.6.5.tar.gz", hash = "sha256:f3045d0f0d6bdc909e362bda5a6f92dc917dcf0d9c18b0e67f82d698b91d45d1", size = 1268079, upload-time = "2026-03-04T07:03:31.951Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/1f/c6e8c367f4eff530dc6e5f060db24393b6720e27207677f708ad5d66de0b/linopy-0.6.3-py3-none-any.whl", hash = "sha256:44c97b436f4364a98b457e52dc244d885536adc059c2c0905504b156dc09244b", size = 115124, upload-time = "2026-02-11T09:59:37.603Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/b5/fb36509c4400b2c2f151d1d490ca693dadc23d1b58655f8c393ec56fa200/linopy-0.6.5-py3-none-any.whl", hash = "sha256:fc7381dbd9b3956807fcd037b95d1b41a7caa29b0fb13c63532a5a6ceee49787", size = 116302, upload-time = "2026-03-04T07:03:30.28Z" },
 ]
 
 [[package]]
@@ -1295,12 +1295,13 @@ docs = [
 ]
 vulnerability-fixes = [
     { name = "cryptography" },
+    { name = "pyasn1" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "highspy", specifier = ">=1.12.0" },
-    { name = "linopy", specifier = ">=0.6.3" },
+    { name = "linopy", specifier = ">=0.6.5" },
     { name = "numpy", specifier = ">=2.4.1" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "pydantic", specifier = ">=2.12.5" },
@@ -1329,7 +1330,10 @@ docs = [
     { name = "mkdocs-material", specifier = ">=9.7.1" },
     { name = "mkdocstrings-python", specifier = ">=2.0.1" },
 ]
-vulnerability-fixes = [{ name = "cryptography", specifier = ">=46.0.5" }]
+vulnerability-fixes = [
+    { name = "cryptography", specifier = ">=46.0.5" },
+    { name = "pyasn1", specifier = ">=0.6.3" },
+]
 
 [[package]]
 name = "packaging"
@@ -1524,11 +1528,11 @@ wheels = [
 
 [[package]]
 name = "pyasn1"
-version = "0.6.2"
+version = "0.6.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/b6/6e630dff89739fcd427e3f72b3d905ce0acb85a45d4ec3e2678718a3487f/pyasn1-0.6.2.tar.gz", hash = "sha256:9b59a2b25ba7e4f8197db7686c09fb33e658b98339fadb826e9512629017833b", size = 146586, upload-time = "2026-01-16T18:04:18.534Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5c/5f/6583902b6f79b399c9c40674ac384fd9cd77805f9e6205075f828ef11fb2/pyasn1-0.6.3.tar.gz", hash = "sha256:697a8ecd6d98891189184ca1fa05d1bb00e2f84b5977c481452050549c8a72cf", size = 148685, upload-time = "2026-03-17T01:06:53.382Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/b5/a96872e5184f354da9c84ae119971a0a4c221fe9b27a4d94bd43f2596727/pyasn1-0.6.2-py3-none-any.whl", hash = "sha256:1eb26d860996a18e9b6ed05e7aae0e9fc21619fcee6af91cca9bad4fbea224bf", size = 83371, upload-time = "2026-01-16T18:04:17.174Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/a0/7d793dce3fa811fe047d6ae2431c672364b462850c6235ae306c0efd025f/pyasn1-0.6.3-py3-none-any.whl", hash = "sha256:a80184d120f0864a52a073acc6fc642847d0be408e7c7252f31390c0f4eadcde", size = 83997, upload-time = "2026-03-17T01:06:52.036Z" },
 ]
 
 [[package]]

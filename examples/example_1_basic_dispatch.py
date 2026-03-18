@@ -25,10 +25,7 @@ if __name__ == "__main__":
         variable_cost=0,
     )
     load = Load(name="load", type=LoadType.Fixed)
-    portfolio = AssetPortfolio()
-    portfolio.add_asset(generator_1)
-    portfolio.add_asset(generator_2)
-    portfolio.add_asset(load)
+    portfolio = AssetPortfolio([generator_1, generator_2, load])
 
     scenario = Scenario(
         available_capacity_profiles={

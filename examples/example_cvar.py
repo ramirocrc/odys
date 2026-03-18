@@ -29,7 +29,7 @@ if __name__ == "__main__":
     ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=20.0)
 
     portfolio = AssetPortfolio()
-    portfolio.add_asset(ccgt)
+    portfolio.add_assets(ccgt)
 
     sdac = EnergyMarket(
         name="sdac",

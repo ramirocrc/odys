@@ -6,6 +6,7 @@ from odys.energy_system_models.assets.base import EnergyAsset
 from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.assets.storage import Storage
+from odys.exceptions import OdysValidationError
 
 
 @pytest.fixture
@@ -49,9 +50,9 @@ def portfolio_with_assets(
 ) -> AssetPortfolio:
     """Create a portfolio with sample assets for testing."""
     portfolio = AssetPortfolio()
-    portfolio.add_asset(sample_generator_1)
-    portfolio.add_asset(sample_generator_2)
-    portfolio.add_asset(sample_battery)
+    portfolio.add_assets(sample_generator_1)
+    portfolio.add_assets(sample_generator_2)
+    portfolio.add_assets(sample_battery)
     return portfolio
 
 
@@ -60,10 +61,10 @@ def test_add_asset_raises_errors(
 ) -> None:
     """Test that add_asset raises appropriate errors for invalid inputs."""
     portfolio = AssetPortfolio()
-    portfolio.add_asset(sample_generator_1)
+    portfolio.add_assets(sample_generator_1)
     exptected_error_message = f"Asset with name '{sample_generator_1.name}' already exists."
-    with pytest.raises(ValueError, match=exptected_error_message):
-        portfolio.add_asset(sample_generator_1)
+    with pytest.raises(OdysValidationError, match=exptected_error_message):
+        portfolio.add_assets(sample_generator_1)
 
 
 @pytest.mark.parametrize(
@@ -86,7 +87,7 @@ def test_get_asset_returns_correct_asset(
 
 def test_get_asset_raises_key_error_for_nonexistent_asset(portfolio_with_assets: AssetPortfolio) -> None:
     """Test that get_asset raises KeyError for non-existent assets."""
-    with pytest.raises(KeyError, match=r"Asset with name 'nonexistent' does not exist."):
+    with pytest.raises(OdysValidationError, match=r"Asset with name 'nonexistent' does not exist."):
         portfolio_with_assets.get_asset("nonexistent")
 
 
@@ -96,9 +97,9 @@ def test_portfolio_properties_return_correct_assets(
     sample_battery: Storage,
 ) -> None:
     portfolio = AssetPortfolio()
-    portfolio.add_asset(sample_generator_1)
-    portfolio.add_asset(sample_generator_2)
-    portfolio.add_asset(sample_battery)
+    portfolio.add_assets(sample_generator_1)
+    portfolio.add_assets(sample_generator_2)
+    portfolio.add_assets(sample_battery)
 
     generators = portfolio.generators
     storages = portfolio.storages

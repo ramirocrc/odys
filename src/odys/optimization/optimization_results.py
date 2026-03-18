@@ -10,6 +10,7 @@ import pandas as pd
 import xarray as xr
 from linopy.constants import SolverStatus, TerminationCondition
 
+from odys.exceptions import OdysNoResultsError, OdysSolverError
 from odys.math_model.milp_model import EnergyMILPModel
 from odys.math_model.model_components.sets import ModelDimension
 from odys.math_model.model_components.variables import ModelVariable
@@ -113,7 +114,7 @@ class OptimizationResults:
     def _validate_terminated_successfully(self) -> None:
         if self._solver_status != SolverStatus.ok:
             msg = f"No solution available. Optimization Termination Condition: {self.termination_condition}."
-            raise ValueError(msg)
+            raise OdysSolverError(msg)
 
     @cached_property
     def storages(self) -> StorageResults:
@@ -121,7 +122,7 @@ class OptimizationResults:
         self._validate_terminated_successfully()
         if self._milp_model.parameters.storages is None:
             msg = "This model does not contain storage results"
-            raise ValueError(msg)
+            raise OdysNoResultsError(msg)
         return StorageResults(
             net_power=self._get_variable_results(ModelVariable.STORAGE_POWER_NET),
             state_of_charge=self._get_variable_results(ModelVariable.STORAGE_SOC),
@@ -133,7 +134,7 @@ class OptimizationResults:
         self._validate_terminated_successfully()
         if self._milp_model.parameters.markets is None:
             msg = "This model does not contain market results"
-            raise ValueError(msg)
+            raise OdysNoResultsError(msg)
         return MarketResults(
             sell_volume=self._get_variable_results(ModelVariable.MARKET_SELL),
             buy_volume=self._get_variable_results(ModelVariable.MARKET_BUY),
@@ -145,7 +146,7 @@ class OptimizationResults:
         self._validate_terminated_successfully()
         if self._milp_model.parameters.generators is None:
             msg = "This model does not contain generator results"
-            raise ValueError(msg)
+            raise OdysNoResultsError(msg)
 
         return GeneratorResults(
             power=self._get_variable_results(ModelVariable.GENERATOR_POWER),
@@ -160,7 +161,7 @@ class OptimizationResults:
         self._validate_terminated_successfully()
         if self._milp_model.parameters.cvar_config is None:
             msg = "This model was not optimized with a CVaR configuration"
-            raise ValueError(msg)
+            raise OdysNoResultsError(msg)
         cvar_config = self._milp_model.parameters.cvar_config
         eta = float(self._solution[ModelVariable.VALUE_AT_RISK.var_name].item())
         z = self._solution[ModelVariable.SHORTFALL_REVENUE.var_name].to_series()

@@ -6,6 +6,7 @@ from typing import Self
 from pydantic import Field, model_validator
 
 from odys.energy_system_models.assets.base import EnergyAsset
+from odys.exceptions import OdysValidationError
 
 
 class LoadType(StrEnum):
@@ -38,10 +39,16 @@ class Load(EnergyAsset):
 
     @model_validator(mode="after")
     def _validate_type_and_variable_cost(self) -> Self:
-        if self.type == LoadType.Fixed and (self.variable_cost_to_decrease or self.variable_cost_to_increase):
-            msg = "`variable_cost_to_decrease` and `variable_cost_to_incrase` are fields valid only for Flexible loads."
-            raise ValueError(msg)
-        if self.type == LoadType.Flexible and not (self.variable_cost_to_decrease and self.variable_cost_to_increase):
-            msg = "`variable_cost_to_decrease` and `variable_cost_to_incrase` must be specified for Flexible load"
-            raise ValueError(msg)
+        if self.type == LoadType.Fixed and (
+            self.variable_cost_to_decrease is not None or self.variable_cost_to_increase is not None
+        ):
+            msg = (
+                "`variable_cost_to_decrease` and `variable_cost_to_increase` are fields valid only for Flexible loads."
+            )
+            raise OdysValidationError(msg)
+        if self.type == LoadType.Flexible and (
+            self.variable_cost_to_decrease is None or self.variable_cost_to_increase is None
+        ):
+            msg = "`variable_cost_to_decrease` and `variable_cost_to_increase` must be specified for Flexible loads."
+            raise OdysValidationError(msg)
         return self

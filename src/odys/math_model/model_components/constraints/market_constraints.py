@@ -2,10 +2,11 @@
 
 from odys.energy_system_models.markets import TradeDirection
 from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
 from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
 
 
-class MarketConstraints:
+class MarketConstraints(ConstraintGroup):
     """Builds constraints for market trading volumes, mutual exclusivity, and trade direction."""
 
     def __init__(self, milp_model: EnergyMILPModel) -> None:

@@ -29,7 +29,7 @@ if __name__ == "__main__":
     )
 
     portfolio = AssetPortfolio()
-    portfolio.add_asset(ccgt_unit)
+    portfolio.add_assets(ccgt_unit)
 
     sdac_market = EnergyMarket(
         name="sdac",
