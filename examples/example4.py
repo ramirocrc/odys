@@ -32,10 +32,10 @@ if __name__ == "__main__":
         ramp_down=100,
     )
     portfolio = AssetPortfolio()
-    portfolio.add_asset(generator_1)
-    portfolio.add_asset(generator_2)
+    portfolio.add_assets(generator_1)
+    portfolio.add_assets(generator_2)
     load = Load(name="load", type=LoadType.Fixed)
-    portfolio.add_asset(load)
+    portfolio.add_assets(load)
 
     energy_system = EnergySystem(
         portfolio=portfolio,

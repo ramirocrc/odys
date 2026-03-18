@@ -134,9 +134,9 @@ def _create_energy_system(
     """Create energy system with common setup logic."""
     portfolio = AssetPortfolio()
     for asset in assets:
-        portfolio.add_asset(asset)
+        portfolio.add_assets(asset)
 
-    portfolio.add_asset(load)
+    portfolio.add_assets(load)
 
     return EnergySystem(
         portfolio=portfolio,

@@ -4,6 +4,8 @@ This module provides the AssetPortfolio class for managing collections
 of energy system assets including generators, storages, and other components.
 """
 
+from collections import Counter
+from collections.abc import Iterable
 from types import MappingProxyType
 from typing import TypeVar
 
@@ -11,6 +13,7 @@ from odys.energy_system_models.assets.base import EnergyAsset
 from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.assets.storage import Storage
+from odys.exceptions import OdysValidationError
 
 T = TypeVar("T", bound=EnergyAsset)
 
@@ -23,24 +26,36 @@ class AssetPortfolio:
     to add, retrieve, and filter assets by type.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, assets: Iterable[EnergyAsset] | None = None) -> None:
         """Initialize an empty asset portfolio."""
         self._assets: dict[str, EnergyAsset] = {}
+        if assets:
+            self.add_assets(assets)
 
-    def add_asset(self, asset: EnergyAsset) -> None:
-        """Add an energy asset to the portfolio.
+    def add_assets(self, assets: EnergyAsset | Iterable[EnergyAsset]) -> None:
+        """Add a energy assets to the portfolio.
 
         Args:
-            asset: The energy asset to add to the portfolio.
+            assets: The energy assets to add to the portfolio.
 
         Raises:
             ValueError: If an asset with the same name already exists.
             TypeError: If the asset is not an instance of EnergyAsset.
 
         """
+        if isinstance(assets, EnergyAsset):
+            self._add_single_asset(assets)
+            return
+
+        self._validate_unique_asset_names(assets)
+
+        for asset in assets:
+            self._add_single_asset(asset)
+
+    def _add_single_asset(self, asset: EnergyAsset) -> None:
         if asset.name in self._assets:
             msg = f"Asset with name '{asset.name}' already exists."
-            raise ValueError(msg)
+            raise OdysValidationError(msg)
         self._assets[asset.name] = asset
 
     def get_asset(self, name: str) -> EnergyAsset:
@@ -58,11 +73,18 @@ class AssetPortfolio:
         """
         if name not in self._assets:
             msg = f"Asset with name '{name}' does not exist."
-            raise KeyError(msg)
+            raise OdysValidationError(msg)
         return self._assets[name]
 
     def _get_assets_by_type(self, asset_type: type[T]) -> tuple[T, ...]:
         return tuple(asset for asset in self._assets.values() if isinstance(asset, asset_type))
+
+    def _validate_unique_asset_names(self, assets: Iterable[EnergyAsset]) -> None:
+        names_count = Counter(asset.name for asset in assets)
+        duplicates = [name for name, count in names_count.items() if count > 1]
+        if duplicates:
+            msg = f"Duplicate asset names in input: {duplicates}"
+            raise ValueError(msg)
 
     @property
     def assets(self) -> MappingProxyType[str, EnergyAsset]:

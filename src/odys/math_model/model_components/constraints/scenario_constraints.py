@@ -1,12 +1,13 @@
 """Scenario-level constraints for the optimization model."""
 
 from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
 from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
 from odys.math_model.model_components.sets import ModelDimension
 from odys.math_model.model_components.variables import MARKET_VARIABLES
 
 
-class ScenarioConstraints:
+class ScenarioConstraints(ConstraintGroup):
     """Builds power balance, available capacity, and non-anticipativity constraints."""
 
     def __init__(

@@ -42,11 +42,11 @@ if __name__ == "__main__":
         soc_min=0.1,
     )
     portfolio = AssetPortfolio()
-    portfolio.add_asset(generator_1)
-    portfolio.add_asset(generator_2)
-    portfolio.add_asset(battery_1)
+    portfolio.add_assets(generator_1)
+    portfolio.add_assets(generator_2)
+    portfolio.add_assets(battery_1)
     load = Load(name="load", type=LoadType.Fixed)
-    portfolio.add_asset(load)
+    portfolio.add_assets(load)
 
     energy_system = EnergySystem(
         portfolio=portfolio,

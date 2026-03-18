@@ -22,24 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def generator1() -> Generator:
-    return Generator(
-        name="gen1",
-        nominal_power=100.0,
-        variable_cost=20.0,
-    )
-
-
-@pytest.fixture
-def generator2() -> Generator:
-    return Generator(
-        name="gen2",
-        nominal_power=150.0,
-        variable_cost=25.0,
-    )
-
-
-@pytest.fixture
 def battery1() -> Storage:
     return Storage(
         name="batt1",
@@ -53,11 +35,6 @@ def battery1() -> Storage:
 
 
 @pytest.fixture
-def load1() -> Load:
-    return Load(name="load1")
-
-
-@pytest.fixture
 def asset_portfolio_sample(
     generator1: Generator,
     generator2: Generator,
@@ -65,21 +42,11 @@ def asset_portfolio_sample(
     load1: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
-    portfolio.add_asset(generator1)
-    portfolio.add_asset(generator2)
-    portfolio.add_asset(battery1)
-    portfolio.add_asset(load1)
+    portfolio.add_assets(generator1)
+    portfolio.add_assets(generator2)
+    portfolio.add_assets(battery1)
+    portfolio.add_assets(load1)
     return portfolio
-
-
-@pytest.fixture
-def demand_profile_sample() -> list[float]:
-    return [150, 200, 150]
-
-
-@pytest.fixture
-def time_index(demand_profile_sample: list[float]) -> list[int]:
-    return list(range(len(demand_profile_sample)))
 
 
 @pytest.fixture
@@ -151,15 +118,6 @@ def energy_system_with_multiple_scenarios(
             EnergyMarket(name="other", max_trading_volume_per_step=50, stage_fixed=False),
         ),
     )
-
-
-@pytest.fixture
-def linopy_model(energy_system_sample: ValidatedEnergySystem) -> linopy.Model:
-    model_builder = EnergyAlgebraicModelBuilder(
-        energy_system_sample.energy_system_parameters,
-    )
-    energy_milp_model = model_builder.build()
-    return energy_milp_model.linopy_model
 
 
 @pytest.fixture

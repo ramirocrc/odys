@@ -54,10 +54,10 @@ def portfolio_with_battery(
     load: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
-    portfolio.add_asset(wind_generator)
-    portfolio.add_asset(gas_generator)
-    portfolio.add_asset(battery)
-    portfolio.add_asset(load)
+    portfolio.add_assets(wind_generator)
+    portfolio.add_assets(gas_generator)
+    portfolio.add_assets(battery)
+    portfolio.add_assets(load)
     return portfolio
 
 
@@ -68,9 +68,9 @@ def portfolio_without_battery(
     load: Load,
 ) -> AssetPortfolio:
     portfolio = AssetPortfolio()
-    portfolio.add_asset(wind_generator)
-    portfolio.add_asset(gas_generator)
-    portfolio.add_asset(load)
+    portfolio.add_assets(wind_generator)
+    portfolio.add_assets(gas_generator)
+    portfolio.add_assets(load)
     return portfolio
 
 

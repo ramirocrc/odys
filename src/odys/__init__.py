@@ -5,6 +5,8 @@ storages, and other energy assets using mathematical optimization techniques.
 
 """
 
+from importlib.metadata import version
+
 from odys.energy_system import EnergySystem
 from odys.energy_system_models.assets.generator import Generator
 from odys.energy_system_models.assets.load import Load, LoadType
@@ -13,3 +15,19 @@ from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.markets import EnergyMarket, TradeDirection
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
 from odys.optimization.cvar_config import CVaRConfig
+
+__version__ = version("odys")
+
+__all__ = [
+    "AssetPortfolio",
+    "CVaRConfig",
+    "EnergyMarket",
+    "EnergySystem",
+    "Generator",
+    "Load",
+    "LoadType",
+    "Scenario",
+    "StochasticScenario",
+    "Storage",
+    "TradeDirection",
+]

@@ -21,6 +21,7 @@ from odys.energy_system_models.scenarios import (
     validate_sequence_of_stochastic_scenarios,
 )
 from odys.energy_system_models.units import PowerUnit
+from odys.exceptions import OdysValidationError
 from odys.math_model.model_components.parameters.generator_parameters import GeneratorParameters
 from odys.math_model.model_components.parameters.load_parameters import LoadParameters
 from odys.math_model.model_components.parameters.market_parameters import MarketParameters
@@ -178,7 +179,7 @@ class ValidatedEnergySystem(BaseModel):
                         f"Portfolio contains loads {[load.name for load in self.portfolio.loads]}, "
                         f"but scenario '{scenario.name}' has no load profiles."
                     )
-                    raise ValueError(msg)
+                    raise OdysValidationError(msg)
 
                 portfolio_load_names = {load.name for load in self.portfolio.loads}
                 scenario_load_names = set(scenario.load_profiles.keys())
@@ -186,7 +187,7 @@ class ValidatedEnergySystem(BaseModel):
                 missing_loads = portfolio_load_names - scenario_load_names
                 if missing_loads:
                     msg = f"Scenario '{scenario.name}' is missing load profiles for: {sorted(missing_loads)}"
-                    raise ValueError(msg)
+                    raise OdysValidationError(msg)
 
                 extra_loads = scenario_load_names - portfolio_load_names
                 if extra_loads:
@@ -194,13 +195,13 @@ class ValidatedEnergySystem(BaseModel):
                         f"Scenario '{scenario.name}' has load profiles for loads not in portfolio: "
                         f"{sorted(extra_loads)}"
                     )
-                    raise ValueError(msg)
+                    raise OdysValidationError(msg)
             elif scenario.load_profiles is not None:
                 msg = (
                     f"Portfolio contains no loads, but scenario '{scenario.name}' "
                     f"has load profiles: {list(scenario.load_profiles.keys())}"
                 )
-                raise ValueError(msg)
+                raise OdysValidationError(msg)
 
     def _validate_markets_consistent_with_scenario_market_prices(self) -> None:
         """Validate consistency between portfolio markets and scenario market prices.
@@ -220,7 +221,7 @@ class ValidatedEnergySystem(BaseModel):
                         f"Portfolio contains markets {[market.name for market in self._collection_of_markets]}, "
                         f"but scenario '{scenario.name}' has no market prices."
                     )
-                    raise ValueError(msg)
+                    raise OdysValidationError(msg)
 
                 portfolio_market_names = {market.name for market in self._collection_of_markets}
                 scenario_market_names = set(scenario.market_prices.keys())
@@ -228,7 +229,7 @@ class ValidatedEnergySystem(BaseModel):
                 missing_markets = portfolio_market_names - scenario_market_names
                 if missing_markets:
                     msg = f"Scenario '{scenario.name}' is missing market prices for: {sorted(missing_markets)}"
-                    raise ValueError(msg)
+                    raise OdysValidationError(msg)
 
                 extra_markets = scenario_market_names - portfolio_market_names
                 if extra_markets:
@@ -236,13 +237,13 @@ class ValidatedEnergySystem(BaseModel):
                         f"Scenario '{scenario.name}' has market prices for markets not in portfolio: "
                         f"{sorted(extra_markets)}"
                     )
-                    raise ValueError(msg)
+                    raise OdysValidationError(msg)
             elif scenario.market_prices is not None:
                 msg = (
                     f"EnergySystem contains no markets, but scenario '{scenario.name}' "
                     f"has market prices: {list(scenario.market_prices.keys())}"
                 )
-                raise ValueError(msg)
+                raise OdysValidationError(msg)
 
     def _validate_load_profiles(self, scenario: Scenario) -> None:
         """Validate that load profile lengths match the number of time steps.
@@ -260,7 +261,7 @@ class ValidatedEnergySystem(BaseModel):
                     f"Length of load profile {load_name} ({len(load_profile)})"
                     f" does not match the number of time steps ({self.number_of_steps})."
                 )
-                raise ValueError(msg)
+                raise OdysValidationError(msg)
 
     def _validate_available_capacity_scenario(self, scenario: Scenario) -> None:
         """Validate that available capacity profiles are only for generators.
@@ -280,20 +281,20 @@ class ValidatedEnergySystem(BaseModel):
                     "Available capacity can only be specified for generators, "
                     f"but got '{asset_name}' of type {type(asset)}."
                 )
-                raise TypeError(msg)
+                raise OdysValidationError(msg)
             if len(capacity_profile) != self.number_of_steps:
                 msg = (
                     f"Length of capacity profile for {asset_name} ({len(capacity_profile)})"
                     f" does not match the number of time steps ({self.number_of_steps})."
                 )
-                raise ValueError(msg)
+                raise OdysValidationError(msg)
             for capacity_i in capacity_profile:
                 if not (0 <= capacity_i <= asset.nominal_power):
                     msg = (
                         f"Available capacity value {capacity_i} for asset '{asset_name}' is invalid. "
                         f"Values must be between 0 and the asset's nominal power ({asset.nominal_power})."
                     )
-                    raise ValueError(msg)
+                    raise OdysValidationError(msg)
 
     def _validate_enough_power_to_meet_demand(self, scenario: StochasticScenario) -> None:
         """Validate that maximum available power can meet peak demand.
@@ -307,7 +308,7 @@ class ValidatedEnergySystem(BaseModel):
         """
         if scenario.load_profiles is None:
             msg = "Load profile is empty, there is nothing to balance."
-            raise ValueError(msg)
+            raise OdysValidationError(msg)
 
         cumulative_generators_power = sum(gen.nominal_power for gen in self.portfolio.generators)
         # TODO: We assume full capacity can be discharged -> Needs to be limited by max power
@@ -321,7 +322,7 @@ class ValidatedEnergySystem(BaseModel):
                         f"Infeasible problem in scenario '{scenario.name}' for load '{load_name}' at time index {t}: "
                         f"Demand = {demand_t}, but maximum available generation + storage = {max_available_power}."
                     )
-                    raise ValueError(msg)
+                    raise OdysValidationError(msg)
 
     def _validate_enough_energy_to_meet_demand(self, scenario: StochasticScenario) -> None:  # noqa: ARG002
         """Validate that the system has enough energy to meet total demand.

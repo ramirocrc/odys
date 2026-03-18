@@ -27,9 +27,9 @@ if __name__ == "__main__":
         variable_cost=100.0,
     )
     portfolio = AssetPortfolio()
-    portfolio.add_asset(generator_1)
-    portfolio.add_asset(generator_2)
-    portfolio.add_asset(Load(name="load"))
+    portfolio.add_assets(generator_1)
+    portfolio.add_assets(generator_2)
+    portfolio.add_assets(Load(name="load"))
 
     scenarios = [
         StochasticScenario(

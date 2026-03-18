@@ -29,8 +29,8 @@ if __name__ == "__main__":
     )
 
     portfolio = AssetPortfolio()
-    portfolio.add_asset(generator_1)
-    portfolio.add_asset(load)
+    portfolio.add_assets(generator_1)
+    portfolio.add_assets(load)
 
     scenario = Scenario(
         available_capacity_profiles={

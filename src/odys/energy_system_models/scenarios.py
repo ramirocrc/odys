@@ -4,6 +4,8 @@ from collections.abc import Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from odys.exceptions import OdysValidationError
+
 
 class Scenario(BaseModel):
     """Scenario conditions."""
@@ -39,7 +41,7 @@ def validate_sequence_of_stochastic_scenarios(
     sum_of_probabilities = sum(scenario.probability for scenario in scenarios)
     if sum_of_probabilities != 1.0:
         msg = f"Scenarios should add up to 1, but got sum = {sum_of_probabilities} instead."
-        raise ValueError(msg)
+        raise OdysValidationError(msg)
 
     scenario_names = [scenario.name for scenario in scenarios]
     duplicated_scenario_names = {scenario for scenario in scenario_names if scenario_names.count(scenario) > 1}
@@ -47,4 +49,4 @@ def validate_sequence_of_stochastic_scenarios(
         msg = (
             f"Scenarios must have a unique name. The following names appear more than once: {duplicated_scenario_names}"
         )
-        raise ValueError(msg)
+        raise OdysValidationError(msg)
