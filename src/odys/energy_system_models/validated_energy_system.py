@@ -98,6 +98,7 @@ class ValidatedEnergySystem(BaseModel):
     def energy_system_parameters(self) -> EnergySystemParameters:
         """Parameters of the energy system."""
         return EnergySystemParameters(
+            timestep=self.timestep,
             generators=self._generator_parameters,
             storages=self._storage_parameters,
             loads=self._load_parameters,
