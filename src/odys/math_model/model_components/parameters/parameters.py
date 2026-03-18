@@ -4,6 +4,8 @@ This module defines parameter names and types used in energy system
 optimization models.
 """
 
+from datetime import timedelta
+
 from pydantic import BaseModel, ConfigDict
 
 from odys.math_model.model_components.parameters.generator_parameters import GeneratorParameters
@@ -19,6 +21,7 @@ class EnergySystemParameters(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
 
+    timestep: timedelta
     generators: GeneratorParameters | None
     storages: StorageParameters | None
     loads: LoadParameters | None

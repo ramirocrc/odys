@@ -13,6 +13,7 @@ from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
+from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,7 @@ class TestStorageConstraints:
 
         eff_ch = self.storage1.efficiency_charging
         eff_disch = self.storage1.efficiency_discharging
+        dt = 1.0  # timestep in hours
 
         for t in self.time_index[1:]:  # Skip t=0
             actual_t = actual_constraint.sel(time=str(t), storage="batt1")
@@ -111,7 +113,9 @@ class TestStorageConstraints:
             capacity = self.storage1.capacity
             expected_expr = (
                 soc_t
-                == soc_t_minus_1 + eff_ch * storage_charge_t / capacity - 1 / eff_disch * storage_discharge_t / capacity
+                == soc_t_minus_1
+                + eff_ch * storage_charge_t * dt / capacity
+                - 1 / eff_disch * storage_discharge_t * dt / capacity
             )
 
             assert_conequal(expected_expr, actual_t.lhs == actual_t.rhs)
@@ -157,11 +161,12 @@ class TestStorageConstraints:
             dims=["scenario", "storage"],
         )
         capacity = self.storage1.capacity
+        dt = 1.0  # timestep in hours
         expected_expr = (
             soc_t0
             - storage_soc_start_array
-            - eff_ch * storage_charge_t / capacity
-            + 1 / eff_disch * storage_discharge_t / capacity
+            - eff_ch * storage_charge_t * dt / capacity
+            + 1 / eff_disch * storage_discharge_t * dt / capacity
             == 0
         )
 
@@ -192,3 +197,101 @@ class TestStorageConstraints:
         expected_expr = storage_soc <= storage_soc_max_array
 
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
+
+
+class TestStorageConstraintsSubHourlyTimestep:
+    """Verify that SOC constraints correctly scale with a 15-minute timestep."""
+
+    @pytest.fixture
+    def energy_system_15min(
+        self,
+        asset_portfolio_sample: AssetPortfolio,
+        demand_profile_sample: list[float],
+    ) -> ValidatedEnergySystem:
+        return ValidatedEnergySystem(
+            portfolio=asset_portfolio_sample,
+            number_of_steps=len(demand_profile_sample),
+            timestep=timedelta(minutes=15),
+            power_unit=PowerUnit.MegaWatt,
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                load_profiles={"load1": demand_profile_sample},
+            ),
+        )
+
+    @pytest.fixture
+    def linopy_model_15min(self, energy_system_15min: ValidatedEnergySystem) -> linopy.Model:
+
+        model_builder = EnergyAlgebraicModelBuilder(
+            energy_system_15min.energy_system_parameters,
+        )
+        return model_builder.build().linopy_model
+
+    def test_soc_dynamics_with_15min_timestep(
+        self,
+        linopy_model_15min: linopy.Model,
+        storage1: Storage,
+        time_index: list[int],
+    ) -> None:
+        actual_constraint = linopy_model_15min.constraints["storage_soc_dynamics_constraint"]
+
+        storage_soc = linopy_model_15min.variables["storage_soc"]
+        storage_charge = linopy_model_15min.variables["storage_power_in"]
+        storage_discharge = linopy_model_15min.variables["storage_power_out"]
+
+        eff_ch = storage1.efficiency_charging
+        eff_disch = storage1.efficiency_discharging
+        dt = 0.25  # 15 minutes in hours
+        capacity = storage1.capacity
+
+        for t in time_index[1:]:
+            actual_t = actual_constraint.sel(time=str(t), storage="batt1")
+
+            soc_t = storage_soc.sel(time=str(t), storage="batt1")
+            soc_t_minus_1 = storage_soc.sel(time=str(t - 1), storage="batt1")
+            charge_t = storage_charge.sel(time=str(t), storage="batt1")
+            discharge_t = storage_discharge.sel(time=str(t), storage="batt1")
+
+            expected_expr = (
+                soc_t == soc_t_minus_1 + eff_ch * charge_t * dt / capacity - 1 / eff_disch * discharge_t * dt / capacity
+            )
+
+            assert_conequal(expected_expr, actual_t.lhs == actual_t.rhs)
+
+    def test_soc_start_with_15min_timestep(
+        self,
+        linopy_model_15min: linopy.Model,
+        storage1: Storage,
+        time_index: list[int],
+    ) -> None:
+        actual_constraint = linopy_model_15min.constraints["storage_soc_start_constraint"]
+
+        storage_soc = linopy_model_15min.variables["storage_soc"]
+        storage_charge = linopy_model_15min.variables["storage_power_in"]
+        storage_discharge = linopy_model_15min.variables["storage_power_out"]
+
+        eff_ch = storage1.efficiency_charging
+        eff_disch = storage1.efficiency_discharging
+        dt = 0.25  # 15 minutes in hours
+        capacity = storage1.capacity
+
+        t0 = time_index[0]
+        soc_t0 = storage_soc.sel(time=str(t0))
+        charge_t0 = storage_charge.sel(time=str(t0))
+        discharge_t0 = storage_discharge.sel(time=str(t0))
+
+        soc_start_array = xr.DataArray(
+            [[storage1.soc_start]],
+            coords={
+                "scenario": ["deterministic_scenario"],
+                "storage": [storage1.name],
+            },
+            dims=["scenario", "storage"],
+        )
+
+        expected_expr = (
+            soc_t0 - soc_start_array - eff_ch * charge_t0 * dt / capacity + 1 / eff_disch * discharge_t0 * dt / capacity
+            == 0
+        )
+
+        assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)

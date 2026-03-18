@@ -1,5 +1,7 @@
 """Storage-related constraints for the optimization model."""
 
+from datetime import timedelta
+
 from odys.math_model.milp_model import EnergyMILPModel
 from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
 from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
@@ -13,6 +15,7 @@ class StorageConstraints(ConstraintGroup):
         """Initialize with the MILP model containing storage variables and parameters."""
         self.model = milp_model
         self.params = milp_model.parameters.storages
+        self._timestep_hours = milp_model.parameters.timestep / timedelta(hours=1)
 
     def _validate_storage_parameters_exist(self) -> None:
         if self.params is None:
@@ -57,10 +60,11 @@ class StorageConstraints(ConstraintGroup):
     def _get_storage_soc_dynamics_constraint(self) -> ModelConstraint:
         self._validate_storage_parameters_exist()
         time_coords = self.model.storage_soc.coords[ModelDimension.Time.value]
+        dt = self._timestep_hours
         constraint_expr = self.model.storage_soc - (
             self.model.storage_soc.shift(time=1)
-            + self.params.efficiency_charging * self.model.storage_power_in / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
-            - 1 / self.params.efficiency_discharging * self.model.storage_power_out / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            + self.params.efficiency_charging * self.model.storage_power_in * dt / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            - 1 / self.params.efficiency_discharging * self.model.storage_power_out * dt / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         )
 
         constraint = constraint_expr.where(time_coords > time_coords[0]) == 0
@@ -77,11 +81,12 @@ class StorageConstraints(ConstraintGroup):
         charge_t0 = self.model.storage_power_in.sel(time=t0)
         discharge_t0 = self.model.storage_power_out.sel(time=t0)
 
+        dt = self._timestep_hours
         constraint_expr = (
             soc_t0
             - self.params.soc_start  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
-            - self.params.efficiency_charging * charge_t0 / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
-            + 1 / self.params.efficiency_discharging * discharge_t0 / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            - self.params.efficiency_charging * charge_t0 * dt / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+            + 1 / self.params.efficiency_discharging * discharge_t0 * dt / self.params.capacity  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
         )
 
         constraint = constraint_expr == 0
