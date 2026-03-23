@@ -10,6 +10,7 @@ from datetime import timedelta
 from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
+from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
 from odys.optimization.cvar_config import CVaRConfig
@@ -30,7 +31,7 @@ class EnergySystem:
         portfolio: AssetPortfolio,
         timestep: timedelta,
         number_of_steps: int,
-        power_unit: str,
+        power_unit: str | PowerUnit,
         scenarios: Scenario | Sequence[StochasticScenario],
         cvar_config: CVaRConfig | None = None,
         markets: EnergyMarket | Sequence[EnergyMarket] | None = None,
@@ -52,7 +53,7 @@ class EnergySystem:
             markets=markets,
             timestep=timestep,
             number_of_steps=number_of_steps,
-            power_unit=power_unit,  # ty: ignore  # pyright: ignore[reportArgumentType]
+            power_unit=PowerUnit(power_unit),
             scenarios=scenarios,
             cvar_config=cvar_config,
         )

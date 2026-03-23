@@ -33,7 +33,7 @@
 
 - [x] Add batteries soc_min and soc_max params
 - [ ] Review time step implementation
-  - [ ] Review power balance
+  - [x] Review power balance
   - [x] Review ValidatedEnergySystem.\_validate_inputs
 - [ ] Evaluate other uses cases (e.g. optimze bids based on day-ahead price forecast)
 - [ ] Implement cusomt Exceptions
