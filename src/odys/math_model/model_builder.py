@@ -4,17 +4,16 @@ This module provides the EnergyAlgebraicModelBuilder that assembles
 variables, constraints, and objectives into a solvable MILP model.
 """
 
-from collections.abc import Iterable
 from functools import cached_property
 
 from odys.exceptions import OdysError, OdysValidationError
 from odys.math_model.milp_model import EnergyMILPModel
+from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
 from odys.math_model.model_components.constraints.cvar_constraints import CVaRConstraints
 from odys.math_model.model_components.constraints.generator_constraints import (
     GeneratorConstraints,
 )
 from odys.math_model.model_components.constraints.market_constraints import MarketConstraints
-from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
 from odys.math_model.model_components.constraints.scenario_constraints import (
     ScenarioConstraints,
 )
@@ -92,7 +91,7 @@ class EnergyAlgebraicModelBuilder:
         if self._milp_model.parameters.markets:
             variables_to_add.extend(MARKET_VARIABLES)
 
-        if self._has_cvar_term:
+        if self._milp_model.parameters.objective.cvar is not None:
             variables_to_add.extend(CVAR_VARIABLES)
 
         for variable in variables_to_add:
@@ -161,44 +160,28 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def _add_model_constraints(self) -> None:
-        self._add_generator_constraints()
-        self._add_storage_constraints()
-        self._add_market_constraints()
-        self._add_scenario_constraints()
-        if self._has_cvar_term:
-            self._add_cvar_constraints()
+        for group in self._get_constraint_groups():
+            group.add_to_model(self._milp_model.linopy_model)
 
-    def _add_storage_constraints(self) -> None:
-        constraints = StorageConstraints(milp_model=self._milp_model).all
-        self._add_set_of_constraints_to_model(constraints)
+    def _get_constraint_groups(self) -> list[ConstraintGroup]:
+        groups: list[ConstraintGroup] = []
+        params = self._milp_model.parameters
 
-    def _add_generator_constraints(self) -> None:
-        constraints = GeneratorConstraints(self._milp_model).all
-        self._add_set_of_constraints_to_model(constraints)
+        if params.generators is not None:
+            groups.append(GeneratorConstraints(self._milp_model, params.generators))
 
-    def _add_market_constraints(self) -> None:
-        constraints = MarketConstraints(milp_model=self._milp_model).all
-        self._add_set_of_constraints_to_model(constraints)
+        if params.storages is not None:
+            groups.append(StorageConstraints(self._milp_model, params.storages))
 
-    def _add_scenario_constraints(self) -> None:
-        constraints = ScenarioConstraints(
-            milp_model=self._milp_model,
-        ).all
-        self._add_set_of_constraints_to_model(constraints)
+        if params.markets is not None:
+            groups.append(MarketConstraints(self._milp_model, params.markets))
 
-    def _add_cvar_constraints(self) -> None:
-        constraints = CVaRConstraints(milp_model=self._milp_model).all
-        self._add_set_of_constraints_to_model(constraints)
+        groups.append(ScenarioConstraints(self._milp_model, market_params=params.markets))
 
-    def _add_set_of_constraints_to_model(self, constraints: Iterable[ModelConstraint]) -> None:
-        for constraint in constraints:
-            self._milp_model.linopy_model.add_constraints(
-                constraint.constraint,
-                name=constraint.name,
-            )
+        if params.objective.cvar is not None:
+            groups.append(CVaRConstraints(self._milp_model))
 
-    def _has_cvar_term(self) -> bool:
-        return self._milp_model.parameters.objective.cvar is not None
+        return groups
 
     def _add_model_objective(self) -> None:
         objective = build_objective(self._milp_model, self._milp_model.parameters.objective)
