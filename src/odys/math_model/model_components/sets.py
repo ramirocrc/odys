@@ -18,7 +18,7 @@ class ModelDimension(StrEnum):
     Markets = "market"
 
 
-class ModelIndex(BaseModel, ABC):  # pyright: ignore[reportUnsafeMultipleInheritance]
+class ModelIndex(BaseModel, ABC):
     """Energy Model Set."""
 
     dimension: ClassVar[ModelDimension]

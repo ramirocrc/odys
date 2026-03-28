@@ -30,7 +30,7 @@ from odys.math_model.model_components.parameters.parameters import (
 )
 from odys.math_model.model_components.parameters.scenario_parameters import ScenarioParameters
 from odys.math_model.model_components.parameters.storage_parameters import StorageParameters
-from odys.optimization.cvar_config import CVaRConfig
+from odys.optimization.objective import Objective
 
 
 class ValidatedEnergySystem(BaseModel):
@@ -56,7 +56,7 @@ class ValidatedEnergySystem(BaseModel):
     timestep: timedelta
     number_of_steps: int
     power_unit: PowerUnit
-    cvar_config: CVaRConfig | None = None
+    objective: Objective = Field(default_factory=Objective)
     markets: EnergyMarket | Sequence[EnergyMarket] | None = Field(default=None, init_var=True)
     scenarios: Scenario | Sequence[StochasticScenario] = Field(init_var=True)
 
@@ -104,7 +104,7 @@ class ValidatedEnergySystem(BaseModel):
             loads=self._load_parameters,
             markets=self._market_parameters,
             scenarios=self._scenario_parameters,
-            cvar_config=self.cvar_config,
+            objective=self.objective,
         )
 
     @cached_property

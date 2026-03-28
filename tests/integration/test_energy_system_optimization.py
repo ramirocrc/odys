@@ -110,7 +110,8 @@ class SystemTestCase:
 
 def _create_time_index(num_steps: int) -> pd.Index:
     """Create a proper time index for test DataFrames."""
-    return pd.Index([str(i) for i in range(num_steps)], name="time")
+    index: pd.Index = pd.Index([str(i) for i in range(num_steps)], name="time")
+    return index
 
 
 def _create_expected_dataframe(

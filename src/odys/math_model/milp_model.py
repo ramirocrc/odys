@@ -144,17 +144,25 @@ class EnergyMILPModel:
         Does not apply scenario probabilities — this is the raw per-scenario profit.
         Used in both the CVaR shortfall constraint and the CVaR objective term.
         """
-        profit = 0
+        profit_terms: list[linopy.LinearExpression] = []
 
         if self._parameters.scenarios.market_prices is not None:
-            profit += (
-                (self.market_sell_volume - self.market_buy_volume) * self._parameters.scenarios.market_prices
-            ).sum([ModelDimension.Time, ModelDimension.Markets])
+            profit_terms.append(
+                (
+                    (self.market_sell_volume - self.market_buy_volume)  # pyrefly: ignore
+                    * self._parameters.scenarios.market_prices
+                ).sum([ModelDimension.Time, ModelDimension.Markets]),
+            )
 
         if self._parameters.generators is not None:
-            profit += -(
-                self.generator_power * self._parameters.generators.variable_cost
-                + self.generator_startup * self._parameters.generators.startup_cost
-            ).sum([ModelDimension.Time, ModelDimension.Generators])
+            profit_terms.append(
+                -(
+                    self.generator_power * self._parameters.generators.variable_cost
+                    + self.generator_startup * self._parameters.generators.startup_cost
+                ).sum([ModelDimension.Time, ModelDimension.Generators]),
+            )
+        if not profit_terms:
+            msg = "per_scenario_profit requires at least one revenue or cost source (markets or generators)"
+            raise ValueError(msg)
 
-        return profit  # type: ignore[return-value]
+        return sum(profit_terms)  # type: ignore[return-value]

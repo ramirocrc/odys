@@ -68,5 +68,4 @@ if __name__ == "__main__":
     logger.info(result.solver_status)
     logger.info("generators power")
     logger.info(result.generators.power)
-    logger.info(result.to_dataframe().to_csv("results"))
     logger.info(result.to_dataframe())

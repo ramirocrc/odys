@@ -5,7 +5,7 @@ than sdac (avg 216 vs 200), so with a small CVaR weight the optimizer sells
 everything in sidc. The low-price scenario (sidc=50) then falls well below the
 VaR threshold, producing a non-zero shortfall.
 
-Try increasing cvar_config.weight to see how the optimizer gradually shifts
+Try increasing the CVaRTerm weight to see how the optimizer gradually shifts
 capacity to sdac, reducing the shortfall at the cost of expected revenue.
 """
 
@@ -13,10 +13,11 @@ from datetime import timedelta
 
 from odys import (
     AssetPortfolio,
-    CVaRConfig,
+    CVaRTerm,
     EnergyMarket,
     EnergySystem,
     Generator,
+    Objective,
     StochasticScenario,
     TradeDirection,
 )
@@ -69,7 +70,9 @@ if __name__ == "__main__":
         timestep=timedelta(minutes=30),
         number_of_steps=4,
         power_unit="MW",
-        cvar_config=CVaRConfig(confidence_level=0.6, weight=0.00001),
+        objective=Objective(
+            cvar=CVaRTerm(weight=0.0001, confidence_level=0.6),
+        ),
     )
 
     result = energy_system.optimize()

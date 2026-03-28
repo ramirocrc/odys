@@ -159,14 +159,14 @@ class OptimizationResults:
     def cvar(self) -> CVaRResults:
         """Get CVaR results."""
         self._validate_terminated_successfully()
-        if self._milp_model.parameters.cvar_config is None:
-            msg = "This model was not optimized with a CVaR configuration"
+        cvar_term = self._milp_model.parameters.objective.cvar
+        if cvar_term is None:
+            msg = "This model was not optimized with a CVaR term in the objective"
             raise OdysNoResultsError(msg)
-        cvar_config = self._milp_model.parameters.cvar_config
         eta = float(self._solution[ModelVariable.VALUE_AT_RISK.var_name].item())
         z = self._solution[ModelVariable.SHORTFALL_REVENUE.var_name].to_series()
         probs = self._milp_model.parameters.scenarios.scenario_probabilities.to_series()
-        cvar_value = eta - (1 / (1 - cvar_config.confidence_level)) * (probs * z).sum()
+        cvar_value = eta - (1 / (1 - cvar_term.confidence_level)) * (probs * z).sum()
         return CVaRResults(value_at_risk=eta, cvar=float(cvar_value), shortfall_per_scenario=z)
 
     def _get_variable_results(self, variable: ModelVariable) -> pd.DataFrame:

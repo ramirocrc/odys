@@ -13,7 +13,7 @@ from odys.math_model.model_components.parameters.load_parameters import LoadPara
 from odys.math_model.model_components.parameters.market_parameters import MarketParameters
 from odys.math_model.model_components.parameters.scenario_parameters import ScenarioParameters
 from odys.math_model.model_components.parameters.storage_parameters import StorageParameters
-from odys.optimization.cvar_config import CVaRConfig
+from odys.optimization.objective import Objective
 
 
 class EnergySystemParameters(BaseModel):
@@ -27,4 +27,4 @@ class EnergySystemParameters(BaseModel):
     loads: LoadParameters | None
     markets: MarketParameters | None
     scenarios: ScenarioParameters
-    cvar_config: CVaRConfig | None = None
+    objective: Objective
