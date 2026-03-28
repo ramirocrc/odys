@@ -64,7 +64,7 @@ class ScenarioConstraints(ConstraintGroup):
 
     def _get_available_capacity_profiles_constraint(self) -> ModelConstraint:
         var_generator_power = self.model.generator_power
-        expression = var_generator_power <= self.scenario_params.available_capacity_profiles  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOperatorIssue]
+        expression = var_generator_power <= self.scenario_params.available_capacity_profiles
         return ModelConstraint(
             name="available_capacity_constraint",
             constraint=expression,

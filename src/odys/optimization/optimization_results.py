@@ -11,10 +11,10 @@ import xarray as xr
 from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.exceptions import OdysNoResultsError, OdysSolverError
-from odys.math_model.milp_model import EnergyMILPModel
 from odys.math_model.model_components.sets import ModelDimension
 from odys.math_model.model_components.variables import ModelVariable
 from odys.optimization.result_containers import CVaRResults, GeneratorResults, MarketResults, StorageResults
+from odys.optimization.solved_model_data import SolvedModelData
 
 
 class OptimizationResults:
@@ -28,18 +28,18 @@ class OptimizationResults:
         self,
         solver_status: SolverStatus,
         termination_condition: TerminationCondition,
-        milp_model: EnergyMILPModel,
+        solved_data: SolvedModelData,
     ) -> None:
         """Initialize the optimization results object.
 
         Args:
-            solver_status: Solving status
-            termination_condition: Termination condition
-            milp_model: Solved EnergyMILPModel Model
+            solver_status: Solving status.
+            termination_condition: Termination condition.
+            solved_data: Frozen snapshot of solved model data.
         """
         self._solver_status = solver_status
         self._termination_condition = termination_condition
-        self._milp_model = milp_model
+        self._solved_data = solved_data
 
     @cached_property
     def solver_status(self) -> str:
@@ -64,7 +64,7 @@ class OptimizationResults:
     @cached_property
     def _solution(self) -> xr.Dataset:
         self._validate_terminated_successfully()
-        return self._milp_model.linopy_model.solution
+        return self._solved_data.solution
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert optimization results to a pandas DataFrame.
@@ -77,7 +77,7 @@ class OptimizationResults:
         for variable in ModelVariable:
             variable_name = variable.var_name
             # Skip if this variable is not populated (eg skip storage variables if no storages in the system)
-            if variable_name not in self._milp_model.linopy_model.variables.labels:
+            if variable_name not in self._solved_data.variable_names:
                 continue
             # Skip variables without a Time dimension — they can't be reshaped into the standard format
             if variable.dimensions is None or ModelDimension.Time not in variable.dimensions:
@@ -120,7 +120,7 @@ class OptimizationResults:
     def storages(self) -> StorageResults:
         """Get storage results."""
         self._validate_terminated_successfully()
-        if self._milp_model.parameters.storages is None:
+        if not self._solved_data.has_storages:
             msg = "This model does not contain storage results"
             raise OdysNoResultsError(msg)
         return StorageResults(
@@ -132,7 +132,7 @@ class OptimizationResults:
     def markets(self) -> MarketResults:
         """Get market results."""
         self._validate_terminated_successfully()
-        if self._milp_model.parameters.markets is None:
+        if not self._solved_data.has_markets:
             msg = "This model does not contain market results"
             raise OdysNoResultsError(msg)
         return MarketResults(
@@ -144,7 +144,7 @@ class OptimizationResults:
     def generators(self) -> GeneratorResults:
         """Get generator results."""
         self._validate_terminated_successfully()
-        if self._milp_model.parameters.generators is None:
+        if not self._solved_data.has_generators:
             msg = "This model does not contain generator results"
             raise OdysNoResultsError(msg)
 
@@ -159,13 +159,13 @@ class OptimizationResults:
     def cvar(self) -> CVaRResults:
         """Get CVaR results."""
         self._validate_terminated_successfully()
-        cvar_term = self._milp_model.parameters.objective.cvar
+        cvar_term = self._solved_data.cvar_term
         if cvar_term is None:
             msg = "This model was not optimized with a CVaR term in the objective"
             raise OdysNoResultsError(msg)
         eta = float(self._solution[ModelVariable.VALUE_AT_RISK.var_name].item())
         z = self._solution[ModelVariable.SHORTFALL_REVENUE.var_name].to_series()
-        probs = self._milp_model.parameters.scenarios.scenario_probabilities.to_series()
+        probs = self._solved_data.scenario_probabilities
         cvar_value = eta - (1 / (1 - cvar_term.confidence_level)) * (probs * z).sum()
         return CVaRResults(value_at_risk=eta, cvar=float(cvar_value), shortfall_per_scenario=z)
 
