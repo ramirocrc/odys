@@ -1,6 +1,7 @@
 """Scenario parameters for the mathematical optimization model."""
 
 from collections.abc import Sequence
+from functools import cached_property
 from typing import ClassVar
 
 import numpy as np
@@ -67,7 +68,7 @@ class ScenarioParameters:
         """Return the scenario index."""
         return self._scenario_index
 
-    @property
+    @cached_property
     def load_profiles(self) -> xr.DataArray | None:
         """Return load profiles across scenarios and time."""
         if self._loads_index is None:
@@ -85,7 +86,7 @@ class ScenarioParameters:
             coords=self._scenario_index.coordinates | self._loads_index.coordinates | self._time_index.coordinates,
         )
 
-    @property
+    @cached_property
     def market_prices(self) -> xr.DataArray | None:
         """Return market prices across scenarios and time."""
         if self._markets_index is None:
@@ -103,7 +104,7 @@ class ScenarioParameters:
             coords=self._scenario_index.coordinates | self._markets_index.coordinates | self._time_index.coordinates,
         )
 
-    @property
+    @cached_property
     def available_capacity_profiles(self) -> xr.DataArray | None:
         """Return available capacity profiles for generators across scenarios and time."""
         if self._generators_index is None:
@@ -123,7 +124,7 @@ class ScenarioParameters:
             coords=self._scenario_index.coordinates | self._generators_index.coordinates | self._time_index.coordinates,
         )
 
-    @property
+    @cached_property
     def scenario_probabilities(self) -> xr.DataArray:
         """Returns scenario probabilities as xarray DataArray."""
         return xr.DataArray(

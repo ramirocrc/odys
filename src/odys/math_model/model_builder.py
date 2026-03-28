@@ -7,6 +7,7 @@ variables, constraints, and objectives into a solvable MILP model.
 from collections.abc import Iterable
 from functools import cached_property
 
+from odys.exceptions import OdysError, OdysValidationError
 from odys.math_model.milp_model import EnergyMILPModel
 from odys.math_model.model_components.constraints.cvar_constraints import CVaRConstraints
 from odys.math_model.model_components.constraints.generator_constraints import (
@@ -67,12 +68,12 @@ class EnergyAlgebraicModelBuilder:
             The fully constructed EnergyMILPModel ready for solving.
 
         Raises:
-            AttributeError: If the model has already been built.
+            OdysError: If the model has already been built.
 
         """
         if self._model_is_built:
             msg = "Model has already been built."
-            raise AttributeError(msg)
+            raise OdysError(msg)
         self._add_model_variables()
         self._add_model_constraints()
         self._add_model_objective()
@@ -129,13 +130,13 @@ class EnergyAlgebraicModelBuilder:
             dimension: The model dimension to look up.
 
         Raises:
-            ValueError: If no index exists for the given dimension.
+            OdysValidationError: If no index exists for the given dimension.
 
         """
         index = self._dimension_to_index_mapping.get(dimension)
         if index is None:
             msg = f"No index found for dimension '{dimension}'."
-            raise ValueError(msg)
+            raise OdysValidationError(msg)
         return index
 
     @cached_property

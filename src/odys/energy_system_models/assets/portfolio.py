@@ -39,8 +39,7 @@ class AssetPortfolio:
             assets: The energy assets to add to the portfolio.
 
         Raises:
-            ValueError: If an asset with the same name already exists.
-            TypeError: If the asset is not an instance of EnergyAsset.
+            OdysValidationError: If an asset with the same name already exists.
 
         """
         if isinstance(assets, EnergyAsset):
@@ -84,7 +83,7 @@ class AssetPortfolio:
         duplicates = [name for name, count in names_count.items() if count > 1]
         if duplicates:
             msg = f"Duplicate asset names in input: {duplicates}"
-            raise ValueError(msg)
+            raise OdysValidationError(msg)
 
     @property
     def assets(self) -> MappingProxyType[str, EnergyAsset]:

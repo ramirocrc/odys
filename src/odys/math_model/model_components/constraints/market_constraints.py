@@ -1,6 +1,7 @@
 """Market-related constraints for the optimization model."""
 
 from odys.energy_system_models.markets import TradeDirection
+from odys.exceptions import OdysValidationError
 from odys.math_model.milp_model import EnergyMILPModel
 from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
 from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
@@ -17,7 +18,7 @@ class MarketConstraints(ConstraintGroup):
     def _validate_market_parameters_exist(self) -> None:
         if self.params is None:
             msg = "No parameters specified."
-            raise ValueError(msg)
+            raise OdysValidationError(msg)
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:
