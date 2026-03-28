@@ -96,55 +96,29 @@ class ValidatedEnergySystem(BaseModel):
     @cached_property
     def energy_system_parameters(self) -> EnergySystemParameters:
         """Parameters of the energy system."""
-        return EnergySystemParameters(
-            timestep=self.timestep,
-            generators=self._generator_parameters,
-            storages=self._storage_parameters,
-            loads=self._load_parameters,
-            markets=self._market_parameters,
-            scenarios=self._scenario_parameters,
-            objective=self.objective,
-        )
+        generator_params = GeneratorParameters.from_assets(self.portfolio.generators)
+        storage_params = StorageParameters.from_assets(self.portfolio.storages)
+        load_params = LoadParameters.from_assets(self.portfolio.loads)
+        market_params = MarketParameters.from_assets(self._collection_of_markets)
 
-    @cached_property
-    def _scenario_parameters(self) -> ScenarioParameters:
-        generators_index = self._generator_parameters.index if self._generator_parameters else None
-        storages_index = self._storage_parameters.index if self._storage_parameters else None
-        loads_index = self._load_parameters.index if self._load_parameters else None
-        markets_index = self._market_parameters.index if self._market_parameters else None
-
-        return ScenarioParameters(
+        scenario_params = ScenarioParameters(
             number_of_timesteps=self.number_of_steps,
             scenarios=self._collection_of_scenarios,
-            generators_index=generators_index,
-            storages_index=storages_index,
-            loads_index=loads_index,
-            markets_index=markets_index,
+            generators_index=generator_params.index if generator_params else None,
+            storages_index=storage_params.index if storage_params else None,
+            loads_index=load_params.index if load_params else None,
+            markets_index=market_params.index if market_params else None,
         )
 
-    @property
-    def _generator_parameters(self) -> GeneratorParameters | None:
-        if len(self.portfolio.generators) == 0:
-            return None
-        return GeneratorParameters(generators=self.portfolio.generators)
-
-    @property
-    def _storage_parameters(self) -> StorageParameters | None:
-        if len(self.portfolio.storages) == 0:
-            return None
-        return StorageParameters(self.portfolio.storages)
-
-    @property
-    def _load_parameters(self) -> LoadParameters | None:
-        if len(self.portfolio.loads) == 0:
-            return None
-        return LoadParameters(loads=self.portfolio.loads)
-
-    @property
-    def _market_parameters(self) -> MarketParameters | None:
-        if self.markets is None:
-            return None
-        return MarketParameters(self._collection_of_markets)
+        return EnergySystemParameters(
+            timestep=self.timestep,
+            generators=generator_params,
+            storages=storage_params,
+            loads=load_params,
+            markets=market_params,
+            scenarios=scenario_params,
+            objective=self.objective,
+        )
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:

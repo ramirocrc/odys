@@ -116,7 +116,9 @@ class TestValidateLoadsConsistentWithScenarios:
 class TestValidateMarketsConsistentWithScenarios:
     def test_valid(self, market: EnergyMarket) -> None:
         scenario = StochasticScenario(
-            name="s1", probability=1.0, market_prices={"market1": MARKET_PRICES},
+            name="s1",
+            probability=1.0,
+            market_prices={"market1": MARKET_PRICES},
         )
         validate_markets_consistent_with_scenarios((market,), (scenario,))
 
@@ -206,7 +208,7 @@ class TestValidateAvailableCapacityProfiles:
             probability=1.0,
             available_capacity_profiles={"gen1": [90.0, 150.0, 95.0, 100.0]},
         )
-        with pytest.raises(OdysValidationError, match="Available capacity value.*is invalid"):
+        with pytest.raises(OdysValidationError, match=r"Available capacity value.*is invalid"):
             validate_available_capacity_profiles(scenario, portfolio, NUMBER_OF_STEPS)
 
 
@@ -224,7 +226,9 @@ class TestValidateEnoughPowerToMeetDemand:
 
     def test_demand_exceeds_capacity(self, generator: Generator, storage: Storage) -> None:
         scenario = StochasticScenario(
-            name="s1", probability=1.0, load_profiles={"load1": [80.0, 200.0, 90.0, 100.0]},
+            name="s1",
+            probability=1.0,
+            load_profiles={"load1": [80.0, 200.0, 90.0, 100.0]},
         )
         with pytest.raises(OdysValidationError, match="Infeasible problem"):
             validate_enough_power_to_meet_demand(scenario, (generator,), (storage,))
