@@ -1,12 +1,17 @@
 """Generator parameters for the mathematical optimization model."""
 
-from collections.abc import Sequence
-from typing import ClassVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, ClassVar
 
 import xarray as xr
 
-from odys.energy_system_models.assets.generator import Generator
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from odys.energy_system_models.assets.generator import Generator
 
 
 class GeneratorIndex(ModelIndex):
@@ -17,6 +22,21 @@ class GeneratorIndex(ModelIndex):
 
 class GeneratorParameters:
     """Parameters for generator assets in the energy system model."""
+
+    @classmethod
+    def from_assets(cls, generators: Sequence[Generator]) -> GeneratorParameters | None:
+        """Create generator parameters from a sequence of generators.
+
+        Args:
+            generators: Sequence of power generator objects.
+
+        Returns:
+            GeneratorParameters if generators is non-empty, None otherwise.
+
+        """
+        if not generators:
+            return None
+        return cls(generators=generators)
 
     def __init__(self, generators: Sequence[Generator]) -> None:
         """Initialize generator parameters.

@@ -84,10 +84,7 @@ def validate_loads_consistent_with_scenarios(
 
             extra_loads = scenario_load_names - portfolio_load_names
             if extra_loads:
-                msg = (
-                    f"Scenario '{scenario.name}' has load profiles for loads not in portfolio: "
-                    f"{sorted(extra_loads)}"
-                )
+                msg = f"Scenario '{scenario.name}' has load profiles for loads not in portfolio: {sorted(extra_loads)}"
                 raise OdysValidationError(msg)
         elif scenario.load_profiles is not None:
             msg = (
@@ -258,6 +255,5 @@ def validate_enough_energy_to_meet_demand(scenario: StochasticScenario) -> None:
     Checks that the total energy available from generators and batteries
     can meet the total energy demand over the time horizon.
     """
-    # TODO: Validate that:
-    # sum(demand * timestep) <= sum(generator.nominal_power * timestep) + sum(battery.soc_initial - battery.soc_terminal)
+    # TODO: Implement energy adequacy validation
     return

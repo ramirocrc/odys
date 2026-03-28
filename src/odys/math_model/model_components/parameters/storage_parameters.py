@@ -1,12 +1,17 @@
 """Storage parameters for the mathematical optimization model."""
 
-from collections.abc import Sequence
-from typing import ClassVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, ClassVar
 
 import xarray as xr
 
-from odys.energy_system_models.assets.storage import Storage
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from odys.energy_system_models.assets.storage import Storage
 
 
 class StorageIndex(ModelIndex):
@@ -17,6 +22,21 @@ class StorageIndex(ModelIndex):
 
 class StorageParameters:
     """Parameters for storage assets in the energy system model."""
+
+    @classmethod
+    def from_assets(cls, storages: Sequence[Storage]) -> StorageParameters | None:
+        """Create storage parameters from a sequence of storages.
+
+        Args:
+            storages: Sequence of storage objects.
+
+        Returns:
+            StorageParameters if storages is non-empty, None otherwise.
+
+        """
+        if not storages:
+            return None
+        return cls(storages=storages)
 
     def __init__(self, storages: Sequence[Storage]) -> None:
         """Initialize storage parameters.

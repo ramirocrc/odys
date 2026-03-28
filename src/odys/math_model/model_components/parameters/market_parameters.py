@@ -1,12 +1,17 @@
 """Market parameters for the mathematical optimization model."""
 
-from collections.abc import Sequence
-from typing import ClassVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, ClassVar
 
 import xarray as xr
 
-from odys.energy_system_models.markets import EnergyMarket
 from odys.math_model.model_components.sets import ModelDimension, ModelIndex
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from odys.energy_system_models.markets import EnergyMarket
 
 
 class MarketIndex(ModelIndex):
@@ -17,6 +22,21 @@ class MarketIndex(ModelIndex):
 
 class MarketParameters:
     """Parameters for energy market components in the energy system model."""
+
+    @classmethod
+    def from_assets(cls, markets: Sequence[EnergyMarket]) -> MarketParameters | None:
+        """Create market parameters from a sequence of markets.
+
+        Args:
+            markets: Sequence of energy market objects.
+
+        Returns:
+            MarketParameters if markets is non-empty, None otherwise.
+
+        """
+        if not markets:
+            return None
+        return cls(markets=markets)
 
     def __init__(self, markets: Sequence[EnergyMarket]) -> None:
         """Initialize market parameters.
