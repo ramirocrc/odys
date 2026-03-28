@@ -1,7 +1,15 @@
 # Solvers API
 
-The solvers module contains different optimization solver implementations.
+The solvers module contains solver configuration and dispatch for energy system optimization.
 
-## HiGHS Solver
+## Solver
 
-::: odys.solvers.highs_solver
+::: odys.solvers.solver
+
+## Solver Configuration
+
+::: odys.solvers.solver_config
+
+## Option Translators
+
+::: odys.solvers.option_translators
