@@ -8,22 +8,28 @@ from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.math_model.milp_model import EnergyMILPModel
 from odys.optimization.optimization_results import OptimizationResults
+from odys.solvers.solver_config import SolverConfig
 
 
-def optimize_algebraic_model(milp_model: EnergyMILPModel) -> OptimizationResults:
+def optimize_algebraic_model(
+    milp_model: EnergyMILPModel,
+    solver_config: SolverConfig | None = None,
+) -> OptimizationResults:
     """Solve the optimization model using HiGHS.
 
     Args:
         milp_model: The EnergyMILPModel to solve.
+        solver_config: Solver configuration. Uses defaults if not provided.
 
     Returns:
         OptimizationResults containing the solution and metadata.
 
     """
+    config = solver_config or SolverConfig()
     solving_status, termination_condition = milp_model.linopy_model.solve(
         solver_name="highs",
         explicit_coordinate_names=True,
-        output_flag=False,
+        **config.to_solver_options(),
     )
 
     return OptimizationResults(

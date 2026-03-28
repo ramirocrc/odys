@@ -108,3 +108,12 @@ def test_portfolio_properties_return_correct_assets(
     assert sample_battery is storages[0]
 
     assert (generators + storages) == (sample_generator_1, sample_generator_2, sample_battery)
+
+
+def test_add_assets_raises_error_for_duplicate_names_in_iterable() -> None:
+    """Test that add_assets raises OdysValidationError for duplicate names in the input iterable."""
+    gen1 = Generator(name="same_name", nominal_power=100.0, variable_cost=50.0)
+    gen2 = Generator(name="same_name", nominal_power=120.0, variable_cost=20.0)
+    portfolio = AssetPortfolio()
+    with pytest.raises(OdysValidationError, match=r"Duplicate asset names"):
+        portfolio.add_assets([gen1, gen2])

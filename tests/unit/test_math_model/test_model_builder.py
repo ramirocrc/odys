@@ -10,6 +10,7 @@ from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.scenarios import Scenario
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
+from odys.exceptions import OdysError
 from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
 
 logger = logging.getLogger(__name__)
@@ -102,5 +103,5 @@ def test_model_already_built(energy_system_sample: ValidatedEnergySystem) -> Non
         energy_system_sample.energy_system_parameters,
     )
     model_builder.build()
-    with pytest.raises(AttributeError, match=r"Model has already been built."):
+    with pytest.raises(OdysError, match=r"Model has already been built."):
         model_builder.build()

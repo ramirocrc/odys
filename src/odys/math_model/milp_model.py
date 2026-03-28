@@ -10,6 +10,7 @@ import linopy
 from linopy import Model, Variable
 from pydantic import BaseModel, ConfigDict
 
+from odys.exceptions import OdysValidationError
 from odys.math_model.model_components.parameters.generator_parameters import GeneratorIndex
 from odys.math_model.model_components.parameters.load_parameters import LoadIndex
 from odys.math_model.model_components.parameters.market_parameters import MarketIndex
@@ -163,6 +164,6 @@ class EnergyMILPModel:
             )
         if not profit_terms:
             msg = "per_scenario_profit requires at least one revenue or cost source (markets or generators)"
-            raise ValueError(msg)
+            raise OdysValidationError(msg)
 
         return sum(profit_terms)  # type: ignore[return-value]

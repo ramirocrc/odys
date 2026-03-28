@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 
+from odys.exceptions import OdysValidationError
 from odys.math_model.milp_model import EnergyMILPModel
 from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
 from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
@@ -20,7 +21,7 @@ class StorageConstraints(ConstraintGroup):
     def _validate_storage_parameters_exist(self) -> None:
         if self.params is None:
             msg = "No storage parameters specified."
-            raise ValueError(msg)
+            raise OdysValidationError(msg)
 
     @property
     def all(self) -> tuple[ModelConstraint, ...]:

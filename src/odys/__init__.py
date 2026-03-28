@@ -15,6 +15,7 @@ from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.markets import EnergyMarket, TradeDirection
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
 from odys.optimization.objective import CVaRTerm, Objective, ProfitTerm
+from odys.solvers.solver_config import SolverConfig
 
 __version__ = version("odys")
 
@@ -29,6 +30,7 @@ __all__ = [
     "Objective",
     "ProfitTerm",
     "Scenario",
+    "SolverConfig",
     "StochasticScenario",
     "Storage",
     "TradeDirection",
