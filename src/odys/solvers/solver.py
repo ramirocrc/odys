@@ -1,11 +1,13 @@
-"""HiGHS solver implementation for energy system optimization.
+"""Solver dispatch for energy system optimization.
 
-This module provides the HiGHSolver class for solving energy system
-optimization problems using the HiGHS linear programming solver.
+This module provides the solve function that dispatches to any
+linopy-supported solver based on the SolverConfig.
 """
 
+import linopy
 from linopy.constants import SolverStatus, TerminationCondition
 
+from odys.exceptions import OdysSolverError
 from odys.math_model.milp_model import EnergyMILPModel
 from odys.optimization.optimization_results import OptimizationResults
 from odys.optimization.solved_model_data import SolvedModelData
@@ -16,19 +18,24 @@ def optimize_algebraic_model(
     milp_model: EnergyMILPModel,
     solver_config: SolverConfig | None = None,
 ) -> OptimizationResults:
-    """Solve the optimization model using HiGHS.
+    """Solve the optimization model using the configured solver.
 
     Args:
         milp_model: The EnergyMILPModel to solve.
-        solver_config: Solver configuration. Uses defaults if not provided.
+        solver_config: Solver configuration. Uses defaults (HiGHS) if not provided.
 
     Returns:
         OptimizationResults containing the solution and metadata.
 
+    Raises:
+        OdysSolverError: If the configured solver is not available.
+
     """
     config = solver_config or SolverConfig()
+    _validate_solver_available(config.solver_name)
+
     solving_status, termination_condition = milp_model.linopy_model.solve(
-        solver_name="highs",
+        solver_name=config.solver_name,
         explicit_coordinate_names=True,
         **config.to_solver_options(),
     )
@@ -51,3 +58,19 @@ def optimize_algebraic_model(
         termination_condition=TerminationCondition(termination_condition),
         solved_data=solved_data,
     )
+
+
+def _validate_solver_available(solver_name: str) -> None:
+    """Validate that the solver is installed and available.
+
+    Args:
+        solver_name: The solver name to check.
+
+    Raises:
+        OdysSolverError: If the solver is not in linopy.available_solvers.
+
+    """
+    if solver_name not in linopy.available_solvers:
+        available = ", ".join(sorted(linopy.available_solvers)) or "none"
+        msg = f"Solver '{solver_name}' is not available. Installed solvers: {available}."
+        raise OdysSolverError(msg)

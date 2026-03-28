@@ -15,7 +15,7 @@ from odys.energy_system_models.validated_energy_system import ValidatedEnergySys
 from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
 from odys.optimization.objective import Objective
 from odys.optimization.optimization_results import OptimizationResults
-from odys.solvers.highs_solver import optimize_algebraic_model
+from odys.solvers.solver import optimize_algebraic_model
 from odys.solvers.solver_config import SolverConfig
 
 
@@ -62,7 +62,7 @@ class EnergySystem:
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimizationResults:
         """Optimize the energy system.
 
-        This method solves the pre-built algebraic model using HiGHS solver.
+        This method solves the pre-built algebraic model using the configured solver.
         The model is built during optimization from the energy system configuration.
 
         Args:
