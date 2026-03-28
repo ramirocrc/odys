@@ -15,7 +15,7 @@ from odys import (
     StochasticScenario,
     TradeDirection,
 )
-from odys.optimization.cvar_config import CVaRConfig
+from odys.optimization.objective import CVaRTerm, Objective
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
@@ -70,9 +70,8 @@ if __name__ == "__main__":
             ),
         ],
         timestep=timedelta(minutes=30),
-        cvar_config=CVaRConfig(
-            confidence_level=0.5,
-            weight=1,
+        objective=Objective(
+            cvar=CVaRTerm(weight=1, confidence_level=0.5),
         ),
         number_of_steps=8,
         power_unit="MW",

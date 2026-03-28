@@ -1,4 +1,5 @@
 from types import MappingProxyType
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -8,7 +9,7 @@ from odys.exceptions import OdysValidationError
 
 
 @pytest.fixture
-def battery_base_params() -> MappingProxyType:
+def battery_base_params() -> MappingProxyType[str, Any]:
     return MappingProxyType({
         "name": "test_battery",
         "capacity": 100.0,
@@ -44,7 +45,7 @@ def test_battery_creation_with_invalid_parameters_raises_error(
     param_name: str,
     invalid_value: float,
     expected_match: str,
-    battery_base_params: dict,
+    battery_base_params: MappingProxyType[str, Any],
 ) -> None:
     base_params = dict(battery_base_params)
     base_params[param_name] = invalid_value
@@ -63,9 +64,9 @@ def test_battery_creation_with_invalid_parameters_raises_error(
     ],
 )
 def test_soc_values_outside_bounds_raises_error(
-    invalid_parameters: dict,
+    invalid_parameters: dict[str, Any],
     expected_match: str,
-    battery_base_params: dict,
+    battery_base_params: MappingProxyType[str, Any],
 ) -> None:
     base_params = dict(battery_base_params)
     invalid_battery_params = base_params | invalid_parameters  # The latter takes priority when same key exists

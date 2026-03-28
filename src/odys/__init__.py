@@ -14,18 +14,20 @@ from odys.energy_system_models.assets.portfolio import AssetPortfolio
 from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.markets import EnergyMarket, TradeDirection
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
-from odys.optimization.cvar_config import CVaRConfig
+from odys.optimization.objective import CVaRTerm, Objective, ProfitTerm
 
 __version__ = version("odys")
 
 __all__ = [
     "AssetPortfolio",
-    "CVaRConfig",
+    "CVaRTerm",
     "EnergyMarket",
     "EnergySystem",
     "Generator",
     "Load",
     "LoadType",
+    "Objective",
+    "ProfitTerm",
     "Scenario",
     "StochasticScenario",
     "Storage",

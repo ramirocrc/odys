@@ -91,7 +91,7 @@ class EnergyAlgebraicModelBuilder:
         if self._milp_model.parameters.markets:
             variables_to_add.extend(MARKET_VARIABLES)
 
-        if self._milp_model.parameters.cvar_config:
+        if self._has_cvar_term:
             variables_to_add.extend(CVAR_VARIABLES)
 
         for variable in variables_to_add:
@@ -164,7 +164,7 @@ class EnergyAlgebraicModelBuilder:
         self._add_storage_constraints()
         self._add_market_constraints()
         self._add_scenario_constraints()
-        if self._milp_model.parameters.cvar_config:
+        if self._has_cvar_term:
             self._add_cvar_constraints()
 
     def _add_storage_constraints(self) -> None:
@@ -196,6 +196,9 @@ class EnergyAlgebraicModelBuilder:
                 name=constraint.name,
             )
 
+    def _has_cvar_term(self) -> bool:
+        return self._milp_model.parameters.objective.cvar is not None
+
     def _add_model_objective(self) -> None:
-        objective = build_objective(self._milp_model)
+        objective = build_objective(self._milp_model, self._milp_model.parameters.objective)
         self._milp_model.linopy_model.add_objective(objective, sense="max")
