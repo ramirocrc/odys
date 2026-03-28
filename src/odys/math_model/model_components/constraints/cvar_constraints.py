@@ -1,7 +1,7 @@
 """CVaR (Conditional Value at Risk) constraints for stochastic optimization."""
 
 from odys.math_model.milp_model import EnergyMILPModel
-from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
+from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup, constraint
 from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
 
 
@@ -12,16 +12,10 @@ class CVaRConstraints(ConstraintGroup):
         """Initialize with the MILP model containing CVaR variables."""
         self.model = milp_model
 
-    @property
-    def all(self) -> tuple[ModelConstraint, ...]:
-        """Return all CVaR constraints."""
-        return (self._get_shortfall_constraint(),)
-
+    @constraint
     def _get_shortfall_constraint(self) -> ModelConstraint:
-        constraint = (
-            self.model.cvar_shortfall >= self.model.cvar_value_at_risk - self.model.per_scenario_profit()
-        )  # pyrefly: ignore
+        constraint_expr = self.model.cvar_shortfall >= self.model.cvar_value_at_risk - self.model.per_scenario_profit()
         return ModelConstraint(
-            constraint=constraint,
+            constraint=constraint_expr,
             name="cvar_shortfall_constraint",
         )

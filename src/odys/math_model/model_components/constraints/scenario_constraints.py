@@ -1,8 +1,9 @@
 """Scenario-level constraints for the optimization model."""
 
 from odys.math_model.milp_model import EnergyMILPModel
-from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup
+from odys.math_model.model_components.constraints.constraints_group import ConstraintGroup, constraint
 from odys.math_model.model_components.constraints.model_constraint import ModelConstraint
+from odys.math_model.model_components.parameters.market_parameters import MarketParameters
 from odys.math_model.model_components.sets import ModelDimension
 from odys.math_model.model_components.variables import MARKET_VARIABLES
 
@@ -13,29 +14,17 @@ class ScenarioConstraints(ConstraintGroup):
     def __init__(
         self,
         milp_model: EnergyMILPModel,
+        market_params: MarketParameters | None = None,
     ) -> None:
-        """Initialize with the MILP model containing scenario-level variables and parameters."""
+        """Initialize with the MILP model and optional market parameters."""
         self.model = milp_model
         self.scenario_params = milp_model.parameters.scenarios
-        self.market_params = milp_model.parameters.markets
+        self.market_params = market_params
         self._include_generators = bool(milp_model.parameters.generators)
         self._include_storages = bool(milp_model.parameters.storages)
-        self._include_markets = bool(milp_model.parameters.markets)
+        self._include_markets = bool(market_params)
 
-    @property
-    def all(self) -> tuple[ModelConstraint, ...]:
-        """Return all scenario-level constraints (power balance, capacity, non-anticipativity)."""
-        constraints = [
-            self._get_power_balance_constraint(),
-        ]
-
-        if self._include_generators and self.scenario_params.available_capacity_profiles is not None:
-            constraints.append(self._get_available_capacity_profiles_constraint())
-
-        if self._include_markets:
-            constraints += self._get_non_anticipativity_constraint()
-        return tuple(constraints)
-
+    @constraint
     def _get_power_balance_constraint(self) -> ModelConstraint:
         """Linopy power balance constraint ensuring supply equals demand.
 
@@ -62,14 +51,19 @@ class ScenarioConstraints(ConstraintGroup):
             constraint=lhs == 0,  # ty: ignore  # pyright: ignore[reportArgumentType]
         )
 
-    def _get_available_capacity_profiles_constraint(self) -> ModelConstraint:
-        var_generator_power = self.model.generator_power
-        expression = var_generator_power <= self.scenario_params.available_capacity_profiles
-        return ModelConstraint(
-            name="available_capacity_constraint",
-            constraint=expression,
-        )
+    @constraint
+    def _get_available_capacity_profiles_constraint(self) -> list[ModelConstraint]:
+        if not self._include_generators or self.scenario_params.available_capacity_profiles is None:
+            return []
+        expression = self.model.generator_power <= self.scenario_params.available_capacity_profiles
+        return [
+            ModelConstraint(
+                name="available_capacity_constraint",
+                constraint=expression,
+            ),
+        ]
 
+    @constraint
     def _get_non_anticipativity_constraint(self) -> list[ModelConstraint]:
         """Non-anticipativity constraint ensuring variables have same values across scenarios.
 
@@ -77,8 +71,11 @@ class ScenarioConstraints(ConstraintGroup):
         all scenarios, reflecting that decisions are made before uncertainty is revealed.
         Only applies to markets where stage_fixed is True.
         """
+        if self.market_params is None:
+            return []
+
         constraints = []
-        stage_fixed_markets = self.market_params.stage_fixed  # ty: ignore # pyrefly: ignore  # pyright: ignore[reportOptionalMemberAccess]
+        stage_fixed_markets = self.market_params.stage_fixed
 
         for market_var in MARKET_VARIABLES:
             linopy_var = self.model.linopy_model.variables[market_var.var_name]
