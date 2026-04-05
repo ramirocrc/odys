@@ -225,14 +225,7 @@ class TestStorageConstraintsSubHourlyTimestep:
         self,
         energy_system_15min: ValidatedEnergySystem,
     ) -> linopy.Model:
-        params = build_parameters(
-            portfolio=energy_system_15min.portfolio,
-            markets=energy_system_15min.collection_of_markets,
-            timestep=energy_system_15min.timestep,
-            number_of_steps=energy_system_15min.number_of_steps,
-            scenarios=energy_system_15min.collection_of_scenarios,
-            objective=energy_system_15min.objective,
-        )
+        params = build_parameters(energy_system_15min)
         model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
         return model_builder.build().linopy_model
 

@@ -1,40 +1,29 @@
-from collections.abc import Sequence
-from datetime import timedelta
-
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.markets import EnergyMarket
-from odys.energy_system_models.scenarios import StochasticScenario
+from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from odys.math_model.model_components.parameters.generator_parameters import GeneratorParameters
 from odys.math_model.model_components.parameters.load_parameters import LoadParameters
 from odys.math_model.model_components.parameters.market_parameters import MarketParameters
 from odys.math_model.model_components.parameters.parameters import EnergySystemParameters
 from odys.math_model.model_components.parameters.scenario_parameters import ScenarioParameters
 from odys.math_model.model_components.parameters.storage_parameters import StorageParameters
-from odys.optimization.objective import Objective
 
 
-def build_parameters(
-    portfolio: AssetPortfolio,
-    markets: Sequence[EnergyMarket],
-    timestep: timedelta,
-    number_of_steps: int,
-    scenarios: Sequence[StochasticScenario],
-    objective: Objective,
-) -> EnergySystemParameters:
+def build_parameters(system: ValidatedEnergySystem) -> EnergySystemParameters:
     """Build parameters suitable for the optimization model.
 
     Args:
-        portfolio: The asset portfolio containing generators, storages, and loads.
-        markets: Sequence of energy markets.
-        timestep: Duration of each time period.
-        number_of_steps: Number of time steps in the optimization horizon.
-        scenarios: Sequence of stochastic scenarios.
-        objective: Objective function configuration.
+        system: The validated energy system configuration.
 
     Returns:
         EnergySystemParameters suitable for building an optimization model.
 
     """
+    portfolio = system.portfolio
+    markets = system.collection_of_markets
+    timestep = system.timestep
+    number_of_steps = system.number_of_steps
+    scenarios = system.collection_of_scenarios
+    objective = system.objective
+
     generator_params = GeneratorParameters.from_assets(portfolio.generators)
     storage_params = StorageParameters.from_assets(portfolio.storages)
     load_params = LoadParameters.from_assets(portfolio.loads)

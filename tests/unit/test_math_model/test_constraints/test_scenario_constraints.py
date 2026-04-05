@@ -125,14 +125,7 @@ def energy_system_with_multiple_scenarios(
 def linopy_model_with_non_anticipativity(
     energy_system_with_multiple_scenarios: ValidatedEnergySystem,
 ) -> linopy.Model:
-    params = build_parameters(
-        portfolio=energy_system_with_multiple_scenarios.portfolio,
-        markets=energy_system_with_multiple_scenarios.collection_of_markets,
-        timestep=energy_system_with_multiple_scenarios.timestep,
-        number_of_steps=energy_system_with_multiple_scenarios.number_of_steps,
-        scenarios=energy_system_with_multiple_scenarios.collection_of_scenarios,
-        objective=energy_system_with_multiple_scenarios.objective,
-    )
+    params = build_parameters(energy_system_with_multiple_scenarios)
     model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
     energy_milp_model = model_builder.build()
     return energy_milp_model.linopy_model

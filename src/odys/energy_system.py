@@ -73,14 +73,7 @@ class EnergySystem:
             OptimizationResults containing the solution and metadata.
 
         """
-        params = build_parameters(
-            portfolio=self._validated_model.portfolio,
-            markets=self._validated_model.collection_of_markets,
-            timestep=self._validated_model.timestep,
-            number_of_steps=self._validated_model.number_of_steps,
-            scenarios=self._validated_model.collection_of_scenarios,
-            objective=self._validated_model.objective,
-        )
+        params = build_parameters(self._validated_model)
         model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
         milp_model = model_builder.build()
         return optimize_algebraic_model(milp_model, solver_config=solver_config)

@@ -72,14 +72,7 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> ValidatedEne
 def test_model_build_components(
     energy_system_sample: ValidatedEnergySystem,
 ) -> None:
-    params = build_parameters(
-        portfolio=energy_system_sample.portfolio,
-        markets=energy_system_sample.collection_of_markets,
-        timestep=energy_system_sample.timestep,
-        number_of_steps=energy_system_sample.number_of_steps,
-        scenarios=energy_system_sample.collection_of_scenarios,
-        objective=energy_system_sample.objective,
-    )
+    params = build_parameters(energy_system_sample)
     model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
     energy_milp_model = model_builder.build()
     linopy_model = energy_milp_model.linopy_model
@@ -110,14 +103,7 @@ def test_model_build_components(
 def test_model_already_built(
     energy_system_sample: ValidatedEnergySystem,
 ) -> None:
-    params = build_parameters(
-        portfolio=energy_system_sample.portfolio,
-        markets=energy_system_sample.collection_of_markets,
-        timestep=energy_system_sample.timestep,
-        number_of_steps=energy_system_sample.number_of_steps,
-        scenarios=energy_system_sample.collection_of_scenarios,
-        objective=energy_system_sample.objective,
-    )
+    params = build_parameters(energy_system_sample)
     model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
     model_builder.build()
     with pytest.raises(OdysError, match=r"Model has already been built."):

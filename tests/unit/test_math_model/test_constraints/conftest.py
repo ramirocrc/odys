@@ -60,14 +60,7 @@ def energy_system_parameters(
     energy_system_sample: ValidatedEnergySystem,
 ) -> EnergySystemParameters:
     """Build energy system parameters from a ValidatedEnergySystem fixture."""
-    return build_parameters(
-        portfolio=energy_system_sample.portfolio,
-        markets=energy_system_sample.collection_of_markets,
-        timestep=energy_system_sample.timestep,
-        number_of_steps=energy_system_sample.number_of_steps,
-        scenarios=energy_system_sample.collection_of_scenarios,
-        objective=energy_system_sample.objective,
-    )
+    return build_parameters(energy_system_sample)
 
 
 @pytest.fixture
