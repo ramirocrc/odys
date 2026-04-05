@@ -63,12 +63,12 @@ if __name__ == "__main__":
 
     result = energy_system.optimize()
     logger.info(result.termination_condition)
+
     logger.info(result.solver_status)
     battery_results = result.storages
     logger.info("generators power")
     logger.info(result.generators.power)
     logger.info("battery")
     logger.info(result.storages.net_power)
-
     logger.info("results summary dataframe")
     logger.info(result.to_dataframe())
