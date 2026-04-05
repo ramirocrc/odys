@@ -186,3 +186,17 @@ class EnergyAlgebraicModelBuilder:
     def _add_model_objective(self) -> None:
         objective = build_objective(self._milp_model, self._milp_model.parameters.objective)
         self._milp_model.linopy_model.add_objective(objective, sense="max")
+
+
+def build_model(energy_system_parameters: EnergySystemParameters) -> EnergyMILPModel:
+    """Build an optimization model from energy system parameters.
+
+    Args:
+        energy_system_parameters: Validated energy system parameters.
+
+    Returns:
+        EnergyMILPModel ready for solving.
+
+    """
+    builder = EnergyAlgebraicModelBuilder(energy_system_parameters)
+    return builder.build()

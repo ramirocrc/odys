@@ -15,7 +15,7 @@ from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
-from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
+from odys.math_model.model_builder import build_model
 from odys.math_model.model_components.variables import MARKET_VARIABLES
 from odys.math_model.parameters_builder import build_parameters
 
@@ -126,9 +126,7 @@ def linopy_model_with_non_anticipativity(
     energy_system_with_multiple_scenarios: ValidatedEnergySystem,
 ) -> linopy.Model:
     params = build_parameters(energy_system_with_multiple_scenarios)
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
-    energy_milp_model = model_builder.build()
-    return energy_milp_model.linopy_model
+    return build_model(params).linopy_model
 
 
 class TestScenarioConstraints:

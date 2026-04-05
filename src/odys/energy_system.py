@@ -12,7 +12,7 @@ from odys.energy_system_models.markets import EnergyMarket
 from odys.energy_system_models.scenarios import Scenario, StochasticScenario
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
-from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
+from odys.math_model.model_builder import build_model
 from odys.math_model.parameters_builder import build_parameters
 from odys.optimization.objective import Objective
 from odys.optimization.optimization_results import OptimizationResults
@@ -74,6 +74,8 @@ class EnergySystem:
 
         """
         params = build_parameters(self._validated_model)
-        model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
-        milp_model = model_builder.build()
-        return optimize_algebraic_model(milp_model, solver_config=solver_config)
+        milp_model = build_model(params)
+        return optimize_algebraic_model(
+            milp_model=milp_model,
+            solver_config=solver_config,
+        )
