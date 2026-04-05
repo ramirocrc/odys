@@ -14,6 +14,7 @@ from odys.energy_system_models.assets.storage import Storage
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
+from odys.math_model.parameters_builder import build_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -220,11 +221,19 @@ class TestStorageConstraintsSubHourlyTimestep:
         )
 
     @pytest.fixture
-    def linopy_model_15min(self, energy_system_15min: ValidatedEnergySystem) -> linopy.Model:
-
-        model_builder = EnergyAlgebraicModelBuilder(
-            energy_system_15min.energy_system_parameters,
+    def linopy_model_15min(
+        self,
+        energy_system_15min: ValidatedEnergySystem,
+    ) -> linopy.Model:
+        params = build_parameters(
+            portfolio=energy_system_15min.portfolio,
+            markets=energy_system_15min.collection_of_markets,
+            timestep=energy_system_15min.timestep,
+            number_of_steps=energy_system_15min.number_of_steps,
+            scenarios=energy_system_15min.collection_of_scenarios,
+            objective=energy_system_15min.objective,
         )
+        model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
         return model_builder.build().linopy_model
 
     def test_soc_dynamics_with_15min_timestep(

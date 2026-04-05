@@ -12,6 +12,7 @@ from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from odys.exceptions import OdysError
 from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
+from odys.math_model.parameters_builder import build_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -68,10 +69,18 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> ValidatedEne
     )
 
 
-def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> None:
-    model_builder = EnergyAlgebraicModelBuilder(
-        energy_system_sample.energy_system_parameters,
+def test_model_build_components(
+    energy_system_sample: ValidatedEnergySystem,
+) -> None:
+    params = build_parameters(
+        portfolio=energy_system_sample.portfolio,
+        markets=energy_system_sample.collection_of_markets,
+        timestep=energy_system_sample.timestep,
+        number_of_steps=energy_system_sample.number_of_steps,
+        scenarios=energy_system_sample.collection_of_scenarios,
+        objective=energy_system_sample.objective,
     )
+    model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
     energy_milp_model = model_builder.build()
     linopy_model = energy_milp_model.linopy_model
 
@@ -98,10 +107,18 @@ def test_model_build_components(energy_system_sample: ValidatedEnergySystem) -> 
     assert linopy_model.objective is not None
 
 
-def test_model_already_built(energy_system_sample: ValidatedEnergySystem) -> None:
-    model_builder = EnergyAlgebraicModelBuilder(
-        energy_system_sample.energy_system_parameters,
+def test_model_already_built(
+    energy_system_sample: ValidatedEnergySystem,
+) -> None:
+    params = build_parameters(
+        portfolio=energy_system_sample.portfolio,
+        markets=energy_system_sample.collection_of_markets,
+        timestep=energy_system_sample.timestep,
+        number_of_steps=energy_system_sample.number_of_steps,
+        scenarios=energy_system_sample.collection_of_scenarios,
+        objective=energy_system_sample.objective,
     )
+    model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
     model_builder.build()
     with pytest.raises(OdysError, match=r"Model has already been built."):
         model_builder.build()

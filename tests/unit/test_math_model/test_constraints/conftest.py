@@ -8,6 +8,8 @@ from odys.energy_system_models.assets.load import Load
 from odys.energy_system_models.units import PowerUnit
 from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
 from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
+from odys.math_model.model_components.parameters.parameters import EnergySystemParameters
+from odys.math_model.parameters_builder import build_parameters
 
 
 @pytest.fixture
@@ -54,13 +56,26 @@ def megawatt_unit() -> PowerUnit:
 
 
 @pytest.fixture
-def linopy_model(energy_system_sample: ValidatedEnergySystem) -> Model:
-    """Build a linopy model from an energy_system_sample fixture.
+def energy_system_parameters(
+    energy_system_sample: ValidatedEnergySystem,
+) -> EnergySystemParameters:
+    """Build energy system parameters from a ValidatedEnergySystem fixture."""
+    return build_parameters(
+        portfolio=energy_system_sample.portfolio,
+        markets=energy_system_sample.collection_of_markets,
+        timestep=energy_system_sample.timestep,
+        number_of_steps=energy_system_sample.number_of_steps,
+        scenarios=energy_system_sample.collection_of_scenarios,
+        objective=energy_system_sample.objective,
+    )
+
+
+@pytest.fixture
+def linopy_model(energy_system_parameters: EnergySystemParameters) -> Model:
+    """Build a linopy model from energy system parameters.
 
     Each test module must define its own `energy_system_sample` fixture.
     """
-    model_builder = EnergyAlgebraicModelBuilder(
-        energy_system_sample.energy_system_parameters,
-    )
+    model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=energy_system_parameters)
     energy_milp_model = model_builder.build()
     return energy_milp_model.linopy_model
