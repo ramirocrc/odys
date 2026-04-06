@@ -7,8 +7,7 @@ the system operation to meet demand at minimum cost.
 
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario
-from odys.energy_system_models.assets.storage import Storage
+from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario, Storage
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()

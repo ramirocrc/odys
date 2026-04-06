@@ -22,9 +22,29 @@ class EnergySystemParameters(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
 
     timestep: timedelta
-    generators: GeneratorParameters | None
-    storages: StorageParameters | None
-    loads: LoadParameters | None
-    markets: MarketParameters | None
+    generators: GeneratorParameters
+    storages: StorageParameters
+    loads: LoadParameters
+    markets: MarketParameters
     scenarios: ScenarioParameters
     objective: Objective
+
+    @property
+    def has_generators(self) -> bool:
+        """Return True if there are generators."""
+        return not self.generators.is_empty
+
+    @property
+    def has_storages(self) -> bool:
+        """Return True if there are storages."""
+        return not self.storages.is_empty
+
+    @property
+    def has_loads(self) -> bool:
+        """Return True if there are loads."""
+        return not self.loads.is_empty
+
+    @property
+    def has_markets(self) -> bool:
+        """Return True if there are markets."""
+        return not self.markets.is_empty

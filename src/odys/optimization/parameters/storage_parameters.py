@@ -23,30 +23,36 @@ class StorageIndex(ModelIndex):
 class StorageParameters:
     """Parameters for storage assets in the energy system model."""
 
-    def __init__(self, storages: Sequence[Storage]) -> None:
+    def __init__(self, storages: Sequence[Storage] | None = None) -> None:
         """Initialize storage parameters.
 
         Args:
             storages: Sequence of storage objects.
         """
+        self._storages = list(storages) if storages else []
         self._index = StorageIndex(
-            values=tuple(storage.name for storage in storages),
+            values=tuple(storage.name for storage in self._storages),
         )
         data = {
-            "capacity": [storage.capacity for storage in storages],
-            "max_power": [storage.max_power for storage in storages],
-            "efficiency_charging": [storage.efficiency_charging for storage in storages],
-            "efficiency_discharging": [storage.efficiency_discharging for storage in storages],
-            "soc_start": [storage.soc_start for storage in storages],
-            "soc_end": [storage.soc_end for storage in storages],
-            "soc_min": [storage.soc_min for storage in storages],
-            "soc_max": [storage.soc_max for storage in storages],
+            "capacity": [storage.capacity for storage in self._storages],
+            "max_power": [storage.max_power for storage in self._storages],
+            "efficiency_charging": [storage.efficiency_charging for storage in self._storages],
+            "efficiency_discharging": [storage.efficiency_discharging for storage in self._storages],
+            "soc_start": [storage.soc_start for storage in self._storages],
+            "soc_end": [storage.soc_end for storage in self._storages],
+            "soc_min": [storage.soc_min for storage in self._storages],
+            "soc_max": [storage.soc_max for storage in self._storages],
         }
         dim = self._index.dimension
         self._dataset = xr.Dataset(
             {name: (dim, values) for name, values in data.items()},
             coords=self._index.coordinates,
         )
+
+    @property
+    def is_empty(self) -> bool:
+        """Return True if there are no storages."""
+        return len(self._storages) == 0
 
     @property
     def index(self) -> StorageIndex:

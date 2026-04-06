@@ -21,16 +21,21 @@ class LoadIndex(ModelIndex):
 class LoadParameters:
     """Parameters for load assets in the energy system model."""
 
-    def __init__(self, loads: Sequence[Load]) -> None:
+    def __init__(self, loads: Sequence[Load] | None = None) -> None:
         """Initialize load parameters.
 
         Args:
             loads: Sequence of load objects.
         """
-        self._loads = loads
+        self._loads = list(loads) if loads else []
         self._index = LoadIndex(
-            values=tuple(gen.name for gen in self._loads),
+            values=tuple(load.name for load in self._loads),
         )
+
+    @property
+    def is_empty(self) -> bool:
+        """Return True if there are no loads."""
+        return len(self._loads) == 0
 
     @property
     def index(self) -> LoadIndex:

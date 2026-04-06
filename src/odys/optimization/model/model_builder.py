@@ -82,13 +82,13 @@ class EnergyAlgebraicModelBuilder:
 
     def _add_model_variables(self) -> None:
         variables_to_add = []
-        if self._milp_model.parameters.generators:
+        if not self._milp_model.parameters.generators.is_empty:
             variables_to_add.extend(GENERATOR_VARIABLES)
 
-        if self._milp_model.parameters.storages:
+        if not self._milp_model.parameters.storages.is_empty:
             variables_to_add.extend(STORAGE_VARIABLES)
 
-        if self._milp_model.parameters.markets:
+        if not self._milp_model.parameters.markets.is_empty:
             variables_to_add.extend(MARKET_VARIABLES)
 
         if self._milp_model.parameters.objective.cvar is not None:
@@ -167,13 +167,13 @@ class EnergyAlgebraicModelBuilder:
         groups: list[ConstraintGroup] = []
         params = self._milp_model.parameters
 
-        if params.generators is not None:
+        if not params.generators.is_empty:
             groups.append(GeneratorConstraints(self._milp_model, params.generators))
 
-        if params.storages is not None:
+        if not params.storages.is_empty:
             groups.append(StorageConstraints(self._milp_model, params.storages))
 
-        if params.markets is not None:
+        if not params.markets.is_empty:
             groups.append(MarketConstraints(self._milp_model, params.markets))
 
         groups.append(ScenarioConstraints(self._milp_model, market_params=params.markets))

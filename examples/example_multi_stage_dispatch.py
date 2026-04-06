@@ -9,13 +9,14 @@ from datetime import timedelta
 
 from odys import (
     AssetPortfolio,
+    CVaRTerm,
     EnergyMarket,
     EnergySystem,
     Generator,
+    Objective,
     StochasticScenario,
     TradeDirection,
 )
-from odys.optimization.objective import CVaRTerm, Objective
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()

@@ -28,10 +28,10 @@ class EnergyModelIndices(BaseModel):
 
     scenarios: ScenarioIndex
     time: TimeIndex
-    generators: GeneratorIndex | None
-    storages: StorageIndex | None
-    loads: LoadIndex | None
-    markets: MarketIndex | None
+    generators: GeneratorIndex
+    storages: StorageIndex
+    loads: LoadIndex
+    markets: MarketIndex
 
 
 class EnergyMILPModel:
@@ -53,10 +53,10 @@ class EnergyMILPModel:
         return EnergyModelIndices(
             scenarios=self._parameters.scenarios.scenario_index,
             time=self._parameters.scenarios.time_index,
-            generators=self._parameters.generators.index if self._parameters.generators is not None else None,
-            storages=self._parameters.storages.index if self._parameters.storages is not None else None,
-            loads=self._parameters.loads.index if self._parameters.loads is not None else None,
-            markets=self._parameters.markets.index if self._parameters.markets is not None else None,
+            generators=self._parameters.generators.index,
+            storages=self._parameters.storages.index,
+            loads=self._parameters.loads.index,
+            markets=self._parameters.markets.index,
         )
 
     @property
@@ -155,7 +155,7 @@ class EnergyMILPModel:
                 ).sum([ModelDimension.Time, ModelDimension.Markets]),
             )
 
-        if self._parameters.generators is not None:
+        if not self._parameters.generators.is_empty:
             profit_terms.append(
                 -(
                     self.generator_power * self._parameters.generators.variable_cost

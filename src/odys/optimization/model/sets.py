@@ -29,3 +29,8 @@ class ModelIndex(BaseModel, ABC):
     def coordinates(self) -> dict[str, list[str]]:
         """Gets coordinates for xarray objects."""
         return {f"{self.dimension}": list(self.values)}
+
+    @property
+    def is_empty(self) -> bool:
+        """Return True if there are no values in this index."""
+        return len(self.values) == 0

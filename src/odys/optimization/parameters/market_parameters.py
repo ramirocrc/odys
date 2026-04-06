@@ -23,23 +23,29 @@ class MarketIndex(ModelIndex):
 class MarketParameters:
     """Parameters for energy market components in the energy system model."""
 
-    def __init__(self, markets: Sequence[EnergyMarket]) -> None:
+    def __init__(self, markets: Sequence[EnergyMarket] | None = None) -> None:
         """Initialize market parameters.
 
         Args:
             markets: Sequence of energy market objects.
         """
-        self._index = MarketIndex(values=tuple(market.name for market in markets))
+        self._markets = list(markets) if markets else []
+        self._index = MarketIndex(values=tuple(market.name for market in self._markets))
         data = {
-            "max_volume": [market.max_trading_volume_per_step for market in markets],
-            "stage_fixed": [market.stage_fixed for market in markets],
-            "trade_direction": [market.trade_direction for market in markets],
+            "max_volume": [market.max_trading_volume_per_step for market in self._markets],
+            "stage_fixed": [market.stage_fixed for market in self._markets],
+            "trade_direction": [market.trade_direction for market in self._markets],
         }
         dim = self._index.dimension
         self._dataset = xr.Dataset(
             {name: (dim, values) for name, values in data.items()},
             coords=self._index.coordinates,
         )
+
+    @property
+    def is_empty(self) -> bool:
+        """Return True if there are no markets."""
+        return len(self._markets) == 0
 
     @property
     def index(self) -> MarketIndex:

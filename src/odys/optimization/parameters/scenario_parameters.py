@@ -34,20 +34,20 @@ class ScenarioParameters:
         self,
         number_of_timesteps: int,
         scenarios: Sequence[StochasticScenario],
-        generators_index: GeneratorIndex | None,
-        storages_index: StorageIndex | None,
-        markets_index: MarketIndex | None,
-        loads_index: LoadIndex | None,
+        generators_index: GeneratorIndex,
+        storages_index: StorageIndex,
+        markets_index: MarketIndex,
+        loads_index: LoadIndex,
     ) -> None:
         """Initialize scenario parameters.
 
         Args:
             number_of_timesteps: Number of time steps in the scenarios.
             scenarios: Sequence of stochastic scenario objects.
-            generators_index: Optional generator index.
-            storages_index: Optional storage index.
-            markets_index: Optional market index.
-            loads_index: Optional load index.
+            generators_index: Generator index.
+            storages_index: Storage index.
+            markets_index: Market index.
+            loads_index: Load index.
         """
         self._number_of_timesteps = number_of_timesteps
         self._scenarios = scenarios
@@ -71,7 +71,7 @@ class ScenarioParameters:
     @cached_property
     def load_profiles(self) -> xr.DataArray | None:
         """Return load profiles across scenarios and time."""
-        if self._loads_index is None:
+        if self._loads_index.is_empty:
             return None
         all_load_profiles = []
         for scenario in self._scenarios:
@@ -89,7 +89,7 @@ class ScenarioParameters:
     @cached_property
     def market_prices(self) -> xr.DataArray | None:
         """Return market prices across scenarios and time."""
-        if self._markets_index is None:
+        if self._markets_index.is_empty:
             return None
         all_market_prices = []
         for scenario in self._scenarios:
@@ -107,7 +107,7 @@ class ScenarioParameters:
     @cached_property
     def available_capacity_profiles(self) -> xr.DataArray | None:
         """Return available capacity profiles for generators across scenarios and time."""
-        if self._generators_index is None:
+        if self._generators_index.is_empty:
             return None
         all_capacity_profiles = []
 

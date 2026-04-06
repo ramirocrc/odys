@@ -14,15 +14,15 @@ class ScenarioConstraints(ConstraintGroup):
     def __init__(
         self,
         milp_model: EnergyMILPModel,
-        market_params: MarketParameters | None = None,
+        market_params: MarketParameters,
     ) -> None:
         """Initialize with the MILP model and optional market parameters."""
         self.model = milp_model
         self.scenario_params = milp_model.parameters.scenarios
         self.market_params = market_params
-        self._include_generators = bool(milp_model.parameters.generators)
-        self._include_storages = bool(milp_model.parameters.storages)
-        self._include_markets = bool(market_params)
+        self._include_generators = not milp_model.parameters.generators.is_empty
+        self._include_storages = not milp_model.parameters.storages.is_empty
+        self._include_markets = not market_params.is_empty
 
     @constraint
     def _get_power_balance_constraint(self) -> ModelConstraint:
@@ -71,7 +71,7 @@ class ScenarioConstraints(ConstraintGroup):
         all scenarios, reflecting that decisions are made before uncertainty is revealed.
         Only applies to markets where stage_fixed is True.
         """
-        if self.market_params is None:
+        if self.market_params.is_empty:
             return []
 
         constraints = []
