@@ -23,21 +23,6 @@ class GeneratorIndex(ModelIndex):
 class GeneratorParameters:
     """Parameters for generator assets in the energy system model."""
 
-    @classmethod
-    def from_assets(cls, generators: Sequence[Generator]) -> GeneratorParameters | None:
-        """Create generator parameters from a sequence of generators.
-
-        Args:
-            generators: Sequence of power generator objects.
-
-        Returns:
-            GeneratorParameters if generators is non-empty, None otherwise.
-
-        """
-        if not generators:
-            return None
-        return cls(generators=generators)
-
     def __init__(self, generators: Sequence[Generator]) -> None:
         """Initialize generator parameters.
 

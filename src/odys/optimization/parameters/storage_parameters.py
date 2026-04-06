@@ -23,21 +23,6 @@ class StorageIndex(ModelIndex):
 class StorageParameters:
     """Parameters for storage assets in the energy system model."""
 
-    @classmethod
-    def from_assets(cls, storages: Sequence[Storage]) -> StorageParameters | None:
-        """Create storage parameters from a sequence of storages.
-
-        Args:
-            storages: Sequence of storage objects.
-
-        Returns:
-            StorageParameters if storages is non-empty, None otherwise.
-
-        """
-        if not storages:
-            return None
-        return cls(storages=storages)
-
     def __init__(self, storages: Sequence[Storage]) -> None:
         """Initialize storage parameters.
 

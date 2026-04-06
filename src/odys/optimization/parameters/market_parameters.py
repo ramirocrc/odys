@@ -23,21 +23,6 @@ class MarketIndex(ModelIndex):
 class MarketParameters:
     """Parameters for energy market components in the energy system model."""
 
-    @classmethod
-    def from_assets(cls, markets: Sequence[EnergyMarket]) -> MarketParameters | None:
-        """Create market parameters from a sequence of markets.
-
-        Args:
-            markets: Sequence of energy market objects.
-
-        Returns:
-            MarketParameters if markets is non-empty, None otherwise.
-
-        """
-        if not markets:
-            return None
-        return cls(markets=markets)
-
     def __init__(self, markets: Sequence[EnergyMarket]) -> None:
         """Initialize market parameters.
 

@@ -123,10 +123,10 @@ class EnergySystem(BaseModel):
 
     def build_parameters(self) -> EnergySystemParameters:
         """Build parameters from this energy system for the optimization model."""
-        generator_params = GeneratorParameters.from_assets(self.portfolio.generators)
-        storage_params = StorageParameters.from_assets(self.portfolio.storages)
-        load_params = LoadParameters.from_assets(self.portfolio.loads)
-        market_params = MarketParameters.from_assets(self.collection_of_markets)
+        generator_params = GeneratorParameters(self.portfolio.generators) if self.portfolio.generators else None
+        storage_params = StorageParameters(self.portfolio.storages) if self.portfolio.storages else None
+        load_params = LoadParameters(self.portfolio.loads) if self.portfolio.loads else None
+        market_params = MarketParameters(self.collection_of_markets) if self.collection_of_markets else None
 
         scenario_params = ScenarioParameters(
             number_of_timesteps=self.number_of_steps,

@@ -21,21 +21,6 @@ class LoadIndex(ModelIndex):
 class LoadParameters:
     """Parameters for load assets in the energy system model."""
 
-    @classmethod
-    def from_assets(cls, loads: Sequence[Load]) -> LoadParameters | None:
-        """Create load parameters from a sequence of loads.
-
-        Args:
-            loads: Sequence of load objects.
-
-        Returns:
-            LoadParameters if loads is non-empty, None otherwise.
-
-        """
-        if not loads:
-            return None
-        return cls(loads=loads)
-
     def __init__(self, loads: Sequence[Load]) -> None:
         """Initialize load parameters.
 
