@@ -11,7 +11,7 @@ from linopy import Model, Variable
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.exceptions import OdysValidationError
-from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.sets import ModelDimension, ModelIndex
 from odys.optimization.model.variables import ModelVariable
 from odys.optimization.parameters.generator_parameters import GeneratorIndex
 from odys.optimization.parameters.load_parameters import LoadIndex
@@ -32,6 +32,18 @@ class EnergyModelIndices(BaseModel):
     storages: StorageIndex
     loads: LoadIndex
     markets: MarketIndex
+
+    def get_index(self, dimension: ModelDimension) -> ModelIndex:
+        """Return the index for a given dimension."""
+        mapping = {
+            ModelDimension.Scenarios: self.scenarios,
+            ModelDimension.Time: self.time,
+            ModelDimension.Generators: self.generators,
+            ModelDimension.Storages: self.storages,
+            ModelDimension.Loads: self.loads,
+            ModelDimension.Markets: self.markets,
+        }
+        return mapping[dimension]
 
 
 class EnergyMILPModel:

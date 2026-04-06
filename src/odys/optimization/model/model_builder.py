@@ -4,9 +4,7 @@ This module provides the EnergyAlgebraicModelBuilder that assembles
 variables, constraints, and objectives into a solvable MILP model.
 """
 
-from functools import cached_property
-
-from odys.domain.exceptions import OdysError, OdysValidationError
+from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup
 from odys.optimization.constraints.cvar_constraints import CVaRConstraints
 from odys.optimization.constraints.generator_constraints import (
@@ -25,7 +23,6 @@ from odys.optimization.model.linopy_converter import (
 )
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.objectives import build_objective
-from odys.optimization.model.sets import ModelDimension, ModelIndex
 from odys.optimization.model.variables import (
     CVAR_VARIABLES,
     GENERATOR_VARIABLES,
@@ -105,7 +102,7 @@ class EnergyAlgebraicModelBuilder:
 
         if variable.dimensions is not None:
             for dimension in variable.dimensions:
-                index = self.get_index_for_dimension(dimension)
+                index = self._milp_model.indices.get_index(dimension)
                 coordinates |= index.coordinates
                 dimensions.append(index.dimension)
                 indices.append(index)
@@ -121,33 +118,6 @@ class EnergyAlgebraicModelBuilder:
             ),
             binary=variable.is_binary,
         )
-
-    def get_index_for_dimension(self, dimension: ModelDimension) -> ModelIndex:
-        """Return the model index corresponding to a given dimension.
-
-        Args:
-            dimension: The model dimension to look up.
-
-        Raises:
-            OdysValidationError: If no index exists for the given dimension.
-
-        """
-        index = self._dimension_to_index_mapping.get(dimension)
-        if index is None:
-            msg = f"No index found for dimension '{dimension}'."
-            raise OdysValidationError(msg)
-        return index
-
-    @cached_property
-    def _dimension_to_index_mapping(self) -> dict[ModelDimension, ModelIndex | None]:
-        return {
-            ModelDimension.Scenarios: self._milp_model.indices.scenarios,
-            ModelDimension.Time: self._milp_model.indices.time,
-            ModelDimension.Generators: self._milp_model.indices.generators,
-            ModelDimension.Storages: self._milp_model.indices.storages,
-            ModelDimension.Loads: self._milp_model.indices.loads,
-            ModelDimension.Markets: self._milp_model.indices.markets,
-        }
 
     def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
         """Add a variable to the underlying linopy model."""
