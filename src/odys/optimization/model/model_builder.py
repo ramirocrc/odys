@@ -23,11 +23,9 @@ from odys.optimization.model.linopy_converter import (
 )
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.objectives import build_objective
+from odys.optimization.model.registry import AssetRegistry
 from odys.optimization.model.variables import (
     CVAR_VARIABLES,
-    GENERATOR_VARIABLES,
-    MARKET_VARIABLES,
-    STORAGE_VARIABLES,
     ModelVariable,
 )
 from odys.optimization.parameters.parameters import EnergySystemParameters
@@ -78,17 +76,15 @@ class EnergyAlgebraicModelBuilder:
         return self._milp_model
 
     def _add_model_variables(self) -> None:
-        variables_to_add = []
-        if not self._milp_model.parameters.generators.is_empty:
-            variables_to_add.extend(GENERATOR_VARIABLES)
+        params = self._milp_model.parameters
+        variables_to_add: list[ModelVariable] = []
 
-        if not self._milp_model.parameters.storages.is_empty:
-            variables_to_add.extend(STORAGE_VARIABLES)
+        for asset in AssetRegistry:
+            param = getattr(params, asset.name.lower() + "s")
+            if not param.is_empty:
+                variables_to_add.extend(asset.spec.variables)
 
-        if not self._milp_model.parameters.markets.is_empty:
-            variables_to_add.extend(MARKET_VARIABLES)
-
-        if self._milp_model.parameters.objective.cvar is not None:
+        if params.objective.cvar is not None:
             variables_to_add.extend(CVAR_VARIABLES)
 
         for variable in variables_to_add:
@@ -138,15 +134,15 @@ class EnergyAlgebraicModelBuilder:
         params = self._milp_model.parameters
 
         if not params.generators.is_empty:
-            groups.append(GeneratorConstraints(self._milp_model, params.generators))
+            groups.append(GeneratorConstraints(self._milp_model))
 
         if not params.storages.is_empty:
-            groups.append(StorageConstraints(self._milp_model, params.storages))
+            groups.append(StorageConstraints(self._milp_model))
 
         if not params.markets.is_empty:
-            groups.append(MarketConstraints(self._milp_model, params.markets))
+            groups.append(MarketConstraints(self._milp_model))
 
-        groups.append(ScenarioConstraints(self._milp_model, market_params=params.markets))
+        groups.append(ScenarioConstraints(self._milp_model))
 
         if params.objective.cvar is not None:
             groups.append(CVaRConstraints(self._milp_model))

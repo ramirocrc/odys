@@ -33,6 +33,14 @@ class MarketResults(BaseModel):
     buy_volume: pd.DataFrame
 
 
+class LoadResults(BaseModel):
+    """Class to store load results."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    load_profile: pd.DataFrame
+
+
 class CVaRResults(BaseModel):
     """CVaR optimization results: value at risk, CVaR value, and per-scenario shortfalls."""
 

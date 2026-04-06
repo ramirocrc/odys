@@ -6,16 +6,15 @@ from odys.optimization.constraints.constraints_group import ConstraintGroup, con
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.sets import ModelDimension
-from odys.optimization.parameters.storage_parameters import StorageParameters
 
 
 class StorageConstraints(ConstraintGroup):
     """Builds constraints for storage charge/discharge, SOC dynamics, and power limits."""
 
-    def __init__(self, milp_model: EnergyMILPModel, params: StorageParameters) -> None:
+    def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and storage parameters."""
         self.model = milp_model
-        self.params = params
+        self.params = milp_model.parameters.storages
         self._timestep_hours = milp_model.parameters.timestep / timedelta(hours=1)
 
     @constraint

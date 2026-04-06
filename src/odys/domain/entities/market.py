@@ -2,7 +2,9 @@
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from odys.domain.entities.base import EnergyAsset
 
 
 class TradeDirection(StrEnum):
@@ -13,10 +15,10 @@ class TradeDirection(StrEnum):
     BUY_AND_SELL = "buy_and_sell"
 
 
-class EnergyMarket(BaseModel):
+class EnergyMarket(EnergyAsset):
     """Represents an energy market in the energy system."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(frozen=True)
 
     name: str
     max_trading_volume_per_step: float = Field(gt=0)

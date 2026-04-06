@@ -5,46 +5,34 @@ from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import MARKET_VARIABLES
-from odys.optimization.parameters.market_parameters import MarketParameters
 
 
 class ScenarioConstraints(ConstraintGroup):
     """Builds power balance, available capacity, and non-anticipativity constraints."""
 
-    def __init__(
-        self,
-        milp_model: EnergyMILPModel,
-        market_params: MarketParameters,
-    ) -> None:
+    def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and optional market parameters."""
         self.model = milp_model
-        self.scenario_params = milp_model.parameters.scenarios
-        self.market_params = market_params
-        self._include_generators = not milp_model.parameters.generators.is_empty
-        self._include_storages = not milp_model.parameters.storages.is_empty
-        self._include_markets = not market_params.is_empty
+        self._params = milp_model.parameters
 
     @constraint
     def _get_power_balance_constraint(self) -> ModelConstraint:
-        """Linopy power balance constraint ensuring supply equals demand.
-
-        This constraint ensures that at each time period and scenario, the total power
-        generation plus battery discharge equals the demand plus battery charging.
-        """
+        """Linopy power balance constraint ensuring supply equals demand."""
         lhs = 0
-        if self._include_generators:
+
+        if not self._params.generators.is_empty:
             lhs += self.model.generator_power.sum(ModelDimension.Generators)
 
-        if self._include_storages:
+        if not self._params.storages.is_empty:
             lhs += self.model.storage_power_out.sum(ModelDimension.Storages)
             lhs += -self.model.storage_power_in.sum(ModelDimension.Storages)
 
-        if self._include_markets:
+        if not self._params.markets.is_empty:
             lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)
             lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)
 
-        if self.scenario_params.load_profiles is not None:
-            lhs += -self.scenario_params.load_profiles
+        if self._params.scenarios.load_profiles is not None:
+            lhs += -self._params.scenarios.load_profiles
 
         return ModelConstraint(
             name="power_balance_constraint",
@@ -53,9 +41,9 @@ class ScenarioConstraints(ConstraintGroup):
 
     @constraint
     def _get_available_capacity_profiles_constraint(self) -> list[ModelConstraint]:
-        if not self._include_generators or self.scenario_params.available_capacity_profiles is None:
+        if self._params.generators.is_empty or self._params.scenarios.available_capacity_profiles is None:
             return []
-        expression = self.model.generator_power <= self.scenario_params.available_capacity_profiles
+        expression = self.model.generator_power <= self._params.scenarios.available_capacity_profiles
         return [
             ModelConstraint(
                 name="available_capacity_constraint",
@@ -71,11 +59,11 @@ class ScenarioConstraints(ConstraintGroup):
         all scenarios, reflecting that decisions are made before uncertainty is revealed.
         Only applies to markets where stage_fixed is True.
         """
-        if self.market_params.is_empty:
+        if self._params.markets.is_empty:
             return []
 
         constraints = []
-        stage_fixed_markets = self.market_params.stage_fixed
+        stage_fixed_markets = self._params.markets.stage_fixed
 
         for market_var in MARKET_VARIABLES:
             linopy_var = self.model.linopy_model.variables[market_var.var_name]

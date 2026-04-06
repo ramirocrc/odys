@@ -4,16 +4,15 @@ from odys.domain.entities.market import TradeDirection
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.model.milp_model import EnergyMILPModel
-from odys.optimization.parameters.market_parameters import MarketParameters
 
 
 class MarketConstraints(ConstraintGroup):
     """Builds constraints for market trading volumes, mutual exclusivity, and trade direction."""
 
-    def __init__(self, milp_model: EnergyMILPModel, params: MarketParameters) -> None:
+    def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and market parameters."""
         self.model = milp_model
-        self.params = params
+        self.params = milp_model.parameters.markets
 
     @constraint
     def _get_market_max_sell_volume_constraint(self) -> ModelConstraint:

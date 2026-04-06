@@ -3,16 +3,15 @@
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.model.milp_model import EnergyMILPModel
-from odys.optimization.parameters.generator_parameters import GeneratorParameters
 
 
 class GeneratorConstraints(ConstraintGroup):
     """Builds constraints for generator power limits, ramping, startup/shutdown, and min uptime."""
 
-    def __init__(self, milp_model: EnergyMILPModel, params: GeneratorParameters) -> None:
+    def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and generator parameters."""
         self.model = milp_model
-        self.params = params
+        self.params = milp_model.parameters.generators
 
     @constraint
     def _get_generator_max_power_constraint(self) -> ModelConstraint:
