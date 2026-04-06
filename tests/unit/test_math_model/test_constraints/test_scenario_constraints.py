@@ -15,9 +15,8 @@ from odys.domain.entities.storage import Storage
 from odys.domain.scenarios import Scenario, StochasticScenario
 from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
-from odys.optimization.model_builder import build_model
-from odys.optimization.parameters_builder import build_parameters
-from odys.optimization.variables import MARKET_VARIABLES
+from odys.optimization.model.model_builder import build_model
+from odys.optimization.model.variables import MARKET_VARIABLES
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +124,7 @@ def energy_system_with_multiple_scenarios(
 def linopy_model_with_non_anticipativity(
     energy_system_with_multiple_scenarios: EnergySystem,
 ) -> linopy.Model:
-    params = build_parameters(energy_system_with_multiple_scenarios)
+    params = energy_system_with_multiple_scenarios.build_parameters()
     return build_model(params).linopy_model
 
 

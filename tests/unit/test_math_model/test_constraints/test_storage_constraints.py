@@ -13,8 +13,7 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
-from odys.optimization.model_builder import build_model
-from odys.optimization.parameters_builder import build_parameters
+from odys.optimization.model.model_builder import build_model
 
 logger = logging.getLogger(__name__)
 
@@ -225,7 +224,7 @@ class TestStorageConstraintsSubHourlyTimestep:
         self,
         energy_system_15min: EnergySystem,
     ) -> linopy.Model:
-        params = build_parameters(energy_system_15min)
+        params = energy_system_15min.build_parameters()
         return build_model(params).linopy_model
 
     def test_soc_dynamics_with_15min_timestep(

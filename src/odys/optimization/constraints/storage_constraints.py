@@ -4,9 +4,9 @@ from datetime import timedelta
 
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.milp_model import EnergyMILPModel
+from odys.optimization.model.milp_model import EnergyMILPModel
+from odys.optimization.model.sets import ModelDimension
 from odys.optimization.parameters.storage_parameters import StorageParameters
-from odys.optimization.sets import ModelDimension
 
 
 class StorageConstraints(ConstraintGroup):

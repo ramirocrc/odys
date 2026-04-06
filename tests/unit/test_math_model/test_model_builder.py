@@ -11,8 +11,7 @@ from odys.domain.exceptions import OdysError
 from odys.domain.scenarios import Scenario
 from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
-from odys.optimization.model_builder import EnergyAlgebraicModelBuilder
-from odys.optimization.parameters_builder import build_parameters
+from odys.optimization.model.model_builder import EnergyAlgebraicModelBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +71,7 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> EnergySystem
 def test_model_build_components(
     energy_system_sample: EnergySystem,
 ) -> None:
-    params = build_parameters(energy_system_sample)
+    params = energy_system_sample.build_parameters()
     model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
     energy_milp_model = model_builder.build()
     linopy_model = energy_milp_model.linopy_model
@@ -103,7 +102,7 @@ def test_model_build_components(
 def test_model_already_built(
     energy_system_sample: EnergySystem,
 ) -> None:
-    params = build_parameters(energy_system_sample)
+    params = energy_system_sample.build_parameters()
     model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
     model_builder.build()
     with pytest.raises(OdysError, match=r"Model has already been built."):

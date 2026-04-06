@@ -1,1 +1,1 @@
-"""Parameters module for mathematical model components."""
+"""Odys optimization parameters subpackage."""

@@ -19,21 +19,21 @@ from odys.optimization.constraints.scenario_constraints import (
 from odys.optimization.constraints.storage_constraints import (
     StorageConstraints,
 )
-from odys.optimization.linopy_converter import (
+from odys.optimization.model.linopy_converter import (
     LinopyVariableParameters,
     get_variable_lower_bound,
 )
-from odys.optimization.milp_model import EnergyMILPModel
-from odys.optimization.objectives import build_objective
-from odys.optimization.parameters.parameters import EnergySystemParameters
-from odys.optimization.sets import ModelDimension, ModelIndex
-from odys.optimization.variables import (
+from odys.optimization.model.milp_model import EnergyMILPModel
+from odys.optimization.model.objectives import build_objective
+from odys.optimization.model.sets import ModelDimension, ModelIndex
+from odys.optimization.model.variables import (
     CVAR_VARIABLES,
     GENERATOR_VARIABLES,
     MARKET_VARIABLES,
     STORAGE_VARIABLES,
     ModelVariable,
 )
+from odys.optimization.parameters.parameters import EnergySystemParameters
 
 
 class EnergyAlgebraicModelBuilder:

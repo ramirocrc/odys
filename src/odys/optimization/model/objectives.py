@@ -3,8 +3,8 @@
 import linopy
 
 from odys.domain.objective import CVaRTerm, Objective
-from odys.optimization.milp_model import EnergyMILPModel
-from odys.optimization.sets import ModelDimension
+from odys.optimization.model.milp_model import EnergyMILPModel
+from odys.optimization.model.sets import ModelDimension
 
 
 def _profit_expr(model: EnergyMILPModel) -> linopy.LinearExpression:

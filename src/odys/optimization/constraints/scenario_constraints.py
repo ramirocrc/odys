@@ -2,10 +2,10 @@
 
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.milp_model import EnergyMILPModel
+from odys.optimization.model.milp_model import EnergyMILPModel
+from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.variables import MARKET_VARIABLES
 from odys.optimization.parameters.market_parameters import MarketParameters
-from odys.optimization.sets import ModelDimension
-from odys.optimization.variables import MARKET_VARIABLES
 
 
 class ScenarioConstraints(ConstraintGroup):

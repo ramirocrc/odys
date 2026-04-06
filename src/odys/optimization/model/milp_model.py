@@ -11,14 +11,14 @@ from linopy import Model, Variable
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.exceptions import OdysValidationError
+from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.variables import ModelVariable
 from odys.optimization.parameters.generator_parameters import GeneratorIndex
 from odys.optimization.parameters.load_parameters import LoadIndex
 from odys.optimization.parameters.market_parameters import MarketIndex
 from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioIndex, TimeIndex
 from odys.optimization.parameters.storage_parameters import StorageIndex
-from odys.optimization.sets import ModelDimension
-from odys.optimization.variables import ModelVariable
 
 
 class EnergyModelIndices(BaseModel):

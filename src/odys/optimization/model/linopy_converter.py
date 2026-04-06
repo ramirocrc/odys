@@ -5,10 +5,10 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 
-from odys.optimization.sets import (
+from odys.optimization.model.sets import (
     ModelIndex,
 )
-from odys.optimization.variables import BoundType
+from odys.optimization.model.variables import BoundType
 
 
 class LinopyVariableParameters(BaseModel):

@@ -7,9 +7,8 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.load import Load
 from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
-from odys.optimization.model_builder import build_model
+from odys.optimization.model.model_builder import build_model
 from odys.optimization.parameters.parameters import EnergySystemParameters
-from odys.optimization.parameters_builder import build_parameters
 
 
 @pytest.fixture
@@ -60,7 +59,7 @@ def energy_system_parameters(
     energy_system_sample: EnergySystem,
 ) -> EnergySystemParameters:
     """Build energy system parameters from a EnergySystem fixture."""
-    return build_parameters(energy_system_sample)
+    return energy_system_sample.build_parameters()
 
 
 @pytest.fixture

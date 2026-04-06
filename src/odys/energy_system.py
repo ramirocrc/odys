@@ -21,8 +21,13 @@ from odys.domain.scenarios import (
 )
 from odys.domain.units import PowerUnit
 from odys.domain.validation import validate_energy_system_inputs
-from odys.optimization.model_builder import build_model
-from odys.optimization.parameters_builder import build_parameters
+from odys.optimization.model.model_builder import build_model
+from odys.optimization.parameters.generator_parameters import GeneratorParameters
+from odys.optimization.parameters.load_parameters import LoadParameters
+from odys.optimization.parameters.market_parameters import MarketParameters
+from odys.optimization.parameters.parameters import EnergySystemParameters
+from odys.optimization.parameters.scenario_parameters import ScenarioParameters
+from odys.optimization.parameters.storage_parameters import StorageParameters
 from odys.results.optimization_results import OptimizationResults
 from odys.solvers.solver import optimize_algebraic_model
 from odys.solvers.solver_config import SolverConfig
@@ -116,6 +121,32 @@ class EnergySystem(BaseModel):
             return (self.markets,)
         return tuple(self.markets)
 
+    def build_parameters(self) -> EnergySystemParameters:
+        """Build parameters from this energy system for the optimization model."""
+        generator_params = GeneratorParameters.from_assets(self.portfolio.generators)
+        storage_params = StorageParameters.from_assets(self.portfolio.storages)
+        load_params = LoadParameters.from_assets(self.portfolio.loads)
+        market_params = MarketParameters.from_assets(self.collection_of_markets)
+
+        scenario_params = ScenarioParameters(
+            number_of_timesteps=self.number_of_steps,
+            scenarios=self.collection_of_scenarios,
+            generators_index=generator_params.index if generator_params else None,
+            storages_index=storage_params.index if storage_params else None,
+            loads_index=load_params.index if load_params else None,
+            markets_index=market_params.index if market_params else None,
+        )
+
+        return EnergySystemParameters(
+            timestep=self.timestep,
+            generators=generator_params,
+            storages=storage_params,
+            loads=load_params,
+            markets=market_params,
+            scenarios=scenario_params,
+            objective=self.objective,
+        )
+
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimizationResults:
         """Optimize the energy system.
 
@@ -128,7 +159,7 @@ class EnergySystem(BaseModel):
             OptimizationResults containing the solution and metadata.
 
         """
-        params = build_parameters(self)
+        params = self.build_parameters()
         milp_model = build_model(params)
         return optimize_algebraic_model(
             milp_model=milp_model,

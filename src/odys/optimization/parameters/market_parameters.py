@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import xarray as xr
 
-from odys.optimization.sets import ModelDimension, ModelIndex
+from odys.optimization.model.sets import ModelDimension, ModelIndex
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

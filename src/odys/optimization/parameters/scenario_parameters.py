@@ -8,11 +8,11 @@ import numpy as np
 import xarray as xr
 
 from odys.domain.scenarios import StochasticScenario
+from odys.optimization.model.sets import ModelDimension, ModelIndex
 from odys.optimization.parameters.generator_parameters import GeneratorIndex
 from odys.optimization.parameters.load_parameters import LoadIndex
 from odys.optimization.parameters.market_parameters import MarketIndex
 from odys.optimization.parameters.storage_parameters import StorageIndex
-from odys.optimization.sets import ModelDimension, ModelIndex
 
 
 class TimeIndex(ModelIndex):

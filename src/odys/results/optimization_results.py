@@ -11,8 +11,8 @@ import xarray as xr
 from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
-from odys.optimization.sets import ModelDimension
-from odys.optimization.variables import ModelVariable
+from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.variables import ModelVariable
 from odys.results.result_containers import CVaRResults, GeneratorResults, MarketResults, StorageResults
 from odys.results.solved_model_data import SolvedModelData
 

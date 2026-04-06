@@ -8,7 +8,7 @@ import linopy
 from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysSolverError
-from odys.optimization.milp_model import EnergyMILPModel
+from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.results.optimization_results import OptimizationResults
 from odys.results.solved_model_data import SolvedModelData
 from odys.solvers.solver_config import SolverConfig

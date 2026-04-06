@@ -3,7 +3,7 @@
 from odys.domain.entities.market import TradeDirection
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.milp_model import EnergyMILPModel
+from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.parameters.market_parameters import MarketParameters
 
 
