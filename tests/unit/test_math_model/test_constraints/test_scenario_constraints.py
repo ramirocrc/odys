@@ -7,17 +7,17 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Storage
-from odys.energy_system_models.markets import EnergyMarket
-from odys.energy_system_models.scenarios import Scenario, StochasticScenario
-from odys.energy_system_models.units import PowerUnit
-from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
-from odys.math_model.model_builder import build_model
-from odys.math_model.model_components.variables import MARKET_VARIABLES
-from odys.math_model.parameters_builder import build_parameters
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load
+from odys.domain.entities.market import EnergyMarket
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.storage import Storage
+from odys.domain.scenarios import Scenario, StochasticScenario
+from odys.domain.units import PowerUnit
+from odys.energy_system import EnergySystem
+from odys.optimization.model_builder import build_model
+from odys.optimization.parameters_builder import build_parameters
+from odys.optimization.variables import MARKET_VARIABLES
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +54,8 @@ def asset_portfolio_sample(
 def energy_system_sample(
     asset_portfolio_sample: AssetPortfolio,
     demand_profile_sample: list[float],
-) -> ValidatedEnergySystem:
-    return ValidatedEnergySystem(
+) -> EnergySystem:
+    return EnergySystem(
         portfolio=asset_portfolio_sample,
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile_sample),
@@ -75,7 +75,7 @@ def energy_system_sample(
 def energy_system_with_multiple_scenarios(
     asset_portfolio_sample: AssetPortfolio,
     demand_profile_sample: list[float],
-) -> ValidatedEnergySystem:
+) -> EnergySystem:
     scenarios = [
         StochasticScenario(
             name="scenario_1",
@@ -108,7 +108,7 @@ def energy_system_with_multiple_scenarios(
             },
         ),
     ]
-    return ValidatedEnergySystem(
+    return EnergySystem(
         portfolio=asset_portfolio_sample,
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile_sample),
@@ -123,7 +123,7 @@ def energy_system_with_multiple_scenarios(
 
 @pytest.fixture
 def linopy_model_with_non_anticipativity(
-    energy_system_with_multiple_scenarios: ValidatedEnergySystem,
+    energy_system_with_multiple_scenarios: EnergySystem,
 ) -> linopy.Model:
     params = build_parameters(energy_system_with_multiple_scenarios)
     return build_model(params).linopy_model

@@ -2,12 +2,12 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.storage import Storage
+from odys.domain.scenarios import StochasticScenario
 from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Storage
-from odys.energy_system_models.scenarios import StochasticScenario
 
 
 @pytest.fixture

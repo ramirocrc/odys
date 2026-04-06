@@ -2,7 +2,7 @@
 
 import pytest
 
-from odys.exceptions import OdysSolverError
+from odys.domain.exceptions import OdysSolverError
 from odys.solvers.solver import _validate_solver_available
 
 

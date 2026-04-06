@@ -6,12 +6,12 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.scenarios import Scenario
-from odys.energy_system_models.units import PowerUnit
-from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.scenarios import Scenario
+from odys.domain.units import PowerUnit
+from odys.energy_system import EnergySystem
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +66,8 @@ def demand_profile_extended() -> list[float]:
 def energy_system_sample(
     asset_portfolio_sample: AssetPortfolio,
     demand_profile_sample: list[float],
-) -> ValidatedEnergySystem:
-    return ValidatedEnergySystem(
+) -> EnergySystem:
+    return EnergySystem(
         portfolio=asset_portfolio_sample,
         number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),

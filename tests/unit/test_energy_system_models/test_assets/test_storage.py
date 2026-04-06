@@ -4,8 +4,8 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from odys.energy_system_models.assets.storage import Storage
-from odys.exceptions import OdysValidationError
+from odys.domain.entities.storage import Storage
+from odys.domain.exceptions import OdysValidationError
 
 
 @pytest.fixture

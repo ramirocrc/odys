@@ -1,5 +1,7 @@
-"""Optimization package for energy system modeling.
+"""Optimization layer for energy system models.
 
-This package provides classes and utilities for solving energy system
-optimization problems using various solvers.
+Contains MILP model building, constraints, parameters, and solver integration.
 """
+
+from odys.optimization.model_builder import build_model
+from odys.optimization.parameters_builder import build_parameters

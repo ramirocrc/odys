@@ -50,7 +50,7 @@ def test_solver_name_custom() -> None:
 
 def test_solver_name_empty_raises() -> None:
     """Empty solver name raises a validation error."""
-    with pytest.raises(Exception):  # noqa: B017
+    with pytest.raises((ValueError, TypeError), match="solver_name"):
         SolverConfig(solver_name="")
 
 
@@ -63,7 +63,8 @@ def test_solver_options_override() -> None:
     )
     options = config.to_solver_options()
     assert options["presolve"] == "off"
-    assert options["custom_option"] == 42
+    custom_option_value = 42
+    assert options["custom_option"] == custom_option_value
 
 
 def test_to_solver_options_gurobi() -> None:

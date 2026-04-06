@@ -2,11 +2,11 @@
 
 import pytest
 
-from odys.energy_system_models.assets.base import EnergyAsset
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Storage
-from odys.exceptions import OdysValidationError
+from odys.domain.entities.base import EnergyAsset
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.storage import Storage
+from odys.domain.exceptions import OdysValidationError
 
 
 @pytest.fixture

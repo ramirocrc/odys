@@ -2,13 +2,14 @@
 
 import pytest
 
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Storage
-from odys.energy_system_models.markets import EnergyMarket
-from odys.energy_system_models.scenarios import StochasticScenario
-from odys.energy_system_models.validation import (
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load
+from odys.domain.entities.market import EnergyMarket
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.storage import Storage
+from odys.domain.exceptions import OdysValidationError
+from odys.domain.scenarios import StochasticScenario
+from odys.domain.validation import (
     validate_available_capacity_profiles,
     validate_enough_energy_to_meet_demand,
     validate_enough_power_to_meet_demand,
@@ -16,7 +17,6 @@ from odys.energy_system_models.validation import (
     validate_loads_consistent_with_scenarios,
     validate_markets_consistent_with_scenarios,
 )
-from odys.exceptions import OdysValidationError
 
 NOMINAL_POWER = 100.0
 VARIABLE_COST = 50.0

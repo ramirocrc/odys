@@ -7,10 +7,10 @@ linopy-supported solver based on the SolverConfig.
 import linopy
 from linopy.constants import SolverStatus, TerminationCondition
 
-from odys.exceptions import OdysSolverError
-from odys.math_model.milp_model import EnergyMILPModel
-from odys.optimization.optimization_results import OptimizationResults
-from odys.optimization.solved_model_data import SolvedModelData
+from odys.domain.exceptions import OdysSolverError
+from odys.optimization.milp_model import EnergyMILPModel
+from odys.results.optimization_results import OptimizationResults
+from odys.results.solved_model_data import SolvedModelData
 from odys.solvers.solver_config import SolverConfig
 
 

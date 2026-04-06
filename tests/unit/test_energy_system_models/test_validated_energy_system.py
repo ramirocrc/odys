@@ -9,15 +9,15 @@ from datetime import timedelta
 
 import pytest
 
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Storage
-from odys.energy_system_models.markets import EnergyMarket
-from odys.energy_system_models.scenarios import Scenario
-from odys.energy_system_models.units import PowerUnit
-from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
-from odys.exceptions import OdysValidationError
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load
+from odys.domain.entities.market import EnergyMarket
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.storage import Storage
+from odys.domain.exceptions import OdysValidationError
+from odys.domain.scenarios import Scenario
+from odys.domain.units import PowerUnit
+from odys.energy_system import EnergySystem
 
 
 @pytest.fixture
@@ -75,7 +75,7 @@ def test_energy_system_creation_with_valid_inputs(
     valid_timestep: timedelta,
 ) -> None:
     """Test that EnergySystem can be created with valid inputs."""
-    ValidatedEnergySystem(
+    EnergySystem(
         portfolio=testing_portfolio,
         number_of_steps=len(valid_demand_profile),
         timestep=valid_timestep,
@@ -98,7 +98,7 @@ def test_validation_of_capacity_profile_lengths(
         "test_generator": [90.0, 100.0, 95.0, 100.0],
     }
 
-    energy_system = ValidatedEnergySystem(
+    energy_system = EnergySystem(
         portfolio=testing_portfolio,
         number_of_steps=len(valid_demand_profile),
         timestep=valid_timestep,
@@ -117,7 +117,7 @@ def test_validation_of_capacity_profile_lengths(
     }
 
     with pytest.raises(OdysValidationError, match="does not match the number of time steps"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=len(valid_demand_profile),
             timestep=valid_timestep,
@@ -140,7 +140,7 @@ def test_validation_that_capacity_profiles_only_for_generators(
     }
 
     with pytest.raises(OdysValidationError, match="Available capacity can only be specified for generators"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=len(valid_demand_profile),
             timestep=valid_timestep,
@@ -161,7 +161,7 @@ def test_validation_that_system_can_meet_power_demand(
     excessive_demand = [80.0, 200.0, 90.0, 150.0]  # 200 MW exceeds 150 MW capacity
 
     with pytest.raises(OdysValidationError, match="Infeasible problem"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=len(excessive_demand),
             timestep=valid_timestep,
@@ -210,7 +210,7 @@ def empty_portfolio() -> AssetPortfolio:
 def test_load_validation_missing_load_profiles(testing_portfolio: AssetPortfolio) -> None:
     """Test validation when portfolio has loads but scenario has no load profiles."""
     with pytest.raises(OdysValidationError, match=r"Portfolio contains loads.*but scenario.*has no load profiles"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -225,7 +225,7 @@ def test_load_validation_missing_load_profiles(testing_portfolio: AssetPortfolio
 def test_load_validation_missing_specific_load_profile(testing_portfolio: AssetPortfolio) -> None:
     """Test validation when scenario is missing profiles for specific loads."""
     with pytest.raises(OdysValidationError, match=r"Scenario.*is missing load profiles for"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -240,7 +240,7 @@ def test_load_validation_missing_specific_load_profile(testing_portfolio: AssetP
 def test_load_validation_extra_load_profiles(testing_portfolio: AssetPortfolio) -> None:
     """Test validation when scenario has profiles for loads not in portfolio."""
     with pytest.raises(OdysValidationError, match=r"Scenario.*has load profiles for loads not in portfolio"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -258,7 +258,7 @@ def test_load_validation_extra_load_profiles(testing_portfolio: AssetPortfolio) 
 def test_load_validation_no_loads_but_has_profiles(portfolio_without_loads: AssetPortfolio) -> None:
     """Test validation when portfolio has no loads but scenario has load profiles."""
     with pytest.raises(OdysValidationError, match=r"Portfolio contains no loads.*but scenario.*has load profiles"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=portfolio_without_loads,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -276,7 +276,7 @@ def test_market_validation_missing_market_prices(
 ) -> None:
     """Test validation when portfolio has markets but scenario has no market prices."""
     with pytest.raises(OdysValidationError, match=r"Portfolio contains markets.*but scenario.*has no market prices"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -296,7 +296,7 @@ def test_market_validation_missing_specific_market_prices(
 ) -> None:
     """Test validation when scenario is missing prices for specific markets."""
     with pytest.raises(OdysValidationError, match=r"Scenario.*is missing market prices for"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -313,7 +313,7 @@ def test_market_validation_missing_specific_market_prices(
 def test_market_validation_extra_market_prices(testing_portfolio: AssetPortfolio, testing_market: EnergyMarket) -> None:
     """Test validation when scenario has prices for markets not in portfolio."""
     with pytest.raises(OdysValidationError, match=r"Scenario.*has market prices for markets not in portfolio"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -333,7 +333,7 @@ def test_market_validation_extra_market_prices(testing_portfolio: AssetPortfolio
 def test_market_validation_no_markets_but_has_prices(portfolio_without_loads: AssetPortfolio) -> None:
     """Test validation when portfolio has no markets but scenario has market prices."""
     with pytest.raises(OdysValidationError, match=r"EnergySystem contains no markets.*but scenario.*has market prices"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=portfolio_without_loads,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -349,7 +349,7 @@ def test_market_validation_no_markets_but_has_prices(portfolio_without_loads: As
 def test_load_profile_length_validation(testing_portfolio: AssetPortfolio) -> None:
     """Test validation of load profile length mismatch."""
     with pytest.raises(OdysValidationError, match=r"Length of load profile.*does not match the number of time steps"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -364,7 +364,7 @@ def test_load_profile_length_validation(testing_portfolio: AssetPortfolio) -> No
 def test_capacity_profile_value_validation(testing_portfolio: AssetPortfolio) -> None:
     """Test validation of capacity profile values outside valid range."""
     with pytest.raises(OdysValidationError, match=r"Available capacity value.*is invalid"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
@@ -381,7 +381,7 @@ def test_capacity_profile_value_validation(testing_portfolio: AssetPortfolio) ->
 def test_empty_load_profiles_validation(portfolio_without_loads: AssetPortfolio) -> None:
     """Test validation when load profiles is empty (should trigger empty load profile error)."""
     with pytest.raises(OdysValidationError, match="Load profile is empty, there is nothing to balance"):
-        ValidatedEnergySystem(
+        EnergySystem(
             portfolio=portfolio_without_loads,
             number_of_steps=4,
             timestep=timedelta(hours=1),

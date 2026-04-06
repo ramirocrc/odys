@@ -3,13 +3,13 @@ from datetime import timedelta
 import pytest
 from linopy import Model
 
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.units import PowerUnit
-from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
-from odys.math_model.model_builder import build_model
-from odys.math_model.model_components.parameters.parameters import EnergySystemParameters
-from odys.math_model.parameters_builder import build_parameters
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load
+from odys.domain.units import PowerUnit
+from odys.energy_system import EnergySystem
+from odys.optimization.model_builder import build_model
+from odys.optimization.parameters.parameters import EnergySystemParameters
+from odys.optimization.parameters_builder import build_parameters
 
 
 @pytest.fixture
@@ -57,9 +57,9 @@ def megawatt_unit() -> PowerUnit:
 
 @pytest.fixture
 def energy_system_parameters(
-    energy_system_sample: ValidatedEnergySystem,
+    energy_system_sample: EnergySystem,
 ) -> EnergySystemParameters:
-    """Build energy system parameters from a ValidatedEnergySystem fixture."""
+    """Build energy system parameters from a EnergySystem fixture."""
     return build_parameters(energy_system_sample)
 
 

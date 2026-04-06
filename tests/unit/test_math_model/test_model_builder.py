@@ -3,16 +3,16 @@ from datetime import timedelta
 
 import pytest
 
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Storage
-from odys.energy_system_models.scenarios import Scenario
-from odys.energy_system_models.units import PowerUnit
-from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
-from odys.exceptions import OdysError
-from odys.math_model.model_builder import EnergyAlgebraicModelBuilder
-from odys.math_model.parameters_builder import build_parameters
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.storage import Storage
+from odys.domain.exceptions import OdysError
+from odys.domain.scenarios import Scenario
+from odys.domain.units import PowerUnit
+from odys.energy_system import EnergySystem
+from odys.optimization.model_builder import EnergyAlgebraicModelBuilder
+from odys.optimization.parameters_builder import build_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +55,9 @@ def asset_portfolio_sample(load1: Load) -> AssetPortfolio:
 
 
 @pytest.fixture
-def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> ValidatedEnergySystem:
+def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> EnergySystem:
     demand_profile = [150, 200, 150]
-    return ValidatedEnergySystem(
+    return EnergySystem(
         portfolio=asset_portfolio_sample,
         number_of_steps=len(demand_profile),
         timestep=timedelta(hours=1),
@@ -70,7 +70,7 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> ValidatedEne
 
 
 def test_model_build_components(
-    energy_system_sample: ValidatedEnergySystem,
+    energy_system_sample: EnergySystem,
 ) -> None:
     params = build_parameters(energy_system_sample)
     model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
@@ -101,7 +101,7 @@ def test_model_build_components(
 
 
 def test_model_already_built(
-    energy_system_sample: ValidatedEnergySystem,
+    energy_system_sample: EnergySystem,
 ) -> None:
     params = build_parameters(energy_system_sample)
     model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)

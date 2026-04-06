@@ -1,4 +1,4 @@
-from odys.energy_system_models.assets.generator import Generator
+from odys.domain.entities.generator import Generator
 
 generator_1 = Generator(
     name="gen1",

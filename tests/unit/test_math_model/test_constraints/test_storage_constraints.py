@@ -7,14 +7,14 @@ import xarray as xr
 from linopy.testing import assert_conequal
 
 from odys import Scenario
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Storage
-from odys.energy_system_models.units import PowerUnit
-from odys.energy_system_models.validated_energy_system import ValidatedEnergySystem
-from odys.math_model.model_builder import build_model
-from odys.math_model.parameters_builder import build_parameters
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.storage import Storage
+from odys.domain.units import PowerUnit
+from odys.energy_system import EnergySystem
+from odys.optimization.model_builder import build_model
+from odys.optimization.parameters_builder import build_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +53,8 @@ def asset_portfolio_sample(
 def energy_system_sample(
     asset_portfolio_sample: AssetPortfolio,
     demand_profile_sample: list[float],
-) -> ValidatedEnergySystem:
-    return ValidatedEnergySystem(
+) -> EnergySystem:
+    return EnergySystem(
         portfolio=asset_portfolio_sample,
         number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),
@@ -208,8 +208,8 @@ class TestStorageConstraintsSubHourlyTimestep:
         self,
         asset_portfolio_sample: AssetPortfolio,
         demand_profile_sample: list[float],
-    ) -> ValidatedEnergySystem:
-        return ValidatedEnergySystem(
+    ) -> EnergySystem:
+        return EnergySystem(
             portfolio=asset_portfolio_sample,
             number_of_steps=len(demand_profile_sample),
             timestep=timedelta(minutes=15),
@@ -223,7 +223,7 @@ class TestStorageConstraintsSubHourlyTimestep:
     @pytest.fixture
     def linopy_model_15min(
         self,
-        energy_system_15min: ValidatedEnergySystem,
+        energy_system_15min: EnergySystem,
     ) -> linopy.Model:
         params = build_parameters(energy_system_15min)
         return build_model(params).linopy_model

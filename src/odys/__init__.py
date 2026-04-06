@@ -7,14 +7,14 @@ storages, and other energy assets using mathematical optimization techniques.
 
 from importlib.metadata import version
 
+from odys.domain.entities.generator import Generator
+from odys.domain.entities.load import Load, LoadType
+from odys.domain.entities.market import EnergyMarket, TradeDirection
+from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.storage import Storage
+from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
+from odys.domain.scenarios import Scenario, StochasticScenario
 from odys.energy_system import EnergySystem
-from odys.energy_system_models.assets.generator import Generator
-from odys.energy_system_models.assets.load import Load, LoadType
-from odys.energy_system_models.assets.portfolio import AssetPortfolio
-from odys.energy_system_models.assets.storage import Storage
-from odys.energy_system_models.markets import EnergyMarket, TradeDirection
-from odys.energy_system_models.scenarios import Scenario, StochasticScenario
-from odys.optimization.objective import CVaRTerm, Objective, ProfitTerm
 from odys.solvers.solver_config import SolverConfig
 
 __version__ = version("odys")
