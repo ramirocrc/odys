@@ -28,29 +28,20 @@ class AssetPortfolio:
     """
 
     def __init__(self, assets: Iterable[EnergyAsset] | None = None) -> None:
-        """Initialize an empty asset portfolio."""
-        self._assets: dict[str, EnergyAsset] = {}
-        if assets:
-            self.add_assets(assets)
-
-    def add_assets(self, assets: EnergyAsset | Iterable[EnergyAsset]) -> None:
-        """Add a energy assets to the portfolio.
+        """Initialize an asset portfolio.
 
         Args:
-            assets: The energy assets to add to the portfolio.
+            assets: Iterable of energy assets to add to the portfolio.
 
         Raises:
-            OdysValidationError: If an asset with the same name already exists.
-
+            OdysValidationError: If an asset with the same name already exists
+                or if there are duplicate names in the input.
         """
-        if isinstance(assets, EnergyAsset):
-            self._add_single_asset(assets)
-            return
-
-        self._validate_unique_asset_names(assets)
-
-        for asset in assets:
-            self._add_single_asset(asset)
+        self._assets: dict[str, EnergyAsset] = {}
+        if assets:
+            self._validate_unique_asset_names(assets)
+            for asset in assets:
+                self._add_single_asset(asset)
 
     def _add_single_asset(self, asset: EnergyAsset) -> None:
         if asset.name in self._assets:

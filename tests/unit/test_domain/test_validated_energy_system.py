@@ -52,11 +52,7 @@ def testing_portfolio(
     testing_battery: Storage,
     testing_load: Load,
 ) -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(testing_generator)
-    portfolio.add_assets(testing_battery)
-    portfolio.add_assets(testing_load)
-    return portfolio
+    return AssetPortfolio(assets=[testing_generator, testing_battery, testing_load])
 
 
 @pytest.fixture
@@ -180,26 +176,24 @@ def testing_market() -> EnergyMarket:
 
 @pytest.fixture
 def portfolio_without_loads() -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(Generator(name="gen", nominal_power=100.0, variable_cost=50.0))
-    return portfolio
+    return AssetPortfolio(assets=[Generator(name="gen", nominal_power=100.0, variable_cost=50.0)])
 
 
 @pytest.fixture
 def portfolio_without_generators() -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(
-        Storage(
-            name="battery",
-            capacity=50.0,
-            max_power=25.0,
-            efficiency_charging=0.9,
-            efficiency_discharging=0.9,
-            soc_start=0.5,
-        ),
+    return AssetPortfolio(
+        assets=[
+            Storage(
+                name="battery",
+                capacity=50.0,
+                max_power=25.0,
+                efficiency_charging=0.9,
+                efficiency_discharging=0.9,
+                soc_start=0.5,
+            ),
+            Load(name="load"),
+        ],
     )
-    portfolio.add_assets(Load(name="load"))
-    return portfolio
 
 
 @pytest.fixture

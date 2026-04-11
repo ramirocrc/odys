@@ -101,7 +101,7 @@ result = energy_system.optimize()
 ```python
 print(result.generators.power)      # dispatch per scenario
 print(result.storages.net_power)     # storage behavior per scenario
-print(result.to_dataframe)           # everything combined
+print(result.to_dataframe())           # everything combined
 ```
 
 Since we have two scenarios, the results include a scenario dimension. You can compare how the optimizer dispatches differently under each wind condition.

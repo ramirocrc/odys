@@ -6,34 +6,30 @@
 
 ## Scenarios
 
-::: odys.energy_system_models.scenarios
+::: odys.domain.scenarios
 
 ## Assets
 
 ### Base Asset
 
-::: odys.energy_system_models.assets.base
+::: odys.domain.entities.base
 
 ### Generator
 
-::: odys.energy_system_models.assets.generator
+::: odys.domain.entities.generator
 
 ### Storage
 
-::: odys.energy_system_models.assets.storage
+::: odys.domain.entities.storage
 
 ### Load
 
-::: odys.energy_system_models.assets.load
+::: odys.domain.entities.load
 
 ### AssetPortfolio
 
-::: odys.energy_system_models.assets.portfolio
+::: odys.domain.entities.portfolio
 
 ## Markets
 
-::: odys.energy_system_models.markets
-
-## Validated Energy System
-
-::: odys.energy_system_models.validated_energy_system
+::: odys.domain.entities.market

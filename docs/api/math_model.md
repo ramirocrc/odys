@@ -4,72 +4,76 @@ The `math_model` module contains the internals for building and solving the mixe
 
 ## Model Builder
 
-::: odys.math_model.model_builder
+::: odys.optimization.model.model_builder
 
 ## MILP Model
 
-::: odys.math_model.milp_model
+::: odys.optimization.model.milp_model
 
 ## Sets
 
-::: odys.math_model.model_components.sets
+::: odys.optimization.model.sets
 
 ## Variables
 
-::: odys.math_model.model_components.variables
+::: odys.optimization.model.variables
 
 ## Objectives
 
-::: odys.math_model.model_components.objectives
+::: odys.optimization.model.objectives
 
 ## Constraints
 
 ### Model Constraint
 
-::: odys.math_model.model_components.constraints.model_constraint
+::: odys.optimization.constraints.model_constraint
 
 ### Generator Constraints
 
-::: odys.math_model.model_components.constraints.generator_constraints
+::: odys.optimization.constraints.generator_constraints
 
 ### Storage Constraints
 
-::: odys.math_model.model_components.constraints.storage_constraints
+::: odys.optimization.constraints.storage_constraints
 
 ### Scenario Constraints
 
-::: odys.math_model.model_components.constraints.scenario_constraints
+::: odys.optimization.constraints.scenario_constraints
 
 ### Market Constraints
 
-::: odys.math_model.model_components.constraints.market_constraints
+::: odys.optimization.constraints.market_constraints
+
+### CVaR Constraints
+
+::: odys.optimization.constraints.cvar_constraints
 
 ## Parameters
 
 ### Energy System Parameters
 
-::: odys.math_model.model_components.parameters.parameters
+::: odys.optimization.parameters.parameters
 
 ### Generator Parameters
 
-::: odys.math_model.model_components.parameters.generator_parameters
+::: odys.optimization.parameters.generator_parameters
 
 ### Storage Parameters
 
-::: odys.math_model.model_components.parameters.storage_parameters
+::: odys.optimization.parameters.storage_parameters
 
 ### Load Parameters
 
-::: odys.math_model.model_components.parameters.load_parameters
+::: odys.optimization.parameters.load_parameters
 
 ### Market Parameters
 
-::: odys.math_model.model_components.parameters.market_parameters
+::: odys.optimization.parameters.market_parameters
 
 ### Scenario Parameters
 
-::: odys.math_model.model_components.parameters.scenario_parameters
+::: odys.optimization.parameters.scenario_parameters
 
 ## Linopy Converter
 
-::: odys.math_model.model_components.linopy_converter
+::: odys.optimization.model.linopy_converter

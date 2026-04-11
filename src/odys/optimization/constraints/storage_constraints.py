@@ -19,6 +19,7 @@ class StorageConstraints(ConstraintGroup):
 
     @constraint
     def _get_storage_max_charge_constraint(self) -> ModelConstraint:
+        """Maximum charging power limited by max_power when in charging mode."""
         return ModelConstraint(
             constraint=self.model.storage_power_in <= self.model.storage_charge_mode * self.params.max_power,
             name="storage_max_charge_constraint",
@@ -26,6 +27,7 @@ class StorageConstraints(ConstraintGroup):
 
     @constraint
     def _get_storage_max_discharge_constraint(self) -> ModelConstraint:
+        """Maximum discharging power limited by max_power when in discharging mode."""
         return ModelConstraint(
             constraint=self.model.storage_power_out + self.model.storage_charge_mode * self.params.max_power
             <= self.params.max_power,

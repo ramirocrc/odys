@@ -36,7 +36,6 @@ nav:
       - Optimization: api/optimization.md
       - Math Model: api/math_model.md
       - Solvers: api/solvers.md
-  - Contributing: contributing.md
 
 theme:
   name: material

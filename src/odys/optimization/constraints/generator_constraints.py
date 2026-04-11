@@ -27,6 +27,10 @@ class GeneratorConstraints(ConstraintGroup):
 
     @constraint
     def _get_generator_status_constraint(self) -> ModelConstraint:
+        """Ensures generator power is zero when status is off.
+
+        Uses a small epsilon value to prevent numerical issues.
+        """
         epsilon = 1e-5 * self.params.nominal_power
         return ModelConstraint(
             constraint=self.model.generator_power >= self.model.generator_status * epsilon,
@@ -35,6 +39,7 @@ class GeneratorConstraints(ConstraintGroup):
 
     @constraint
     def _get_generator_startup_lower_bound_constraint(self) -> ModelConstraint:
+        """Startup indicator active when turning generator on."""
         return ModelConstraint(
             constraint=self.model.generator_startup
             >= self.model.generator_status
@@ -46,6 +51,7 @@ class GeneratorConstraints(ConstraintGroup):
 
     @constraint
     def _get_generator_startup_upper_bound_1_constraint(self) -> ModelConstraint:
+        """Startup indicator bounded by current status."""
         return ModelConstraint(
             constraint=self.model.generator_startup <= self.model.generator_status,
             name="generator_startup_upper_bound_1_constraint",
@@ -53,6 +59,7 @@ class GeneratorConstraints(ConstraintGroup):
 
     @constraint
     def _get_generator_startup_upper_bound_2_constraint(self) -> ModelConstraint:
+        """Startup indicator bounded by previous status."""
         return ModelConstraint(
             constraint=self.model.generator_startup + self.model.generator_status.shift(time=1) <= 1.0,
             name="generator_startup_upper_bound_2_constraint",
@@ -60,6 +67,7 @@ class GeneratorConstraints(ConstraintGroup):
 
     @constraint
     def _get_generator_shutdown_lower_bound_constraint(self) -> ModelConstraint:
+        """Shutdown indicator active when turning generator off."""
         return ModelConstraint(
             constraint=self.model.generator_shutdown
             >= self.model.generator_status.shift(time=1) - self.model.generator_status,
@@ -68,6 +76,7 @@ class GeneratorConstraints(ConstraintGroup):
 
     @constraint
     def _get_generator_shutdown_upper_bound_1_constraint(self) -> ModelConstraint:
+        """Shutdown indicator bounded by previous status."""
         return ModelConstraint(
             constraint=self.model.generator_shutdown <= self.model.generator_status.shift(time=1),
             name="generator_shutdown_upper_bound_1_constraint",
@@ -75,6 +84,7 @@ class GeneratorConstraints(ConstraintGroup):
 
     @constraint
     def _get_generator_shutdown_upper_bound_2_constraint(self) -> ModelConstraint:
+        """Shutdown indicator bounded by current status."""
         return ModelConstraint(
             constraint=self.model.generator_shutdown + self.model.generator_status <= 1.0,
             name="generator_shutdown_upper_bound_2_constraint",

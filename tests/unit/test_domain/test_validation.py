@@ -55,9 +55,7 @@ def load() -> Load:
 
 @pytest.fixture
 def portfolio(generator: Generator, storage: Storage, load: Load) -> AssetPortfolio:
-    p = AssetPortfolio()
-    p.add_assets([generator, storage, load])
-    return p
+    return AssetPortfolio(assets=[generator, storage, load])
 
 
 @pytest.fixture

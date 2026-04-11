@@ -27,9 +27,7 @@ if __name__ == "__main__":
         trade_direction=TradeDirection.BUY_ONLY,
     )
 
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(generator_1)
-    portfolio.add_assets(load)
+    portfolio = AssetPortfolio(assets=[generator_1, load])
 
     scenario = Scenario(
         available_capacity_profiles={

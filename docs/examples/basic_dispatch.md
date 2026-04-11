@@ -91,7 +91,7 @@ print(result.generators.power)
 print(result.storages.net_power)
 
 # Everything in one DataFrame
-print(result.to_dataframe)
+print(result.to_dataframe())
 ```
 
 ## What to look for

@@ -2,8 +2,8 @@
 
 ## OptimizationResults
 
-::: odys.optimization.optimization_results
+::: odys.results.optimization_results
 
 ## Result Containers
 
-::: odys.optimization.result_containers
+::: odys.results.result_containers

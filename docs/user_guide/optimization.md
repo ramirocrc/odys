@@ -97,7 +97,7 @@ All of these are `pandas.DataFrame` objects, so you can use the full pandas API 
 For a single view of everything:
 
 ```python
-df = result.to_dataframe
+df = result.to_dataframe()
 ```
 
 This gives you a multi-indexed DataFrame with all variables, units, and timesteps. For deterministic scenarios, the scenario index level is dropped automatically.

@@ -70,10 +70,7 @@ def asset_portfolio_single_market(
     generator1: Generator,
     load1: Load,
 ) -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(generator1)
-    portfolio.add_assets(load1)
-    return portfolio
+    return AssetPortfolio(assets=[generator1, load1])
 
 
 @pytest.fixture
@@ -81,10 +78,7 @@ def asset_portfolio_mixed_markets(
     generator1: Generator,
     load1: Load,
 ) -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(generator1)
-    portfolio.add_assets(load1)
-    return portfolio
+    return AssetPortfolio(assets=[generator1, load1])
 
 
 @pytest.fixture
@@ -274,9 +268,7 @@ class TestMarketConstraintsEdgeCases:
         load1: Load,
         demand_profile_sample: list[float],
     ) -> None:
-        portfolio = AssetPortfolio()
-        portfolio.add_assets(generator1)
-        portfolio.add_assets(load1)
+        portfolio = AssetPortfolio(assets=[generator1, load1])
 
         energy_system = EnergySystem(
             portfolio=portfolio,

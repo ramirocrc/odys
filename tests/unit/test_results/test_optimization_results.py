@@ -33,11 +33,7 @@ def energy_system_sample() -> EnergySystem:
         soc_end=0.5,
     )
     load_1 = Load(name="load_1")
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(generator_1)
-    portfolio.add_assets(generator_2)
-    portfolio.add_assets(battery_1)
-    portfolio.add_assets(load_1)
+    portfolio = AssetPortfolio([generator_1, generator_2, battery_1, load_1])
 
     demand_profile = [50, 75, 100, 125, 150]
     return EnergySystem(

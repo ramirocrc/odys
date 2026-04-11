@@ -41,12 +41,7 @@ def asset_portfolio_sample(
     battery1: Storage,
     load1: Load,
 ) -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(generator1)
-    portfolio.add_assets(generator2)
-    portfolio.add_assets(battery1)
-    portfolio.add_assets(load1)
-    return portfolio
+    return AssetPortfolio(assets=[generator1, generator2, battery1, load1])
 
 
 @pytest.fixture

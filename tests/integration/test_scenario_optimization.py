@@ -53,12 +53,7 @@ def portfolio_with_battery(
     battery: Storage,
     load: Load,
 ) -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(wind_generator)
-    portfolio.add_assets(gas_generator)
-    portfolio.add_assets(battery)
-    portfolio.add_assets(load)
-    return portfolio
+    return AssetPortfolio([wind_generator, gas_generator, battery, load])
 
 
 @pytest.fixture
@@ -67,11 +62,7 @@ def portfolio_without_battery(
     gas_generator: Generator,
     load: Load,
 ) -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(wind_generator)
-    portfolio.add_assets(gas_generator)
-    portfolio.add_assets(load)
-    return portfolio
+    return AssetPortfolio([wind_generator, gas_generator, load])
 
 
 @pytest.fixture

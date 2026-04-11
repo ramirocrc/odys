@@ -35,14 +35,14 @@ from odys import EnergyMarket, TradeDirection
 sell_only = EnergyMarket(
     name="feed_in",
     max_trading_volume_per_step=100.0,
-    trade_direction=TradeDirection.SELL,
+    trade_direction=TradeDirection.SELL_ONLY,
 )
 
 # Can only buy from this market
 buy_only = EnergyMarket(
     name="backup_supply",
     max_trading_volume_per_step=50.0,
-    trade_direction=TradeDirection.BUY,
+    trade_direction=TradeDirection.BUY_ONLY,
 )
 ```
 

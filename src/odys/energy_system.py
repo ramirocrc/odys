@@ -55,7 +55,7 @@ class EnergySystem(BaseModel):
 
     Example:
         >>> gen = Generator(name="gen1", nominal_power=100, variable_cost=20)
-        >>> portfolio = AssetPortfolio(generators=[gen])
+        >>> portfolio = AssetPortfolio(assets=[gen])
         >>> system = EnergySystem(
         ...     portfolio=portfolio,
         ...     timestep=timedelta(hours=1),
@@ -159,6 +159,7 @@ class EnergySystem(BaseModel):
 
         """
         params = self.build_parameters()
+
         milp_model = build_model(params)
         return optimize_algebraic_model(
             milp_model=milp_model,

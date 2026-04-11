@@ -8,7 +8,7 @@ This example combines stochastic scenarios with multiple electricity markets, in
 
 - Stochastic scenarios with different market prices per scenario
 - `stage_fixed=True` on the day-ahead market (same volumes in all scenarios)
-- `TradeDirection.BUY` to restrict markets to buy-only
+- `TradeDirection.BUY_ONLY` to restrict markets to buy-only
 - How the optimizer splits decisions between "commit now" and "adjust later"
 
 ## The setup
@@ -58,17 +58,17 @@ energy_system = EnergySystem(
             name="sdac",
             max_trading_volume_per_step=150,
             stage_fixed=True,
-            trade_direction=TradeDirection.BUY,
+            trade_direction=TradeDirection.BUY_ONLY,
         ),
         EnergyMarket(
             name="sidc1",
             max_trading_volume_per_step=100,
-            trade_direction=TradeDirection.BUY,
+            trade_direction=TradeDirection.BUY_ONLY,
         ),
         EnergyMarket(
             name="sidc2",
             max_trading_volume_per_step=50,
-            trade_direction=TradeDirection.BUY,
+            trade_direction=TradeDirection.BUY_ONLY,
         ),
     ),
     scenarios=[
@@ -120,5 +120,5 @@ print(result.to_dataframe)
 
 - The **sdac** buy volumes are identical in both scenarios because `stage_fixed=True`. The optimizer picks volumes that work well on average.
 - **sidc1** and **sidc2** volumes differ between scenarios since the optimizer can react to the realized prices.
-- All markets are buy-only (`TradeDirection.BUY`), so `sell_volume` should be zero.
+- All markets are buy-only (`TradeDirection.BUY_ONLY`), so `sell_volume` should be zero.
 - Compare the sdac volumes across scenarios -- they're the same, which is the non-anticipativity constraint at work.

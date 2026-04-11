@@ -148,7 +148,7 @@ class EnergyMILPModel:
 
     @property
     def cvar_shortfall(self) -> Variable:
-        """Return the revenue shortfall revenue variable."""
+        """Return the revenue shortfall variable."""
         return self._linopy_model.variables[ModelVariable.SHORTFALL_REVENUE.var_name]
 
     def per_scenario_profit(self) -> linopy.LinearExpression:

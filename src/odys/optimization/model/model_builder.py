@@ -116,7 +116,11 @@ class EnergyAlgebraicModelBuilder:
         )
 
     def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
-        """Add a variable to the underlying linopy model."""
+        """Add a variable to the underlying linopy model.
+
+        Args:
+            variable: Variable parameters to add to the linopy model.
+        """
         self._milp_model.linopy_model.add_variables(
             name=variable.name,
             coords=variable.coords,

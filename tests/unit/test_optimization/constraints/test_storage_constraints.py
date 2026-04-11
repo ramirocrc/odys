@@ -40,12 +40,7 @@ def asset_portfolio_sample(
     storage1: Storage,
     load1: Load,
 ) -> AssetPortfolio:
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(generator1)
-    portfolio.add_assets(generator2)
-    portfolio.add_assets(storage1)
-    portfolio.add_assets(load1)
-    return portfolio
+    return AssetPortfolio(assets=[generator1, generator2, storage1, load1])
 
 
 @pytest.fixture

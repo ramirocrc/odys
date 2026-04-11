@@ -33,11 +33,7 @@ if __name__ == "__main__":
         soc_start=0,
         soc_end=0,
     )
-    portfolio = AssetPortfolio()
-    portfolio.add_assets(generator_1)
-    portfolio.add_assets(generator_2)
-    portfolio.add_assets(load)
-    portfolio.add_assets(battery)
+    portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
 
     scenario = Scenario(
         available_capacity_profiles={

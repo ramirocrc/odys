@@ -133,11 +133,7 @@ def _create_energy_system(
     market_prices: dict[str, list[float]] | None = None,
 ) -> EnergySystem:
     """Create energy system with common setup logic."""
-    portfolio = AssetPortfolio()
-    for asset in assets:
-        portfolio.add_assets(asset)
-
-    portfolio.add_assets(load)
+    portfolio = AssetPortfolio([*assets, load])
 
     return EnergySystem(
         portfolio=portfolio,

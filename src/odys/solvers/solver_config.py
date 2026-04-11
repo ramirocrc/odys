@@ -12,17 +12,6 @@ class SolverConfig(BaseModel):
 
     Controls solver selection, common behavior like time limits and optimality
     gaps, and allows raw solver-specific options for advanced use cases.
-
-    Args:
-        solver_name: Name of the solver to use. Must be available in linopy.
-        time_limit: Maximum solve time in seconds. None means no limit.
-        mip_rel_gap: Relative MIP optimality gap tolerance (0.0 = prove optimality).
-        presolve: Whether to enable solver presolve.
-        threads: Number of threads for the solver. None means solver default.
-        log_output: Whether to display solver output logs.
-        solver_options: Raw solver-specific options that override any translated
-            common options. Passed directly to linopy's ``Model.solve()``.
-
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
