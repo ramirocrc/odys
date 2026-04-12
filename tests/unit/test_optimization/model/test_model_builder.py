@@ -9,7 +9,6 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.exceptions import OdysError
 from odys.domain.scenarios import Scenario
-from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import EnergyAlgebraicModelBuilder
 
@@ -56,7 +55,6 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> EnergySystem
         portfolio=asset_portfolio_sample,
         number_of_steps=len(demand_profile),
         timestep=timedelta(hours=1),
-        power_unit=PowerUnit.MegaWatt,
         scenarios=Scenario(
             available_capacity_profiles={},
             load_profiles={"load1": demand_profile},

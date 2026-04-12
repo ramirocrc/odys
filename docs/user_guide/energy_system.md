@@ -23,7 +23,6 @@ energy_system = EnergySystem(
     ),
     timestep=timedelta(hours=1),
     number_of_steps=4,
-    power_unit="MW",
 )
 
 result = energy_system.optimize()
@@ -37,7 +36,6 @@ result = energy_system.optimize()
 | `scenarios`       | `Scenario` or `list[StochasticScenario]`         | Yes      | -       | Scenario data (load profiles, prices, capacity profiles) |
 | `timestep`        | `timedelta`                                      | Yes      | -       | Duration of each time period                             |
 | `number_of_steps` | `int`                                            | Yes      | -       | How many timesteps to optimize over                      |
-| `power_unit`      | `str`                                            | Yes      | -       | Unit for power values: `"W"`, `"kW"`, or `"MW"`          |
 | `markets`         | `EnergyMarket` or `list[EnergyMarket]` or `None` | No       | `None`  | Energy markets for buying/selling                        |
 
 ## Scenarios
@@ -92,7 +90,6 @@ energy_system = EnergySystem(
     scenarios=scenario,
     timestep=timedelta(hours=1),
     number_of_steps=4,
-    power_unit="MW",
 )
 ```
 

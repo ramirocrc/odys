@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
 site_name: Odys
 repo_url: https://github.com/ramirocrc/odys
 site_url: https://ramirocrc.github.io/odys

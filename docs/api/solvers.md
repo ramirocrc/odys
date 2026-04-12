@@ -12,4 +12,4 @@ The solvers module contains solver configuration and dispatch for energy system 
 
 ## Option Translators
 
-::: odys.solvers.option_translators
+::: odys.solvers.config_translators

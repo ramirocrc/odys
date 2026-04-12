@@ -100,7 +100,6 @@ energy_system = EnergySystem(
     scenarios=scenario,
     timestep=timedelta(minutes=30),
     number_of_steps=7,
-    power_unit="MW",
 )
 ```
 

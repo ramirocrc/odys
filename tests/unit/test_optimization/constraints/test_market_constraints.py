@@ -10,7 +10,6 @@ from odys.domain.entities.load import Load
 from odys.domain.entities.market import EnergyMarket, TradeDirection
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.scenarios import Scenario
-from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.parameters.parameters import EnergySystemParameters
@@ -91,7 +90,6 @@ def energy_system_single_market(
         portfolio=asset_portfolio_single_market,
         number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),
-        power_unit=PowerUnit.MegaWatt,
         markets=market_buy_and_sell,
         scenarios=Scenario(
             available_capacity_profiles={},
@@ -113,7 +111,6 @@ def energy_system_mixed_markets(
         portfolio=asset_portfolio_mixed_markets,
         number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),
-        power_unit=PowerUnit.MegaWatt,
         markets=[market_buy_only, market_sell_only, market_buy_and_sell],
         scenarios=Scenario(
             available_capacity_profiles={},
@@ -274,7 +271,6 @@ class TestMarketConstraintsEdgeCases:
             portfolio=portfolio,
             number_of_steps=len(demand_profile_sample),
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles={"load1": demand_profile_sample},

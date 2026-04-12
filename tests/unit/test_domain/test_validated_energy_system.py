@@ -16,7 +16,6 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import Scenario
-from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
 
 
@@ -75,7 +74,6 @@ def test_energy_system_creation_with_valid_inputs(
         portfolio=testing_portfolio,
         number_of_steps=len(valid_demand_profile),
         timestep=valid_timestep,
-        power_unit=PowerUnit.MegaWatt,
         scenarios=Scenario(
             available_capacity_profiles={},
             load_profiles={"test_load": valid_demand_profile},
@@ -102,7 +100,6 @@ def test_validation_of_capacity_profile_lengths(
             available_capacity_profiles=valid_capacity_profiles,
             load_profiles={"test_load": valid_demand_profile},
         ),
-        power_unit=PowerUnit.MegaWatt,
     )
 
     # Note: energy_system.available_capacity_profiles is now an xr.DataArray, not a dict
@@ -121,7 +118,6 @@ def test_validation_of_capacity_profile_lengths(
                 available_capacity_profiles=invalid_capacity_profiles,
                 load_profiles={"test_load": valid_demand_profile},
             ),
-            power_unit=PowerUnit.MegaWatt,
         )
 
 
@@ -144,7 +140,6 @@ def test_validation_that_capacity_profiles_only_for_generators(
                 available_capacity_profiles=invalid_capacity_profiles,
                 load_profiles={"test_load": valid_demand_profile},
             ),
-            power_unit=PowerUnit.MegaWatt,
         )
 
 
@@ -161,7 +156,6 @@ def test_validation_that_system_can_meet_power_demand(
             portfolio=testing_portfolio,
             number_of_steps=len(excessive_demand),
             timestep=valid_timestep,
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles={"test_load": excessive_demand},
@@ -208,7 +202,6 @@ def test_load_validation_missing_load_profiles(testing_portfolio: AssetPortfolio
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles=None,  # Missing load profiles
@@ -223,7 +216,6 @@ def test_load_validation_missing_specific_load_profile(testing_portfolio: AssetP
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles={},  # Empty dict, missing "test_load"
@@ -238,7 +230,6 @@ def test_load_validation_extra_load_profiles(testing_portfolio: AssetPortfolio) 
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles={
@@ -256,7 +247,6 @@ def test_load_validation_no_loads_but_has_profiles(portfolio_without_loads: Asse
             portfolio=portfolio_without_loads,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles={"some_load": [80.0, 120.0, 90.0, 150.0]},
@@ -274,7 +264,6 @@ def test_market_validation_missing_market_prices(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             markets=testing_market,
             scenarios=Scenario(
                 available_capacity_profiles={},
@@ -294,7 +283,6 @@ def test_market_validation_missing_specific_market_prices(
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             markets=testing_market,
             scenarios=Scenario(
                 available_capacity_profiles={},
@@ -311,7 +299,6 @@ def test_market_validation_extra_market_prices(testing_portfolio: AssetPortfolio
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             markets=testing_market,
             scenarios=Scenario(
                 available_capacity_profiles={},
@@ -331,7 +318,6 @@ def test_market_validation_no_markets_but_has_prices(portfolio_without_loads: As
             portfolio=portfolio_without_loads,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles=None,
@@ -347,7 +333,6 @@ def test_load_profile_length_validation(testing_portfolio: AssetPortfolio) -> No
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles={"test_load": [80.0, 120.0]},  # Only 2 values instead of 4
@@ -362,7 +347,6 @@ def test_capacity_profile_value_validation(testing_portfolio: AssetPortfolio) ->
             portfolio=testing_portfolio,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={
                     "test_generator": [90.0, 150.0, 95.0, 100.0],  # 150.0 exceeds nominal_power of 100.0
@@ -379,7 +363,6 @@ def test_empty_load_profiles_validation(portfolio_without_loads: AssetPortfolio)
             portfolio=portfolio_without_loads,
             number_of_steps=4,
             timestep=timedelta(hours=1),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles=None,

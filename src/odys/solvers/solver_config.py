@@ -4,8 +4,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from odys.solvers.option_translators import translate_options
-
 
 class SolverConfig(BaseModel):
     """Configuration for optimization solvers.
@@ -26,24 +24,3 @@ class SolverConfig(BaseModel):
         default=None,
         description="Raw solver-specific options. Override translated common options.",
     )
-
-    def to_solver_options(self) -> dict[str, Any]:
-        """Convert to a dict of solver-specific options for linopy's ``Model.solve()``.
-
-        Translates common options (time_limit, presolve, etc.) into the format
-        expected by the configured solver. Any entries in ``solver_options``
-        take precedence over the translated values.
-        """
-        common = self.model_dump(
-            include={"time_limit", "mip_rel_gap", "threads"},
-            exclude_none=True,
-        )
-        common["presolve"] = self.presolve
-        common["log_output"] = self.log_output
-
-        translated = translate_options(self.solver_name, common)
-
-        if self.solver_options is not None:
-            translated.update(self.solver_options)
-
-        return translated

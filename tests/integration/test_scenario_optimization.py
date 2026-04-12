@@ -108,7 +108,6 @@ def test_two_scenario_optimization_with_anticipativity(
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile),
         scenarios=scenarios,
-        power_unit="MW",
     )
 
     result_anticipative = energy_system_anticipative.optimize()
@@ -127,7 +126,6 @@ def test_two_scenario_optimization_with_non_anticipativity(
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile),
         scenarios=scenarios,
-        power_unit="MW",
     )
 
     result_non_anticipative = energy_system_non_anticipative.optimize()
@@ -146,7 +144,6 @@ def test_anticipativity_vs_non_anticipativity_comparison(
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile),
         scenarios=scenarios,
-        power_unit="MW",
     )
 
     result_anticipative = energy_system.optimize()

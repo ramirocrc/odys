@@ -40,7 +40,6 @@ def energy_system_sample() -> EnergySystem:
         portfolio=portfolio,
         number_of_steps=len(demand_profile),
         timestep=timedelta(minutes=30),
-        power_unit="MW",
         scenarios=Scenario(
             available_capacity_profiles={},
             load_profiles={"load_1": demand_profile},

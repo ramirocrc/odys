@@ -12,7 +12,6 @@ from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.scenarios import Scenario
-from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
 
 STANDARD_GENERATOR_POWER = 100.0
@@ -140,7 +139,6 @@ def _create_energy_system(
         markets=markets,
         timestep=timedelta(hours=1),
         number_of_steps=len(load_profile),
-        power_unit=PowerUnit.MegaWatt,
         scenarios=Scenario(
             available_capacity_profiles={},
             load_profiles={load.name: load_profile},

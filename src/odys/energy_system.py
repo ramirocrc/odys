@@ -13,13 +13,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.objective import Objective
+from odys.domain.objective import Objective, ProfitTerm
 from odys.domain.scenarios import (
     Scenario,
     StochasticScenario,
     validate_sequence_of_stochastic_scenarios,
 )
-from odys.domain.units import PowerUnit
 from odys.domain.validation import validate_energy_system_inputs
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
@@ -60,7 +59,6 @@ class EnergySystem(BaseModel):
         ...     portfolio=portfolio,
         ...     timestep=timedelta(hours=1),
         ...     number_of_steps=24,
-        ...     power_unit="MW",
         ...     scenarios=[Scenario()],
         ... )
         >>> results = system.optimize()
@@ -71,8 +69,7 @@ class EnergySystem(BaseModel):
     portfolio: AssetPortfolio
     timestep: timedelta
     number_of_steps: int
-    power_unit: PowerUnit
-    objective: Objective = Field(default_factory=Objective)
+    objective: Objective | None = None
     markets: EnergyMarket | Sequence[EnergyMarket] | None = Field(default=None, init_var=True)
     scenarios: Scenario | Sequence[StochasticScenario] = Field(init_var=True)
 
@@ -143,7 +140,7 @@ class EnergySystem(BaseModel):
             loads=load_params,
             markets=market_params,
             scenarios=scenario_params,
-            objective=self.objective,
+            objective=self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0)),
         )
 
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimizationResults:

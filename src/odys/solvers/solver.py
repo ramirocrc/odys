@@ -11,6 +11,7 @@ from odys.domain.exceptions import OdysSolverError
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.results.optimization_results import OptimizationResults
 from odys.results.solved_model_data import SolvedModelData
+from odys.solvers.config_translators import translate_solver_config
 from odys.solvers.solver_config import SolverConfig
 
 
@@ -32,12 +33,12 @@ def optimize_algebraic_model(
 
     """
     config = solver_config or SolverConfig()
-    _validate_solver_available(config.solver_name)
+    validate_solver_available(config.solver_name)
 
     solving_status, termination_condition = milp_model.linopy_model.solve(
         solver_name=config.solver_name,
         explicit_coordinate_names=True,
-        **config.to_solver_options(),
+        **translate_solver_config(config),
     )
 
     cvar_term = milp_model.parameters.objective.cvar
@@ -60,7 +61,7 @@ def optimize_algebraic_model(
     )
 
 
-def _validate_solver_available(solver_name: str) -> None:
+def validate_solver_available(solver_name: str) -> None:
     """Validate that the solver is installed and available.
 
     Args:

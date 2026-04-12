@@ -11,7 +11,6 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.load import Load
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
-from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
 
@@ -52,7 +51,6 @@ def energy_system_sample(
         portfolio=asset_portfolio_sample,
         number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),
-        power_unit=PowerUnit.MegaWatt,
         scenarios=Scenario(
             available_capacity_profiles={},
             load_profiles={"load1": demand_profile_sample},
@@ -207,7 +205,6 @@ class TestStorageConstraintsSubHourlyTimestep:
             portfolio=asset_portfolio_sample,
             number_of_steps=len(demand_profile_sample),
             timestep=timedelta(minutes=15),
-            power_unit=PowerUnit.MegaWatt,
             scenarios=Scenario(
                 available_capacity_profiles={},
                 load_profiles={"load1": demand_profile_sample},

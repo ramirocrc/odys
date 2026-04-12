@@ -73,7 +73,6 @@ energy_system = EnergySystem(
     scenarios=[low_wind, high_wind],
     timestep=timedelta(hours=1),
     number_of_steps=4,
-    power_unit="MW",
 )
 
 result = energy_system.optimize()

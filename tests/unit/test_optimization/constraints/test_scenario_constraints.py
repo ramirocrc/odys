@@ -13,7 +13,6 @@ from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.scenarios import Scenario, StochasticScenario
-from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.model.variables import MARKET_VARIABLES
@@ -53,7 +52,6 @@ def energy_system_sample(
         portfolio=asset_portfolio_sample,
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile_sample),
-        power_unit=PowerUnit.MegaWatt,
         scenarios=Scenario(
             available_capacity_profiles={
                 "gen1": [80, 80, 100],
@@ -106,7 +104,6 @@ def energy_system_with_multiple_scenarios(
         portfolio=asset_portfolio_sample,
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile_sample),
-        power_unit=PowerUnit.MegaWatt,
         scenarios=scenarios,
         markets=(
             EnergyMarket(name="stage_fixed", max_trading_volume_per_step=100, stage_fixed=True),

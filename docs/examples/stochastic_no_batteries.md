@@ -79,7 +79,6 @@ energy_system = EnergySystem(
     timestep=timedelta(minutes=30),
     number_of_steps=7,
     scenarios=scenarios,
-    power_unit="MW",
 )
 
 result = energy_system.optimize()

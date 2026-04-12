@@ -1,10 +1,3 @@
-"""Energy system optimization example.
-
-This module demonstrates the usage of the odys library for energy system optimization.
-It creates a simple energy system with generators and batteries, then optimizes
-the system operation to meet demand at minimum cost.
-"""
-
 from datetime import timedelta
 
 from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario
@@ -41,7 +34,6 @@ if __name__ == "__main__":
         timestep=timedelta(minutes=30),
         number_of_steps=9,
         scenarios=scenario,
-        power_unit="MW",
     )
 
     result = energy_system.optimize()

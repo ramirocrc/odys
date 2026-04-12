@@ -5,7 +5,6 @@ from linopy import Model
 
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.load import Load
-from odys.domain.units import PowerUnit
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.parameters.parameters import EnergySystemParameters
@@ -47,11 +46,6 @@ def time_index(demand_profile_sample: list[float]) -> list[int]:
 @pytest.fixture
 def one_hour_timestep() -> timedelta:
     return timedelta(hours=1)
-
-
-@pytest.fixture
-def megawatt_unit() -> PowerUnit:
-    return PowerUnit.MegaWatt
 
 
 @pytest.fixture
