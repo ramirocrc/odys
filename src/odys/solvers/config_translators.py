@@ -6,6 +6,7 @@ the format each solver expects.
 
 from typing import Any, Protocol
 
+from odys.domain.exceptions import OdysValidationError
 from odys.solvers.solver_config import SolverConfig, SolverName
 
 
@@ -90,6 +91,12 @@ class GLPKOptionTranslator:
 
     def translate(self, config: SolverConfig) -> dict[str, Any]:
         """Translate common options to GLPK solver format."""
+        if config.threads is not None:
+            msg = f"Solver {config.solver_name!s} does not support 'threads' option."
+            raise OdysValidationError(msg)
+        if config.log_output:
+            msg = f"Solver {config.solver_name!s} does not support 'log_output' option."
+            raise OdysValidationError(msg)
         result: dict[str, Any] = {}
         if config.time_limit is not None:
             result["tmlim"] = config.time_limit
