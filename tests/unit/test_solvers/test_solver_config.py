@@ -11,7 +11,7 @@ def test_default_solver_config() -> None:
     assert config.solver_name == SolverName.HIGHS
     assert config.time_limit is None
     assert config.mip_rel_gap is None
-    assert config.presolve is True
+    assert config.presolve is False
     assert config.threads is None
     assert config.log_output is False
     assert config.solver_options is None

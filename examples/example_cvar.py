@@ -66,7 +66,7 @@ if __name__ == "__main__":
         ),
     )
 
-    result = energy_system.optimize(solver_config=SolverConfig(solver_name=SolverName.GUROBI, presolve=True))
+    result = energy_system.optimize(solver_config=SolverConfig(solver_name=SolverName.HIGHS, log_output=False))
     logger.info(result.termination_condition)
     logger.info("sell volume")
     logger.info(result.markets.sell_volume)

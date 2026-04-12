@@ -65,6 +65,7 @@ class CPLEXOptionTranslator:
         if config.threads is not None:
             result["threads"] = config.threads
         result["preprocessing.presolve"] = 1 if config.presolve else 0
+        result["mip.display"] = 0 if not config.log_output else 2
         result["output.clonelog"] = 1 if config.log_output else 0
         return result
 

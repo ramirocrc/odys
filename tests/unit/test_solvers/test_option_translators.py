@@ -63,6 +63,7 @@ SOLVER_CASES = [
             "mip.tolerances.mipgap": COMMON_OPTS.mip_rel_gap,
             "preprocessing.presolve": 0,
             "threads": COMMON_OPTS.threads,
+            "mip.display": 2,
             "output.clonelog": 1,
         },
     ),
