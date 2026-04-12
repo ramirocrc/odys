@@ -40,6 +40,12 @@ Documentation = "https://ramirocrc.github.io/odys/"
 Homepage = "https://ramirocrc.github.io/odys/"
 Repository = "https://github.com/ramirocrc/odys"
 
+[project.optional-dependencies]
+cplex = ["cplex>=22.1.2.1"]
+glpk = ["swiglpk>=5.0.13"]
+gurobi = ["gurobipy>=13.0.1"]
+scip = ["pyscipopt>=6.1.0"]
+
 [dependency-groups]
 dev = [
   "basedpyright>=1.38.0",
@@ -85,7 +91,6 @@ branch = true
 source = ["src"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["highspy"]
 DEP004 = ["rich"]
 
 [tool.pyrefly]

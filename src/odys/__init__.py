@@ -15,7 +15,7 @@ from odys.domain.entities.storage import Storage
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
 from odys.domain.scenarios import Scenario, StochasticScenario
 from odys.energy_system import EnergySystem
-from odys.solvers.solver_config import SolverConfig
+from odys.solvers.solver_config import SolverConfig, SolverName
 
 __version__ = version("odys")
 
@@ -31,6 +31,7 @@ __all__ = [
     "ProfitTerm",
     "Scenario",
     "SolverConfig",
+    "SolverName",
     "StochasticScenario",
     "Storage",
     "TradeDirection",

@@ -12,7 +12,7 @@ from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.results.optimization_results import OptimizationResults
 from odys.results.solved_model_data import SolvedModelData
 from odys.solvers.config_translators import translate_solver_config
-from odys.solvers.solver_config import SolverConfig
+from odys.solvers.solver_config import SolverConfig, SolverName
 
 
 def optimize_algebraic_model(
@@ -61,7 +61,7 @@ def optimize_algebraic_model(
     )
 
 
-def validate_solver_available(solver_name: str) -> None:
+def validate_solver_available(solver_name: SolverName) -> None:
     """Validate that the solver is installed and available.
 
     Args:

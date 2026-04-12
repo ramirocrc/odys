@@ -6,7 +6,7 @@ the format each solver expects.
 
 from typing import Any, Protocol
 
-from odys.solvers.solver_config import SolverConfig
+from odys.solvers.solver_config import SolverConfig, SolverName
 
 
 class SolverOptionTranslator(Protocol):
@@ -99,15 +99,6 @@ class GLPKOptionTranslator:
         return result
 
 
-SOLVER_TRANSLATORS: dict[str, SolverOptionTranslator] = {
-    "highs": HiGHSOptionTranslator(),
-    "gurobi": GurobiOptionTranslator(),
-    "cplex": CPLEXOptionTranslator(),
-    "scip": SCIPOptionTranslator(),
-    "glpk": GLPKOptionTranslator(),
-}
-
-
 def translate_solver_config(solver_config: SolverConfig) -> dict[str, Any]:
     """Translate common option names to solver-specific option names.
 
@@ -124,8 +115,11 @@ def translate_solver_config(solver_config: SolverConfig) -> dict[str, Any]:
     Raises:
         OdysValidationError: If solver_name is empty.
     """
-    translator = SOLVER_TRANSLATORS.get(solver_config.solver_name)
-    if translator is None:
-        msg = f"No translator available for {solver_config.solver_name}"
-        raise KeyError(msg)
+    translator = {
+        SolverName.HIGHS: HiGHSOptionTranslator(),
+        SolverName.GUROBI: GurobiOptionTranslator(),
+        SolverName.CPLEX: CPLEXOptionTranslator(),
+        SolverName.SCIP: SCIPOptionTranslator(),
+        SolverName.GLPK: GLPKOptionTranslator(),
+    }[solver_config.solver_name]
     return translator.translate(solver_config)

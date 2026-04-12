@@ -1,8 +1,19 @@
 """Solver configuration for energy system optimization."""
 
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class SolverName(StrEnum):
+    """Supported solver names for energy system optimization."""
+
+    HIGHS = "highs"
+    GUROBI = "gurobi"
+    CPLEX = "cplex"
+    SCIP = "scip"
+    GLPK = "glpk"
 
 
 class SolverConfig(BaseModel):
@@ -14,7 +25,7 @@ class SolverConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    solver_name: str = Field(default="highs", min_length=1, description="Linopy solver name.")
+    solver_name: SolverName = Field(default=SolverName.HIGHS, description="Solver name.")
     time_limit: float | None = Field(default=None, gt=0, description="Max solve time in seconds.")
     mip_rel_gap: float | None = Field(default=None, ge=0, le=1, description="Relative MIP gap tolerance.")
     presolve: bool = Field(default=True, description="Enable solver presolve.")

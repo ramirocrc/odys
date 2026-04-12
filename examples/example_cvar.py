@@ -9,6 +9,7 @@ from odys import (
     Objective,
     ProfitTerm,
     SolverConfig,
+    SolverName,
     StochasticScenario,
     TradeDirection,
 )
@@ -65,7 +66,7 @@ if __name__ == "__main__":
         ),
     )
 
-    result = energy_system.optimize(solver_config=SolverConfig(solver_name="gurobi", presolve=True))
+    result = energy_system.optimize(solver_config=SolverConfig(solver_name=SolverName.GUROBI, presolve=True))
     logger.info(result.termination_condition)
     logger.info("sell volume")
     logger.info(result.markets.sell_volume)
