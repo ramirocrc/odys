@@ -7,7 +7,7 @@ registered asset types and their specifications.
 from dataclasses import dataclass
 from enum import Enum
 
-from odys.domain.entities.base import EnergyAsset
+from odys.domain.entities.base import EnergyEntity
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.load import Load
 from odys.domain.entities.market import EnergyMarket
@@ -23,23 +23,16 @@ from odys.optimization.parameters.generator_parameters import GeneratorParameter
 from odys.optimization.parameters.load_parameters import LoadParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
 from odys.optimization.parameters.storage_parameters import StorageParameters
-from odys.results.result_containers import (
-    GeneratorResults,
-    LoadResults,
-    MarketResults,
-    StorageResults,
-)
 
 
 @dataclass(frozen=True)
 class AssetSpec:
     """Specification for a registered asset type."""
 
-    entity_class: type[EnergyAsset]
+    entity_class: type[EnergyEntity]
     parameter_class: type[GeneratorParameters | StorageParameters | MarketParameters | LoadParameters]
     dimension: ModelDimension
     variables: tuple[ModelVariable, ...]
-    result_class: type[GeneratorResults | StorageResults | MarketResults | LoadResults]
 
 
 class AssetRegistry(Enum):
@@ -50,7 +43,6 @@ class AssetRegistry(Enum):
         parameter_class=GeneratorParameters,
         dimension=ModelDimension.Generators,
         variables=tuple(GENERATOR_VARIABLES),
-        result_class=GeneratorResults,
     )
 
     STORAGE = AssetSpec(
@@ -58,7 +50,6 @@ class AssetRegistry(Enum):
         parameter_class=StorageParameters,
         dimension=ModelDimension.Storages,
         variables=tuple(STORAGE_VARIABLES),
-        result_class=StorageResults,
     )
 
     MARKET = AssetSpec(
@@ -66,7 +57,6 @@ class AssetRegistry(Enum):
         parameter_class=MarketParameters,
         dimension=ModelDimension.Markets,
         variables=tuple(MARKET_VARIABLES),
-        result_class=MarketResults,
     )
 
     LOAD = AssetSpec(
@@ -74,7 +64,6 @@ class AssetRegistry(Enum):
         parameter_class=LoadParameters,
         dimension=ModelDimension.Loads,
         variables=(),
-        result_class=LoadResults,
     )
 
     @property
@@ -96,11 +85,6 @@ class AssetRegistry(Enum):
     ) -> list[type[GeneratorParameters | StorageParameters | MarketParameters | LoadParameters]]:
         """Get all parameter classes from registered asset types."""
         return [member.spec.parameter_class for member in cls]
-
-    @classmethod
-    def all_result_classes(cls) -> list[type[GeneratorResults | StorageResults | MarketResults | LoadResults]]:
-        """Get all result classes from registered asset types."""
-        return [member.spec.result_class for member in cls]
 
     @classmethod
     def get_by_dimension(cls, dimension: ModelDimension) -> "AssetRegistry | None":

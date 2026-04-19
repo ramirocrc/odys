@@ -1,3 +1,5 @@
+"""Example 3: Energy market integration."""
+
 from datetime import timedelta
 
 from odys import AssetPortfolio, EnergyMarket, EnergySystem, Generator, Load, LoadType, Scenario, TradeDirection
@@ -5,6 +7,7 @@ from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
+
 
 if __name__ == "__main__":
     generator_1 = Generator(
@@ -42,8 +45,6 @@ if __name__ == "__main__":
     )
 
     result = energy_system.optimize()
-    logger.info(result.termination_condition)
-    logger.info(result.solver_status)
-    logger.info("generators power")
-    logger.info(round(result.generators.power))
-    logger.info(result.markets.buy_volume)
+    solution_array = result.solution
+    for gen_dispatch in result.generators.values():
+        logger.info(gen_dispatch.to_dataframe())

@@ -4,7 +4,7 @@ from enum import StrEnum
 
 from pydantic import ConfigDict, Field
 
-from odys.domain.entities.base import EnergyAsset
+from odys.domain.entities.base import EnergyEntity
 
 
 class TradeDirection(StrEnum):
@@ -15,7 +15,7 @@ class TradeDirection(StrEnum):
     BUY_AND_SELL = "buy_and_sell"
 
 
-class EnergyMarket(EnergyAsset):
+class EnergyMarket(EnergyEntity):
     """Represents an energy market in the energy system."""
 
     model_config = ConfigDict(frozen=True)

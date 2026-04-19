@@ -6,7 +6,6 @@ the format each solver expects.
 
 from typing import Any, Protocol
 
-from odys.domain.exceptions import OdysValidationError
 from odys.solvers.solver_config import SolverConfig, SolverName
 
 
@@ -87,32 +86,11 @@ class SCIPOptionTranslator:
         return result
 
 
-class GLPKOptionTranslator:
-    """Option translator for GLPK solver."""
-
-    def translate(self, config: SolverConfig) -> dict[str, Any]:
-        """Translate common options to GLPK solver format."""
-        if config.threads is not None:
-            msg = f"Solver {config.solver_name!s} does not support 'threads' option."
-            raise OdysValidationError(msg)
-        if config.log_output:
-            msg = f"Solver {config.solver_name!s} does not support 'log_output' option."
-            raise OdysValidationError(msg)
-        result: dict[str, Any] = {}
-        if config.time_limit is not None:
-            result["tmlim"] = config.time_limit
-        if config.mip_rel_gap is not None:
-            result["mipgap"] = config.mip_rel_gap
-        result["presolve"] = config.presolve
-        return result
-
-
 def translate_solver_config(solver_config: SolverConfig) -> dict[str, Any]:
     """Translate common option names to solver-specific option names.
 
-    For known solvers (HiGHS, Gurobi, CPLEX, SCIP, GLPK), applies the
-    appropriate translation. For unknown solvers, passes common options
-    through unchanged -- the user should use ``solver_options`` for full control.
+    For known solvers (HiGHS, Gurobi, CPLEX, SCIP, Xpress), applies the
+    appropriate translation.
 
     Args:
         solver_config: Solver config
@@ -121,13 +99,12 @@ def translate_solver_config(solver_config: SolverConfig) -> dict[str, Any]:
         Solver-specific options dict ready for linopy's ``Model.solve(**kwargs)``.
 
     Raises:
-        OdysValidationError: If solver_name is empty.
+        OdysValidationError: If solver_name is not recognized.
     """
     translator = {
         SolverName.HIGHS: HiGHSOptionTranslator(),
         SolverName.GUROBI: GurobiOptionTranslator(),
         SolverName.CPLEX: CPLEXOptionTranslator(),
         SolverName.SCIP: SCIPOptionTranslator(),
-        SolverName.GLPK: GLPKOptionTranslator(),
     }[solver_config.solver_name]
     return translator.translate(solver_config)

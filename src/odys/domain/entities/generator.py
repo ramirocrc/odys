@@ -6,10 +6,10 @@ in energy system optimization problems.
 
 from pydantic import Field
 
-from odys.domain.entities.base import EnergyAsset
+from odys.domain.entities.base import EnergyEntity
 
 
-class Generator(EnergyAsset):
+class Generator(EnergyEntity):
     """Represents a power generator in the energy system.
 
     This class models generators with various operational constraints

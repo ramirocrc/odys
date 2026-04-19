@@ -5,7 +5,7 @@ from typing import Self
 
 from pydantic import Field, model_validator
 
-from odys.domain.entities.base import EnergyAsset
+from odys.domain.entities.base import EnergyEntity
 from odys.domain.exceptions import OdysValidationError
 
 
@@ -16,7 +16,7 @@ class LoadType(StrEnum):
     Flexible = "flexible"
 
 
-class Load(EnergyAsset):
+class Load(EnergyEntity):
     """Represents a load asset in the energy system."""
 
     type: LoadType = Field(

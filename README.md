@@ -31,17 +31,30 @@ As **Odys** is based on **Pydantic**, **linopy**, and **HiGHS**, they will be au
 
 ## Installation
 
+Odys comes with **HiGHS** by default. You can also use other commercial or open-source solvers by installing them as optional dependencies.
+
 pip:
 
 ```console
 pip install odys
+pip install odys[gurobi]   # or cplex, scip
 ```
 
 uv:
 
 ```console
 uv add odys
+uv add odys[gurobi]   # or cplex, scip
 ```
+
+### Supported Solvers
+
+| Solver | Package | Notes |
+|--------|---------|-------|
+| HiGHS | Included by default | Open-source, MIT license |
+| Gurobi | `gurobipy` | Commercial, requires license |
+| CPLEX | `cplex` | Commercial, requires license |
+| SCIP | `pyscipopt` | Open-source, ZIB license |
 
 ## Example
 

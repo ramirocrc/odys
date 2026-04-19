@@ -1,13 +1,16 @@
+"""Example: Multi-stage stochastic dispatch optimization."""
+
 from datetime import timedelta
 
 from odys import (
     AssetPortfolio,
-    CVaRTerm,
     EnergyMarket,
     EnergySystem,
     Generator,
     Objective,
     ProfitTerm,
+    SolverConfig,
+    SolverName,
     StochasticScenario,
     TradeDirection,
 )
@@ -52,7 +55,7 @@ if __name__ == "__main__":
                 },
             ),
             StochasticScenario(
-                name="scenario2",
+                name="scenario_2",
                 probability=0.49,
                 available_capacity_profiles={
                     "ccgt": 8 * [100],
@@ -66,20 +69,16 @@ if __name__ == "__main__":
         timestep=timedelta(minutes=30),
         objective=Objective(
             profit=ProfitTerm(weight=1),
-            cvar=CVaRTerm(weight=1, confidence_level=0.5),
         ),
         number_of_steps=8,
     )
 
-    result = energy_system.optimize()
+    result = energy_system.optimize(solver_config=SolverConfig(solver_name=SolverName.HIGHS))
     logger.info(result.termination_condition)
     logger.info(result.solver_status)
     logger.info("generators power")
-    logger.info(result.generators.power)
+    for name, gen in result.generators.items():
+        logger.info("  %s: %s", name, gen.to_dataframe())
     logger.info("volume sold to markets")
-    logger.info(result.markets.sell_volume)
-    logger.info(result.markets.buy_volume)
-    logger.info("cvar")
-    logger.info(result.cvar.value_at_risk)
-    logger.info(result.cvar.cvar)
-    logger.info(result.cvar.shortfall_per_scenario)
+    for name, market in result.markets.items():
+        logger.info("  %s: %s", name, market.to_dataset())

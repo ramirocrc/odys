@@ -16,7 +16,7 @@
 
 ## Overview
 
-Odys is a Python package for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization. It's built on top of [Pydantic](https://docs.pydantic.dev/), [linopy](https://linopy.readthedocs.io/), and [HiGHS](https://ergo-code.github.io/HiGHS/).
+Odys is a Python package for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization.
 
 The key features are:
 
@@ -31,15 +31,26 @@ The key features are:
 
     ```console
     pip install odys
+    pip install odys[gurobi]   # or cplex, scip
     ```
 
 === "uv"
 
     ```console
     uv add odys
+    uv add odys[gurobi]   # or cplex, scip
     ```
 
 Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/).
+
+### Supported Solvers
+
+| Solver | Package             | License           |
+| ------ | ------------------- | ----------------- |
+| HiGHS  | Included by default | Open-source (MIT) |
+| Gurobi | `gurobipy`          | Commercial        |
+| CPLEX  | `cplex`             | Commercial        |
+| SCIP   | `pyscipopt`         | Open-source (ZIB) |
 
 ## Minimal Example
 
@@ -118,7 +129,7 @@ Odys is built on top of these great projects:
 
 - [Pydantic](https://docs.pydantic.dev/) - Data validation and settings management
 - [linopy](https://linopy.readthedocs.io/) - Linear optimization modeling
-- [HiGHS](https://ergo-code.github.io/HiGHS/) - High-performance optimization solver
+- [HiGHS](https://ergo-code.github.io/HiGHS/) - High-performance optimization solver (optional: Gurobi, CPLEX, SCIP available via extras)
 - [pandas](https://pandas.pydata.org/) - Data analysis and manipulation
 - [xarray](https://docs.xarray.dev/) - Multi-dimensional arrays
 

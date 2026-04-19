@@ -2,7 +2,7 @@
 
 import pytest
 
-from odys.domain.entities.base import EnergyAsset
+from odys.domain.entities.base import EnergyEntity
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
@@ -67,7 +67,7 @@ def test_empty_portfolio(sample_generator_1: Generator) -> None:
 )
 def test_get_asset_returns_correct_asset(
     asset_name: str,
-    expected_asset_type: type[EnergyAsset],
+    expected_asset_type: type[EnergyEntity],
     portfolio_with_assets: AssetPortfolio,
 ) -> None:
     """Test that get_asset returns the correct asset with proper type."""

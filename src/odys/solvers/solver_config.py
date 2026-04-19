@@ -13,7 +13,6 @@ class SolverName(StrEnum):
     GUROBI = "gurobi"
     CPLEX = "cplex"
     SCIP = "scip"
-    GLPK = "glpk"
 
 
 class SolverConfig(BaseModel):
@@ -28,9 +27,9 @@ class SolverConfig(BaseModel):
     solver_name: SolverName = Field(default=SolverName.HIGHS, description="Solver name.")
     time_limit: float | None = Field(default=None, gt=0, description="Max solve time in seconds.")
     mip_rel_gap: float | None = Field(default=None, ge=0, le=1, description="Relative MIP gap tolerance.")
-    presolve: bool = Field(default=True, description="Enable solver presolve.")
+    presolve: bool = Field(default=False, description="Enable solver presolve.")
     threads: int | None = Field(default=None, gt=0, description="Number of solver threads.")
-    log_output: bool = Field(default=True, description="Display solver output logs.")
+    log_output: bool = Field(default=False, description="Display solver output logs.")
     solver_options: dict[str, Any] | None = Field(
         default=None,
         description="Raw solver-specific options. Override translated common options.",

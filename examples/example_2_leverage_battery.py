@@ -1,3 +1,5 @@
+"""Example 2: Leverage battery storage."""
+
 from datetime import timedelta
 
 from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario, Storage
@@ -48,7 +50,9 @@ if __name__ == "__main__":
     logger.info(result.termination_condition)
     logger.info(result.solver_status)
     logger.info("generators power")
-    logger.info(round(result.generators.power))
+    for name, gen in result.generators.items():
+        logger.info("  %s.power: %s", name, gen.power.values)
     logger.info("battery")
-    logger.info(result.storages.net_power)
-    logger.info(round(result.storages.state_of_charge, 2))
+    for name, stor in result.storages.items():
+        logger.info("  %s.net_power: %s", name, stor.net_power.values)
+        logger.info("  %s.soc: %s", name, stor.soc.values)

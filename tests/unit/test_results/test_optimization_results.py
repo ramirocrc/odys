@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-import pandas as pd
 import pytest
 
 from odys.domain.entities.generator import Generator
@@ -51,83 +50,3 @@ def test_solving_and_termination_condition(energy_system_sample: EnergySystem) -
     result = energy_system_sample.optimize()
     assert result.solver_status == "ok"
     assert result.termination_condition == "optimal"
-
-
-def test_detailed_results_format(energy_system_sample: EnergySystem) -> None:
-    result = energy_system_sample.optimize()
-
-    detailed_results = result.to_dataframe()
-    expected_columns = pd.Index(["value"])
-    expected_index = pd.MultiIndex.from_tuples(
-        [
-            ("battery_1", "storage_charge_mode", "0"),
-            ("battery_1", "storage_charge_mode", "1"),
-            ("battery_1", "storage_charge_mode", "2"),
-            ("battery_1", "storage_charge_mode", "3"),
-            ("battery_1", "storage_charge_mode", "4"),
-            ("battery_1", "storage_net_power", "0"),
-            ("battery_1", "storage_net_power", "1"),
-            ("battery_1", "storage_net_power", "2"),
-            ("battery_1", "storage_net_power", "3"),
-            ("battery_1", "storage_net_power", "4"),
-            ("battery_1", "storage_power_in", "0"),
-            ("battery_1", "storage_power_in", "1"),
-            ("battery_1", "storage_power_in", "2"),
-            ("battery_1", "storage_power_in", "3"),
-            ("battery_1", "storage_power_in", "4"),
-            ("battery_1", "storage_power_out", "0"),
-            ("battery_1", "storage_power_out", "1"),
-            ("battery_1", "storage_power_out", "2"),
-            ("battery_1", "storage_power_out", "3"),
-            ("battery_1", "storage_power_out", "4"),
-            ("battery_1", "storage_soc", "0"),
-            ("battery_1", "storage_soc", "1"),
-            ("battery_1", "storage_soc", "2"),
-            ("battery_1", "storage_soc", "3"),
-            ("battery_1", "storage_soc", "4"),
-            ("generator_1", "generator_power", "0"),
-            ("generator_1", "generator_power", "1"),
-            ("generator_1", "generator_power", "2"),
-            ("generator_1", "generator_power", "3"),
-            ("generator_1", "generator_power", "4"),
-            ("generator_1", "generator_shutdown", "0"),
-            ("generator_1", "generator_shutdown", "1"),
-            ("generator_1", "generator_shutdown", "2"),
-            ("generator_1", "generator_shutdown", "3"),
-            ("generator_1", "generator_shutdown", "4"),
-            ("generator_1", "generator_startup", "0"),
-            ("generator_1", "generator_startup", "1"),
-            ("generator_1", "generator_startup", "2"),
-            ("generator_1", "generator_startup", "3"),
-            ("generator_1", "generator_startup", "4"),
-            ("generator_1", "generator_status", "0"),
-            ("generator_1", "generator_status", "1"),
-            ("generator_1", "generator_status", "2"),
-            ("generator_1", "generator_status", "3"),
-            ("generator_1", "generator_status", "4"),
-            ("generator_2", "generator_power", "0"),
-            ("generator_2", "generator_power", "1"),
-            ("generator_2", "generator_power", "2"),
-            ("generator_2", "generator_power", "3"),
-            ("generator_2", "generator_power", "4"),
-            ("generator_2", "generator_shutdown", "0"),
-            ("generator_2", "generator_shutdown", "1"),
-            ("generator_2", "generator_shutdown", "2"),
-            ("generator_2", "generator_shutdown", "3"),
-            ("generator_2", "generator_shutdown", "4"),
-            ("generator_2", "generator_startup", "0"),
-            ("generator_2", "generator_startup", "1"),
-            ("generator_2", "generator_startup", "2"),
-            ("generator_2", "generator_startup", "3"),
-            ("generator_2", "generator_startup", "4"),
-            ("generator_2", "generator_status", "0"),
-            ("generator_2", "generator_status", "1"),
-            ("generator_2", "generator_status", "2"),
-            ("generator_2", "generator_status", "3"),
-            ("generator_2", "generator_status", "4"),
-        ],
-        names=("unit", "variable", "time"),
-    )
-
-    pd.testing.assert_index_equal(expected_index, detailed_results.index)
-    pd.testing.assert_index_equal(expected_columns, detailed_results.columns)

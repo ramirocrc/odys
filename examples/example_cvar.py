@@ -1,3 +1,5 @@
+"""Example: CVaR optimization with multiple markets."""
+
 from datetime import timedelta
 
 from odys import (
@@ -65,11 +67,10 @@ if __name__ == "__main__":
             cvar=CVaRTerm(weight=0.01, confidence_level=0.6),
         ),
     )
-
-    result = energy_system.optimize(solver_config=SolverConfig(solver_name=SolverName.HIGHS, log_output=False))
-    logger.info(result.termination_condition)
-    logger.info("sell volume")
-    logger.info(result.markets.sell_volume)
-    logger.info("VaR:  %s", result.cvar.value_at_risk)
-    logger.info("CVaR: %s", result.cvar.cvar)
-    logger.info("shortfall per scenario:\n%s", result.cvar.shortfall_per_scenario)
+    solver_config = SolverConfig(
+        solver_name=SolverName.HIGHS,
+        log_output=False,
+    )
+    result = energy_system.optimize(solver_config=solver_config)
+    sol = result.solution
+    x = 1

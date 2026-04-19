@@ -1,3 +1,5 @@
+"""Example 1: Basic dispatch optimization."""
+
 from datetime import timedelta
 
 from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario
@@ -37,7 +39,6 @@ if __name__ == "__main__":
     )
 
     result = energy_system.optimize()
-    logger.info(result.termination_condition)
-    logger.info(result.solver_status)
-    logger.info("generators power")
-    logger.info(result.generators.power)
+    logger.info("Generators optimal dispatch")
+    for gen_dispatch in result.generators.values():
+        logger.info(gen_dispatch.to_dataframe())

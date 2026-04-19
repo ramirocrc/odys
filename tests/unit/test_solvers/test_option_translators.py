@@ -5,7 +5,6 @@ from typing import Any
 
 import pytest
 
-from odys.domain.exceptions import OdysValidationError
 from odys.solvers.config_translators import translate_solver_config
 from odys.solvers.solver_config import SolverConfig, SolverName
 
@@ -18,21 +17,11 @@ COMMON_OPTS = SolverConfig(
     log_output=True,
 )
 
-GLPK_OPTS = SolverConfig(
-    solver_name=SolverName.GLPK,
-    time_limit=120.0,
-    mip_rel_gap=0.05,
-    presolve=False,
-    threads=None,
-    log_output=False,
-)
-
 
 @dataclass
 class SolverTestCase:
     solver_name: SolverName
     expected_output: dict[str, Any]
-    config: SolverConfig | None = None
 
 
 SOLVER_CASES = [
@@ -77,34 +66,11 @@ SOLVER_CASES = [
             "display/verblevel": 4,
         },
     ),
-    SolverTestCase(
-        solver_name=SolverName.GLPK,
-        expected_output={
-            "tmlim": GLPK_OPTS.time_limit,
-            "mipgap": GLPK_OPTS.mip_rel_gap,
-            "presolve": GLPK_OPTS.presolve,
-        },
-        config=GLPK_OPTS,
-    ),
 ]
 
 
 @pytest.mark.parametrize("case", SOLVER_CASES)
 def test_solver_all_options(case: SolverTestCase) -> None:
-    config = case.config or COMMON_OPTS.model_copy(update={"solver_name": case.solver_name})
+    config = COMMON_OPTS.model_copy(update={"solver_name": case.solver_name})
     result = translate_solver_config(config)
     assert result == case.expected_output
-
-
-def test_glpk_rejects_threads() -> None:
-    """GLPK does not support threads option."""
-    config = SolverConfig(solver_name=SolverName.GLPK, threads=4)
-    with pytest.raises(OdysValidationError, match="does not support 'threads'"):
-        translate_solver_config(config)
-
-
-def test_glpk_rejects_log_output() -> None:
-    """GLPK does not support log_output option."""
-    config = SolverConfig(solver_name=SolverName.GLPK, log_output=True)
-    with pytest.raises(OdysValidationError, match="does not support 'log_output'"):
-        translate_solver_config(config)

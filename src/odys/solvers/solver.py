@@ -9,7 +9,6 @@ from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysSolverError
 from odys.optimization.model.milp_model import EnergyMILPModel
-from odys.results.optimization_results import OptimizationResults
 from odys.results.solved_model_data import SolvedModelData
 from odys.solvers.config_translators import translate_solver_config
 from odys.solvers.solver_config import SolverConfig, SolverName
@@ -18,7 +17,7 @@ from odys.solvers.solver_config import SolverConfig, SolverName
 def optimize_algebraic_model(
     milp_model: EnergyMILPModel,
     solver_config: SolverConfig | None = None,
-) -> OptimizationResults:
+) -> SolvedModelData:
     """Solve the optimization model using the configured solver.
 
     Args:
@@ -35,29 +34,27 @@ def optimize_algebraic_model(
     config = solver_config or SolverConfig()
     validate_solver_available(config.solver_name)
 
-    solving_status, termination_condition = milp_model.linopy_model.solve(
+    solver_status, termination_condition = milp_model.linopy_model.solve(
         solver_name=config.solver_name,
         explicit_coordinate_names=True,
         **translate_solver_config(config),
     )
 
     cvar_term = milp_model.parameters.objective.cvar
-    solved_data = SolvedModelData(
+    return SolvedModelData(
+        solver_status=SolverStatus(solver_status),
+        termination_condition=TerminationCondition(termination_condition),
         solution=milp_model.linopy_model.solution,
         variable_names=frozenset(milp_model.linopy_model.variables.labels),
         has_generators=not milp_model.parameters.generators.is_empty,
         has_storages=not milp_model.parameters.storages.is_empty,
         has_markets=not milp_model.parameters.markets.is_empty,
+        has_loads=not milp_model.parameters.loads.is_empty,
         cvar_term=cvar_term,
         scenario_probabilities=(
             milp_model.parameters.scenarios.scenario_probabilities.to_series() if cvar_term is not None else None
         ),
-    )
-
-    return OptimizationResults(
-        solver_status=SolverStatus(solving_status),
-        termination_condition=TerminationCondition(termination_condition),
-        solved_data=solved_data,
+        load_profiles=milp_model.parameters.scenarios.load_profiles,
     )
 
 

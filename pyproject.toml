@@ -14,11 +14,12 @@ keywords = [
   "portfolio",
   "stochastic"
 ]
+license = {text = "MIT"}
+
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -42,7 +43,6 @@ Repository = "https://github.com/ramirocrc/odys"
 
 [project.optional-dependencies]
 cplex = ["cplex>=22.1.2.1"]
-glpk = ["swiglpk>=5.0.13"]
 gurobi = ["gurobipy>=13.0.1"]
 scip = ["pyscipopt>=6.1.0"]
 
@@ -74,7 +74,7 @@ vulnerability-fixes = [
 ]
 
 [build-system]
-requires = ["uv_build"]
+requires = ["uv_build<0.12"]
 build-backend = "uv_build"
 
 [tool.basedpyright]
