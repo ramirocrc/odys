@@ -1,13 +1,11 @@
 """Frozen snapshot of solved model data for result extraction."""
 
-from collections.abc import Hashable
 from types import MappingProxyType
 
 import xarray as xr
 from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
-from odys.domain.objective import CVaRTerm
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import ModelVariable
 from odys.results.dispatch import GeneratorDispatch, MarketDispatch, StorageDispatch
@@ -20,29 +18,22 @@ class SolvedModelData:
     linopy model to be garbage-collected after solving.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         solver_status: SolverStatus,
         termination_condition: TerminationCondition,
         solution: xr.Dataset,
-        variable_names: frozenset[Hashable],
-        *,
-        has_generators: bool,
-        has_storages: bool,
-        has_markets: bool,
-        cvar_term: CVaRTerm | None,
     ) -> None:
         """Initialize SolvedModelData."""
         self._solver_status = solver_status
         self._termination_condition = termination_condition
-        if "scenario" in solution.coords and len(solution.coords["scenario"]) == 1:
-            solution = solution.squeeze("scenario", drop=True)
+        if ModelDimension.Scenarios in solution.coords and len(solution.coords[ModelDimension.Scenarios]) == 1:
+            solution = solution.squeeze(ModelDimension.Scenarios, drop=True)
         self._solution = solution
-        self._variable_names = variable_names
-        self._has_generators = has_generators
-        self._has_storages = has_storages
-        self._has_markets = has_markets
-        self._cvar_term = cvar_term
+        self._variable_names = set(solution.variables.keys())
+        self._has_generators = ModelDimension.Generators in solution.dims
+        self._has_storages = ModelDimension.Storages in solution.dims
+        self._has_markets = ModelDimension.Markets in solution.dims
 
     @property
     def solver_status(self) -> str:

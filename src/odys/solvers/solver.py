@@ -40,16 +40,10 @@ def optimize_algebraic_model(
         **translate_solver_config(config),
     )
 
-    cvar_term = milp_model.parameters.objective.cvar
     return SolvedModelData(
         solver_status=SolverStatus(solver_status),
         termination_condition=TerminationCondition(termination_condition),
         solution=milp_model.linopy_model.solution,
-        variable_names=frozenset(milp_model.linopy_model.variables.labels),
-        has_generators=not milp_model.parameters.generators.is_empty,
-        has_storages=not milp_model.parameters.storages.is_empty,
-        has_markets=not milp_model.parameters.markets.is_empty,
-        cvar_term=cvar_term,
     )
 
 
