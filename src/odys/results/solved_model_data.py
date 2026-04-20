@@ -3,7 +3,6 @@
 from collections.abc import Hashable
 from types import MappingProxyType
 
-import pandas as pd
 import xarray as xr
 from linopy.constants import SolverStatus, TerminationCondition
 
@@ -11,7 +10,7 @@ from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.domain.objective import CVaRTerm
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import ModelVariable
-from odys.results.dispatch import GeneratorDispatch, LoadDispatch, MarketDispatch, StorageDispatch
+from odys.results.dispatch import GeneratorDispatch, MarketDispatch, StorageDispatch
 
 
 class SolvedModelData:
@@ -31,10 +30,7 @@ class SolvedModelData:
         has_generators: bool,
         has_storages: bool,
         has_markets: bool,
-        has_loads: bool,
         cvar_term: CVaRTerm | None,
-        scenario_probabilities: pd.Series | None,
-        load_profiles: xr.DataArray | None,
     ) -> None:
         """Initialize SolvedModelData."""
         self._solver_status = solver_status
@@ -46,10 +42,7 @@ class SolvedModelData:
         self._has_generators = has_generators
         self._has_storages = has_storages
         self._has_markets = has_markets
-        self._has_loads = has_loads
         self._cvar_term = cvar_term
-        self._scenario_probabilities = scenario_probabilities
-        self._load_profiles = load_profiles
 
     @property
     def solver_status(self) -> str:
@@ -107,19 +100,6 @@ class SolvedModelData:
                 soc=sol[ModelVariable.STORAGE_SOC.var_name].sel(storage=storage_name, drop=True),
                 charge_mode=sol[ModelVariable.STORAGE_CHARGE_MODE.var_name].sel(storage=storage_name, drop=True),
             )
-        return MappingProxyType(result)
-
-    @property
-    def loads(self) -> MappingProxyType[str, LoadDispatch]:
-        """Get load dispatch results."""
-        self._validate_terminated_successfully()
-        if not self._has_loads:
-            msg = "This model does not contain load results"
-            raise OdysNoResultsError(msg)
-
-        result: dict[str, LoadDispatch] = {}
-        for load_name in self._load_profiles.coords[ModelDimension.Loads].to_numpy():
-            result[load_name] = LoadDispatch(load=self._load_profiles.sel(load=load_name))
         return MappingProxyType(result)
 
     @property

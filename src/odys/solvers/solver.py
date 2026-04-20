@@ -49,12 +49,7 @@ def optimize_algebraic_model(
         has_generators=not milp_model.parameters.generators.is_empty,
         has_storages=not milp_model.parameters.storages.is_empty,
         has_markets=not milp_model.parameters.markets.is_empty,
-        has_loads=not milp_model.parameters.loads.is_empty,
         cvar_term=cvar_term,
-        scenario_probabilities=(
-            milp_model.parameters.scenarios.scenario_probabilities.to_series() if cvar_term is not None else None
-        ),
-        load_profiles=milp_model.parameters.scenarios.load_profiles,
     )
 
 

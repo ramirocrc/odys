@@ -102,27 +102,6 @@ class StorageDispatch:
         return self.to_dataset().to_dataframe()
 
 
-class LoadDispatch:
-    """Dispatch results for a single load asset."""
-
-    def __init__(self, load: xr.DataArray) -> None:
-        """Initialize load dispatch results."""
-        self._load = load
-
-    @property
-    def load(self) -> xr.DataArray:
-        """Load profile (MWh)."""
-        return self._load
-
-    def to_dataset(self) -> xr.Dataset:
-        """Return dispatch results as an xarray Dataset."""
-        return xr.Dataset(data_vars={"load": self._load})
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Return dispatch results as a pandas DataFrame."""
-        return self.to_dataset().to_dataframe()
-
-
 class MarketDispatch:
     """Dispatch results for a single market."""
 

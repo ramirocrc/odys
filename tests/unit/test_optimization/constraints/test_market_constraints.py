@@ -280,5 +280,6 @@ class TestMarketConstraintsEdgeCases:
         params = energy_system.build_parameters()
         linopy_model = build_model(params).linopy_model
 
-        market_constraints = [c for c in linopy_model.constraints.labels if "market" in c]
+        keys = set(linopy_model.constraints.labels)
+        market_constraints = [c for c in keys if "market" in str(c)]
         assert len(market_constraints) == 0

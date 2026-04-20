@@ -64,7 +64,7 @@ if __name__ == "__main__":
         number_of_steps=4,
         objective=Objective(
             profit=ProfitTerm(weight=1),
-            cvar=CVaRTerm(weight=0.01, confidence_level=0.6),
+            cvar=CVaRTerm(weight=100, confidence_level=0.6),
         ),
     )
     solver_config = SolverConfig(
@@ -73,4 +73,6 @@ if __name__ == "__main__":
     )
     result = energy_system.optimize(solver_config=solver_config)
     sol = result.solution
-    x = 1
+    logger.info(sol)
+    logger.info("market results")
+    logger.info(result.markets["sdac"].to_dataframe())
