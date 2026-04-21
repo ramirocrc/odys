@@ -72,7 +72,6 @@ if __name__ == "__main__":
         log_output=False,
     )
     result = energy_system.optimize(solver_config=solver_config)
-    sol = result.solution
-    logger.info(sol)
-    logger.info("market results")
-    logger.info(result.markets["sdac"].to_dataframe())
+
+    logger.info("solution dataframe")
+    logger.info(result.to_dataset())

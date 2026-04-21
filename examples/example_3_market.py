@@ -45,6 +45,6 @@ if __name__ == "__main__":
     )
 
     result = energy_system.optimize()
-    solution_array = result.solution
-    for gen_dispatch in result.generators.values():
+    solution_array = result.to_dataset()
+    for gen_dispatch in result.generators:
         logger.info(gen_dispatch.to_dataframe())

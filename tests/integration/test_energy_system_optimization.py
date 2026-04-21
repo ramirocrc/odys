@@ -472,13 +472,13 @@ def test_energy_system_optimization(test_id: str, system_factory: Callable[[], S
     assert result.termination_condition == "optimal", f"Non-optimal solution for {test_id}"
 
     if test_system.expected_generator_results is not None:
-        gen_dispatch = next(iter(result.generators.values()))
+        gen_dispatch = next(iter(result.generators))
         assert gen_dispatch.power is not None
         arr = gen_dispatch.power.to_numpy()
         assert arr.size > 0
 
     if test_system.expected_storage_results is not None:
-        stor_dispatch = next(iter(result.storages.values()))
+        stor_dispatch = next(iter(result.storages))
         assert stor_dispatch.soc is not None
         arr = stor_dispatch.soc.to_numpy()
         assert arr.size > 0

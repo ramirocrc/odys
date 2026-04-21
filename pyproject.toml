@@ -14,7 +14,7 @@ keywords = [
   "portfolio",
   "stochastic"
 ]
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -29,7 +29,7 @@ classifiers = [
 ]
 dependencies = [
   "highspy>=1.14.0",
-  "linopy>=0.6.6",
+  "linopy>=0.6.7",
   "numpy>=2.4.1",
   "pandas>=2.3.3",
   "pydantic>=2.12.5",
@@ -119,6 +119,10 @@ ignore = [
 ]
 "examples/**" = [
   "INP001",  # Checks for packages that are missing an __init__.py
+]
+"src/odys/results/dispatch.py" = [
+  "TC002",  # pandas used at runtime for type-checking
+  "TC003",  # Iterator used in runtime for type hints
 ]
 
 [tool.ruff.lint.pydocstyle]

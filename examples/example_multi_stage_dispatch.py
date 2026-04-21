@@ -76,9 +76,5 @@ if __name__ == "__main__":
     result = energy_system.optimize(solver_config=SolverConfig(solver_name=SolverName.HIGHS))
     logger.info(result.termination_condition)
     logger.info(result.solver_status)
-    logger.info("generators power")
-    for name, gen in result.generators.items():
-        logger.info("  %s: %s", name, gen.to_dataframe())
-    logger.info("volume sold to markets")
-    for name, market in result.markets.items():
-        logger.info("  %s: %s", name, market.to_dataset())
+    logger.info("solution dataframe")
+    logger.info(result.to_dataset())

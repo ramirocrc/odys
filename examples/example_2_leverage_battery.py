@@ -50,9 +50,9 @@ if __name__ == "__main__":
     logger.info(result.termination_condition)
     logger.info(result.solver_status)
     logger.info("generators power")
-    for name, gen in result.generators.items():
-        logger.info("  %s.power: %s", name, gen.power.values)
+    for gen in result.generators:
+        logger.info("  %s.power: %s", gen.name, gen.power.values)
     logger.info("battery")
-    for name, stor in result.storages.items():
-        logger.info("  %s.net_power: %s", name, stor.net_power.values)
-        logger.info("  %s.soc: %s", name, stor.soc.values)
+    for stor in result.storages:
+        logger.info("  %s.net_power: %s", stor.name, stor.net_power.values)
+        logger.info("  %s.soc: %s", stor.name, stor.soc.values)

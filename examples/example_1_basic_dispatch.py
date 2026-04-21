@@ -40,5 +40,8 @@ if __name__ == "__main__":
 
     result = energy_system.optimize()
     logger.info("Generators optimal dispatch")
-    for gen_dispatch in result.generators.values():
+    for gen_dispatch in result.generators:
+        logger.info(gen_dispatch.name)
         logger.info(gen_dispatch.to_dataframe())
+
+    logger.info(result.to_dataset())

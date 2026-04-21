@@ -27,7 +27,7 @@ from odys.optimization.parameters.market_parameters import MarketParameters
 from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioParameters
 from odys.optimization.parameters.storage_parameters import StorageParameters
-from odys.results.solved_model_data import SolvedModelData
+from odys.results.optimization_results import OptimalDisptachResults
 from odys.solvers.solver import optimize_algebraic_model
 from odys.solvers.solver_config import SolverConfig
 
@@ -143,7 +143,7 @@ class EnergySystem(BaseModel):
             objective=self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0)),
         )
 
-    def optimize(self, solver_config: SolverConfig | None = None) -> SolvedModelData:
+    def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDisptachResults:
         """Optimize the energy system.
 
         This method builds and solves the optimization model using the configured solver.
