@@ -42,8 +42,3 @@ class Objective(BaseModel):
 
     profit: ProfitTerm
     cvar: CVaRTerm | None = None
-
-
-Objective(
-    profit=ProfitTerm(weight=1.0),
-)

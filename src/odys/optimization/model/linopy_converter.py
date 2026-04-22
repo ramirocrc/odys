@@ -14,7 +14,11 @@ from odys.optimization.model.variables import BoundType
 class LinopyVariableParameters(BaseModel):
     """Parameters needed to add a variable to a linopy model."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        arbitrary_types_allowed=True,
+    )
 
     name: str
     coords: Mapping[str, list[str]]

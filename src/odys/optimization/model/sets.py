@@ -21,8 +21,12 @@ class ModelDimension(StrEnum):
 class ModelIndex(BaseModel, ABC):
     """Energy Model Set."""
 
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+    )
+
     dimension: ClassVar[ModelDimension]
-    model_config = ConfigDict(frozen=True)
     values: tuple[str, ...]
 
     @property

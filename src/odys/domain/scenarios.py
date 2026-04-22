@@ -10,7 +10,10 @@ from odys.domain.exceptions import OdysValidationError
 class Scenario(BaseModel):
     """Scenario conditions."""
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+    )
 
     available_capacity_profiles: Mapping[str, Sequence[float]] | None = Field(
         default=None,

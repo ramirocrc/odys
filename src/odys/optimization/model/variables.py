@@ -6,7 +6,7 @@ optimization models.
 
 from enum import Enum, unique
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from odys.optimization.model.sets import ModelDimension
 
@@ -20,6 +20,11 @@ class BoundType(Enum):
 
 class VariableSpec(BaseModel):
     """Specification for an optimization variable (name, type, dimensions, bounds)."""
+
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+    )
 
     name: str
     is_binary: bool

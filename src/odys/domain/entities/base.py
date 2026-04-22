@@ -16,6 +16,9 @@ class EnergyEntity(BaseModel, ABC):  # pyright: ignore[reportUnsafeMultipleInher
     like generators, batteries, and other energy system components.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+    )
 
     name: str

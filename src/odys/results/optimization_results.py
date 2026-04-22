@@ -20,6 +20,17 @@ class OptimalDisptachResults:
     linopy model to be garbage-collected after solving.
     """
 
+    __slots__ = (
+        "_has_generators",
+        "_has_markets",
+        "_has_storages",
+        "_objective_value",
+        "_solution",
+        "_solver_status",
+        "_termination_condition",
+        "_variable_names",
+    )
+
     def __init__(
         self,
         solver_status: SolverStatus,
