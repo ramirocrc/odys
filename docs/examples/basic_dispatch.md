@@ -1,100 +1,94 @@
 # Basic Dispatch
 
-This example shows the core odys workflow: two generators and a storage dispatched to meet a fixed load at minimum cost.
+## Problem Description
 
-**Source**: [`examples/example1.py`](https://github.com/ramirocrc/odys/blob/main/examples/example1.py)
+This example asks a simple but important question: if a load must be met at every timestep, how should Odys dispatch a cheap renewable generator and a more expensive thermal unit?
 
-## What it demonstrates
+The setup is intentionally small. We have a fixed 70 MW load over 9 half-hour periods, a free solar plant with time-varying availability, and a gas turbine with a marginal cost of 50 $/MWh. The optimizer should use solar whenever it is available and only call on gas when solar is not enough.
 
-- Setting up generators with different costs and constraints (ramp rates, min up time, min power)
-- Adding a storage with efficiency losses and SOC bounds
-- Using `available_capacity_profiles` to limit a generator's output over time
-- Reading the optimization results
+That makes this a good first example because it shows the core Odys workflow without adding storage or markets.
 
-## The setup
+**Source**: [`examples/basic_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/basic_dispatch.py)
 
-We have two generators with different characteristics:
+## Walkthrough
 
-- **gen1**: Cheap (20 $/MWh), 100 MW, with a ramp-down limit and varying available capacity
-- **gen2**: Expensive (100 $/MWh), 150 MW, with ramp limits, min power, and a 4-step min up time
+### 1. Define the assets
 
-Plus a storage (200 MW, 100 MWh) that starts full and must end at 50% SOC.
-
-## Code
+Start by creating the two generators and the fixed load. This is the part where we tell Odys what can produce power, what it costs, and what demand must be served.
 
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario, Storage
+from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario
 
-generator_1 = Generator(
-    name="gen1",
-    nominal_power=100.0,
-    variable_cost=20.0,
-    min_up_time=1,
-    ramp_down=100,
-)
-generator_2 = Generator(
-    name="gen2",
-    nominal_power=150.0,
-    variable_cost=100.0,
-    min_up_time=4,
-    min_power=30,
-    startup_cost=0,
-    ramp_up=140,
-    ramp_down=100,
-)
-battery_1 = Storage(
-    name="battery1",
-    max_power=200.0,
-    capacity=100.0,
-    efficiency_charging=0.9,
-    efficiency_discharging=0.8,
-    soc_start=1.0,
-    soc_end=0.5,
-    soc_min=0.1,
-)
+ccgt = Generator(name="ccgt", nominal_power=100, variable_cost=50)
+solar_pv = Generator(name="solar_pv", nominal_power=150, variable_cost=0)
+load = Load(name="load", type=LoadType.Fixed)
+portfolio = AssetPortfolio([ccgt, solar_pv, load])
+```
 
-portfolio = AssetPortfolio()
-portfolio.add_asset(generator_1)
-portfolio.add_asset(generator_2)
-portfolio.add_asset(battery_1)
-portfolio.add_asset(Load(name="load", type=LoadType.Fixed))
+Here the cost difference does most of the work. Solar is free, so the solver will prefer it whenever it is available.
 
+### 2. Describe what is available
+
+Now give Odys a time series for the solar PV available capacity and the load.
+
+The solar profile represents the maximum available capacity of the solar PV
+plant throughout the day. At night it is zero, then it increases as the sun
+rises and falls again toward evening. The important detail is that the
+available solar capacity does not have to match the panel's maximum rating.
+The plant may be able to produce up to 150 MW in principle, but at each
+timestep the actual limit is whatever the solar resource allows.
+
+The ccgt is simpler: we treat it as fully available during the selected period,
+so it can produce up to its nominal capacity in every timestep. That gives the
+optimizer a reliable backup when solar is not enough.
+
+Finally, the load is fixed. Odys must serve that demand at every step, so the
+problem is really about deciding how much solar to use first and how much gas
+is needed to cover the remainder.
+
+```python
+scenario = Scenario(
+    available_capacity_profiles={
+        "ccgt": 9 * [100],
+        "solar_pv": [0, 30, 60, 80, 100, 80, 60, 30, 0],
+    },
+    load_profiles={"load": 9 * [70]},
+)
+```
+
+Notice the subtle point here: the gas turbine has a nominal capacity of 100 MW, but solar is limited by its profile. In other words, installed capacity is not the same thing as what is actually usable in a given timestep.
+
+### 3. Solve the system
+
+Once the portfolio and scenario are in place, the optimizer can build the least-cost dispatch.
+
+```python
 energy_system = EnergySystem(
     portfolio=portfolio,
-    scenarios=Scenario(
-        available_capacity_profiles={
-            "gen1": [100, 100, 100, 50, 50, 50, 50],
-        },
-        load_profiles={"load": [300, 75, 300, 50, 100, 120, 125]},
-    ),
     timestep=timedelta(minutes=30),
-    number_of_steps=7,
+    number_of_steps=9,
+    scenarios=scenario,
 )
 
 result = energy_system.optimize()
 ```
 
-## Reading the results
+At this point the solver is doing the real work: it balances the load in every step while trying to use the cheapest energy first.
 
-```python
-# Check that the solver found an optimal solution
-print(result.solver_status)         # "ok"
-print(result.termination_condition)  # "optimal"
+## Results
 
-# Generator dispatch
-print(result.generators.power)
+The output shows the generator dispatch over time. The pattern should be easy to read:
 
-# Storage charge/discharge
-print(result.storages.net_power)
+- solar is used first whenever it is available
+- gas fills the remaining demand
+- total supply always matches the fixed load
 
-# Everything in one DataFrame
-print(result.to_dataframe())
-```
+If you print `result.generators.power`, you should see the gas turbine doing little work in the sunny periods and covering the full load when solar is unavailable.
 
-## What to look for
+## Discussion
 
-- **gen1** is dispatched first because it's cheaper, but it's capped by `available_capacity_profiles` in later timesteps.
-- **gen2** kicks in when gen1 can't cover the load, but once it's on, it stays on for at least 4 steps (`min_up_time=4`).
-- The **storage** discharges when demand is high and charges when demand is low, respecting its SOC constraints.
+This example is the baseline for the rest of the docs. It shows the main idea behind optimization in Odys: define the assets, define what is available, define what must be served, and let the solver find the cheapest feasible dispatch.
+
+A useful mental model is a household budget. Solar is the income you would rather spend first because it is free, while gas is the emergency fund you only use when necessary.

@@ -112,7 +112,7 @@ intraday = EnergyMarket(
 )
 ```
 
-See the [Markets + Stochastic example](../examples/markets_stochastic.md) for a full walkthrough.
+See the [CVaR Market Risk example](../examples/cvar_market_risk.md) for a full walkthrough.
 
 ## Results with multiple scenarios
 

@@ -6,4 +6,4 @@
 
 ## Result Containers
 
-::: odys.results.result_containers
+::: odys.results.dispatch

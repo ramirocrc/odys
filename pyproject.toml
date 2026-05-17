@@ -14,7 +14,8 @@ keywords = [
   "portfolio",
   "stochastic"
 ]
-license = { text = "MIT" }
+
+license = "MIT"
 
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -27,6 +28,7 @@ classifiers = [
   "Topic :: Scientific/Engineering",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+
 dependencies = [
   "highspy>=1.14.0",
   "linopy>=0.6.7",

@@ -7,9 +7,9 @@ from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import ModelVariable
 from odys.results.dispatch import (
-    GeneratorsDispatch,
-    MarketsDispatch,
-    StoragesDispatch,
+    GeneratorDispatch,
+    MarketDispatch,
+    StorageDispatch,
 )
 
 
@@ -71,14 +71,14 @@ class OptimalDisptachResults:
             raise OdysSolverError(msg)
 
     @property
-    def generators(self) -> GeneratorsDispatch:
+    def generators(self) -> GeneratorDispatch:
         """Get generator dispatch results."""
         self._validate_terminated_successfully()
         if not self._has_generators:
             msg = "This model does not contain generator results"
             raise OdysNoResultsError(msg)
 
-        return GeneratorsDispatch(
+        return GeneratorDispatch(
             power=self._solution[ModelVariable.GENERATOR_POWER.var_name],
             status=self._solution[ModelVariable.GENERATOR_STATUS.var_name],
             startup=self._solution[ModelVariable.GENERATOR_STARTUP.var_name],
@@ -86,28 +86,28 @@ class OptimalDisptachResults:
         )
 
     @property
-    def storages(self) -> StoragesDispatch:
+    def storages(self) -> StorageDispatch:
         """Get storage dispatch results."""
         self._validate_terminated_successfully()
         if not self._has_storages:
             msg = "This model does not contain storage results"
             raise OdysNoResultsError(msg)
 
-        return StoragesDispatch(
+        return StorageDispatch(
             net_power=self._solution[ModelVariable.STORAGE_POWER_NET.var_name],
             soc=self._solution[ModelVariable.STORAGE_SOC.var_name],
             charge_mode=self._solution[ModelVariable.STORAGE_CHARGE_MODE.var_name],
         )
 
     @property
-    def markets(self) -> MarketsDispatch:
+    def markets(self) -> MarketDispatch:
         """Get market dispatch results."""
         self._validate_terminated_successfully()
         if not self._has_markets:
             msg = "This model does not contain market results"
             raise OdysNoResultsError(msg)
 
-        return MarketsDispatch(
+        return MarketDispatch(
             sell_volume=self._solution[ModelVariable.MARKET_SELL.var_name],
             buy_volume=self._solution[ModelVariable.MARKET_BUY.var_name],
         )

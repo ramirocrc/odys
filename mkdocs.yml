@@ -27,10 +27,9 @@ nav:
   - Examples:
       - Overview: examples/index.md
       - Basic Dispatch: examples/basic_dispatch.md
-      - Stochastic Scenarios: examples/stochastic.md
-      - Stochastic Without Storage: examples/stochastic_no_batteries.md
-      - Markets: examples/markets.md
-      - Markets + Stochastic: examples/markets_stochastic.md
+      - Battery Dispatch: examples/battery_dispatch.md
+      - Market Arbitrage: examples/market_arbitrage.md
+      - CVaR Market Risk: examples/cvar_market_risk.md
   - API Reference:
       - Overview: api/index.md
       - Energy System: api/energy_system.md
