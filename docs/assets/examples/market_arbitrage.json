@@ -1,0 +1,158 @@
+{
+  "data": [
+    {
+      "marker": {
+        "color": "#E67E22"
+      },
+      "name": "CCGT Generation",
+      "opacity": 0.8,
+      "x": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "y": {
+        "dtype": "f8",
+        "bdata": "AAAAAACAUUAAAAAAAIBRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgFFAAAAAAACAUUAAAAAAAIBRQAAAAAAAAAAA"
+      },
+      "yaxis": "y",
+      "type": "bar"
+    },
+    {
+      "marker": {
+        "color": "#3498DB"
+      },
+      "name": "Market Purchases",
+      "opacity": 0.8,
+      "x": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "y": {
+        "dtype": "f8",
+        "bdata": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAgFFAAAAAAACAUUAAAAAAAIBRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgFFA"
+      },
+      "yaxis": "y",
+      "type": "bar"
+    },
+    {
+      "line": {
+        "color": "#E74C3C",
+        "width": 2
+      },
+      "marker": {
+        "size": 8
+      },
+      "mode": "lines+markers",
+      "name": "Market Price ($/MWh)",
+      "x": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "y": [
+        80,
+        70,
+        40,
+        30,
+        30,
+        80,
+        90,
+        60,
+        40
+      ],
+      "yaxis": "y2",
+      "type": "scatter"
+    },
+    {
+      "line": {
+        "color": "#E74C3C",
+        "dash": "dot",
+        "width": 1
+      },
+      "mode": "lines",
+      "name": "CCGT Cost (50 $/MWh)",
+      "x": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "y": [
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50
+      ],
+      "yaxis": "y2",
+      "type": "scatter"
+    }
+  ],
+  "layout": {
+    "template": {},
+    "title": {
+      "text": "Market Arbitrage Dispatch",
+      "x": 0.5
+    },
+    "yaxis": {
+      "title": {
+        "text": "Power (MW)"
+      },
+      "side": "left"
+    },
+    "yaxis2": {
+      "title": {
+        "text": "Price ($/MWh)"
+      },
+      "side": "right",
+      "overlaying": "y",
+      "rangemode": "tozero"
+    },
+    "legend": {
+      "x": 0.01,
+      "y": 0.99
+    },
+    "margin": {
+      "l": 40,
+      "r": 40,
+      "t": 40,
+      "b": 40
+    },
+    "xaxis": {
+      "title": {
+        "text": "Time Step"
+      }
+    },
+    "barmode": "group",
+    "hovermode": "x unified"
+  }
+}

@@ -235,7 +235,7 @@ class TestMultipleMarketsWithDifferentDirections:
         ]
 
         for constraint_name in expected_constraints:
-            assert constraint_name in linopy_model_mixed_markets.constraints
+            assert constraint_name in linopy_model_mixed_markets.constraints.data
 
     def test_market_variables_created_for_each_market(
         self,

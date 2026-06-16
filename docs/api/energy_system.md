@@ -1,35 +1,8 @@
-# Energy System API
+# `odys.energy_system`
 
-## EnergySystem
+Main entry point for configuring and optimizing an energy system.
+
+Read this page if you want to understand the orchestration object that ties assets, scenarios, and solver execution together.
+For most users, this is the core API page after `odys`.
 
 ::: odys.energy_system
-
-## Scenarios
-
-::: odys.domain.scenarios
-
-## Assets
-
-### Base Asset
-
-::: odys.domain.entities.base
-
-### Generator
-
-::: odys.domain.entities.generator
-
-### Storage
-
-::: odys.domain.entities.storage
-
-### Load
-
-::: odys.domain.entities.load
-
-### AssetPortfolio
-
-::: odys.domain.entities.portfolio
-
-## Markets
-
-::: odys.domain.entities.market

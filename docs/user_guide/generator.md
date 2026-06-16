@@ -2,6 +2,8 @@
 
 A `Generator` represents any dispatchable power source in your energy system -- think gas turbines, diesel generators, or even a simplified solar/wind unit with a fixed capacity.
 
+See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
+
 ## Basic usage
 
 ```python
@@ -16,6 +18,26 @@ gen = Generator(
 
 That's really all you need. The optimizer will figure out the dispatch (how much power to produce at each timestep) to minimize total cost while meeting demand.
 
+In the model, that dispatch is bounded by:
+
+$$
+0 \le p_{g,t}, \qquad u_{g,t} \in \{0,1\}
+$$
+
+$$
+p_{g,t} - P^{\max}_g u_{g,t} \le 0
+$$
+
+$$
+p_{g,t} \ge \epsilon_g u_{g,t}, \qquad p_{g,t} \ge P^{\min}_g u_{g,t}
+$$
+
+and, when enabled, by ramp limits:
+
+$$
+p_{g,t} - p_{g,t-1} \le R^{up}_g, \qquad p_{g,t-1} - p_{g,t} \le R^{down}_g
+$$
+
 ## Fields
 
 | Field           | Type    | Required | Default | Description                                             |
@@ -27,9 +49,9 @@ That's really all you need. The optimizer will figure out the dispatch (how much
 | `ramp_up`       | `float` | No       | `None`  | Max increase in power per hour                          |
 | `ramp_down`     | `float` | No       | `None`  | Max decrease in power per hour                          |
 | `min_up_time`   | `int`   | No       | `1`     | Minimum number of timesteps the generator must stay on  |
-| `min_down_time` | `int`   | No       | `1`     | Minimum number of timesteps the generator must stay off |
+| `min_down_time` | `int`   | No       | `1`     | Accepted by the model object, but not enforced by the current optimization constraints |
 | `startup_cost`  | `float` | No       | `0.0`   | Cost incurred each time the generator starts up         |
-| `shutdown_cost` | `float` | No       | `None`  | Cost incurred each time the generator shuts down        |
+| `shutdown_cost` | `float` | No       | `None`  | Accepted by the model object, but not included in the current objective |
 
 ## Ramp constraints
 
@@ -47,9 +69,15 @@ gen = Generator(
 
 When `ramp_up` or `ramp_down` is `None` (the default), there's no ramp constraint -- the generator can jump from 0 to full power in a single step.
 
-## Minimum up/down times
+## Minimum up time
 
-These prevent the optimizer from toggling the generator on and off every timestep:
+The current optimization model enforces minimum up time with a rolling constraint tied to shutdown events:
+
+$$
+\sum_{\tau=t-U_g+1}^{t} u_{g,\tau} \ge U_g y^{shutdown}_{g,t+1}
+$$
+
+where $U_g$ is the minimum up time.
 
 ```python
 gen = Generator(
@@ -57,13 +85,12 @@ gen = Generator(
     nominal_power=500.0,
     variable_cost=25.0,
     min_up_time=4,   # once on, stays on for at least 4 steps
-    min_down_time=2,  # once off, stays off for at least 2 steps
 )
 ```
 
-## Startup and shutdown costs
+## Startup cost and shutdown tracking
 
-You can penalize switching the generator on or off:
+Startup cost is included in the objective. Shutdown events are tracked as decision variables, but `shutdown_cost` is not currently included in the objective.
 
 ```python
 gen = Generator(
@@ -71,11 +98,28 @@ gen = Generator(
     nominal_power=50.0,
     variable_cost=80.0,
     startup_cost=500.0,
-    shutdown_cost=100.0,
 )
 ```
 
-This makes the optimizer think twice before toggling the generator, which is realistic for many thermal plants.
+This makes the optimizer think twice before turning the generator on, which is realistic for many thermal plants.
+
+Startup and shutdown are represented with binary transition variables:
+
+$$
+y^{start}_{g,t} \ge u_{g,t} - u_{g,t-1}
+$$
+
+$$
+y^{start}_{g,t} \le u_{g,t}, \qquad y^{start}_{g,t} + u_{g,t-1} \le 1
+$$
+
+$$
+y^{shutdown}_{g,t} \ge u_{g,t-1} - u_{g,t}
+$$
+
+$$
+y^{shutdown}_{g,t} \le u_{g,t-1}, \qquad y^{shutdown}_{g,t} + u_{g,t} \le 1
+$$
 
 ## Available capacity profiles
 
@@ -93,6 +137,12 @@ scenario = Scenario(
 ```
 
 The key in the dict must match the generator's `name`.
+
+The implemented constraint is:
+
+$$
+p_{g,t,s} \le A_{g,t,s}
+$$
 
 ## Results
 

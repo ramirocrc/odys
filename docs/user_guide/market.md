@@ -2,6 +2,8 @@
 
 An `EnergyMarket` represents an electricity market where your portfolio can buy and/or sell energy. This is how you model revenue from selling excess generation or purchasing power when it's cheaper than running your own assets.
 
+See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
+
 ## Basic usage
 
 ```python
@@ -13,7 +15,23 @@ market = EnergyMarket(
 )
 ```
 
-By default, the market allows both buying and selling up to the specified volume per timestep.
+By default, the market allows either buying or selling up to the specified volume per timestep. The current optimization model prevents buying and selling in the same market at the same timestep.
+
+That means:
+
+$$
+0 \le v^{buy}_{m,t} \le V^{\max}_m, \qquad 0 \le v^{sell}_{m,t} \le V^{\max}_m, \qquad z_{m,t} \in \{0,1\}
+$$
+
+and mutual exclusivity is enforced as:
+
+$$
+v^{sell}_{m,t} \le z_{m,t} V^{\max}_m
+$$
+
+$$
+v^{buy}_{m,t} + z_{m,t} V^{\max}_m \le V^{\max}_m
+$$
 
 ## Fields
 
@@ -66,6 +84,12 @@ intraday = EnergyMarket(
 
 This is particularly useful in [stochastic optimization](stochastic.md) setups.
 
+For stage-fixed markets, the same buy volume, sell volume, and trade mode are enforced across scenarios:
+
+$$
+x_{m,t,s} = x_{m,t,s_0} \quad \forall s
+$$
+
 ## Market prices
 
 Prices are provided through the `Scenario` (or `StochasticScenario`), not on the market object itself:
@@ -82,6 +106,12 @@ scenario = Scenario(
 ```
 
 The key must match the market's `name`.
+
+Revenue and cost enter the objective as:
+
+$$
+\sum_{t,m} \lambda_{m,t,s}\left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right)
+$$
 
 ## Multiple markets
 

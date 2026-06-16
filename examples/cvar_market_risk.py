@@ -126,12 +126,15 @@ from odys import (
     StochasticScenario,
     TradeDirection,
 )
+from odys.results.optimization_results import OptimalDisptachResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
 
-if __name__ == "__main__":
+
+def run_cvar_market_risk() -> tuple[OptimalDisptachResults, OptimalDisptachResults]:
+    """Run the CVaR market risk example and return both optimization results."""
     ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=20.0)
 
     portfolio = AssetPortfolio(assets=[ccgt])
@@ -181,8 +184,6 @@ if __name__ == "__main__":
         ),
     )
     result_max_expected_profit = energy_system_max_expected_profit.optimize()
-    logger.info("optimal solution for max expected profit")
-    logger.info(result_max_expected_profit.markets.sell_volume)
 
     energy_system_penalized_cvar = EnergySystem(
         portfolio=portfolio,
@@ -195,7 +196,15 @@ if __name__ == "__main__":
             cvar=CVaRTerm(weight=1, confidence_level=0.6),
         ),
     )
-
     result_penalized_cvar = energy_system_penalized_cvar.optimize()
+
+    return result_max_expected_profit, result_penalized_cvar
+
+
+if __name__ == "__main__":
+    result_max_expected_profit, result_penalized_cvar = run_cvar_market_risk()
+    logger.info("optimal solution for max expected profit")
+    logger.info(result_max_expected_profit.markets.sell_volume)
+
     logger.info("optimal solution penalizing cvar")
     logger.info(result_penalized_cvar.markets.sell_volume)

@@ -51,7 +51,11 @@ docs:
     @echo "🚀 Serving docs"
     uv run --locked mkdocs serve
 
-docs-test:
+generate-plots:
+    @echo "🚀 Generating example plots"
+    uv run --locked python docs/generate_example_plots.py
+
+docs-test: generate-plots
     @echo "🚀 Testing docs build"
     uv run --locked mkdocs build --strict
 

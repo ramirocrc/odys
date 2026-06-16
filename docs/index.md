@@ -4,7 +4,7 @@
 [![Coverage](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
 [![Python versions](https://img.shields.io/pypi/pyversions/odys?color=green)](https://pypi.org/project/odys/)
 [![PyPI](https://img.shields.io/pypi/v/odys)](https://pypi.org/project/odys/)
-[![License](https://img.shields.io/github/license/ramirocrc/odys)](https://img.shields.io/github/license/ramirocrc/odys)
+[![License](https://img.shields.io/github/license/ramirocrc/odys)](https://github.com/ramirocrc/odys/blob/main/LICENSE)
 
 ---
 
@@ -13,6 +13,14 @@
 **Source Code**: [https://github.com/ramirocrc/odys/](https://github.com/ramirocrc/odys/)
 
 ---
+
+Odys helps you model and optimize multi-asset energy systems across multiple electricity markets.
+
+## Start here
+
+- Read the [User Guide](user_guide/energy_system.md) to learn the core workflow
+- Browse [Examples](examples/index.md) to see complete, runnable scenarios
+- Use the [API Reference](api/index.md) when you need implementation details
 
 ## Overview
 
@@ -42,6 +50,7 @@ The key features are:
     ```
 
 Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/).
+If you use a commercial solver, install the matching extra as well.
 
 ### Supported Solvers
 
@@ -52,11 +61,9 @@ Odys requires a recent and currently supported [version of Python](https://www.p
 | CPLEX  | `cplex`             | Commercial        |
 | SCIP   | `pyscipopt`         | Open-source (ZIB) |
 
-## Minimal Example
+## Quick example
 
-A generator and a storage working together to meet a fixed load over 4 hourly timesteps.
-
-### Create it
+This is the shortest path from model setup to solution.
 
 ```python
 from datetime import timedelta
@@ -97,35 +104,17 @@ energy_system = EnergySystem(
     timestep=timedelta(hours=1),
     number_of_steps=4,
 )
-```
-
-### Run it
-
-```python
 result = energy_system.optimize()
-```
 
-### Check it
-
-```python
-# Solver status
-print(result.solver_status)        # "ok"
-print(result.termination_condition) # "optimal"
-
-# Generator dispatch
+print(result.solver_status)
 print(result.generators.power)
-
-# Storage behavior
-print(result.storages.net_power)
-print(result.storages.state_of_charge)
-
-# Everything in one DataFrame
-print(result.to_dataframe)
 ```
+
+See the [Examples](examples/index.md) page for fuller scenarios.
 
 ## Dependencies
 
-Odys is built on top of these great projects:
+Odys depends on a small set of core libraries:
 
 - [Pydantic](https://docs.pydantic.dev/) - Data validation and settings management
 - [linopy](https://linopy.readthedocs.io/) - Linear optimization modeling
@@ -138,21 +127,3 @@ All dependencies are installed automatically when you install odys.
 ## License
 
 Odys is licensed under the [MIT License](https://github.com/ramirocrc/odys/blob/main/LICENSE).
-
-## Citation
-
-If you use odys for a scientific publication, we'd appreciate a citation.
-
-**BibTeX**:
-
-```bibtex
-@software{odys,
-  author  = {Criach, Ramiro},
-  title   = {odys},
-  version = {0.1.2},
-  month   = {12},
-  year    = {2024},
-  license = {MIT},
-  url     = {https://ramirocrc.github.io/odys/},
-}
-```

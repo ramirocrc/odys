@@ -20,25 +20,13 @@ class ProfitTerm(ObjectiveTerm):
 
 
 class CVaRTerm(ObjectiveTerm):
-    """Conditional Value at Risk penalty.
-
-    Args:
-        confidence_level: The alpha parameter (e.g. 0.95 means we care about the worst 5% of scenarios).
-        weight: How much to weight CVaR relative to expected profit.
-
-    """
+    """Conditional Value at Risk penalty."""
 
     confidence_level: float = Field(gt=0, lt=1)
 
 
 class Objective(BaseModel):
-    """Objective function configuration.
-
-    Args:
-        profit: Expected profit term (always active).
-        cvar: Optional CVaR risk penalty term.
-
-    """
+    """Objective function configuration."""
 
     profit: ProfitTerm
     cvar: CVaRTerm | None = None

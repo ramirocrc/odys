@@ -1,5 +1,7 @@
 """Tests for the SolverConfig class."""
 
+from typing import cast
+
 import pytest
 
 from odys.solvers.solver_config import SolverConfig, SolverName
@@ -26,4 +28,4 @@ def test_solver_name_enum() -> None:
 def test_solver_name_empty_raises() -> None:
     """Empty solver name raises a validation error."""
     with pytest.raises((ValueError, TypeError), match="solver_name"):
-        SolverConfig(solver_name="")  # type: ignore[arg-type]
+        SolverConfig(solver_name=cast("SolverName", ""))

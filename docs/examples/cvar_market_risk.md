@@ -139,6 +139,14 @@ This is the key modeling move. Profit alone rewards the best average outcome, bu
 
 ## Results
 
+The chart below compares the optimal allocation across scenarios for both the
+profit-only and CVaR-penalized runs. With profit alone, the optimizer sends
+capacity to the riskier sidc market. Adding CVaR shifts everything to sdac.
+
+```plotly
+{"file_path": "/assets/examples/cvar_market_risk.json"}
+```
+
 Profit-only result:
 
 ```text

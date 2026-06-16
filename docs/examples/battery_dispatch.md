@@ -64,11 +64,19 @@ At this point you want to look at the generator and battery outputs together. Th
 
 ## Results
 
+The chart below shows how storage changes the dispatch. The top panel tracks
+generator output, while the bottom panel shows the battery state of charge and
+net power flow.
+
+```plotly
+{"file_path": "/assets/examples/battery_dispatch.json"}
+```
+
 The output should show three distinct behaviors:
 
 - solar covers the load when it is sufficient
-- the battery charges when solar is above load
-- the battery discharges when solar falls below load
+- the battery charges (negative net power) when solar is above load
+- the battery discharges (positive net power) when solar falls below load
 
 Because the battery starts and ends empty, the optimizer cannot treat storage as a free source of energy. It has to choose when storing energy is worth the losses.
 

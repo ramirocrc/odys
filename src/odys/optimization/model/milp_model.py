@@ -5,6 +5,7 @@ with typed accessors for energy system decision variables.
 """
 
 from functools import cached_property
+from typing import cast
 
 import linopy
 from linopy import Model, Variable
@@ -178,4 +179,4 @@ class EnergyMILPModel:
             msg = "per_scenario_profit requires at least one revenue or cost source (markets or generators)"
             raise OdysValidationError(msg)
 
-        return sum(profit_terms)  # type: ignore[return-value]
+        return cast("linopy.LinearExpression", sum(profit_terms))

@@ -44,13 +44,15 @@ when should you simply buy?
 from datetime import timedelta
 
 from odys import AssetPortfolio, EnergyMarket, EnergySystem, Generator, Load, LoadType, Scenario, TradeDirection
+from odys.results.optimization_results import OptimalDisptachResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
 
 
-if __name__ == "__main__":
+def run_market_arbitrage() -> OptimalDisptachResults:
+    """Run the market arbitrage example and return the optimization results."""
     generator_1 = Generator(
         name="ccgt",
         nominal_power=100,
@@ -85,5 +87,9 @@ if __name__ == "__main__":
         scenarios=scenario,
     )
 
-    result = energy_system.optimize()
+    return energy_system.optimize()
+
+
+if __name__ == "__main__":
+    result = run_market_arbitrage()
     logger.info(result.generators.to_dataframe())

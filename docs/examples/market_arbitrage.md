@@ -58,6 +58,14 @@ Now the solver compares the cost of generating locally with the market price at 
 
 ## Results
 
+The chart below compares local generation against market purchases. The market
+price overlay (with a reference line at the CCGT marginal cost of 50 $/MWh)
+shows exactly when the optimizer switches between the two sources.
+
+```plotly
+{"file_path": "/assets/examples/market_arbitrage.json"}
+```
+
 The dispatch should flip around the 50 $/MWh threshold:
 
 - when the market is cheaper than gas, the optimizer buys

@@ -7,12 +7,14 @@ from linopy import Model
 
 from odys.optimization.constraints.model_constraint import ModelConstraint
 
+_constraint_registry: dict[Callable[..., ModelConstraint | list[ModelConstraint]], bool] = {}
+
 
 def constraint(
     fn: Callable[..., ModelConstraint | list[ModelConstraint]],
 ) -> Callable[..., ModelConstraint | list[ModelConstraint]]:
     """Mark a method as a constraint producer. Discovered automatically by ConstraintGroup."""
-    fn._is_model_constraint = True  # type: ignore[attr-defined]  # noqa: SLF001
+    _constraint_registry[fn] = True
     return fn
 
 
@@ -30,7 +32,7 @@ class ConstraintGroup:
         """Register @constraint-decorated methods defined on this subclass."""
         super().__init_subclass__(**kwargs)
         cls._constraint_methods = tuple(
-            name for name, attr in cls.__dict__.items() if getattr(attr, "_is_model_constraint", False)
+            name for name, attr in cls.__dict__.items() if _constraint_registry.get(attr, False)
         )
 
     def collect_constraints(self) -> list[ModelConstraint]:

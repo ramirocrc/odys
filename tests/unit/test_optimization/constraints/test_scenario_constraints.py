@@ -176,7 +176,7 @@ class TestScenarioConstraints:
             coords={
                 "scenario": ["deterministic_scenario"],
                 "generator": ["gen1", "gen2"],
-                "time": self.time_index,
+                "time": [str(t) for t in self.time_index],
             },
             dims=["scenario", "generator", "time"],
         )

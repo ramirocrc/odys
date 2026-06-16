@@ -31,7 +31,7 @@ classifiers = [
 
 dependencies = [
   "highspy>=1.14.0",
-  "linopy>=0.6.7",
+  "linopy>=0.7.0",
   "numpy>=2.4.1",
   "pandas>=2.3.3",
   "pydantic>=2.12.5",
@@ -54,7 +54,7 @@ dev = [
   "deptry>=0.24.0",
   "nox>=2025.5.12",
   "prek>=0.2.30",
-  "pyrefly>=0.49.0",
+  "pyrefly>=1.0.0",
   "pytest>=9.0.2",
   "pytest-cov>=7.0.0",
   "pytest-xdist>=3.8.0",
@@ -68,11 +68,12 @@ docs = [
   "mkdocs>=1.6.1",
   "mkdocs-exclude>=1.0.2",
   "mkdocs-material>=9.7.1",
+  "mkdocs-plotly-plugin>=0.1.3",
   "mkdocstrings-python>=2.0.1",
+  "plotly>=6.0.0",
 ]
 vulnerability-fixes = [
-  "cryptography>=46.0.5",
-  "pyasn1>=0.6.3",
+  "urllib3>=2.7.0",
 ]
 
 [build-system]
@@ -93,6 +94,7 @@ branch = true
 source = ["src"]
 
 [tool.deptry.per_rule_ignores]
+DEP002 = ["highspy", "cplex", "gurobipy", "pyscipopt"]
 DEP004 = ["rich"]
 
 [tool.pyrefly]
@@ -121,6 +123,15 @@ ignore = [
 ]
 "examples/**" = [
   "INP001",  # Checks for packages that are missing an __init__.py
+  "S101",  # Use of 'assert' detected
+  "D",  # Check for missing docstrings
+  "F811",  # Redefinition of unsuded variables
+]
+"docs/generate_example_plots.py" = [
+  "INP001",  # No __init__.py in docs/
+  "E402",  # sys.path manipulation before imports
+  "C408",  # plotly API uses dict() extensively
+  "T201",  # print() for CLI output is intentional
 ]
 "src/odys/results/dispatch.py" = [
   "TC002",  # pandas used at runtime for type-checking

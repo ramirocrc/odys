@@ -2,6 +2,8 @@
 
 A `Storage` models an energy storage system in your portfolio. The optimizer decides when to charge and discharge it to minimize costs (or maximize revenue).
 
+See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
+
 ## Basic usage
 
 ```python
@@ -30,8 +32,8 @@ storage = Storage(
 | `soc_end`                | `float` | No       | `None`  | Required final state of charge (0-1). If `None`, the optimizer is free to choose |
 | `soc_min`                | `float` | No       | `0.0`   | Minimum allowed state of charge (0-1)                                            |
 | `soc_max`                | `float` | No       | `1.0`   | Maximum allowed state of charge (0-1)                                            |
-| `degradation_cost`       | `float` | No       | `None`  | Cost per MWh cycled through the storage                                          |
-| `self_discharge_rate`    | `float` | No       | `None`  | Fraction of stored energy lost per hour (0-1)                                    |
+| `degradation_cost`       | `float` | No       | `None`  | Accepted by the model object, but not included in the current objective          |
+| `self_discharge_rate`    | `float` | No       | `None`  | Accepted by the model object, but not included in the current storage dynamics   |
 
 ## State of charge (SOC)
 
@@ -59,15 +61,63 @@ storage = Storage(
 
     `soc_start` and `soc_end` must fall within the `[soc_min, soc_max]` range. Pydantic validation will catch this if you get it wrong.
 
+The SOC evolution is:
+
+$$
+0 \le p^{ch}_{b,t}, \qquad 0 \le p^{dis}_{b,t}, \qquad 0 \le SOC_{b,t}, \qquad z_{b,t} \in \{0,1\}
+$$
+
+$$
+SOC_{b,t} = SOC_{b,t-1}
++ \eta^{ch}_b \frac{\Delta t}{E_b} p^{ch}_{b,t}
+- \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,t}
+$$
+
+for $t > 0$. At the first timestep, the implementation applies:
+
+$$
+SOC_{b,0} = SOC^{start}_b
++ \eta^{ch}_b \frac{\Delta t}{E_b} p^{ch}_{b,0}
+- \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,0}
+$$
+
+with bounds:
+
+$$
+SOC^{min}_b \le SOC_{b,t} \le SOC^{max}_b
+$$
+
+and:
+
+$$
+SOC_{b,t} \le 1
+$$
+
+Charge and discharge power are constrained by the charging mode:
+
+$$
+p^{ch}_{b,t} \le z_{b,t} P^{\max}_b
+$$
+
+$$
+p^{dis}_{b,t} + z_{b,t} P^{\max}_b \le P^{\max}_b
+$$
+
 ## Efficiency
 
 Charging and discharging efficiencies are applied separately. If you charge 10 MWh with 90% efficiency, 9 MWh actually goes into the storage. If you then discharge those 9 MWh at 85% efficiency, you get 7.65 MWh out.
 
 This means the round-trip efficiency is `efficiency_charging * efficiency_discharging`.
 
+In other words:
+
+$$
+\eta^{rt}_b = \eta^{ch}_b \eta^{dis}_b
+$$
+
 ## Degradation cost
 
-If you want the optimizer to account for storage wear, set a `degradation_cost`:
+`Storage` accepts a `degradation_cost` field, but the current optimization objective does not include a degradation-cost term.
 
 ```python
 storage = Storage(
@@ -81,8 +131,6 @@ storage = Storage(
 )
 ```
 
-This adds a cost penalty for each MWh that flows through the storage, discouraging unnecessary cycling.
-
 ## Results
 
 After optimization, access storage results through `result.storages`:
@@ -94,4 +142,10 @@ result.storages.net_power        # charge/discharge per timestep
 result.storages.state_of_charge  # SOC at each timestep
 ```
 
-Positive `net_power` means discharging, negative means charging.
+The implementation defines `net_power` as:
+
+$$
+p^{net}_{b,t} = p^{ch}_{b,t} - p^{dis}_{b,t}
+$$
+
+Positive `net_power` means charging, negative means discharging.

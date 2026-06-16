@@ -41,12 +41,15 @@ used at each step.
 from datetime import timedelta
 
 from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario
+from odys.results.optimization_results import OptimalDisptachResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
 
-if __name__ == "__main__":
+
+def run_basic_dispatch() -> OptimalDisptachResults:
+    """Run the basic dispatch example and return the optimization results."""
     ccgt = Generator(
         name="ccgt",
         nominal_power=100,
@@ -76,7 +79,11 @@ if __name__ == "__main__":
         scenarios=scenario,
     )
 
-    result = energy_system.optimize()
+    return energy_system.optimize()
+
+
+if __name__ == "__main__":
+    result = run_basic_dispatch()
     logger.info("Generators optimal dispatch")
     for gen_dispatch in result.generators:
         logger.info(gen_dispatch.to_dataframe())

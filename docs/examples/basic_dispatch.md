@@ -79,13 +79,18 @@ At this point the solver is doing the real work: it balances the load in every s
 
 ## Results
 
-The output shows the generator dispatch over time. The pattern should be easy to read:
+The chart below shows the generator dispatch over time. Solar PV is used first
+whenever available (zero marginal cost), and CCGT fills the remaining demand.
+
+```plotly
+{"file_path": "/assets/examples/basic_dispatch.json"}
+```
+
+If you print `result.generators.power`, the pattern should be easy to read:
 
 - solar is used first whenever it is available
 - gas fills the remaining demand
 - total supply always matches the fixed load
-
-If you print `result.generators.power`, you should see the gas turbine doing little work in the sunny periods and covering the full load when solar is unavailable.
 
 ## Discussion
 

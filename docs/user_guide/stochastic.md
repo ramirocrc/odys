@@ -2,9 +2,21 @@
 
 Real-world energy systems deal with uncertainty -- wind output varies, demand fluctuates, prices change. Stochastic optimization lets you make decisions that account for multiple possible futures simultaneously.
 
+See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
+
 ## The idea
 
-Instead of optimizing for a single forecast, you define multiple **scenarios**, each with a probability. The optimizer finds a dispatch plan that performs well across all scenarios, weighted by their likelihood.
+Instead of optimizing for a single forecast, you define multiple **scenarios**, each with a probability. The optimizer finds a dispatch plan that performs well across all scenarios, weighted by their likelihood:
+
+$$
+\sum_s \pi_s = 1
+$$
+
+The risk-neutral objective becomes an expected value over those scenarios:
+
+$$
+\max \sum_s \pi_s \Pi_s
+$$
 
 ## StochasticScenario
 
@@ -50,7 +62,7 @@ Each `StochasticScenario` has:
 
 !!! warning
 
-    Probabilities across all scenarios must sum to exactly 1.0. Scenario names must be unique. Odys validates both of these and raises a `ValueError` if they don't hold.
+    Probabilities across all scenarios must sum to exactly 1.0 and scenario names must be unique. Odys validates both.
 
 ## Using stochastic scenarios
 
@@ -95,6 +107,14 @@ Anything you don't include in a scenario stays unconstrained (e.g., if you don't
 ## Stage-fixed decisions
 
 When using stochastic optimization with markets, you can mark certain markets as `stage_fixed=True`. This means the optimizer must commit to the same trading volumes in that market across all scenarios -- modeling situations where you lock in a position before uncertainty resolves.
+
+Mathematically, each stage-fixed market variable is pinned to its first-scenario value:
+
+$$
+x_{m,t,s} = x_{m,t,s_0} \quad \forall s
+$$
+
+This is applied to market buy volume, sell volume, and trade mode.
 
 ```python
 from odys import EnergyMarket

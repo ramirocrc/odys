@@ -1,9 +1,26 @@
-from types import MappingProxyType
+from typing import Any, TypedDict, cast
 
 import pytest
 from pydantic import ValidationError
 
 from odys.domain.entities.generator import Generator
+
+
+class GeneratorBaseParams(TypedDict):
+    name: str
+    nominal_power: float
+    variable_cost: float
+
+
+class GeneratorParams(GeneratorBaseParams, total=False):
+    ramp_up: float | None
+    ramp_down: float | None
+    min_up_time: int
+    min_down_time: int
+    min_power: float
+    startup_cost: float
+    shutdown_cost: float | None
+
 
 NOMINAL_POWER = 100.0
 VARIABLE_COST = 50.0
@@ -17,12 +34,12 @@ SHUTDOWN_COST = 50.0
 
 
 @pytest.fixture
-def generator_base_params() -> MappingProxyType[str, float]:
-    return MappingProxyType({
+def generator_base_params() -> GeneratorBaseParams:
+    return {
         "name": "test_generator",
         "nominal_power": NOMINAL_POWER,
         "variable_cost": VARIABLE_COST,
-    })
+    }
 
 
 @pytest.mark.parametrize(
@@ -44,18 +61,27 @@ def test_generator_creation_with_invalid_parameter_raises_error(
     param_name: str,
     invalid_value: float,
     expected_match: str,
-    generator_base_params: MappingProxyType[str, float],
+    generator_base_params: GeneratorBaseParams,
 ) -> None:
-    base_params = dict(generator_base_params)
+    base_params: dict[str, Any] = {**generator_base_params}
     base_params[param_name] = invalid_value
     with pytest.raises(ValidationError, match=expected_match):
-        Generator(**base_params)
+        Generator(**cast("GeneratorParams", base_params))
 
 
-def test_generator_creation_with_minimal_required_fields(
-    generator_base_params: MappingProxyType[str, float],
-) -> None:
-    base_params = dict(generator_base_params)
+def test_generator_creation_with_minimal_required_fields() -> None:
+    base_params: GeneratorParams = {
+        "name": "test_generator",
+        "nominal_power": NOMINAL_POWER,
+        "variable_cost": VARIABLE_COST,
+        "ramp_up": None,
+        "ramp_down": None,
+        "min_up_time": 1,
+        "min_down_time": 1,
+        "min_power": 0.0,
+        "startup_cost": 0.0,
+        "shutdown_cost": None,
+    }
     gen = Generator(**base_params)
     assert gen.name == "test_generator"
     assert gen.nominal_power == NOMINAL_POWER
@@ -92,26 +118,57 @@ def test_generator_creation_with_all_optional_fields() -> None:
 
 
 def test_generator_ramp_up_can_be_zero(
-    generator_base_params: MappingProxyType[str, float],
+    generator_base_params: GeneratorBaseParams,
 ) -> None:
-    base_params = dict(generator_base_params)
-    base_params["ramp_up"] = 0.0
+    base_params: GeneratorParams = {
+        "name": generator_base_params["name"],
+        "nominal_power": generator_base_params["nominal_power"],
+        "variable_cost": generator_base_params["variable_cost"],
+        "ramp_up": 0.0,
+        "ramp_down": None,
+        "min_up_time": 1,
+        "min_down_time": 1,
+        "min_power": 0.0,
+        "startup_cost": 0.0,
+        "shutdown_cost": None,
+    }
     gen = Generator(**base_params)
     assert gen.ramp_up == 0.0
 
 
 def test_generator_ramp_down_can_be_zero(
-    generator_base_params: MappingProxyType[str, float],
+    generator_base_params: GeneratorBaseParams,
 ) -> None:
-    base_params = dict(generator_base_params)
-    base_params["ramp_down"] = 0.0
+    base_params: GeneratorParams = {
+        "name": generator_base_params["name"],
+        "nominal_power": generator_base_params["nominal_power"],
+        "variable_cost": generator_base_params["variable_cost"],
+        "ramp_up": None,
+        "ramp_down": 0.0,
+        "min_up_time": 1,
+        "min_down_time": 1,
+        "min_power": 0.0,
+        "startup_cost": 0.0,
+        "shutdown_cost": None,
+    }
     gen = Generator(**base_params)
     assert gen.ramp_down == 0.0
 
 
 def test_generator_min_power_defaults_to_zero(
-    generator_base_params: MappingProxyType[str, float],
+    generator_base_params: GeneratorBaseParams,
 ) -> None:
-    base_params = dict(generator_base_params)
+    base_params: GeneratorParams = {
+        "name": generator_base_params["name"],
+        "nominal_power": generator_base_params["nominal_power"],
+        "variable_cost": generator_base_params["variable_cost"],
+        "ramp_up": None,
+        "ramp_down": None,
+        "min_up_time": 1,
+        "min_down_time": 1,
+        "min_power": 0.0,
+        "startup_cost": 0.0,
+        "shutdown_cost": None,
+    }
     gen = Generator(**base_params)
     assert gen.min_power == 0.0
