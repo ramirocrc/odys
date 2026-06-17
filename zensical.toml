@@ -1,0 +1,238 @@
+[project]
+site_name = "Odys"
+site_url = "https://ramirocrc.github.io/odys"
+site_description = "Python framework for optimizing multi-energy systems"
+site_author = "Ramiro Criach"
+copyright = 'Maintained by <a href="https://ramirocrc.com">ramirocrc</a>.'
+repo_url = "https://github.com/ramirocrc/odys"
+repo_name = "ramirocrc/odys"
+edit_uri = "edit/main/docs/"
+extra_javascript = [
+  "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+]
+extra_css = ["assets/stylesheets/extra.css"]
+
+[project.theme]
+font = { text = "Roboto", code = "Roboto Mono" }
+features = [
+  "announce.dismiss",
+  "content.action.edit",
+  "content.action.view",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.code.select",
+  "content.footnote.tooltips",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.top",
+  "search.highlight",
+]
+
+# Palette toggle for automatic mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+primary = "indigo"
+accent = "indigo"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+# Palette toggle for light mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "indigo"
+accent = "indigo"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+# Palette toggle for dark mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "indigo"
+accent = "orange"
+toggle.icon = "lucide/moon-star"
+toggle.name = "Switch to system preference"
+
+[project.plugins.tags]
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src/odys"]
+
+nav = [
+  { "Home" = "index.md" },
+  { "User Guide" = [
+    { "Mathematical notation" = "user_guide/mathematical_notation.md" },
+    { "Models" = [
+      { "Generator" = "user_guide/generator.md" },
+      { "Storage" = "user_guide/storage.md" },
+      { "Load" = "user_guide/load.md" },
+      { "Market" = "user_guide/market.md" },
+      { "AssetPortfolio" = "user_guide/asset_portfolio.md" },
+      { "Scenario" = "user_guide/scenario.md" },
+      { "StochasticScenario" = "user_guide/stochastic_scenario.md" },
+      { "EnergySystem" = "user_guide/energy_system.md" },
+    ] },
+    { "Optimization" = "user_guide/optimization.md" },
+    { "Stochastic Optimization" = "user_guide/stochastic.md" },
+    { "Multi-stage Optimization" = "user_guide/multi_stage.md" },
+  ] },
+  { "Examples" = [
+    { "Overview" = "examples/index.md" },
+    { "Basic Dispatch" = "examples/basic_dispatch.md" },
+    { "Battery Dispatch" = "examples/battery_dispatch.md" },
+    { "Market Arbitrage" = "examples/market_arbitrage.md" },
+    { "CVaR Market Risk" = "examples/cvar_market_risk.md" },
+  ] },
+  { "API Reference" = [
+    { "Overview" = "api/index.md" },
+    { "odys" = "api/odys.md" },
+    { "energy_system" = "api/energy_system.md" },
+    { "domain" = [
+      { "Overview" = "api/domain/index.md" },
+      { "entities" = [
+        { "Overview" = "api/domain/entities/index.md" },
+        { "base" = "api/domain/entities/base.md" },
+        { "generator" = "api/domain/entities/generator.md" },
+        { "load" = "api/domain/entities/load.md" },
+        { "market" = "api/domain/entities/market.md" },
+        { "portfolio" = "api/domain/entities/portfolio.md" },
+        { "storage" = "api/domain/entities/storage.md" },
+      ] },
+      { "exceptions" = "api/domain/exceptions.md" },
+      { "objective" = "api/domain/objective.md" },
+      { "scenarios" = "api/domain/scenarios.md" },
+      { "validation" = "api/domain/validation.md" },
+    ] },
+    { "results" = [
+      { "Overview" = "api/results/index.md" },
+      { "dispatch" = "api/results/dispatch.md" },
+      { "optimization_results" = "api/results/optimization_results.md" },
+    ] },
+    { "optimization" = [
+      { "Overview" = "api/optimization/index.md" },
+      { "constraints" = [
+        { "Overview" = "api/optimization/constraints/index.md" },
+        { "constraints_group" = "api/optimization/constraints/constraints_group.md" },
+        { "cvar_constraints" = "api/optimization/constraints/cvar_constraints.md" },
+        { "generator_constraints" = "api/optimization/constraints/generator_constraints.md" },
+        { "market_constraints" = "api/optimization/constraints/market_constraints.md" },
+        { "model_constraint" = "api/optimization/constraints/model_constraint.md" },
+        { "scenario_constraints" = "api/optimization/constraints/scenario_constraints.md" },
+        { "storage_constraints" = "api/optimization/constraints/storage_constraints.md" },
+      ] },
+      { "model" = [
+        { "Overview" = "api/optimization/model/index.md" },
+        { "linopy_converter" = "api/optimization/model/linopy_converter.md" },
+        { "milp_model" = "api/optimization/model/milp_model.md" },
+        { "model_builder" = "api/optimization/model/model_builder.md" },
+        { "objectives" = "api/optimization/model/objectives.md" },
+        { "registry" = "api/optimization/model/registry.md" },
+        { "sets" = "api/optimization/model/sets.md" },
+        { "variables" = "api/optimization/model/variables.md" },
+      ] },
+      { "parameters" = [
+        { "Overview" = "api/optimization/parameters/index.md" },
+        { "generator_parameters" = "api/optimization/parameters/generator_parameters.md" },
+        { "load_parameters" = "api/optimization/parameters/load_parameters.md" },
+        { "market_parameters" = "api/optimization/parameters/market_parameters.md" },
+        { "parameters" = "api/optimization/parameters/parameters.md" },
+        { "scenario_parameters" = "api/optimization/parameters/scenario_parameters.md" },
+        { "storage_parameters" = "api/optimization/parameters/storage_parameters.md" },
+      ] },
+    ] },
+    { "solvers" = [
+      { "Overview" = "api/solvers/index.md" },
+      { "config_translators" = "api/solvers/config_translators.md" },
+      { "solver" = "api/solvers/solver.md" },
+      { "solver_config" = "api/solvers/solver_config.md" },
+    ] },
+    { "utils" = [
+      { "Overview" = "api/utils/index.md" },
+      { "logging" = "api/utils/logging.md" },
+    ] },
+  ] },
+]
+
+[project.extra]
+homepage = "https://ramirocrc.github.io/odys"
+
+[project.extra.status]
+new = "Recently added"
+deprecated = "Deprecated"
+
+[project.extra.tags]
+default = "default"
+
+[project.theme.icon]
+tag = { default = "lucide/hash" }
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/ramirocrc/odys"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/python"
+link = "https://pypi.org/project/odys"
+
+[project.markdown_extensions.tables]
+
+[project.markdown_extensions.toc]
+permalink = true
+title = "Page contents"
+
+[project.markdown_extensions.admonition]
+
+[project.markdown_extensions.pymdownx.arithmatex]
+generic = true
+
+[project.markdown_extensions.pymdownx.details]
+
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  { name = "plotly", class = "mkdocs-plotly", format = "pymdownx.superfences.fence_code_format" },
+]
+
+[project.markdown_extensions.pymdownx.highlight]
+pygments_lang_class = true
+
+[project.markdown_extensions.pymdownx.magiclink]
+normalize_issue_symbols = true
+repo_url_shorthand = true
+user = "ramirocrc"
+repo = "odys"
+
+[project.markdown_extensions.pymdownx.betterem]
+smart_enable = "all"
+
+[project.markdown_extensions.pymdownx.caret]
+
+[project.markdown_extensions.pymdownx.inlinehilite]
+
+[project.markdown_extensions.pymdownx.keys]
+
+[project.markdown_extensions.pymdownx.mark]
+
+[project.markdown_extensions.pymdownx.smartsymbols]
+
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+
+[project.markdown_extensions.pymdownx.tilde]
+
+[project.markdown_extensions.attr_list]
+
+[project.markdown_extensions.zensical.extensions.glightbox]
+auto_themed = true
+
+[project.markdown_extensions.pymdownx.emoji]
+emoji_index = "zensical.extensions.emoji.twemoji"
+emoji_generator = "zensical.extensions.emoji.to_svg"
+
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true

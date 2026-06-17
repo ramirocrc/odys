@@ -49,7 +49,7 @@ build-and-publish: build publish
 
 docs:
     @echo "🚀 Serving docs"
-    uv run --locked mkdocs serve
+    uv run --locked zensical serve
 
 generate-plots:
     @echo "🚀 Generating example plots"
@@ -57,11 +57,11 @@ generate-plots:
 
 docs-test: generate-plots
     @echo "🚀 Testing docs build"
-    uv run --locked mkdocs build --strict
+    uv run --locked zensical build --strict
 
 docs-deploy:
     @echo "🚀 Deploying docs"
-    uv run --locked mkdocs gh-deploy --force
+    uv run --locked zensical gh-deploy --force
 
 examples:
     @echo "🚀 Running all examples"
