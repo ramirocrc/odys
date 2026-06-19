@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/chart-line
+---
+
 # `odys.optimization.constraints.market_constraints`
 
 Market constraint construction.

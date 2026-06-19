@@ -1,3 +1,7 @@
+---
+icon: lucide/flask-conical
+---
+
 # Examples
 
 These examples walk through common Odys use cases, from a basic dispatch

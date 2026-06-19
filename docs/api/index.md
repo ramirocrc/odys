@@ -1,3 +1,7 @@
+---
+icon: lucide/code
+---
+
 # API Reference
 
 Use this section to find the public import surface first, then drill into internals only when you need implementation details.

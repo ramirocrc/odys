@@ -1,3 +1,7 @@
+---
+icon: lucide/box
+---
+
 # `odys.domain`
 
 Public domain models and validation helpers.

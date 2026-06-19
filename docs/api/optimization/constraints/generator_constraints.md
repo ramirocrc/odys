@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/bolt
+---
+
 # `odys.optimization.constraints.generator_constraints`
 
 Generator constraint construction.

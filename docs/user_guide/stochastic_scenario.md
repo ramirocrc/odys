@@ -1,3 +1,7 @@
+---
+icon: lucide/shuffle
+---
+
 # StochasticScenario
 
 A `StochasticScenario` extends [Scenario](scenario.md) with a name and a probability, letting you model multiple possible futures. The optimizer finds a dispatch plan that performs well across all scenarios, weighted by how likely each one is.

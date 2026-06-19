@@ -1,3 +1,7 @@
+---
+icon: lucide/wrench
+---
+
 # `odys.utils`
 
 Utility helpers.

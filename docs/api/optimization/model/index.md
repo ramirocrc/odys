@@ -1,3 +1,7 @@
+---
+icon: lucide/git-compare-arrows
+---
+
 # `odys.optimization.model`
 
 Model building and Linopy integration.

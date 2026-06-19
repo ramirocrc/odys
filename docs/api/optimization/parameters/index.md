@@ -1,3 +1,7 @@
+---
+icon: lucide/sliders
+---
+
 # `odys.optimization.parameters`
 
 Model parameter builders.

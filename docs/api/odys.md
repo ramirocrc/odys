@@ -1,3 +1,7 @@
+---
+icon: lucide/package
+---
+
 # `odys`
 
 Top-level public package exports.

@@ -1,3 +1,7 @@
+---
+icon: lucide/trending-up
+---
+
 # Stochastic Optimization
 
 Real-world energy systems deal with uncertainty -- wind output varies, demand fluctuates, prices change. Stochastic optimization lets you make decisions that account for multiple possible futures simultaneously.

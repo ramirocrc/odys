@@ -1,3 +1,7 @@
+---
+icon: lucide/arrow-up-circle
+---
+
 # `odys.optimization.constraints`
 
 MILP constraint builders.

@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/battery-three-quarters
+---
+
 # Battery Dispatch
 
 ## Problem Description
@@ -7,6 +11,19 @@ This example extends the basic dispatch problem by adding a battery. The questio
 The system still has a fixed 70 MW load over 9 half-hour periods, a free solar plant, and a gas turbine with a marginal cost of 50 $/MWh. The new element is a battery with limited energy capacity, limited power, and no initial or final energy target other than starting and ending empty.
 
 That changes the problem in an important way: solar does not have to be used immediately. If there is excess solar in one step, the optimizer can store it and use it later when solar output falls.
+
+```mermaid
+flowchart LR
+    Solar(["☀️ Solar PV<br/>150 MW · 0 \$/MWh"]) --> Bus(["⚡ Bus"])
+    CCGT(["🔥 CCGT<br/>100 MW · 50 \$/MWh"]) --> Bus
+    Battery(["🔋 Battery<br/>100 MWh · 200 MW"]) <--> Bus
+    Bus --> Load(["🏭 Load<br/>70 MW"])
+    style Solar fill:none
+    style CCGT fill:none
+    style Battery fill:none
+    style Bus fill:none
+    style Load fill:none
+```
 
 **Source**: [`examples/battery_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/battery_dispatch.py)
 
@@ -68,9 +85,7 @@ The chart below shows how storage changes the dispatch. The top panel tracks
 generator output, while the bottom panel shows the battery state of charge and
 net power flow.
 
-```plotly
-{"file_path": "/assets/examples/battery_dispatch.json"}
-```
+<iframe src="/assets/examples/battery_dispatch.html" style="width:100%; height:1000px; border:none;" loading="lazy"></iframe>
 
 The output should show three distinct behaviors:
 

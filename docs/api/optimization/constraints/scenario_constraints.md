@@ -1,3 +1,7 @@
+---
+icon: lucide/file-text
+---
+
 # `odys.optimization.constraints.scenario_constraints`
 
 Scenario-level constraint construction.

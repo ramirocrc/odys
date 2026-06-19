@@ -1,3 +1,7 @@
+---
+icon: lucide/target
+---
+
 # `odys.optimization.model.objectives`
 
 Objective model construction.

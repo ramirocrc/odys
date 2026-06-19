@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/chart-line
+---
+
 # Market Arbitrage
 
 ## Problem Description
@@ -7,6 +11,17 @@ This example adds a market to the dispatch problem. The optimizer now has two wa
 The load is fixed at 70 MW over 9 half-hour periods. The gas turbine has a marginal cost of 50 $/MWh, while the market price changes from step to step. Since the market is buy-only, the optimizer is deciding when to procure from the market and when local generation is cheaper.
 
 This is useful because it introduces an external price signal. Instead of only comparing assets against one another, the model is comparing local production against a live market alternative.
+
+```mermaid
+flowchart LR
+    CCGT(["🔥 CCGT<br/>100 MW · 50 \$/MWh"]) --> Bus(["⚡ Bus"])
+    Market(["📈 Market<br/>BUY_ONLY<br/>100 MW limit"]) --> Bus
+    Bus --> Load(["🏭 Load<br/>70 MW"])
+    style CCGT fill:none
+    style Market fill:none
+    style Bus fill:none
+    style Load fill:none
+```
 
 **Source**: [`examples/market_arbitrage.py`](https://github.com/ramirocrc/odys/blob/main/examples/market_arbitrage.py)
 
@@ -62,9 +77,7 @@ The chart below compares local generation against market purchases. The market
 price overlay (with a reference line at the CCGT marginal cost of 50 $/MWh)
 shows exactly when the optimizer switches between the two sources.
 
-```plotly
-{"file_path": "/assets/examples/market_arbitrage.json"}
-```
+<iframe src="/assets/examples/market_arbitrage.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 The dispatch should flip around the 50 $/MWh threshold:
 

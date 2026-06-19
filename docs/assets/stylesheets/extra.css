@@ -1,0 +1,86 @@
+[data-md-component="announce"] {
+  background: linear-gradient(90deg, #da814a, #f5a623);
+  transition: all 250ms;
+}
+
+[data-md-component="announce"]:hover {
+  opacity: 0.8;
+}
+
+[data-md-component="announce"] a {
+  color: #ffffff !important;
+  text-decoration: none;
+}
+
+.mdx-hero {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.mdx-hero h1 {
+  margin: 0 0 0.5rem;
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.mdx-hero__lead {
+  font-size: 1.2rem;
+  color: var(--md-default-fg-color--light);
+  max-width: 36rem;
+  margin: 0 auto 1.5rem;
+  line-height: 1.6;
+}
+
+.mdx-hero__badges {
+  margin-bottom: 1.5rem;
+}
+
+.mdx-hero__badges a {
+  display: inline-block;
+  margin: 0 0.2rem;
+}
+
+.mdx-hero__buttons {
+  margin-bottom: 1rem;
+}
+
+.mdx-hero__buttons .md-button {
+  margin: 0.25rem;
+}
+
+.mdx-features.grid.cards > ul,
+.mdx-features.grid.cards > ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.8rem;
+}
+
+.mdx-features.grid.cards > ul > li,
+.mdx-features.grid.cards > ol > li {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.2rem;
+  padding: 1rem;
+  transition: border-color 250ms;
+}
+
+.mdx-features.grid.cards > ul > li:hover,
+.mdx-features.grid.cards > ol > li:hover {
+  border-color: var(--md-primary-fg-color);
+}
+
+.mdx-features.grid.cards > ul > li p,
+.mdx-features.grid.cards > ol > li p {
+  margin: 0;
+}
+
+.mermaid {
+  display: flex;
+  justify-content: center;
+}
+
+@media screen and (max-width: 29.9844em) {
+  .mdx-hero h1 {
+    font-size: 2rem;
+  }
+}

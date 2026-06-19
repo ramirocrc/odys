@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/shield
+---
+
 # CVaR Market Risk
 
 ## Problem Description
@@ -11,6 +15,17 @@ Because this decision has to be made now, we set `stage_fixed=True` for `sdac`. 
 We consider three equally likely scenarios. To keep the example simple, we assume the turbine availability and the day-ahead price are known, and we only make the intraday market price uncertain. In a more realistic model, availability and day-ahead prices could also vary across scenarios.
 
 The example is built as a single 24-hour timestep because the main decision is one commitment: how much capacity should go to `sdac` before the uncertainty is resolved?
+
+```mermaid
+flowchart TD
+    Now(["📋 Choose sdac volume<br/>(fixed across scenarios)"]) --> High(["🟢 High P(sidc) = 500 \$/MWh"])
+    Now --> Mid(["🟡 Mid P(sidc) = 200 \$/MWh"])
+    Now --> Low(["🔴 Low P(sidc) = 15 \$/MWh"])
+    style Now fill:none
+    style High fill:none
+    style Mid fill:none
+    style Low fill:none
+```
 
 **Source**: [`examples/cvar_market_risk.py`](https://github.com/ramirocrc/odys/blob/main/examples/cvar_market_risk.py)
 
@@ -143,9 +158,7 @@ The chart below compares the optimal allocation across scenarios for both the
 profit-only and CVaR-penalized runs. With profit alone, the optimizer sends
 capacity to the riskier sidc market. Adding CVaR shifts everything to sdac.
 
-```plotly
-{"file_path": "/assets/examples/cvar_market_risk.json"}
-```
+<iframe src="/assets/examples/cvar_market_risk.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 Profit-only result:
 

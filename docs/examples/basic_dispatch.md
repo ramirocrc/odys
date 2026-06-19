@@ -1,3 +1,7 @@
+---
+icon: lucide/play
+---
+
 # Basic Dispatch
 
 ## Problem Description
@@ -7,6 +11,18 @@ This example asks a simple but important question: if a load must be met at ever
 The setup is intentionally small. We have a fixed 70 MW load over 9 half-hour periods, a free solar plant with time-varying availability, and a gas turbine with a marginal cost of 50 $/MWh. The optimizer should use solar whenever it is available and only call on gas when solar is not enough.
 
 That makes this a good first example because it shows the core Odys workflow without adding storage or markets.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
+flowchart LR
+    Solar(["☀️ Solar PV<br/>150 MW · 0 \$/MWh"]) --> Bus(["⚡ Bus"])
+    CCGT(["🔥 CCGT<br/>100 MW · 50 \$/MWh"]) --> Bus
+    Bus --> Load(["🏭 Load<br/>70 MW"])
+    style Solar fill:none
+    style CCGT fill:none
+    style Bus fill:none
+    style Load fill:none
+```
 
 **Source**: [`examples/basic_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/basic_dispatch.py)
 
@@ -82,9 +98,7 @@ At this point the solver is doing the real work: it balances the load in every s
 The chart below shows the generator dispatch over time. Solar PV is used first
 whenever available (zero marginal cost), and CCGT fills the remaining demand.
 
-```plotly
-{"file_path": "/assets/examples/basic_dispatch.json"}
-```
+<iframe src="/assets/examples/basic_dispatch.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 If you print `result.generators.power`, the pattern should be easy to read:
 

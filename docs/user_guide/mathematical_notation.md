@@ -1,3 +1,7 @@
+---
+icon: lucide/sigma
+---
+
 # Mathematical notation
 
 This page collects the mathematical symbols used across the User Guide. The notation is aligned with the current optimization model implementation.

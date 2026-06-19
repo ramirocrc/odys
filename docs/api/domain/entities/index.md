@@ -1,3 +1,7 @@
+---
+icon: lucide/box
+---
+
 # `odys.domain.entities`
 
 Domain entity models.

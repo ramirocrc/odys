@@ -1,3 +1,7 @@
+---
+icon: lucide/cpu
+---
+
 # `odys.solvers`
 
 Solver configuration and dispatch.

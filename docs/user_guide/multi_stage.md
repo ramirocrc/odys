@@ -1,3 +1,7 @@
+---
+icon: lucide/git-branch
+---
+
 # Multi-stage Optimization
 
 !!! note "Coming soon"

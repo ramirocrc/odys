@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/battery-three-quarters
+---
+
 # Storage
 
 A `Storage` models an energy storage system in your portfolio. The optimizer decides when to charge and discharge it to minimize costs (or maximize revenue).

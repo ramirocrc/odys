@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/battery-three-quarters
+---
+
 # `odys.optimization.constraints.storage_constraints`
 
 Storage constraint construction.

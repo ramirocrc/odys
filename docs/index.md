@@ -1,37 +1,54 @@
-# Odys
-
-[![CI](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
-[![Python versions](https://img.shields.io/pypi/pyversions/odys?color=green)](https://pypi.org/project/odys/)
-[![PyPI](https://img.shields.io/pypi/v/odys)](https://pypi.org/project/odys/)
-[![License](https://img.shields.io/github/license/ramirocrc/odys)](https://github.com/ramirocrc/odys/blob/main/LICENSE)
-
+---
+icon: lucide/home
 ---
 
-**Documentation**: [https://ramirocrc.github.io/odys/](https://ramirocrc.github.io/odys/)
+<div class="mdx-hero">
+  <h1>Odys</h1>
+  <p class="mdx-hero__lead">
+    Python framework for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization.
+  </p>
+  <div class="mdx-hero__badges">
+    <a href="https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain">
+      <img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main">
+    </a>
+    <a href="https://codecov.io/gh/ramirocrc/odys">
+      <img alt="Coverage" src="https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg">
+    </a>
+    <a href="https://pypi.org/project/odys/">
+      <img alt="Python versions" src="https://img.shields.io/pypi/pyversions/odys?color=green">
+    </a>
+    <a href="https://pypi.org/project/odys/">
+      <img alt="PyPI" src="https://img.shields.io/pypi/v/odys">
+    </a>
+    <a href="https://github.com/ramirocrc/odys/blob/main/LICENSE">
+      <img alt="License" src="https://img.shields.io/github/license/ramirocrc/odys">
+    </a>
+  </div>
+  <div class="mdx-hero__buttons">
+    <a href="user_guide/energy_system.md" class="md-button md-button--primary">Get started</a>
+    <a href="https://github.com/ramirocrc/odys" class="md-button">View on GitHub</a>
+  </div>
+</div>
 
-**Source Code**: [https://github.com/ramirocrc/odys/](https://github.com/ramirocrc/odys/)
+<div class="mdx-features grid cards" markdown>
 
----
+-   :material-lightning-bolt: __Simple API__
 
-Odys helps you model and optimize multi-asset energy systems across multiple electricity markets.
+    Define your assets (generator, storage, load) and call `.optimize()`. The mathematical model is built and solved for you under the hood.
 
-## Start here
+-   :material-chart-bar: __Stochastic Optimization__
 
-- Read the [User Guide](user_guide/energy_system.md) to learn the core workflow
-- Browse [Examples](examples/index.md) to see complete, runnable scenarios
-- Use the [API Reference](api/index.md) when you need implementation details
+    Optimize across multiple probabilistic scenarios with different prices, capacities, and load profiles to make decisions under uncertainty.
 
-## Overview
+-   :material-shield-check: __Pydantic-powered validation__
 
-Odys is a Python package for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization.
+    All models use Pydantic with strict typing and validators — configuration errors get caught early.
 
-The key features are:
+-   :material-cube-outline: __Multi-solver support__
 
-- **Simple API** - Define your energy system (generators, storages, loads, markets) and call `.optimize()`. The mathematical model is built and solved for you under the hood.
-- **Pydantic-powered validation** - All models use Pydantic with strict typing and validators, so configuration errors get caught early.
-- **Stochastic optimization** - Optimize across multiple probabilistic scenarios with different prices, capacities, and load profiles to make decisions under uncertainty.
-- **Great editor support** - Full autocompletion and type checking everywhere, so you spend less time debugging.
+    Swap between HiGHS (default), Gurobi, CPLEX, or SCIP with a single configuration change.
+
+</div>
 
 ## Installation
 
@@ -49,8 +66,7 @@ The key features are:
     uv add odys[gurobi]   # or cplex, scip
     ```
 
-Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/).
-If you use a commercial solver, install the matching extra as well.
+Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/). If you use a commercial solver, install the matching extra as well.
 
 ### Supported Solvers
 
@@ -70,7 +86,6 @@ from datetime import timedelta
 
 from odys import AssetPortfolio, EnergySystem, Generator, Load, Scenario, Storage
 
-# Define assets
 generator = Generator(
     name="gen",
     nominal_power=100.0,
@@ -89,13 +104,11 @@ storage = Storage(
 
 load = Load(name="demand")
 
-# Build the portfolio
 portfolio = AssetPortfolio()
 portfolio.add_asset(generator)
 portfolio.add_asset(storage)
 portfolio.add_asset(load)
 
-# Set up the energy system
 energy_system = EnergySystem(
     portfolio=portfolio,
     scenarios=Scenario(
@@ -116,11 +129,11 @@ See the [Examples](examples/index.md) page for fuller scenarios.
 
 Odys depends on a small set of core libraries:
 
-- [Pydantic](https://docs.pydantic.dev/) - Data validation and settings management
-- [linopy](https://linopy.readthedocs.io/) - Linear optimization modeling
-- [HiGHS](https://ergo-code.github.io/HiGHS/) - High-performance optimization solver (optional: Gurobi, CPLEX, SCIP available via extras)
-- [pandas](https://pandas.pydata.org/) - Data analysis and manipulation
-- [xarray](https://docs.xarray.dev/) - Multi-dimensional arrays
+- [Pydantic](https://docs.pydantic.dev/) — Data validation and settings management
+- [linopy](https://linopy.readthedocs.io/) — Linear optimization modeling
+- [HiGHS](https://ergo-code.github.io/HiGHS/) — High-performance optimization solver
+- [pandas](https://pandas.pydata.org/) — Data analysis and manipulation
+- [xarray](https://docs.xarray.dev/) — Multi-dimensional arrays
 
 All dependencies are installed automatically when you install odys.
 

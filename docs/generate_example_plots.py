@@ -4,8 +4,8 @@ Usage:
     uv run --locked python docs/generate_example_plots.py
 
 Output:
-    Writes Plotly JSON files to docs/assets/examples/
-    for embedding in mkdocs via mkdocs-plotly-plugin.
+    Writes standalone Plotly HTML files to docs/assets/examples/
+    for embedding in zensical via <iframe>.
 """
 
 import sys
@@ -39,9 +39,9 @@ SIDC_COLOR = "#E67E22"
 
 
 def _save_figure(fig: go.Figure, name: str) -> None:
-    path = OUTPUT_DIR / f"{name}.json"
+    path = OUTPUT_DIR / f"{name}.html"
     fig.update_layout(template=None)
-    path.write_text(fig.to_json())
+    fig.write_html(path, include_plotlyjs="cdn")
     print(f"  \u2713 {path.name}")
 
 

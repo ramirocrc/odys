@@ -1,3 +1,7 @@
+---
+icon: lucide/target
+---
+
 # `odys.domain.objective`
 
 Objective configuration for energy system optimization.

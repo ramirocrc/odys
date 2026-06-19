@@ -1,3 +1,7 @@
+---
+icon: lucide/file-text
+---
+
 # Scenario
 
 A `Scenario` defines the operating conditions for your energy system -- load demand, generator availability, and market prices over time. It's the bridge between your asset definitions and the actual timeseries data the optimizer works with.

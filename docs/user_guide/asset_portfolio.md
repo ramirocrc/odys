@@ -1,3 +1,7 @@
+---
+icon: lucide/briefcase
+---
+
 # AssetPortfolio
 
 An `AssetPortfolio` is the container that holds all your energy assets. You add generators, storages, and loads to it, then pass it to the `EnergySystem`.

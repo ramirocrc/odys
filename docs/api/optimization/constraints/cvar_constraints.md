@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/shield
+---
+
 # `odys.optimization.constraints.cvar_constraints`
 
 CVaR shortfall constraint construction.

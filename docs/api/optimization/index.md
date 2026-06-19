@@ -1,3 +1,7 @@
+---
+icon: lucide/settings-2
+---
+
 # `odys.optimization`
 
 Optimization internals for model construction and solving.

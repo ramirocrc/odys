@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/chart-line
+---
+
 # Market
 
 An `EnergyMarket` represents an electricity market where your portfolio can buy and/or sell energy. This is how you model revenue from selling excess generation or purchasing power when it's cheaper than running your own assets.

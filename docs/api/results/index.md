@@ -1,3 +1,7 @@
+---
+icon: lucide/bar-chart
+---
+
 # `odys.results`
 
 Result containers produced by optimization runs.

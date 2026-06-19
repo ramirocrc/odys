@@ -1,3 +1,7 @@
+---
+icon: lucide/arrow-up-down
+---
+
 # Optimization
 
 This page explains what happens when you call `energy_system.optimize()` -- the objective function, the constraints, and how to read the results.

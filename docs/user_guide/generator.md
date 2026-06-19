@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/bolt
+---
+
 # Generator
 
 A `Generator` represents any dispatchable power source in your energy system -- think gas turbines, diesel generators, or even a simplified solar/wind unit with a fixed capacity.

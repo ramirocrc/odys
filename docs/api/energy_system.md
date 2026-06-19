@@ -1,3 +1,7 @@
+---
+icon: lucide/zap
+---
+
 # `odys.energy_system`
 
 Main entry point for configuring and optimizing an energy system.

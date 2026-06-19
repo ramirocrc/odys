@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/plug
+---
+
 # Load
 
 A `Load` represents a demand that the energy system needs to satisfy. Loads come in two flavors: **fixed** and **flexible**.

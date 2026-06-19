@@ -1,3 +1,7 @@
+---
+icon: lucide/zap
+---
+
 # EnergySystem
 
 `EnergySystem` is the main entry point for setting up and running an optimization. You give it a portfolio of assets, scenario data, and time configuration -- then call `.optimize()`.
