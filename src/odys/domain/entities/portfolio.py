@@ -59,7 +59,7 @@ class AssetPortfolio:
             The energy asset with the specified name.
 
         Raises:
-            KeyError: If no asset with the specified name exists.
+            OdysValidationError: If no asset with the specified name exists.
 
         """
         if name not in self._assets:

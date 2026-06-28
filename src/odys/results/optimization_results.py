@@ -38,7 +38,7 @@ class OptimalDisptachResults:
         solution: xr.Dataset,
         objective_value: float | None,
     ) -> None:
-        """Initialize SolvedModelData."""
+        """Initialize OptimalDisptachResults."""
         self._solver_status = solver_status
         self._termination_condition = termination_condition
         if ModelDimension.Scenarios in solution.coords and len(solution.coords[ModelDimension.Scenarios]) == 1:
