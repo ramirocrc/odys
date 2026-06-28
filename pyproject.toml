@@ -12,7 +12,8 @@ keywords = [
   "milp",
   "optimization",
   "portfolio",
-  "stochastic"
+  "stochastic",
+  "uncertainty",
 ]
 
 license = "MIT"
