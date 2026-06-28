@@ -4,11 +4,13 @@ icon: fontawesome/solid/chart-line
 
 # Market
 
-An `EnergyMarket` represents an electricity market where your portfolio can buy and/or sell energy. This is how you model revenue from selling excess generation or purchasing power when it's cheaper than running your own assets.
+An `EnergyMarket` represents an electricity market where your portfolio can buy and/or sell energy. Use this to model revenue from selling excess generation or purchasing power when it's cheaper than running your own assets.
 
 See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
 
 ## Basic usage
+
+Let's create a market.
 
 ```python
 from odys import EnergyMarket
@@ -48,7 +50,7 @@ $$
 
 ## Trade direction
 
-You can restrict which way the market trades:
+You can restrict which way the market trades. Use `BUY_ONLY` for procurement markets, `SELL_ONLY` for feed-in tariffs, or leave it as `"both"` for markets that allow two-way trading.
 
 ```python
 from odys import EnergyMarket, TradeDirection
@@ -145,7 +147,11 @@ After optimization, access market results through `result.markets`:
 result = energy_system.optimize()
 
 result.markets.sell_volume  # energy sold per market per timestep
-result.markets.buy_volume   # energy bought per market per timestep
+result.markets.buy_volume  # energy bought per market per timestep
 ```
 
 Each of these is a `pandas.DataFrame`.
+
+## Next steps
+
+Now that you understand all the asset types, see [AssetPortfolio](asset_portfolio.md) to learn how to combine them into a single portfolio.

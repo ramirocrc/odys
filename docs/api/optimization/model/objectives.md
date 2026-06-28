@@ -28,4 +28,6 @@ $$
 - \sum_{t,g}\left(c_g p_{g,t,s} + C^{start}_g y^{start}_{g,t,s}\right)
 $$
 
+See also [domain.objective](../../domain/objective.md) for the public configuration interface.
+
 ::: odys.optimization.model.objectives

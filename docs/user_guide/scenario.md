@@ -8,6 +8,8 @@ A `Scenario` defines the operating conditions for your energy system -- load dem
 
 ## Basic usage
 
+Let's define a scenario.
+
 ```python
 from odys import Scenario
 
@@ -107,4 +109,10 @@ energy_system = EnergySystem(
 
 ## When you need multiple scenarios
 
-A single `Scenario` represents one deterministic future. If you want to optimize under uncertainty -- accounting for multiple possible outcomes -- use [StochasticScenario](stochastic_scenario.md) instead.
+A single `Scenario` represents one deterministic future. If you want to optimize under uncertainty -- accounting for multiple possible outcomes -- use `StochasticScenario` instead.
+
+Use `Scenario` when you have a single forecast. Switch to `StochasticScenario` when the future is uncertain and you want to hedge against multiple outcomes.
+
+## Next steps
+
+Ready to run your first optimization? See [Optimization](optimization.md) to understand the objective function, constraints, and how to read results.

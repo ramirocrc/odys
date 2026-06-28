@@ -24,4 +24,6 @@ $$
 
 Trade-direction constraints fix the unavailable direction to zero for buy-only or sell-only markets.
 
+See also [Market](../../domain/entities/market.md) for the domain model and [market_parameters](../parameters/market_parameters.md) for the parameter extraction.
+
 ::: odys.optimization.constraints.market_constraints

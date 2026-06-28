@@ -156,7 +156,6 @@ class EnergySystem(BaseModel):
 
         """
         params = self.build_parameters()
-
         milp_model = build_model(params)
         return optimize_algebraic_model(
             milp_model=milp_model,

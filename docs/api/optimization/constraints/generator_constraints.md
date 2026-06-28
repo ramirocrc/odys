@@ -52,4 +52,6 @@ $$
 \sum_{\tau=t-U_g+1}^{t} u_{g,\tau,s} \ge U_g y^{shutdown}_{g,t+1,s}
 $$
 
+See also [Generator](../../domain/entities/generator.md) for the domain model and [generator_parameters](../parameters/generator_parameters.md) for the parameter extraction.
+
 ::: odys.optimization.constraints.generator_constraints

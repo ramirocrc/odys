@@ -67,5 +67,5 @@ docs/_build/
 
 # === Other ===
 ignored/
-CLAUDE.md
 AGENTS.md
+DOCS_GUIDELINES.md

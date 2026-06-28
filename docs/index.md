@@ -5,7 +5,7 @@ icon: lucide/home
 <div class="mdx-hero">
   <h1>Odys</h1>
   <p class="mdx-hero__lead">
-    Python framework for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization.
+    Optimize energy portfolios under uncertainty.
   </p>
   <div class="mdx-hero__badges">
     <a href="https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain">
@@ -32,98 +32,97 @@ icon: lucide/home
 
 <div class="mdx-features grid cards" markdown>
 
--   :material-lightning-bolt: __Simple API__
+-   :material-chart-bar: **Optimization under uncertainty**
 
-    Define your assets (generator, storage, load) and call `.optimize()`. The mathematical model is built and solved for you under the hood.
+    Stochastic optimization is the default, not an afterthought. Multi-asset, multi-market from day one with built-in CVaR risk management.
 
--   :material-chart-bar: __Stochastic Optimization__
-
-    Optimize across multiple probabilistic scenarios with different prices, capacities, and load profiles to make decisions under uncertainty.
-
--   :material-shield-check: __Pydantic-powered validation__
-
-    All models use Pydantic with strict typing and validators — configuration errors get caught early.
-
--   :material-cube-outline: __Multi-solver support__
+-   :material-cube-outline: **Multi-solver support**
 
     Swap between HiGHS (default), Gurobi, CPLEX, or SCIP with a single configuration change.
 
+-   :material-lightning-bolt: **Simple API**
+
+    Define your assets, describe the uncertainty through scenarios, and call `.optimize()`. No boilerplate, no configuration files.
+
+-   :material-math-log: **Transparent math**
+
+    Every constraint and objective term is documented with equations. You know exactly what the solver sees.
+
 </div>
 
+## Why Odys?
+
+
+In energy systems, deterministic optimization is no longer enough. You need to account for multiple possible futures simultaneously, maximizing expected profit while managing risk.
+
+Odys makes stochastic optimization for energy portfolios as straightforward as possible. Define your assets, describe the uncertainty through scenarios, and let the solver find the optimal dispatch across all possible outcomes.
+
+Whether you're a student learning energy optimization, a researcher prototyping new models, or building decision support tools for industry, Odys lets you focus on the problem instead of the math.
 ## Installation
 
 === "pip"
 
     ```console
     pip install odys
-    pip install odys[gurobi]   # or cplex, scip
     ```
 
 === "uv"
 
     ```console
     uv add odys
-    uv add odys[gurobi]   # or cplex, scip
     ```
 
-Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/). If you use a commercial solver, install the matching extra as well.
-
-### Supported Solvers
-
-| Solver | Package             | License           |
-| ------ | ------------------- | ----------------- |
-| HiGHS  | Included by default | Open-source (MIT) |
-| Gurobi | `gurobipy`          | Commercial        |
-| CPLEX  | `cplex`             | Commercial        |
-| SCIP   | `pyscipopt`         | Open-source (ZIB) |
+Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/). If you use a commercial solver, install the matching extra as well. See [Solvers](user_guide/solvers.md) for details.
 
 ## Quick example
 
-This is the shortest path from model setup to solution.
+Suppose you have a generator and a fixed demand over 4 hours. How much should the generator produce at each timestep?
+
+Let's walk through this. First, we create a generator with a variable cost and a load representing the demand:
 
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, Generator, Load, Scenario, Storage
+from odys import AssetPortfolio, EnergySystem, Generator, Load, Scenario
 
-generator = Generator(
-    name="gen",
-    nominal_power=100.0,
-    variable_cost=50.0,
-)
-
-storage = Storage(
-    name="bess",
-    capacity=50.0,
-    max_power=25.0,
-    efficiency_charging=0.95,
-    efficiency_discharging=0.95,
-    soc_start=0.5,
-    soc_end=0.5,
-)
-
+generator = Generator(name="gen", nominal_power=100.0, variable_cost=50.0)
 load = Load(name="demand")
+```
 
-portfolio = AssetPortfolio()
-portfolio.add_asset(generator)
-portfolio.add_asset(storage)
-portfolio.add_asset(load)
+Now we wire them into a portfolio and tell the `EnergySystem` what demand looks like over time:
+
+```python
+portfolio = AssetPortfolio([generator, load])
 
 energy_system = EnergySystem(
     portfolio=portfolio,
-    scenarios=Scenario(
-        load_profiles={"demand": [60, 90, 40, 70]},
-    ),
+    scenarios=Scenario(load_profiles={"demand": [60, 90, 40, 70]}),
     timestep=timedelta(hours=1),
     number_of_steps=4,
 )
-result = energy_system.optimize()
+```
 
-print(result.solver_status)
+Finally, we call `.optimize()` and look at the results:
+
+```python
+result = energy_system.optimize()
 print(result.generators.power)
 ```
 
-See the [Examples](examples/index.md) page for fuller scenarios.
+The generator meets demand at every timestep:
+
+```
+time  generator
+0     gen          60.0
+1     gen          90.0
+2     gen          40.0
+3     gen          70.0
+Name: generator_power, dtype: float64
+```
+
+Notice how the generator output matches demand exactly at every timestep. There's only one source of power, so the optimizer has no choice but to dispatch it to cover the load. Add a second generator with a different cost, and the story gets a lot more interesting -- the solver will use the cheaper one first and only call on the expensive one when necessary.
+
+See [EnergySystem](user_guide/energy_system.md) to understand the full workflow, or jump to the [Examples](examples/index.md) for complete worked scenarios.
 
 ## Dependencies
 

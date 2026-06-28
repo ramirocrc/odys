@@ -4,7 +4,7 @@ icon: lucide/arrow-up-down
 
 # Optimization
 
-This page explains what happens when you call `energy_system.optimize()` -- the objective function, the constraints, and how to read the results.
+Let's look at what happens when you call `energy_system.optimize()` -- the objective function, the constraints, and how to read the results.
 
 See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
 
@@ -36,7 +36,7 @@ $$
 
 The current implementation includes market revenue/cost when market prices are provided, generator variable cost, and generator startup cost.
 
-The risk term penalizes low-profit scenarios through CVaR. By default, that term is ignored, so the model behaves as risk-neutral:
+The risk term penalizes low-profit scenarios through CVaR. By default, that term is ignored, so the model behaves as risk-neutral. Use CVaR when you want to protect against bad outcomes, not just maximize expected profit.
 
 $$
 w_{\text{profit}} = 1, \qquad w_{\text{risk}} = 0
@@ -61,7 +61,7 @@ $$
 = \sum_l d_{l,t,s} + \sum_b p^{ch}_{b,t,s} + \sum_m v^{sell}_{m,t,s}
 $$
 
-This is the fundamental constraint: total supply must match total demand.
+This is the fundamental constraint: total supply must match total demand. Notice how it balances generation, storage discharge, and market buys on the supply side against load, storage charge, and market sells on the demand side.
 
 ### Generator constraints
 
@@ -204,8 +204,8 @@ result = energy_system.optimize()
 ### Solver status
 
 ```python
-result.solver_status         # "ok" if the solver found a solution
-result.termination_condition # "optimal" if it's the best possible solution
+result.solver_status  # "ok" if the solver found a solution
+result.termination_condition  # "optimal" if it's the best possible solution
 ```
 
 ### Asset-specific results
@@ -214,18 +214,18 @@ Each asset type has its own results container:
 
 ```python
 # Generators
-result.generators.power     # MW dispatched per timestep
-result.generators.status    # on/off (1/0)
-result.generators.startup   # startup events
+result.generators.power  # MW dispatched per timestep
+result.generators.status  # on/off (1/0)
+result.generators.startup  # startup events
 result.generators.shutdown  # shutdown events
 
 # Storages
-result.storages.net_power        # positive = charging, negative = discharging
+result.storages.net_power  # positive = charging, negative = discharging
 result.storages.state_of_charge  # SOC at each timestep
 
 # Markets
 result.markets.sell_volume  # MW sold per market per timestep
-result.markets.buy_volume   # MW bought per market per timestep
+result.markets.buy_volume  # MW bought per market per timestep
 ```
 
 All of these are `pandas.DataFrame` objects, so you can use the full pandas API to slice, filter, and plot.
@@ -243,3 +243,7 @@ This gives you a multi-indexed DataFrame with all variables, units, and timestep
 !!! tip
 
     If you're working in a notebook, `result.to_dataframe` is usually the quickest way to see what the optimizer did. You can export it with `.to_csv()` or plot it directly.
+
+## Next steps
+
+Want to switch solvers or tune solver options? See [Solvers](solvers.md) to configure the optimization backend.

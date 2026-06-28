@@ -8,7 +8,7 @@ A `Load` represents a demand that the energy system needs to satisfy. Loads come
 
 ## Basic usage
 
-The simplest case is a fixed load -- the system must produce exactly this much power at each timestep:
+The simplest case is a fixed load -- the system must produce exactly this much power at each timestep. Use this for most demand modeling.
 
 ```python
 from odys import Load
@@ -16,7 +16,7 @@ from odys import Load
 load = Load(name="demand")
 ```
 
-That's it. The actual demand values are specified later in the `Scenario` via `load_profiles`.
+That's it. The actual demand values are specified later in the `Scenario` via `load_profiles`. We chose to separate the load definition from its time series because the same load can appear in multiple scenarios with different profiles.
 
 ## Fields
 
@@ -49,7 +49,7 @@ The key in `load_profiles` must match the load's `name`.
 
 ## Flexible loads
 
-A flexible load gives the optimizer some room to adjust demand up or down, but at a cost:
+A flexible load gives the optimizer some room to adjust demand up or down, but at a cost. Use this for demand response programs or industrial processes that can shift load.
 
 ```python
 from odys import Load, LoadType
@@ -90,3 +90,7 @@ scenario = Scenario(
     },
 )
 ```
+
+## Next steps
+
+Ready to add time-shifting to your portfolio? See [Storage](storage.md) to model batteries and other energy storage systems.

@@ -10,16 +10,18 @@ See [Mathematical notation](mathematical_notation.md) for the full list of symbo
 
 ## Basic usage
 
+Let's add a battery to the portfolio.
+
 ```python
 from odys import Storage
 
 storage = Storage(
     name="bess",
-    capacity=100.0,          # MWh of storage
-    max_power=50.0,           # MW charge/discharge limit
+    capacity=100.0,  # MWh of storage
+    max_power=50.0,  # MW charge/discharge limit
     efficiency_charging=0.95,
     efficiency_discharging=0.95,
-    soc_start=0.5,            # starts at 50%
+    soc_start=0.5,  # starts at 50%
 )
 ```
 
@@ -107,6 +109,8 @@ $$
 p^{dis}_{b,t} + z_{b,t} P^{\max}_b \le P^{\max}_b
 $$
 
+Notice the binary variable $z_{b,t}$. We use it to prevent the storage from charging and discharging simultaneously, which would be physically impossible and would create artificial efficiency losses in the model.
+
 ## Efficiency
 
 Charging and discharging efficiencies are applied separately. If you charge 10 MWh with 90% efficiency, 9 MWh actually goes into the storage. If you then discharge those 9 MWh at 85% efficiency, you get 7.65 MWh out.
@@ -142,7 +146,7 @@ After optimization, access storage results through `result.storages`:
 ```python
 result = energy_system.optimize()
 
-result.storages.net_power        # charge/discharge per timestep
+result.storages.net_power  # charge/discharge per timestep
 result.storages.state_of_charge  # SOC at each timestep
 ```
 
@@ -153,3 +157,7 @@ p^{net}_{b,t} = p^{ch}_{b,t} - p^{dis}_{b,t}
 $$
 
 Positive `net_power` means charging, negative means discharging.
+
+## Next steps
+
+Want to buy or sell energy from external markets? See [Market](market.md) to add trading to your portfolio.

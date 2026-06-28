@@ -6,7 +6,7 @@ icon: lucide/git-branch
 
 !!! note "Coming soon"
 
-    Multi-stage optimization is planned but not yet implemented. This page describes the concept for context.
+    Multi-stage optimization is planned but not yet implemented. Let's describe the concept for context.
 
 ## What is multi-stage optimization?
 
@@ -23,3 +23,7 @@ When full multi-stage support arrives, you'll be able to define an explicit sequ
 ## Stay tuned
 
 Follow the [GitHub repository](https://github.com/ramirocrc/odys) for updates on this feature.
+
+## Next steps
+
+Ready to see Odys in action? Check out the [Examples](../examples/index.md) for end-to-end worked scenarios.

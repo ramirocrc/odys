@@ -64,7 +64,9 @@ The price series is the whole point of the example. When the market is cheap, th
 ### 3. Solve the system
 
 ```python
-energy_system = EnergySystem(portfolio=portfolio, markets=market, timestep=timedelta(minutes=30), number_of_steps=9, scenarios=scenario)
+energy_system = EnergySystem(
+    portfolio=portfolio, markets=market, timestep=timedelta(minutes=30), number_of_steps=9, scenarios=scenario
+)
 
 result = energy_system.optimize()
 ```

@@ -8,6 +8,8 @@ A `StochasticScenario` extends [Scenario](scenario.md) with a name and a probabi
 
 ## Basic usage
 
+Let's create two scenarios representing different wind conditions.
+
 ```python
 from odys import StochasticScenario
 
@@ -65,7 +67,7 @@ scenarios = [
 
 ## Using stochastic scenarios
 
-Pass a list of scenarios to the [EnergySystem](energy_system.md) instead of a single `Scenario`:
+Pass a list of scenarios to the [EnergySystem](energy_system.md) instead of a single `Scenario`. Use this when you need to account for uncertainty in your optimization.
 
 ```python
 from datetime import timedelta
@@ -105,4 +107,4 @@ This means you can capture several types of uncertainty in a single optimization
 
 ## Next steps
 
-For a deeper dive into stochastic optimization concepts -- stage-fixed decisions, results with multiple scenarios, and how the optimizer weighs probabilities -- see [Stochastic Optimization](../user_guide/stochastic.md).
+For the full mathematical formulation and advanced topics like stage-fixed decisions, see [Stochastic Optimization](stochastic.md). For a reference of all mathematical symbols used in Odys, see [Mathematical notation](mathematical_notation.md).

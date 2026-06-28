@@ -10,6 +10,8 @@ See [Mathematical notation](mathematical_notation.md) for the full list of symbo
 
 ## Basic usage
 
+Let's create a generator.
+
 ```python
 from odys import Generator
 
@@ -59,19 +61,19 @@ $$
 
 ## Ramp constraints
 
-If your generator can't change output instantly, set ramp limits:
+If your generator can't change output instantly, set ramp limits. Real thermal plants can't jump from zero to full power in a single step -- they need time to ramp up.
 
 ```python
 gen = Generator(
     name="slow_gen",
     nominal_power=200.0,
     variable_cost=30.0,
-    ramp_up=50.0,   # can increase by at most 50 MW/h
+    ramp_up=50.0,  # can increase by at most 50 MW/h
     ramp_down=40.0,  # can decrease by at most 40 MW/h
 )
 ```
 
-When `ramp_up` or `ramp_down` is `None` (the default), there's no ramp constraint -- the generator can jump from 0 to full power in a single step.
+When `ramp_up` or `ramp_down` is `None` (the default), there's no ramp constraint -- the generator can jump from 0 to full power in a single step. Use this for fast-responding assets or when ramp limits don't matter for your study.
 
 ## Minimum up time
 
@@ -88,7 +90,7 @@ gen = Generator(
     name="coal_plant",
     nominal_power=500.0,
     variable_cost=25.0,
-    min_up_time=4,   # once on, stays on for at least 4 steps
+    min_up_time=4,  # once on, stays on for at least 4 steps
 )
 ```
 
@@ -105,7 +107,7 @@ gen = Generator(
 )
 ```
 
-This makes the optimizer think twice before turning the generator on, which is realistic for many thermal plants.
+This makes the optimizer think twice before turning the generator on, which is realistic for many thermal plants. Notice how the startup cost creates a tradeoff: the optimizer weighs the cost of starting up against the benefit of running.
 
 Startup and shutdown are represented with binary transition variables:
 
@@ -155,10 +157,14 @@ After optimization, access generator results through `result.generators`:
 ```python
 result = energy_system.optimize()
 
-result.generators.power     # dispatch per timestep
-result.generators.status    # on/off status (1 or 0)
-result.generators.startup   # startup events
+result.generators.power  # dispatch per timestep
+result.generators.status  # on/off status (1 or 0)
+result.generators.startup  # startup events
 result.generators.shutdown  # shutdown events
 ```
 
 Each of these is a `pandas.DataFrame`.
+
+## Next steps
+
+Next, see how [Load](load.md) defines the demand your system must serve.

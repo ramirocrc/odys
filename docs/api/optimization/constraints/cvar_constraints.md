@@ -14,4 +14,6 @@ $$
 
 This supports the CVaR term in the objective.
 
+See also [domain.objective](../../domain/objective.md) for the CVaR objective formulation.
+
 ::: odys.optimization.constraints.cvar_constraints

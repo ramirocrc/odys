@@ -32,4 +32,6 @@ $$
 
 This applies to market buy volume, sell volume, and trade mode.
 
+See also [Scenarios](../../domain/scenarios.md) for the domain model and [scenario_parameters](../parameters/scenario_parameters.md) for the parameter extraction.
+
 ::: odys.optimization.constraints.scenario_constraints

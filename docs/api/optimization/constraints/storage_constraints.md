@@ -50,4 +50,6 @@ $$
 p^{net}_{b,t,s} = p^{ch}_{b,t,s} - p^{dis}_{b,t,s}
 $$
 
+See also [Storage](../../domain/entities/storage.md) for the domain model and [storage_parameters](../parameters/storage_parameters.md) for the parameter extraction.
+
 ::: odys.optimization.constraints.storage_constraints

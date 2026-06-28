@@ -137,13 +137,13 @@ class EnergyAlgebraicModelBuilder:
         groups: list[ConstraintGroup] = []
         params = self._milp_model.parameters
 
-        if not params.generators.is_empty:
+        if params.has_generators:
             groups.append(GeneratorConstraints(self._milp_model))
 
-        if not params.storages.is_empty:
+        if params.has_storages:
             groups.append(StorageConstraints(self._milp_model))
 
-        if not params.markets.is_empty:
+        if params.has_markets:
             groups.append(MarketConstraints(self._milp_model))
 
         groups.append(ScenarioConstraints(self._milp_model))

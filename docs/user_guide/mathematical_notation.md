@@ -4,7 +4,7 @@ icon: lucide/sigma
 
 # Mathematical notation
 
-This page collects the mathematical symbols used across the User Guide. The notation is aligned with the current optimization model implementation.
+Let's collect the mathematical symbols used across the User Guide. The notation is aligned with the current optimization model implementation.
 
 ## Indices and sets
 
@@ -95,3 +95,7 @@ The power-balance equation uses generation, storage discharge, and market buys o
 - Negative storage `net_power` means discharging.
 - Market sell volume contributes positively to profit.
 - Market buy volume contributes negatively to profit.
+
+## Next steps
+
+Learn about [Multi-stage Optimization](multi_stage.md), a planned extension to the current two-stage stochastic framework.

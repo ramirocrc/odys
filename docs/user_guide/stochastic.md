@@ -10,7 +10,7 @@ See [Mathematical notation](mathematical_notation.md) for the full list of symbo
 
 ## The idea
 
-Instead of optimizing for a single forecast, you define multiple **scenarios**, each with a probability. The optimizer finds a dispatch plan that performs well across all scenarios, weighted by their likelihood:
+Instead of optimizing for a single forecast, let's define multiple **scenarios**, each with a probability. The optimizer finds a dispatch plan that performs well across all scenarios, weighted by their likelihood:
 
 $$
 \sum_s \pi_s = 1
@@ -70,7 +70,7 @@ Each `StochasticScenario` has:
 
 ## Using stochastic scenarios
 
-Pass a list of scenarios instead of a single `Scenario`:
+Pass a list of scenarios instead of a single `Scenario`. Use this when you have multiple plausible futures and want to optimize across all of them.
 
 ```python
 from datetime import timedelta
@@ -110,7 +110,7 @@ Anything you don't include in a scenario stays unconstrained (e.g., if you don't
 
 ## Stage-fixed decisions
 
-When using stochastic optimization with markets, you can mark certain markets as `stage_fixed=True`. This means the optimizer must commit to the same trading volumes in that market across all scenarios -- modeling situations where you lock in a position before uncertainty resolves.
+When using stochastic optimization with markets, you can mark certain markets as `stage_fixed=True`. Use this when the optimizer must commit to the same trading volumes in that market across all scenarios -- modeling situations where you lock in a position before uncertainty resolves.
 
 Mathematically, each stage-fixed market variable is pinned to its first-scenario value:
 
@@ -153,3 +153,7 @@ print(result.to_dataframe)
 ```
 
 For deterministic (single scenario) runs, the scenario level is dropped automatically so you don't have to deal with it.
+
+## Next steps
+
+For a deeper dive into the `StochasticScenario` class and its validation rules, see [StochasticScenario](stochastic_scenario.md).

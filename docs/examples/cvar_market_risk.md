@@ -16,16 +16,7 @@ We consider three equally likely scenarios. To keep the example simple, we assum
 
 The example is built as a single 24-hour timestep because the main decision is one commitment: how much capacity should go to `sdac` before the uncertainty is resolved?
 
-```mermaid
-flowchart TD
-    Now(["📋 Choose sdac volume<br/>(fixed across scenarios)"]) --> High(["🟢 High P(sidc) = 500 \$/MWh"])
-    Now --> Mid(["🟡 Mid P(sidc) = 200 \$/MWh"])
-    Now --> Low(["🔴 Low P(sidc) = 15 \$/MWh"])
-    style Now fill:none
-    style High fill:none
-    style Mid fill:none
-    style Low fill:none
-```
+![CVaR decision timeline](/assets/examples/cvar_timeline.svg)
 
 **Source**: [`examples/cvar_market_risk.py`](https://github.com/ramirocrc/odys/blob/main/examples/cvar_market_risk.py)
 

@@ -23,4 +23,6 @@ $$
 
 where $\xi_s \ge \eta - \Pi_s$. If no CVaR term is configured, the implementation builds only the expected-profit term.
 
+See also [optimization.model.objectives](../optimization/model/objectives.md) for the implementation-side construction.
+
 ::: odys.domain.objective

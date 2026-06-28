@@ -4,9 +4,35 @@ icon: lucide/zap
 
 # EnergySystem
 
-`EnergySystem` is the main entry point for setting up and running an optimization. You give it a portfolio of assets, scenario data, and time configuration -- then call `.optimize()`.
+`EnergySystem` is the main entry point for setting up and running an optimization. Let's give it a portfolio of assets, scenario data, and time configuration -- then call `.optimize()`.
+
+We designed `EnergySystem` as a single orchestrator because energy optimization involves multiple moving parts: assets, scenarios, time, and markets. Keeping them together in one object makes the workflow straightforward and validates everything at once.
+
+Here's how the main objects relate to each other:
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
+flowchart TD
+    ES["<b>EnergySystem</b>"]
+    AP["<b>AssetPortfolio</b>"]
+    subgraph Assets [ ]
+        direction LR
+        GEN["Generator(s)"]
+        STO["Storage(s)"]
+        LD["Load(s)"]
+    end
+    MKT["<b>EnergyMarket(s)</b>"]
+    SC["<b>Scenario(s)</b>"]
+
+    ES --> AP
+    ES --> MKT
+    ES --> SC
+    AP --> Assets
+```
 
 ## Basic usage
+
+Let's set up our first system.
 
 ```python
 from datetime import timedelta
@@ -44,7 +70,9 @@ result = energy_system.optimize()
 
 ## Scenarios
 
-For a single deterministic scenario, use `Scenario`:
+Use `Scenario` for deterministic problems. When you need to account for uncertainty, switch to `StochasticScenario`.
+
+For a single deterministic scenario:
 
 ```python
 from odys import Scenario
@@ -97,7 +125,9 @@ energy_system = EnergySystem(
 )
 ```
 
-Market prices are specified in the scenario, not on the market object. See [Market](market.md) for details.
+Notice that market prices are specified in the scenario, not on the market object. We chose this design because prices vary over time and across scenarios, while market properties (like trading limits) stay fixed. Keeping time-varying data in scenarios keeps the model clean.
+
+See [Market](market.md) for details.
 
 ## Running the optimization
 
@@ -119,3 +149,7 @@ When you call `.optimize()`, odys:
 4. Wraps the solution in an `OptimizationResults` object
 
 You don't need to interact with any of these internals -- but if you're curious, the [API Reference](../api/energy_system.md) has the full details.
+
+## Next steps
+
+Now that you've seen the complete workflow, let's dive into each asset type. See [Generator](generator.md) to understand how to model power sources.
