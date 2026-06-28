@@ -1,106 +1,108 @@
-# odys
+# Odys
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)
 [![Python versions](https://img.shields.io/pypi/pyversions/odys?color=green)](https://pypi.org/project/odys/)
 [![PyPI](https://img.shields.io/pypi/v/odys)](https://pypi.org/project/odys/)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)](https://img.shields.io/github/commit-activity/m/ramirocrc/odys)
-[![License](https://img.shields.io/github/license/ramirocrc/odys)](https://img.shields.io/github/license/ramirocrc/odys)
+[![License](https://img.shields.io/github/license/ramirocrc/odys)](https://github.com/ramirocrc/odys/blob/main/LICENSE)
 
----
+Optimize energy portfolios under uncertainty.
 
-- **Github repository**: <https://github.com/ramirocrc/odys/>
-- **Documentation** <https://ramirocrc.github.io/odys/>
+## Features
 
----
+- **Optimization under uncertainty**: Stochastic optimization is the default, not an afterthought. Multi-asset, multi-market from day one with built-in CVaR risk management.
+- **Multi-solver support**: Swap between HiGHS (default), Gurobi, CPLEX, or SCIP with a single configuration change.
+- **Simple API**: Define your assets, describe the uncertainty through scenarios, and call `.optimize()`. No boilerplate, no configuration files.
+- **Transparent math**: Every constraint and objective term is documented with equations. You know exactly what the solver sees.
 
-Odys is a Python package for optimizing multi-asset energy portfolios across multiple electricity markets using stochastic optimization, powered by <a href="https://pydantic-docs.helpmanual.io/" class="external-link" target="_blank">Pydantic</a>, <a href="https://linopy.readthedocs.io/" class="external-link" target="_blank">linopy</a>, and <a href="https://ergo-code.github.io/HiGHS/" class="external-link" target="_blank">HiGHS</a> .
+## Why Odys?
 
-The key features are:
+In energy systems, deterministic optimization is no longer enough. You need to account for multiple possible futures simultaneously, maximizing expected profit while managing risk.
 
-- **Intuitive to write**: Great editor support. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere. Less time debugging. Designed to be easy to use and learn. Less time reading docs.
-- **Simple API**: Define your energy system (generators, storages, loads, markets) and call .optimize(). The mathematical model is built and solved for you under the hood.
-- **Pydantic-powered validation**: All models are built on Pydantic with strict typing and validators, catching configuration errors early.
-- **Stochastic optimization**: Optimize across multiple probabilistic scenarios with different prices, capacities, and load profiles to make decisions under uncertainty.
+Odys makes stochastic optimization for energy portfolios as straightforward as possible. Define your assets, describe the uncertainty through scenarios, and let the solver find the optimal dispatch across all possible outcomes.
 
-## Requirements
-
-A recent and currently supported <a href="https://www.python.org/downloads/" class="external-link" target="_blank">version of Python</a>.
-
-As **Odys** is based on **Pydantic**, **linopy**, and **HiGHS**, they will be automatically installed when you install odys.
+Whether you're a student learning energy optimization, a researcher prototyping new models, or building decision support tools for industry, Odys lets you focus on the problem instead of the math.
 
 ## Installation
-
-Odys comes with **HiGHS** by default. You can also use other commercial or open-source solvers by installing them as optional dependencies.
 
 pip:
 
 ```console
 pip install odys
-pip install odys[gurobi]   # or cplex, scip
 ```
 
 uv:
 
 ```console
 uv add odys
-uv add odys[gurobi]   # or cplex, scip
 ```
 
-### Supported Solvers
+Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/). If you use a commercial solver, install the matching extra as well. See [Solvers](https://ramirocrc.github.io/odys/user_guide/solvers/) for details.
 
-| Solver | Package | Notes |
-|--------|---------|-------|
-| HiGHS | Included by default | Open-source, MIT license |
-| Gurobi | `gurobipy` | Commercial, requires license |
-| CPLEX | `cplex` | Commercial, requires license |
-| SCIP | `pyscipopt` | Open-source, ZIB license |
+## Quick example
 
-## Example
+Suppose you have a generator and a fixed demand over 4 hours. How much should the generator produce at each timestep?
 
-A generator and a storage working together to meet a fixed load over 4 hourly timesteps:
+First, create a generator with a variable cost and a load representing the demand:
 
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, Generator, Load, Scenario, Storage
+from odys import AssetPortfolio, EnergySystem, Generator, Load, Scenario
 
-generator = Generator(
-    name="gen",
-    nominal_power=100.0,
-    variable_cost=50.0,
-)
-
-storage = Storage(
-    name="bess",
-    capacity=50.0,
-    max_power=25.0,
-    efficiency_charging=0.95,
-    efficiency_discharging=0.95,
-    soc_start=0.5,
-    soc_end=0.5,
-)
-
+generator = Generator(name="gen", nominal_power=100.0, variable_cost=50.0)
 load = Load(name="demand")
+```
 
-portfolio = AssetPortfolio()
-portfolio.add_asset(generator)
-portfolio.add_asset(storage)
-portfolio.add_asset(load)
+Wire them into a portfolio and tell the `EnergySystem` what demand looks like over time:
+
+```python
+portfolio = AssetPortfolio([generator, load])
 
 energy_system = EnergySystem(
     portfolio=portfolio,
-    scenarios=Scenario(
-        load_profiles={"demand": [60, 90, 40, 70]},
-    ),
+    scenarios=Scenario(load_profiles={"demand": [60, 90, 40, 70]}),
     timestep=timedelta(hours=1),
     number_of_steps=4,
 )
-
-result = energy_system.optimize()
 ```
+
+Call `.optimize()` and look at the results:
+
+```python
+result = energy_system.optimize()
+print(result.generators.power)
+```
+
+The generator meets demand at every timestep:
+
+```
+time  generator
+0     gen          60.0
+1     gen          90.0
+2     gen          40.0
+3     gen          70.0
+Name: generator_power, dtype: float64
+```
+
+Add a second generator with a different cost, and the solver will use the cheaper one first and only call on the expensive one when necessary.
+
+See the [documentation](https://ramirocrc.github.io/odys/user_guide/energy_system/) for the full workflow, or check the [examples](https://ramirocrc.github.io/odys/examples/) for complete worked scenarios.
+
+## Dependencies
+
+- [Pydantic](https://docs.pydantic.dev/) — Data validation and settings management
+- [linopy](https://linopy.readthedocs.io/) — Linear optimization modeling
+- [HiGHS](https://ergo-code.github.io/HiGHS/) — High-performance optimization solver
+- [pandas](https://pandas.pydata.org/) — Data analysis and manipulation
+- [xarray](https://docs.xarray.dev/) — Multi-dimensional arrays
+
+All dependencies are installed automatically when you install odys.
 
 ## Contributing
 
-For guidance on setting up a development environment and how to make a contribution to odys, see
-[Contributing to odys](https://github.com/ramirocrc/odys/blob/main/CONTRIBUTING.md).
+For guidance on setting up a development environment and how to make a contribution to odys, see [Contributing to odys](https://github.com/ramirocrc/odys/blob/main/CONTRIBUTING.md).
+
+## License
+
+Odys is licensed under the [MIT License](https://github.com/ramirocrc/odys/blob/main/LICENSE).
