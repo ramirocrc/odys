@@ -87,6 +87,7 @@ class TestStorageConstraints:
 
     def test_constraint_storage_soc_dynamics(self) -> None:
         actual_constraint = self.linopy_model.constraints["storage_soc_dynamics_constraint"]
+        assert isinstance(actual_constraint, linopy.Constraint)
 
         storage_soc = self.linopy_model.variables["storage_soc"]
         storage_charge = self.linopy_model.variables["storage_power_in"]
@@ -226,6 +227,7 @@ class TestStorageConstraintsSubHourlyTimestep:
         time_index: list[int],
     ) -> None:
         actual_constraint = linopy_model_15min.constraints["storage_soc_dynamics_constraint"]
+        assert isinstance(actual_constraint, linopy.Constraint)
 
         storage_soc = linopy_model_15min.variables["storage_soc"]
         storage_charge = linopy_model_15min.variables["storage_power_in"]
