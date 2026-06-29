@@ -39,7 +39,7 @@ def validate_sequence_of_stochastic_scenarios(
         scenarios: Sequence of scenarios.
 
     Raises:
-        ValueError: If sum of probabilities is different than 1.
+        OdysValidationError: If sum of probabilities is different than 1.
     """
     sum_of_probabilities = sum(scenario.probability for scenario in scenarios)
     if sum_of_probabilities != 1.0:
