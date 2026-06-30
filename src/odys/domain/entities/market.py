@@ -8,7 +8,12 @@ from odys.domain.entities.base import EnergyEntity
 
 
 class TradeDirection(StrEnum):
-    """Direction of the market positions."""
+    """
+Enumeration of supported market trading directions.
+
+Trading directions specify whether an energy market permits buying,
+selling, or both buying and selling during optimization.
+"""
 
     BUY_ONLY = "buy"
     SELL_ONLY = "sell"
@@ -16,7 +21,21 @@ class TradeDirection(StrEnum):
 
 
 class EnergyMarket(EnergyEntity):
-    """Represents an energy market in the energy system."""
+    """
+Represents an energy market within the optimization model.
+
+An energy market defines the trading environment for an energy system,
+including the maximum trading volume, permitted trading direction, and
+whether market-related decision variables remain fixed across scenarios.
+
+Attributes:
+    name: Unique name of the energy market.
+    max_trading_volume_per_step: Maximum energy that can be traded in a
+        single optimization step.
+    trade_direction: Allowed trading direction for the market.
+    stage_fixed: Indicates whether market variables are fixed across
+        scenarios.
+"""
 
     name: str
     max_trading_volume_per_step: float = Field(gt=0)
