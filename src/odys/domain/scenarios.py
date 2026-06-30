@@ -1,5 +1,15 @@
-"""Scenario definitions for energy system optimization models."""
+"""
+Represents the deterministic conditions used during optimization.
 
+A scenario defines the input data required for an optimization run,
+including optional capacity profiles, load profiles, and market prices.
+These values describe the operating conditions for the energy system.
+
+Attributes:
+    available_capacity_profiles: Available capacity values for each asset.
+    load_profiles: Load demand profiles for each load.
+    market_prices: Market price profiles used during optimization.
+"""
 from collections.abc import Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -24,8 +34,18 @@ class Scenario(BaseModel):
 
 
 class StochasticScenario(Scenario):
-    """Stochastic scenario conditions."""
+    """
+Represents a stochastic scenario used in optimization.
 
+A stochastic scenario extends the base scenario with a unique name and
+an associated probability. Multiple stochastic scenarios can be combined
+to model uncertainty in optimization problems.
+
+Attributes:
+    name: Unique identifier for the scenario.
+    probability: Probability assigned to the scenario. Must be between
+        0 and 1.
+"""
     name: str
     probability: float = Field(ge=0, le=1, description="Probability (0-1) of the scenario.")
 
