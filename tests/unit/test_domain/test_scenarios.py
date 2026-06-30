@@ -34,12 +34,13 @@ class TestScenario:
 
     def test_is_frozen(self) -> None:
         scenario = Scenario()
+        frozen_field = "load_profiles"
         with pytest.raises(ValidationError, match="Instance is frozen"):
-            scenario.load_profiles = {"load1": LOAD_PROFILE}
+            setattr(scenario, frozen_field, {"load1": LOAD_PROFILE})
 
     def test_rejects_unknown_field(self) -> None:
         with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
-            Scenario(bogus_field=1)
+            Scenario.model_validate({"bogus_field": 1})
 
 
 class TestStochasticScenario:
