@@ -10,14 +10,30 @@ from odys.domain.exceptions import OdysValidationError
 
 
 class LoadType(StrEnum):
-    """Load type enumeration."""
+    """
+Enumeration of supported load types.
 
+Load types determine how a load behaves during optimization.
+Fixed loads remain constant, while flexible loads can be adjusted
+within the constraints defined by the model.
+"""
     Fixed = "fixed"
     Flexible = "flexible"
 
 
 class Load(EnergyEntity):
-    """Represents a load asset in the energy system."""
+    """
+Represents a load asset in the energy system.
+
+A load defines the demand characteristics of an energy asset. Depending
+on its type, a load may be fixed or flexible, with optional variable
+costs associated with increasing or decreasing demand.
+
+Attributes:
+    type: Specifies whether the load is fixed or flexible.
+    variable_cost_to_increase: Cost per MWh for increasing load demand.
+    variable_cost_to_decrease: Cost per MWh for decreasing load demand.
+"""
 
     type: LoadType = Field(
         default=LoadType.Fixed,
