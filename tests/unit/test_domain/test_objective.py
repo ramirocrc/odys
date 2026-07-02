@@ -13,7 +13,7 @@ CVAR_CONFIDENCE_LEVEL = 0.95
 class TestProfitTerm:
     def test_requires_weight(self) -> None:
         with pytest.raises(ValidationError, match="Field required"):
-            ProfitTerm()  # type: ignore[call-arg]
+            ProfitTerm.model_validate({})
 
     @pytest.mark.parametrize("weight", [0.5, 1.0, 2.5])
     def test_accepts_custom_weight(self, weight: float) -> None:
@@ -45,7 +45,7 @@ class TestProfitTerm:
 class TestCVaRTerm:
     def test_requires_weight_and_confidence_level(self) -> None:
         with pytest.raises(ValidationError, match="Field required"):
-            CVaRTerm()  # type: ignore[call-arg]
+            CVaRTerm.model_validate({})
 
     def test_accepts_custom_weight_and_confidence_level(self) -> None:
         term = CVaRTerm(weight=CVAR_WEIGHT, confidence_level=CVAR_CONFIDENCE_LEVEL)
@@ -84,7 +84,7 @@ class TestCVaRTerm:
 class TestObjective:
     def test_requires_profit(self) -> None:
         with pytest.raises(ValidationError, match="Field required"):
-            Objective()  # type: ignore[call-arg]
+            Objective.model_validate({})
 
     def test_profit_only_defaults_cvar_to_none(self) -> None:
         objective = Objective(profit=ProfitTerm(weight=1.0))
