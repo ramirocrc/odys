@@ -10,30 +10,32 @@ from odys.domain.exceptions import OdysValidationError
 
 
 class LoadType(StrEnum):
-    """
-Enumeration of supported load types.
+    """Enumeration of supported load types.
 
-Load types determine how a load behaves during optimization.
-Fixed loads remain constant, while flexible loads can be adjusted
-within the constraints defined by the model.
-"""
+    Load types determine how a load behaves during optimization.
+    Fixed loads remain constant, while flexible loads can be adjusted
+    within the constraints defined by the model.
+    """
+
     Fixed = "fixed"
     Flexible = "flexible"
 
 
 class Load(EnergyEntity):
+    """Represents a load asset in the energy system.
+
+    A load is an energy asset that consumes power. Depending on its type, a load
+    may be fixed (inelastic demand, cannot be adjusted by the optimizer) or
+    flexible (demand can be adjusted within constraints). Flexible loads have
+    variable costs for increasing or decreasing demand.
+
+    Attributes:
+        type: Specifies whether the load is fixed or flexible.
+        variable_cost_to_increase: Cost per MWh for increasing load demand
+            (required for flexible loads).
+        variable_cost_to_decrease: Cost per MWh for decreasing load demand
+            (required for flexible loads).
     """
-Represents a load asset in the energy system.
-
-A load defines the demand characteristics of an energy asset. Depending
-on its type, a load may be fixed or flexible, with optional variable
-costs associated with increasing or decreasing demand.
-
-Attributes:
-    type: Specifies whether the load is fixed or flexible.
-    variable_cost_to_increase: Cost per MWh for increasing load demand.
-    variable_cost_to_decrease: Cost per MWh for decreasing load demand.
-"""
 
     type: LoadType = Field(
         default=LoadType.Fixed,
@@ -44,13 +46,13 @@ Attributes:
     variable_cost_to_increase: float | None = Field(
         default=None,
         strict=True,
-        description="Variable cost of changing the load currency per MWh.",
+        description="Variable cost per MWh for increasing load demand.",
     )
 
     variable_cost_to_decrease: float | None = Field(
         default=None,
         strict=True,
-        description="Variable cost of changing the load currency per MWh.",
+        description="Variable cost per MWh for decreasing load demand.",
     )
 
     @model_validator(mode="after")
