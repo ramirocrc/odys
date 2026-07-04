@@ -1,15 +1,12 @@
-"""
-Represents the deterministic conditions used during optimization.
+"""Scenario definitions for deterministic and stochastic optimization.
 
-A scenario defines the input data required for an optimization run,
-including optional capacity profiles, load profiles, and market prices.
-These values describe the operating conditions for the energy system.
-
-Attributes:
-    available_capacity_profiles: Available capacity values for each asset.
-    load_profiles: Load demand profiles for each load.
-    market_prices: Market price profiles used during optimization.
+A scenario represents one possible realization of the energy system's
+exogenous inputs (load demand, generator availability, market prices).
+When multiple scenarios are provided with associated probabilities
+(stochastic optimization), the optimizer finds decisions that perform
+well in expectation across all possible futures.
 """
+
 from collections.abc import Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,7 +15,17 @@ from odys.domain.exceptions import OdysValidationError
 
 
 class Scenario(BaseModel):
-    """Scenario conditions."""
+    """One possible realization of the energy system's exogenous inputs.
+
+    A scenario defines the time-series profiles for load demand, available
+    generator capacity, and market prices that describe one possible future
+    of the operating environment. All fields are keyed by asset name, and
+    each sequence must have a length equal to the number of optimization
+    timesteps.
+
+    A single ``Scenario`` is used for deterministic optimization. For stochastic
+    optimization, use :class:`StochasticScenario` instead.
+    """
 
     model_config = ConfigDict(
         frozen=True,
@@ -34,18 +41,19 @@ class Scenario(BaseModel):
 
 
 class StochasticScenario(Scenario):
+    """A scenario with an associated probability for stochastic optimization.
+
+    A stochastic scenario represents one possible future of the energy system,
+    with a unique name and a probability of occurrence. When multiple
+    stochastic scenarios are provided, their probabilities must sum to 1.0
+    and their names must be unique. The optimizer maximizes expected profit
+    across all scenarios, weighted by probability.
+
+    Attributes:
+        name: Unique identifier for this scenario.
+        probability: Probability of this scenario occurring, between 0 and 1.
     """
-Represents a stochastic scenario used in optimization.
 
-A stochastic scenario extends the base scenario with a unique name and
-an associated probability. Multiple stochastic scenarios can be combined
-to model uncertainty in optimization problems.
-
-Attributes:
-    name: Unique identifier for the scenario.
-    probability: Probability assigned to the scenario. Must be between
-        0 and 1.
-"""
     name: str
     probability: float = Field(ge=0, le=1, description="Probability (0-1) of the scenario.")
 
