@@ -42,6 +42,7 @@ def generator_dispatch() -> GeneratorDispatch:
         shutdown=shutdown,
     )
 
+
 def test_power_property(generator_dispatch: GeneratorDispatch) -> None:
     power = generator_dispatch.power
 
