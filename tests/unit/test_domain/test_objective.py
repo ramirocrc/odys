@@ -20,16 +20,15 @@ class TestProfitTerm:
         term = ProfitTerm(weight=weight)
         assert term.weight == weight
 
-    @pytest.mark.parametrize("weight", [-1.0, 0.0])
-    def test_accepts_non_positive_weight(self, weight: float) -> None:
-        """`weight` carries no lower-bound constraint, so non-positive values are accepted.
+    def test_accepts_zero_weight(self) -> None:
+        """A weight of exactly 0 is accepted (ge=0 is inclusive)."""
+        term = ProfitTerm(weight=0.0)
+        assert term.weight == 0.0
 
-        The issue this test file was written for asked for negative and zero
-        weights to be rejected, but `ObjectiveTerm.weight` has no `Field`
-        constraint on it in the source.
-        """
-        term = ProfitTerm(weight=weight)
-        assert term.weight == weight
+    def test_rejects_negative_weight(self) -> None:
+        """A negative weight is rejected: `weight` has a lower bound of 0."""
+        with pytest.raises(ValidationError, match="Input should be greater than or equal to 0"):
+            ProfitTerm(weight=-1.0)
 
     def test_is_frozen(self) -> None:
         term = ProfitTerm(weight=1.0)
@@ -51,6 +50,11 @@ class TestCVaRTerm:
         term = CVaRTerm(weight=CVAR_WEIGHT, confidence_level=CVAR_CONFIDENCE_LEVEL)
         assert term.weight == CVAR_WEIGHT
         assert term.confidence_level == CVAR_CONFIDENCE_LEVEL
+
+    def test_rejects_negative_weight(self) -> None:
+        """`weight` is inherited from `ObjectiveTerm`; confirm the ge=0 bound applies here too."""
+        with pytest.raises(ValidationError, match="Input should be greater than or equal to 0"):
+            CVaRTerm(weight=-1.0, confidence_level=CVAR_CONFIDENCE_LEVEL)
 
     @pytest.mark.parametrize("confidence_level", [0.01, 0.5, 0.99])
     def test_accepts_confidence_level_within_bounds(self, confidence_level: float) -> None:
