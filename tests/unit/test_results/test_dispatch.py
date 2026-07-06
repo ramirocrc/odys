@@ -1,12 +1,13 @@
 import pytest
 import xarray as xr
 
-from odys.results.dispatch import GeneratorDispatch, StorageDispatch 
+from odys.results.dispatch import GeneratorDispatch, StorageDispatch
 
 EXPECTED_GENERATOR_COUNT = 2
 EXPECTED_STORAGE_COUNT = 2
 EXPECTED_TIMESTEP_COUNT = 2
 EXPECTED_SERIES_LENGTH = EXPECTED_STORAGE_COUNT * EXPECTED_TIMESTEP_COUNT
+
 
 @pytest.fixture
 def storage_dispatch() -> StorageDispatch:
@@ -37,11 +38,12 @@ def storage_dispatch() -> StorageDispatch:
         charge_mode=charge_mode,
     )
 
+
 def test_getitem(storage_dispatch: StorageDispatch) -> None:
     storage = storage_dispatch["storage_1"]
 
     assert isinstance(storage, StorageDispatch)
-    assert len(storage.net_power) == 2
+    assert len(storage.net_power) == EXPECTED_TIMESTEP_COUNT
 
 
 def test_iter(storage_dispatch: StorageDispatch) -> None:
@@ -59,6 +61,7 @@ def test_contains(storage_dispatch: StorageDispatch) -> None:
     assert "storage_1" in storage_dispatch
     assert "storage_2" in storage_dispatch
     assert "storage_3" not in storage_dispatch
+
 
 def test_net_power(storage_dispatch: StorageDispatch) -> None:
     net_power = storage_dispatch.net_power
@@ -101,6 +104,7 @@ def test_repr(storage_dispatch: StorageDispatch) -> None:
 
     assert "StorageDispatch" in representation
 
+
 @pytest.fixture
 def generator_dispatch() -> GeneratorDispatch:
     generators = ["generator_1", "generator_2"]
@@ -136,6 +140,7 @@ def generator_dispatch() -> GeneratorDispatch:
         startup=startup,
         shutdown=shutdown,
     )
+
 
 def test_power_property(generator_dispatch: GeneratorDispatch) -> None:
     power = generator_dispatch.power
