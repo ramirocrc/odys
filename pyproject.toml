@@ -40,8 +40,10 @@ dependencies = [
 ]
 
 [project.urls]
+Changelog = "https://github.com/ramirocrc/odys/blob/main/CHANGELOG.md"
 Documentation = "https://ramirocrc.github.io/odys/"
 Homepage = "https://ramirocrc.github.io/odys/"
+Issues = "https://github.com/ramirocrc/odys/issues"
 Repository = "https://github.com/ramirocrc/odys"
 
 [project.optional-dependencies]
