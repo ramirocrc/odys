@@ -1,24 +1,36 @@
-# Contributing to odys
+# Contributing to Odys
 
-Contributions to odys are welcome and appreciated!
+Thanks for your interest in contributing to Odys! Whether you're fixing a bug, adding a feature, or improving docs — your help is welcome.
 
-## Issues
+## Code of Conduct
 
-Bug reports, feature requests and general questions can all be filed as [issues](https://github.com/ramirocrc/odys/issues/new/choose).
+This project follows the MIT License spirit: be respectful, constructive, and inclusive. Treat all contributors with decency regardless of experience level.
 
-When reporting a bug, please include the output of the following call so we can reproduce the problem:
+## How to contribute
+
+### Report a bug
+
+Bug reports are filed as [GitHub issues](https://github.com/ramirocrc/odys/issues/new/choose).
+
+When reporting a bug, include the output of this command so we can reproduce the problem:
 
 ```bash
 python -c "from importlib.metadata import version; print(version('odys'))"
 ```
 
-## Pull Requests
+For security vulnerabilities, see [SECURITY.md](SECURITY.md) instead.
 
-Getting started with a pull request is straightforward.
+### Suggest a feature
 
-For non-trivial changes, please open an issue first to discuss the approach before submitting a PR.
+Feature requests and general questions can also be filed as [issues](https://github.com/ramirocrc/odys/issues/new/choose).
 
-### Prerequisites
+For non-trivial changes, open an issue first to discuss the approach before submitting a PR.
+
+### Improve documentation
+
+Read [DOCS_GUIDELINES.md](DOCS_GUIDELINES.md) before writing. Every page should have runnable examples and follow the Diátaxis framework.
+
+## Development setup
 
 Make sure you have the following installed:
 
@@ -26,8 +38,6 @@ Make sure you have the following installed:
 - [**uv**](https://docs.astral.sh/uv/) for dependency management
 - [**just**](https://github.com/casey/just) for running development commands
 - [**git**](https://git-scm.com/) for version control
-
-### Installation and setup
 
 Fork the repository on GitHub and clone your fork locally.
 
@@ -40,36 +50,46 @@ cd odys
 just install
 ```
 
-### Check out a new branch and make your changes
+## Development workflow
+
+### Create a branch
 
 ```bash
 git switch -c my-new-feature-branch
 # Make your changes...
 ```
 
-### Run tests and linting
+### Run checks before committing
 
-Before opening a PR, verify that formatting, linting and tests all pass locally.
+Run these commands before opening a PR. They must all pass.
 
 ```bash
-# Run automated code formatting and linting
+# Formatting, linting, and type checking
 just check
+```
 
-# Run tests
+This runs prek hooks plus three type checkers in parallel: `ty`, `pyrefly`, and `basedpyright`. It also checks for obsolete dependencies with `deptry`.
+
+```bash
+# Unit tests with coverage
 just test
 ```
 
-### Build documentation
-
-If your changes touch documentation, verify the build still succeeds.
+Tests require **90% minimum coverage**. If your changes drop coverage below this threshold, add more tests.
 
 ```bash
+# Documentation build (if you touched docs)
 just docs-test
 ```
 
-### Commit and push your changes
+```bash
+# Integration tests across Python versions
+just nox
+```
 
-Once everything passes, commit and push your branch.
+### Commit your changes
+
+Write clear, descriptive commit messages explaining what changed and why.
 
 ```bash
 git add .
@@ -77,11 +97,58 @@ git commit -m "Your detailed description of your changes."
 git push origin my-new-feature-branch
 ```
 
-Then open a pull request on GitHub. Link any related issues and describe what your changes do.
+### Open a pull request
 
-## Pull Request Guidelines
+Open a pull request on GitHub. Link any related issues and describe what your changes do.
 
-Please make sure your pull request:
+## Pull Request checklist
 
-1. Includes tests for any new or changed behaviour.
-2. Updates documentation if it adds new functionality.
+Before opening a PR, verify that your changes:
+
+1. Include tests for any new or changed behaviour.
+2. Update documentation if they add new functionality.
+3. Pass `just check` (formatting, linting, type checking).
+4. Pass `just test` with 90%+ coverage.
+5. Pass `just docs-test` if you touched documentation.
+6. Follow the code style conventions below.
+7. Use type hints everywhere with `X | None` syntax, not `Optional[X]`.
+
+## Code style
+
+Follow these conventions to keep the codebase consistent:
+
+- **Type hints everywhere** — use `X | None` union syntax, not `Optional[X]`
+- **Pydantic frozen models** — use `ConfigDict(frozen=True, extra="forbid")` for all data classes
+- **Custom exceptions** — never raise generic `ValueError` or `TypeError`:
+  - `OdysError` — base exception
+  - `OdysValidationError` — user input validation failures
+  - `OdysSolverError` — solver failures or unexpected status
+  - `OdysNoResultsError` — accessing results that don't exist
+- **Line length**: 120 characters
+- **Docstrings**: Google-style
+- **No comments** — split into functions if you need comments to explain sections
+- **Test data** — use module-level constants (e.g., `STANDARD_GENERATOR_POWER = 100.0`)
+
+## Project structure
+
+```
+src/odys/              # Main package source
+tests/unit/            # Unit tests
+tests/integration/     # Integration tests (run with `just nox`)
+tests/smoke_test.py    # Post-build smoke test
+examples/*.py          # Standalone example scripts
+docs/                  # Documentation source
+```
+
+## Key libraries
+
+- **linopy** — xarray-based linear/mixed-integer optimization modeling
+- **highspy** — HiGHS MILP solver (via linopy)
+- **xarray** — N-dimensional arrays (scenarios, time, assets dimensions)
+- **pydantic** — data validation and immutable models
+
+## Next steps
+
+- Browse [open issues](https://github.com/ramirocrc/odys/issues) to find something to work on
+- Read [AGENTS.md](AGENTS.md) for detailed architecture and development guidelines
+- Check out the [user guide](https://ramirocrc.github.io/odys/) to understand how Odys works
