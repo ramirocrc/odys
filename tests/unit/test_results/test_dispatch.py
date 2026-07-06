@@ -1,11 +1,12 @@
 import pytest
 import xarray as xr
 
-from odys.results.dispatch import GeneratorDispatch, StorageDispatch
+from odys.results.dispatch import GeneratorDispatch, MarketDispatch, StorageDispatch
 
 EXPECTED_GENERATOR_COUNT = 2
 EXPECTED_STORAGE_COUNT = 2
 EXPECTED_TIMESTEP_COUNT = 2
+EXPECTED_MARKET_COUNT = 2
 EXPECTED_SERIES_LENGTH = EXPECTED_STORAGE_COUNT * EXPECTED_TIMESTEP_COUNT
 
 
@@ -103,6 +104,93 @@ def test_repr(storage_dispatch: StorageDispatch) -> None:
     representation = repr(storage_dispatch)
 
     assert "StorageDispatch" in representation
+
+
+@pytest.fixture
+def market_dispatch() -> MarketDispatch:
+    market_names = ["market_1", "market_2"]
+    timesteps = [0, 1]
+
+    sell_volume = xr.DataArray(
+        [[10.0, 20.0], [30.0, 40.0]],
+        dims=["market", "time"],
+        coords={"market": market_names, "time": timesteps},
+    )
+
+    buy_volume = xr.DataArray(
+        [[1.0, 2.0], [3.0, 4.0]],
+        dims=["market", "time"],
+        coords={"market": market_names, "time": timesteps},
+    )
+
+    return MarketDispatch(
+        sell_volume=sell_volume,
+        buy_volume=buy_volume,
+    )
+
+
+def test_market_getitem(market_dispatch: MarketDispatch) -> None:
+    market = market_dispatch["market_1"]
+
+    assert isinstance(market, MarketDispatch)
+    assert len(market.sell_volume) == EXPECTED_TIMESTEP_COUNT
+
+
+def test_market_iter(market_dispatch: MarketDispatch) -> None:
+    items = list(market_dispatch)
+
+    assert len(items) == EXPECTED_MARKET_COUNT
+    assert all(isinstance(item, MarketDispatch) for item in items)
+
+
+def test_market_len(market_dispatch: MarketDispatch) -> None:
+    assert len(market_dispatch) == EXPECTED_MARKET_COUNT
+
+
+def test_market_contains(market_dispatch: MarketDispatch) -> None:
+    assert "market_1" in market_dispatch
+    assert "market_2" in market_dispatch
+    assert "market_3" not in market_dispatch
+
+
+def test_market_sell_volume(market_dispatch: MarketDispatch) -> None:
+    sell_volume = market_dispatch.sell_volume
+
+    assert len(sell_volume) == EXPECTED_SERIES_LENGTH
+
+
+def test_market_buy_volume(market_dispatch: MarketDispatch) -> None:
+    buy_volume = market_dispatch.buy_volume
+
+    assert len(buy_volume) == EXPECTED_SERIES_LENGTH
+
+
+def test_market_net_volume(market_dispatch: MarketDispatch) -> None:
+    net_volume = market_dispatch.net_volume
+
+    assert isinstance(net_volume, xr.DataArray)
+
+
+def test_market_to_dataset(market_dispatch: MarketDispatch) -> None:
+    dataset = market_dispatch.to_dataset()
+
+    assert isinstance(dataset, xr.Dataset)
+    assert "sell_volume" in dataset.data_vars
+    assert "buy_volume" in dataset.data_vars
+
+
+def test_market_to_dataframe(market_dispatch: MarketDispatch) -> None:
+    dataframe = market_dispatch.to_dataframe()
+
+    assert not dataframe.empty
+    assert "sell_volume" in dataframe.columns
+    assert "buy_volume" in dataframe.columns
+
+
+def test_market_repr(market_dispatch: MarketDispatch) -> None:
+    representation = repr(market_dispatch)
+
+    assert "MarketDispatch" in representation
 
 
 @pytest.fixture
