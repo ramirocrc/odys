@@ -5,6 +5,8 @@ from odys.results.dispatch import GeneratorDispatch, StorageDispatch
 
 EXPECTED_GENERATOR_COUNT = 2
 EXPECTED_STORAGE_COUNT = 2
+EXPECTED_TIMESTEP_COUNT = 2
+EXPECTED_SERIES_LENGTH = EXPECTED_STORAGE_COUNT * EXPECTED_TIMESTEP_COUNT
 
 @pytest.fixture
 def storage_dispatch() -> StorageDispatch:
@@ -61,19 +63,19 @@ def test_contains(storage_dispatch: StorageDispatch) -> None:
 def test_net_power(storage_dispatch: StorageDispatch) -> None:
     net_power = storage_dispatch.net_power
 
-    assert len(net_power) == 4
+    assert len(net_power) == EXPECTED_SERIES_LENGTH
 
 
 def test_soc(storage_dispatch: StorageDispatch) -> None:
     soc = storage_dispatch.soc
 
-    assert len(soc) == 4
+    assert len(soc) == EXPECTED_SERIES_LENGTH
 
 
 def test_charge_mode(storage_dispatch: StorageDispatch) -> None:
     charge_mode = storage_dispatch.charge_mode
 
-    assert len(charge_mode) == 4
+    assert len(charge_mode) == EXPECTED_SERIES_LENGTH
 
 
 def test_to_dataset(storage_dispatch: StorageDispatch) -> None:
