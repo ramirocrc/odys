@@ -8,7 +8,7 @@ icon: lucide/play
 
 This example asks a simple but important question: if a load must be met at every timestep, how should Odys dispatch a cheap renewable generator and a more expensive thermal unit?
 
-The setup is intentionally small. We have a fixed 70 MW load over 9 half-hour periods, a free solar plant with time-varying availability, and a gas turbine with a marginal cost of 50 $/MWh. The optimizer should use solar whenever it is available and only call on gas when solar is not enough.
+The setup is intentionally small. We have a fixed 70 MW load over 24 hourly periods, a free solar plant with time-varying availability, and a gas turbine with a marginal cost of 50 $/MWh. The optimizer should use solar whenever it is available and only call on gas when solar is not enough.
 
 That makes this a good first example because it shows the core Odys workflow without adding storage or markets.
 
@@ -54,7 +54,8 @@ plant throughout the day. At night it is zero, then it increases as the sun
 rises and falls again toward evening. The important detail is that the
 available solar capacity does not have to match the panel's maximum rating.
 The plant may be able to produce up to 150 MW in principle, but at each
-timestep the actual limit is whatever the solar resource allows.
+timestep the actual limit is whatever the solar resource allows. During peak
+hours the available capacity reaches 125 MW, well above the 70 MW load.
 
 The ccgt is simpler: we treat it as fully available during the selected period,
 so it can produce up to its nominal capacity in every timestep. That gives the
@@ -67,14 +68,14 @@ is needed to cover the remainder.
 ```python
 scenario = Scenario(
     available_capacity_profiles={
-        "ccgt": 9 * [100],
-        "solar_pv": [0, 30, 60, 80, 100, 80, 60, 30, 0],
+        "ccgt": 24 * [100],
+        "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
     },
-    load_profiles={"load": 9 * [70]},
+    load_profiles={"load": 24 * [70]},
 )
 ```
 
-Notice the subtle point here: the gas turbine has a nominal capacity of 100 MW, but solar is limited by its profile. In other words, installed capacity is not the same thing as what is actually usable in a given timestep.
+Notice the subtle point here: the gas turbine has a nominal capacity of 100 MW, but solar is limited by its profile. In other words, installed capacity is not the same thing as what is actually usable in a given timestep. And when available solar exceeds demand, the optimizer can only dispatch what the load requires — the rest is curtailed.
 
 ### 3. Solve the system
 
@@ -83,20 +84,17 @@ Once the portfolio and scenario are in place, the optimizer can build the least-
 ```python
 energy_system = EnergySystem(
     portfolio=portfolio,
-    timestep=timedelta(minutes=30),
-    number_of_steps=9,
+    timestep=timedelta(hours=1),
+    number_of_steps=24,
     scenarios=scenario,
 )
-
-result = energy_system.optimize()
 ```
 
 At this point the solver is doing the real work: it balances the load in every step while trying to use the cheapest energy first.
 
 ## Results
 
-The chart below shows the generator dispatch over time. Solar PV is used first
-whenever available (zero marginal cost), and CCGT fills the remaining demand.
+The chart below shows the generator dispatch over time as stacked bars. Solar PV is used first whenever available (zero marginal cost), and CCGT fills the remaining demand. The dashed green line shows the available solar capacity, while the dashed gray line shows the constant load.
 
 <iframe src="/assets/examples/basic_dispatch.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
@@ -105,6 +103,8 @@ If you print `result.generators.power`, the pattern should be easy to read:
 - solar is used first whenever it is available
 - gas fills the remaining demand
 - total supply always matches the fixed load
+
+The dashed green line shows the available solar capacity. Notice that during the middle hours (timesteps 9–15), the solar capacity exceeds the load. The optimizer can only dispatch what the load needs, so some solar generation goes unused — this is curtailment.
 
 ## Discussion
 

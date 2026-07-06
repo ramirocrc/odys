@@ -46,7 +46,7 @@ def _save_figure(fig: go.Figure, name: str) -> None:
 
 
 def generate_basic_dispatch() -> None:
-    """Stacked area chart of generator dispatch with load overlay."""
+    """Stacked bar chart of generator dispatch with load overlay."""
     result = run_basic_dispatch()
     df = result.generators.to_dataframe()["power"].unstack("generator")
     steps = list(range(1, len(df) + 1))
@@ -54,26 +54,32 @@ def generate_basic_dispatch() -> None:
     fig = go.Figure()
 
     fig.add_trace(
-        go.Scatter(
+        go.Bar(
             x=steps,
             y=df["solar_pv"],
-            mode="lines",
-            fill="tozeroy",
             name="Solar PV",
-            line=dict(color=SOLAR_COLOR, width=1),
-            stackgroup="generation",
+            marker=dict(color=SOLAR_COLOR),
         ),
     )
 
     fig.add_trace(
-        go.Scatter(
+        go.Bar(
             x=steps,
             y=df["ccgt"],
-            mode="lines",
-            fill="tonexty",
             name="CCGT",
-            line=dict(color=CCGT_COLOR, width=1),
-            stackgroup="generation",
+            marker=dict(color=CCGT_COLOR),
+        ),
+    )
+
+    solar_profile = [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0]
+
+    fig.add_trace(
+        go.Scatter(
+            x=steps,
+            y=solar_profile,
+            mode="lines",
+            name="Solar Capacity",
+            line=dict(color=SOLAR_COLOR, width=2, dash="dash"),
         ),
     )
 
@@ -89,8 +95,9 @@ def generate_basic_dispatch() -> None:
 
     fig.update_layout(
         title=dict(text="Generator Dispatch", x=0.5),
-        xaxis=dict(title="Time Step"),
-        yaxis=dict(title="Power (MW)", range=[0, 180]),
+        xaxis=dict(title="Time Step", range=[0.5, 24.5]),
+        yaxis=dict(title="Power (MW)", range=[0, 150]),
+        barmode="stack",
         hovermode="x unified",
         legend=dict(x=0.01, y=0.99),
         margin=dict(l=40, r=20, t=40, b=40),
@@ -100,7 +107,7 @@ def generate_basic_dispatch() -> None:
 
 
 def generate_battery_dispatch() -> None:
-    """Two-panel chart: generator dispatch + battery SOC and power."""
+    """Two-panel chart: generator dispatch with battery + battery SOC."""
     result = run_battery_dispatch()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
     battery_df = result.storages.to_dataframe().droplevel("storage")
@@ -109,20 +116,29 @@ def generate_battery_dispatch() -> None:
     fig = make_subplots(
         rows=2,
         cols=1,
-        shared_xaxes=True,
         vertical_spacing=0.12,
-        subplot_titles=("Generator Dispatch", "Battery State"),
+        subplot_titles=("Dispatch", "Battery State of Charge"),
+        row_heights=[0.7, 0.3],
     )
 
+    # Split battery into discharge (positive) and charge (negative)
+    battery_power = -battery_df["net_power"].values  # Invert so discharge is positive
+    battery_discharge = [max(0, v) for v in battery_power]
+    battery_charge = [min(0, v) for v in battery_power]
+
+    # Calculate bases for stacking
+    solar = gen_df["solar_pv"].values
+    ccgt = gen_df["ccgt"].values
+    solar_base = battery_discharge
+    ccgt_base = [b + s for b, s in zip(battery_discharge, solar, strict=True)]
+
     fig.add_trace(
-        go.Scatter(
+        go.Bar(
             x=steps,
-            y=gen_df["solar_pv"],
-            mode="lines",
-            fill="tozeroy",
-            name="Solar PV",
-            line=dict(color=SOLAR_COLOR, width=1),
-            stackgroup="gen",
+            y=battery_discharge,
+            base=0,
+            name="Battery Discharge",
+            marker=dict(color=BATTERY_SOC_COLOR),
             legendgroup="gen",
         ),
         row=1,
@@ -130,14 +146,38 @@ def generate_battery_dispatch() -> None:
     )
 
     fig.add_trace(
-        go.Scatter(
+        go.Bar(
             x=steps,
-            y=gen_df["ccgt"],
-            mode="lines",
-            fill="tonexty",
+            y=solar,
+            base=solar_base,
+            name="Solar PV",
+            marker=dict(color=SOLAR_COLOR),
+            legendgroup="gen",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=steps,
+            y=ccgt,
+            base=ccgt_base,
             name="CCGT",
-            line=dict(color=CCGT_COLOR, width=1),
-            stackgroup="gen",
+            marker=dict(color=CCGT_COLOR),
+            legendgroup="gen",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=steps,
+            y=battery_charge,
+            base=0,
+            name="Battery Charge",
+            marker=dict(color=BATTERY_SOC_COLOR),
             legendgroup="gen",
         ),
         row=1,
@@ -158,7 +198,6 @@ def generate_battery_dispatch() -> None:
     )
 
     soc = battery_df["soc"].values
-    net_power = battery_df["net_power"].values
 
     fig.add_trace(
         go.Scatter(
@@ -173,42 +212,38 @@ def generate_battery_dispatch() -> None:
         col=1,
     )
 
-    bar_colors = [BATTERY_DISCHARGE_COLOR if v > 0 else BATTERY_CHARGE_COLOR for v in net_power]
-    fig.add_trace(
-        go.Bar(
-            x=steps,
-            y=net_power,
-            name="Net Power (discharge +)",
-            marker=dict(color=bar_colors),
-            opacity=0.7,
-        ),
-        row=2,
-        col=1,
-    )
-
     fig.update_layout(
+        barmode="stack",
         hovermode="x unified",
         legend=dict(x=0.01, y=0.99),
         margin=dict(l=40, r=20, t=40, b=40),
     )
 
-    fig.update_xaxes(title="Time Step", row=2, col=1)
-    fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 180])
-    fig.update_yaxes(title="Energy (MWh)", row=2, col=1)
+    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[-80, 200])
+    fig.update_yaxes(title="Energy (MWh)", row=2, col=1, range=[0, 1])
 
     _save_figure(fig, "battery_dispatch")
 
 
 def generate_market_arbitrage() -> None:
-    """Dual-axis chart: generation vs market purchases with price overlay."""
+    """Two-panel chart: stacked dispatch bars + market prices."""
     result = run_market_arbitrage()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
     buy_volume = result.markets.buy_volume.xs("market", level="market")
     steps = list(range(1, len(gen_df) + 1))
 
-    market_prices = [80, 70, 40, 30, 30, 80, 90, 60, 40]
+    market_prices = [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]
 
-    fig = go.Figure()
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.12,
+        subplot_titles=("Dispatch", "Market Prices"),
+        row_heights=[0.7, 0.3],
+    )
 
     fig.add_trace(
         go.Bar(
@@ -216,9 +251,9 @@ def generate_market_arbitrage() -> None:
             y=gen_df["ccgt"],
             name="CCGT Generation",
             marker=dict(color=CCGT_COLOR),
-            opacity=0.8,
-            yaxis="y",
         ),
+        row=1,
+        col=1,
     )
 
     fig.add_trace(
@@ -227,9 +262,21 @@ def generate_market_arbitrage() -> None:
             y=buy_volume.values,
             name="Market Purchases",
             marker=dict(color=MARKET_BUY_COLOR),
-            opacity=0.8,
-            yaxis="y",
         ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=steps,
+            y=[70] * len(steps),
+            mode="lines",
+            name="Load (70 MW)",
+            line=dict(color=LOAD_COLOR, width=2, dash="dash"),
+        ),
+        row=1,
+        col=1,
     )
 
     fig.add_trace(
@@ -240,8 +287,9 @@ def generate_market_arbitrage() -> None:
             name="Market Price ($/MWh)",
             line=dict(color=MARKET_PRICE_COLOR, width=2),
             marker=dict(size=8),
-            yaxis="y2",
         ),
+        row=2,
+        col=1,
     )
 
     fig.add_trace(
@@ -251,25 +299,22 @@ def generate_market_arbitrage() -> None:
             mode="lines",
             name="CCGT Cost (50 $/MWh)",
             line=dict(color=MARKET_PRICE_COLOR, width=1, dash="dot"),
-            yaxis="y2",
         ),
+        row=2,
+        col=1,
     )
 
     fig.update_layout(
-        title=dict(text="Market Arbitrage Dispatch", x=0.5),
-        xaxis=dict(title="Time Step"),
-        yaxis=dict(title="Power (MW)", side="left"),
-        yaxis2=dict(
-            title="Price ($/MWh)",
-            side="right",
-            overlaying="y",
-            rangemode="tozero",
-        ),
-        barmode="group",
+        barmode="stack",
         hovermode="x unified",
-        legend=dict(x=0.01, y=0.99),
-        margin=dict(l=40, r=40, t=40, b=40),
+        legend=dict(x=0.5, y=1.02, xanchor="center", yanchor="bottom", orientation="h"),
+        margin=dict(l=40, r=40, t=60, b=40),
     )
+
+    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_yaxes(title="Power (MW)", row=1, col=1)
+    fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
     _save_figure(fig, "market_arbitrage")
 
@@ -349,7 +394,7 @@ def generate_cvar_market_risk() -> None:
         )
 
     fig.update_layout(
-        barmode="group",
+        barmode="stack",
         hovermode="x unified",
         legend=dict(x=0.5, y=-0.15, orientation="h"),
         margin=dict(l=40, r=20, t=40, b=60),

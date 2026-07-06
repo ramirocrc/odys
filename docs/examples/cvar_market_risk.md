@@ -12,7 +12,7 @@ Imagine we are right before the day-ahead market. We have a single gas turbine w
 
 Because this decision has to be made now, we set `stage_fixed=True` for `sdac`. That means the committed volume must be the same across all scenarios.
 
-We consider three equally likely scenarios. Both market prices vary across scenarios: `sdac` has modest price uncertainty (190, 200, 210 $/MWh), while `sidc` has much wider price swings (500, 200, 15 $/MWh). This creates two markets with different risk profiles.
+We consider three equally likely scenarios. Both market prices vary across scenarios: `sdac` has modest price uncertainty (190, 200, 210 $/MWh), while `sidc` has wider price swings (280, 200, 140 $/MWh). This creates two markets with different risk profiles.
 
 The example is built as a single 24-hour timestep because the main decision is one commitment: how much capacity should go to `sdac` before the uncertainty is resolved?
 
@@ -64,14 +64,13 @@ The difference between the markets is the whole point. `sdac` is the market we m
 
 The three scenarios represent three possible price outcomes:
 
-- `high`: the intraday market is very attractive (500 $/MWh), so keeping capacity
+- `high`: the intraday market is attractive (280 $/MWh), so keeping capacity
   for `sidc` pays off.
 - `mid`: both markets are similarly priced around 200 $/MWh.
-- `low`: the intraday market collapses (15 $/MWh), so holding back capacity for
-  `sidc` becomes a bad bet.
+- `low`: the intraday market is less attractive (140 $/MWh), but still profitable.
 
 That spread is what creates the risk tradeoff. `sdac` has modest price variation
-(190-210 $/MWh), while `sidc` swings dramatically (15-500 $/MWh).
+(190-210 $/MWh), while `sidc` swings more widely (140-280 $/MWh).
 
 ```python
 scenarios = [
@@ -79,7 +78,7 @@ scenarios = [
         name="high",
         probability=1 / 3,
         available_capacity_profiles={"ccgt": [100]},
-        market_prices={"sdac": [190], "sidc": [500]},
+        market_prices={"sdac": [190], "sidc": [280]},
     ),
     StochasticScenario(
         name="mid",
@@ -91,7 +90,7 @@ scenarios = [
         name="low",
         probability=1 / 3,
         available_capacity_profiles={"ccgt": [100]},
-        market_prices={"sdac": [210], "sidc": [15]},
+        market_prices={"sdac": [210], "sidc": [140]},
     ),
 ]
 ```
@@ -159,72 +158,64 @@ high      0     sdac        0.0
 mid       0     sdac       -0.0
                 sidc      100.0
 low       0     sdac       -0.0
-                sidc       -0.0
+                sidc      100.0
 ```
 
-This makes sense: the optimizer sends all 100 MW to `sidc` when the price is
-high or moderate, and it stays out of that market when the price falls below
-the turbine's variable cost.
+This makes sense: the optimizer sends all 100 MW to `sidc` because it has slightly higher expected profit (18,667 vs 18,000).
 
 Expected profit confirms that choice:
 
 - `sdac`: `(190 - 20) × 100 = 17,000` in `high`, `(200 - 20) × 100 = 18,000`
   in `mid`, `(210 - 20) × 100 = 19,000` in `low`, so the expected profit is
   `(17,000 + 18,000 + 19,000) / 3 = 18,000`
-- `sidc`: `(500 - 20) × 100 = 48,000` in `high`, `(200 - 20) × 100 = 18,000`
-  in `mid`, and `0` in `low`, so the expected profit is
-  `(48,000 + 18,000 + 0) / 3 = 22,000`
+- `sidc`: `(280 - 20) × 100 = 26,000` in `high`, `(200 - 20) × 100 = 18,000`
+  in `mid`, `(140 - 20) × 100 = 12,000` in `low`, so the expected profit is
+  `(26,000 + 18,000 + 12,000) / 3 = 18,667`
 
-So `sidc` really does have the higher expected profit, which is why the
-profit-only model chooses it.
+So `sidc` has the higher expected profit, which is why the profit-only model chooses it.
 
 With CVaR added:
 
 ```text
 scenario  time  market
-high      0     sdac       94.736842
-                sidc        5.263158
-mid       0     sdac       94.736842
-                sidc        5.263158
-low       0     sdac        0.000000
-                sidc        0.000000
+high      0     sdac       87.5
+                sidc       12.5
+mid       0     sdac       87.5
+                sidc       12.5
+low       0     sdac       87.5
+                sidc       12.5
 ```
 
-This is the key change: once downside risk is penalized, the optimizer commits
-most capacity (~95 MW) to `sdac` across all scenarios, with a small position
-in `sidc` to capture upside in favorable scenarios.
+This is the key change: once downside risk is penalized, the optimizer commits most capacity (~87.5 MW) to `sdac` across all scenarios, with a meaningful position (~12.5 MW) in `sidc` to capture upside in favorable scenarios.
 
-The math backs this up. The CVaR term penalizes downside exposure:
+The math backs this up. For the optimal mix (87.5 MW sdac + 12.5 MW sidc):
 
-- `sdac`: expected profit is `18,000`. Its scenario profits are `17,000`,
-  `18,000`, and `19,000`, so the 60th-percentile VaR is `18,000`. The only
-  shortfall is in the high scenario: `18,000 - 17,000 = 1,000`, and the
-  average shortfall is `1,000 / 3 ≈ 333`. With confidence level `0.6`, the
-  multiplier is `1 / (1 - 0.6) = 2.5`, so the CVaR term is
-  `18,000 - 2.5 × 333 ≈ 17,167`
-- `sidc`: expected profit is `22,000`. Its scenario profits are `0`, `18,000`,
-  and `48,000`, so the 60th-percentile VaR is `18,000`. The only shortfall is
-  in the low scenario: `18,000 - 0 = 18,000`, and the average shortfall is
-  `18,000 / 3 = 6,000`. With confidence level `0.6`, the multiplier is
-  `1 / (1 - 0.6) = 2.5`, so the CVaR term is
-  `18,000 - 2.5 × 6,000 = 3,000`
+- **Scenario profits**: `high` = 18,125, `mid` = 18,000, `low` = 18,125
+- **Expected profit**: (18,125 + 18,000 + 18,125) / 3 = 18,083
+- **VaR (60th percentile)**: 18,125 (the optimizer pushes η to the maximum profit)
+- **Shortfalls**: `high` = 0, `mid` = 125, `low` = 0
+- **E[shortfall]**: (0 + 125 + 0) / 3 ≈ 41.67
+- **CVaR**: 18,125 - 2.5 × 41.67 ≈ 18,021
+- **Objective**: 18,083 + 18,021 = 36,104
 
-So even though `sidc` has the better expected profit, `sdac` has much lower
-downside risk, which is why the CVaR-penalized objective heavily favors it.
+Compare this to pure strategies:
+
+- **100% sdac**: E[profit] = 18,000, CVaR ≈ 17,167, Objective ≈ 35,167
+- **100% sidc**: E[profit] = 18,667, CVaR = 13,000, Objective ≈ 31,667
+
+The mixed strategy (87.5/12.5) achieves a higher objective (36,104) than either pure strategy, demonstrating how CVaR creates value through diversification.
 
 The important comparison is this:
 
-- with profit only, the optimizer prefers `sidc`
-- with profit plus CVaR, the optimizer heavily prefers `sdac`
+- with profit only, the optimizer prefers `sidc` (100% allocation)
+- with profit plus CVaR, the optimizer prefers `sdac` (~87.5% allocation)
 
-The first result makes sense because `sidc` has the highest upside. The second
-result makes sense because CVaR makes the low-price case matter, and that makes
-the lower-variance `sdac` commitment more attractive.
+The first result makes sense because `sidc` has the higher expected profit. The second result makes sense because CVaR makes the low-price case matter, and that makes the lower-variance `sdac` commitment more attractive. The more balanced allocation (87.5/12.5 instead of 95/5) reflects that `sidc` is still profitable in all scenarios, just with more variance.
 
 ## Discussion
 
 This is the most advanced example in the set because it combines uncertainty, market participation, and risk aversion.
 
-The useful intuition here is that expected value and risk are not the same thing. A decision that looks best on average can still be unattractive once you account for the bad tail outcomes. CVaR gives the optimizer a way to say, “I care about avoiding the painful scenarios, not just chasing the average.”
+The useful intuition here is that expected value and risk are not the same thing. A decision that looks best on average can still be unattractive once you account for the bad tail outcomes. CVaR gives the optimizer a way to say, "I care about avoiding the painful scenarios, not just chasing the average."
 
-In this example, both markets have uncertainty, but with very different profiles. `sdac` has modest price variation while `sidc` has dramatic swings. The profit-only objective goes all-in on the higher-variance market, while the CVaR-penalized objective heavily favors the lower-variance option. This is the core value of risk-aware optimization: it lets the model balance upside potential against downside exposure.
+In this example, both markets have uncertainty, but with very different profiles. `sdac` has modest price variation while `sidc` has wider swings. The profit-only objective goes all-in on the higher-variance market, while the CVaR-penalized objective favors the lower-variance option but still maintains a meaningful position in the riskier market. This is the core value of risk-aware optimization: it lets the model balance upside potential against downside exposure, resulting in more diversified allocations rather than extreme bets.

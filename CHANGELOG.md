@@ -7,7 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-05
+
+### Added
+
 - CVaR (Conditional Value at Risk) support for stochastic optimization
+- Lower bound validation (`ge=0`) on `ObjectiveTerm.weight`
+
+### Changed
+
+- Restructured codebase into layered architecture
+- Refactored results API
+- Refactored objective definition
+- Added `slots` and pydantic `frozen` configuration to data models
+- Improved docstrings across market, load, scenario, and objective classes
+- Migrated documentation from MkDocs to Zensical
+- Fixed storage timedelta constraints
+
+### Removed
+
+- Removed load results from results API
 
 ## [0.1.2] - 2025-01-01
 
