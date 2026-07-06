@@ -14,7 +14,7 @@ choice once uncertain market prices are taken into account.
 - **sdac**: Sell-only market with non-anticipative decisions (stage_fixed=True).
   Prices vary slightly by scenario: 190, 200, 210 $/MWh.
 - **sidc**: Sell-only market with uncertain prices (stage_fixed=False).
-  Prices vary by scenario: 500 (high), 200 (mid), 15 (low) $/MWh.
+  Prices vary by scenario: 280 (high), 200 (mid), 140 (low) $/MWh.
 
 ## Problem
 
@@ -30,9 +30,9 @@ Two optimizations are run:
 
 | Scenario | Probability | sdac Price | sidc Price | sdac Profit | sidc Profit |
 |----------|-------------|------------|------------|-------------|-------------|
-| high     | 1/3         | 190 $/MWh  | 500 $/MWh  | 17,000      | 48,000      |
+| high     | 1/3         | 190 $/MWh  | 280 $/MWh  | 17,000      | 26,000      |
 | mid      | 1/3         | 200 $/MWh  | 200 $/MWh  | 18,000      | 18,000      |
-| low      | 1/3         | 210 $/MWh  | 15 $/MWh   | 19,000      | -500        |
+| low      | 1/3         | 210 $/MWh  | 140 $/MWh  | 19,000      | 12,000      |
 
 (Profit = (price - 20) * 100 MW)
 
@@ -42,12 +42,12 @@ Two optimizations are run:
 - E[profit] = (17,000 + 18,000 + 19,000) / 3 = 18,000
 
 **sidc (uncertain):**
-- Allocating to sidc, the optimizer avoids the low scenario (price 15 < 20)
-- High: 100 MW at 500 → 48,000
+- Allocating to sidc, the optimizer sells in all scenarios (all prices > 20)
+- High: 100 MW at 280 → 26,000
 - Mid: 100 MW at 200 → 18,000
-- Low: 0 MW produced → 0
-- **E[profit] = (48,000 + 18,000 + 0) / 3 = 22,000**
-- **sidc has 4,000 higher expected profit than sdac**
+- Low: 100 MW at 140 → 12,000
+- **E[profit] = (26,000 + 18,000 + 12,000) / 3 = 18,667**
+- **sidc has 667 higher expected profit than sdac**
 
 ## CVaR Analysis (confidence_level = 0.6)
 
@@ -60,11 +60,11 @@ The objective uses: CVaR_expr = VaR - 2.5 x E[shortfall]
 - E[shortfall] = (1,000 + 0 + 0) / 3 ≈ 333
 - CVaR_expr = 18,000 - 2.5 x 333 ≈ **17,167**
 
-**For sidc:** Profits: [0, 18,000, 48,000]
+**For sidc:** Profits: [12,000, 18,000, 26,000]
 - VaR (60th percentile) = 18,000
-- Shortfalls: z_low = 18,000 - 0 = 18,000, z_mid = 0, z_high = 0
-- E[shortfall] = (18,000 + 0 + 0) / 3 = 6,000
-- CVaR_expr = 18,000 - 2.5 x 6,000 = **3,000**
+- Shortfalls: z_low = 18,000 - 12,000 = 6,000, z_mid = 0, z_high = 0
+- E[shortfall] = (6,000 + 0 + 0) / 3 = 2,000
+- CVaR_expr = 18,000 - 2.5 x 2,000 = **13,000**
 
 ## Objective Function
 
@@ -75,23 +75,23 @@ Objective = profit_weight x E[profit] + cvar_weight x CVaR_expr
 | Market | E[Profit] | Objective Value |
 |--------|-----------|-----------------|
 | sdac   | 18,000    | 18,000          |
-| sidc   | 22,000    | 22,000          |
+| sidc   | 18,667    | 18,667          |
 
-**Result:** sidc wins (22,000 > 18,000)
-- sidc has 4,000 higher expected profit than sdac
-- Optimizer sells 100 MW to sidc in high/mid scenarios, 0 MW in low
+**Result:** sidc wins (18,667 > 18,000)
+- sidc has 667 higher expected profit than sdac
+- Optimizer sells 100 MW to sidc in all scenarios
 
 ### Run 2: With CVaR Penalty (weight = 1)
 
 The optimizer now finds an optimal mix rather than a pure allocation, since both
 markets have uncertainty:
 
-- **sdac**: ~94.7 MW in all scenarios (non-anticipative)
-- **sidc**: ~5.3 MW in high/mid scenarios, 0 MW in low
+- **sdac**: ~87.5 MW in all scenarios (non-anticipative)
+- **sidc**: ~12.5 MW in all scenarios
 
-**Result:** sdac dominates the allocation (~95% vs ~5%)
-- The CVaR penalty strongly favors the lower-variance market
-- A small sidc position captures upside in favorable scenarios
+**Result:** sdac dominates the allocation (~87.5% vs ~12.5%)
+- The CVaR penalty favors the lower-variance market
+- A meaningful sidc position captures upside in favorable scenarios
 - Lower variance becomes more valuable than higher (but riskier) expected profit
 
 ## Critical CVaR Weight
@@ -103,6 +103,9 @@ profit of sidc dominates; above it, the lower downside risk of sdac wins.
 - **No CVaR (w = 0)**: Optimizer chooses **sidc** (higher expected profit)
 - **Low CVaR weight**: Optimizer still prefers **sidc** (expected profit dominates)
 - **High CVaR weight**: Optimizer shifts to **sdac** (downside risk dominates)
+
+With the reduced sidc variance, the transition is more gradual. Both solutions
+show meaningful allocations to both markets, making the tradeoff clearer.
 
 ## Key Insight
 
@@ -157,7 +160,7 @@ def run_cvar_market_risk() -> tuple[OptimalDisptachResults, OptimalDisptachResul
             name="high",
             probability=1 / 3,
             available_capacity_profiles={"ccgt": [100]},
-            market_prices={"sdac": [190], "sidc": [500]},
+            market_prices={"sdac": [190], "sidc": [280]},
         ),
         StochasticScenario(
             name="mid",
@@ -169,7 +172,7 @@ def run_cvar_market_risk() -> tuple[OptimalDisptachResults, OptimalDisptachResul
             name="low",
             probability=1 / 3,
             available_capacity_profiles={"ccgt": [100]},
-            market_prices={"sdac": [210], "sidc": [15]},
+            market_prices={"sdac": [210], "sidc": [140]},
         ),
     ]
 

@@ -8,7 +8,7 @@ icon: fontawesome/solid/battery-three-quarters
 
 This example extends the basic dispatch problem by adding a battery. The question is no longer just which generator should serve the load right now, but also whether some energy should be saved for later.
 
-The system still has a fixed 70 MW load over 9 half-hour periods, a free solar plant, and a gas turbine with a marginal cost of 50 $/MWh. The new element is a battery with limited energy capacity, limited power, and no initial or final energy target other than starting and ending empty.
+The system still has a fixed 70 MW load over 24 hourly periods, a free solar plant, and a gas turbine with a marginal cost of 50 $/MWh. The new element is a battery with limited energy capacity, limited power, and no initial or final energy target other than starting and ending empty.
 
 That changes the problem in an important way: solar does not have to be used immediately. If there is excess solar in one step, the optimizer can store it and use it later when solar output falls.
 
@@ -16,7 +16,7 @@ That changes the problem in an important way: solar does not have to be used imm
 flowchart LR
     Solar(["☀️ Solar PV<br/>150 MW · 0 \$/MWh"]) --> Bus(["⚡ Bus"])
     CCGT(["🔥 CCGT<br/>100 MW · 50 \$/MWh"]) --> Bus
-    Battery(["🔋 Battery<br/>100 MWh · 200 MW"]) <--> Bus
+    Battery(["🔋 Battery<br/>300 MWh · 200 MW"]) <--> Bus
     Bus --> Load(["🏭 Load<br/>70 MW"])
     style Solar fill:none
     style CCGT fill:none
@@ -41,7 +41,7 @@ from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenar
 generator_1 = Generator(name="ccgt", nominal_power=100, variable_cost=50)
 generator_2 = Generator(name="solar_pv", nominal_power=150, variable_cost=0)
 load = Load(name="load", type=LoadType.Fixed)
-battery = Storage(name="battery", capacity=100, max_power=200, soc_start=0, soc_end=0)
+battery = Storage(name="battery", capacity=300, max_power=200, soc_start=0, soc_end=0)
 portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
 ```
 
@@ -60,10 +60,10 @@ and solar profile: it can store surplus energy and use it later.
 ```python
 scenario = Scenario(
     available_capacity_profiles={
-        "ccgt": 9 * [100],
-        "solar_pv": [0, 30, 60, 80, 100, 80, 60, 30, 0],
+        "ccgt": 24 * [100],
+        "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
     },
-    load_profiles={"load": 9 * [70]},
+    load_profiles={"load": 24 * [70]},
 )
 ```
 
@@ -72,7 +72,7 @@ This is where the battery becomes useful. When solar is above 70 MW, there is sp
 ### 3. Solve and inspect both generators and storage
 
 ```python
-energy_system = EnergySystem(portfolio=portfolio, timestep=timedelta(minutes=30), number_of_steps=9, scenarios=scenario)
+energy_system = EnergySystem(portfolio=portfolio, timestep=timedelta(hours=1), number_of_steps=24, scenarios=scenario)
 
 result = energy_system.optimize()
 ```
@@ -81,19 +81,19 @@ At this point you want to look at the generator and battery outputs together. Th
 
 ## Results
 
-The chart below shows how storage changes the dispatch. The top panel tracks
-generator output, while the bottom panel shows the battery state of charge and
-net power flow.
+The chart below shows how storage changes the dispatch. The top panel shows generator output and battery power flow (discharge positive, charging negative), while the bottom panel shows the battery state of charge.
 
 <iframe src="/assets/examples/battery_dispatch.html" style="width:100%; height:1000px; border:none;" loading="lazy"></iframe>
 
-The output should show three distinct behaviors:
+The output should show several distinct behaviors:
 
-- solar covers the load when it is sufficient
-- the battery charges (negative net power) when solar is above load
-- the battery discharges (positive net power) when solar falls below load
+- during the early morning (timesteps 0–5), solar is zero and the battery starts empty, so CCGT meets the full load
+- as solar ramps up (timesteps 6–8), it covers part of the load and CCGT output falls
+- during peak solar hours (timesteps 9–15), solar exceeds the load and the battery charges with the surplus (positive bars on the chart, up to 55 MW at timestep 12)
+- as solar declines (timesteps 16–18), the battery discharges to supplement the remaining solar output
+- in the evening (timesteps 19–23), solar drops to zero and the battery discharges to meet the load, almost entirely replacing CCGT
 
-Because the battery starts and ends empty, the optimizer cannot treat storage as a free source of energy. It has to choose when storing energy is worth the losses.
+Because the battery starts and ends empty, the optimizer cannot treat storage as a free source of energy. It has to choose when storing energy is worth the round-trip losses. With 300 MWh of capacity, the battery can absorb most of the midday surplus and release it through the evening, dramatically reducing gas use.
 
 ## Discussion
 

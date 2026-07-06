@@ -9,12 +9,12 @@ can save extra solar for later.
 - **solar_pv**: 150 MW solar farm, zero variable cost, output depends on
   weather and time of day.
 - **ccgt**: 100 MW gas turbine, variable cost of 50 $/MWh.
-- **battery**: 100 MWh capacity, 200 MW max charge/discharge rate.
+- **battery**: 300 MWh capacity, 200 MW max charge/discharge rate.
   Starts and ends empty (soc_start=0, soc_end=0).
 
 ## Problem
 
-The setup is still 9 half-hour periods with a constant 70 MW load. The
+The setup is 24 hourly periods with a constant 70 MW load. The
 optimizer can now:
 1. Use solar to meet load
 2. Store excess solar in the battery when production is above demand
@@ -28,9 +28,9 @@ The battery acts like a buffer: it absorbs surplus energy and returns it later
 when solar is scarce.
 
 For example:
-- When solar = 100 MW: battery charges at 30 MW, ccgt = 0  # free charging
+- When solar = 125 MW: battery charges at 55 MW, ccgt = 0  # free charging
 - When solar = 0 MW, battery fully charged: ccgt = 0  # battery powers load
-- When solar = 0 MW, battery empty: ccgt = 100  # must generate from gas (more than load to charge)
+- When solar = 0 MW, battery empty: ccgt = 70  # must generate from gas
 
 ## Understanding the Output
 
@@ -70,7 +70,7 @@ def run_battery_dispatch() -> OptimalDisptachResults:
 
     battery = Storage(
         name="battery",
-        capacity=100,
+        capacity=300,
         max_power=200,
         soc_start=0,
         soc_end=0,
@@ -79,17 +79,17 @@ def run_battery_dispatch() -> OptimalDisptachResults:
 
     scenario = Scenario(
         available_capacity_profiles={
-            "ccgt": 9 * [100],
-            "solar_pv": [0, 30, 60, 80, 100, 80, 60, 30, 0],
+            "ccgt": 24 * [100],
+            "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
         },
         load_profiles={
-            "load": 9 * [70],
+            "load": 24 * [70],
         },
     )
     energy_system = EnergySystem(
         portfolio=portfolio,
-        timestep=timedelta(minutes=30),
-        number_of_steps=9,
+        timestep=timedelta(hours=1),
+        number_of_steps=24,
         scenarios=scenario,
     )
 

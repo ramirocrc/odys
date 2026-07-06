@@ -8,7 +8,7 @@ icon: fontawesome/solid/chart-line
 
 This example adds a market to the dispatch problem. The optimizer now has two ways to satisfy demand: generate locally with a gas turbine or buy energy from a market.
 
-The load is fixed at 70 MW over 9 half-hour periods. The gas turbine has a marginal cost of 50 $/MWh, while the market price changes from step to step. Since the market is buy-only, the optimizer is deciding when to procure from the market and when local generation is cheaper.
+The load is fixed at 70 MW over 24 hourly periods. The gas turbine has a marginal cost of 50 $/MWh, while the market price changes from step to step. Since the market is buy-only, the optimizer is deciding when to procure from the market and when local generation is cheaper.
 
 This is useful because it introduces an external price signal. Instead of only comparing assets against one another, the model is comparing local production against a live market alternative.
 
@@ -53,9 +53,9 @@ The buy-only restriction is important. It keeps the example focused on procureme
 
 ```python
 scenario = Scenario(
-    available_capacity_profiles={"ccgt": 9 * [100]},
-    load_profiles={"load": 9 * [70]},
-    market_prices={"market": [80, 70, 40, 30, 30, 80, 90, 60, 40]},
+    available_capacity_profiles={"ccgt": 24 * [100]},
+    load_profiles={"load": 24 * [70]},
+    market_prices={"market": [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]},
 )
 ```
 
@@ -65,7 +65,7 @@ The price series is the whole point of the example. When the market is cheap, th
 
 ```python
 energy_system = EnergySystem(
-    portfolio=portfolio, markets=market, timestep=timedelta(minutes=30), number_of_steps=9, scenarios=scenario
+    portfolio=portfolio, markets=market, timestep=timedelta(hours=1), number_of_steps=24, scenarios=scenario
 )
 
 result = energy_system.optimize()
@@ -75,11 +75,9 @@ Now the solver compares the cost of generating locally with the market price at 
 
 ## Results
 
-The chart below compares local generation against market purchases. The market
-price overlay (with a reference line at the CCGT marginal cost of 50 $/MWh)
-shows exactly when the optimizer switches between the two sources.
+The chart below compares local generation against market purchases. The top panel shows the dispatch decision, while the bottom panel displays market prices alongside the CCGT marginal cost reference line. This layout makes it easy to see exactly when the optimizer switches between the two sources.
 
-<iframe src="/assets/examples/market_arbitrage.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
+<iframe src="/assets/examples/market_arbitrage.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
 
 The dispatch should flip around the 50 $/MWh threshold:
 

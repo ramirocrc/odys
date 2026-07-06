@@ -13,8 +13,8 @@ generator.
 
 ## Problem
 
-We simulate 9 half-hour periods (4.5 hours) with a constant 70 MW load.
-The solar profile ramps up from 0 to 100 MW and then back down, which gives
+We simulate 24 hourly periods with a constant 70 MW load.
+The solar profile ramps up from 0 to 125 MW and then back down, which gives
 the optimizer a mix of easy and constrained timesteps to work through.
 
 ## Expected Results
@@ -26,6 +26,7 @@ For example:
 - When solar = 70 MW available, ccgt = 0  (demand fully met by solar)
 - When solar = 30 MW available, ccgt = 40  (30 from solar, 40 from gas)
 - When solar = 0 MW, ccgt = 70  (all demand from gas)
+- When solar = 125 MW available, ccgt = 0  (solar exceeds demand, curtailment)
 
 ## Understanding the Output
 
@@ -65,17 +66,17 @@ def run_basic_dispatch() -> OptimalDisptachResults:
 
     scenario = Scenario(
         available_capacity_profiles={
-            "ccgt": 9 * [100],
-            "solar_pv": [0, 30, 60, 80, 100, 80, 60, 30, 0],
+            "ccgt": 24 * [100],
+            "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
         },
         load_profiles={
-            "load": 9 * [70],
+            "load": 24 * [70],
         },
     )
     energy_system = EnergySystem(
         portfolio=portfolio,
-        timestep=timedelta(minutes=30),
-        number_of_steps=9,
+        timestep=timedelta(hours=1),
+        number_of_steps=24,
         scenarios=scenario,
     )
 

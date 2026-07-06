@@ -13,7 +13,7 @@ compares operating cost against market price.
 
 ## Problem
 
-We simulate 9 half-hour periods (4.5 hours) with a constant 70 MW load.
+We simulate 24 hourly periods with a constant 70 MW load.
 Market prices change over time, so the optimizer has to decide step by step
 whether it is cheaper to generate locally or buy from the market.
 
@@ -23,7 +23,8 @@ The optimizer buys from the market whenever the market price is below the
 ccgt's marginal cost of 50 $/MWh. When the market is more expensive, the gas
 plant takes over.
 
-Market prices: [80, 70, 40, 30, 30, 80, 90, 60, 40]
+Market prices vary throughout the day, with some hours below 50 $/MWh and
+others above, creating arbitrage opportunities.
 
 For example:
 - When market price = 80 $/MWh: ccgt = 70 MW  # price > 50, generate
@@ -70,20 +71,20 @@ def run_market_arbitrage() -> OptimalDisptachResults:
 
     scenario = Scenario(
         available_capacity_profiles={
-            "ccgt": 9 * [100],
+            "ccgt": 24 * [100],
         },
         load_profiles={
-            "load": 9 * [70],
+            "load": 24 * [70],
         },
         market_prices={
-            "market": [80, 70, 40, 30, 30, 80, 90, 60, 40],
+            "market": [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
         },
     )
     energy_system = EnergySystem(
         portfolio=portfolio,
         markets=market,
-        timestep=timedelta(minutes=30),
-        number_of_steps=9,
+        timestep=timedelta(hours=1),
+        number_of_steps=24,
         scenarios=scenario,
     )
 
