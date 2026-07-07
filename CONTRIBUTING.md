@@ -79,7 +79,7 @@ Tests require **90% minimum coverage**. If your changes drop coverage below this
 
 ```bash
 # Documentation build (if you touched docs)
-just docs-test
+just docs-build
 ```
 
 ```bash
@@ -109,7 +109,7 @@ Before opening a PR, verify that your changes:
 2. Update documentation if they add new functionality.
 3. Pass `just check` (formatting, linting, type checking).
 4. Pass `just test` with 90%+ coverage.
-5. Pass `just docs-test` if you touched documentation.
+5. Pass `just docs-build` if you touched documentation.
 6. Follow the code style conventions below.
 7. Use type hints everywhere with `X | None` syntax, not `Optional[X]`.
 
