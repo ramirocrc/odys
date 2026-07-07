@@ -39,7 +39,7 @@ Describe the tests you added or updated:
 - [ ] Updated docstrings
 - [ ] Updated user guide (if applicable)
 - [ ] Updated examples (if applicable)
-- [ ] Documentation builds successfully (`just docs-test`)
+- [ ] Documentation builds successfully (`just docs-build`)
 
 ## Checklist
 

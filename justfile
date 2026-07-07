@@ -55,9 +55,9 @@ generate-plots:
     @echo "🚀 Generating example plots"
     uv run --locked python docs/generate_example_plots.py
 
-docs-test: generate-plots
-    @echo "🚀 Testing docs build"
-    uv run --locked zensical build --strict
+docs-build: generate-plots
+    @echo "🚀 Building docs"
+    uv run --locked zensical build --strict --clean
 
 examples:
     @echo "🚀 Running all examples"

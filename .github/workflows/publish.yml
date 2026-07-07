@@ -44,16 +44,11 @@ jobs:
       - name: Check out
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
-      - name: Setup Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: 3.x
-
-      - name: Install zensical
-        run: pip install zensical
+      - name: Setup environment
+        uses: ./.github/actions/setup_environment
 
       - name: Build documentation
-        run: zensical build --clean
+        run: just docs-build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
