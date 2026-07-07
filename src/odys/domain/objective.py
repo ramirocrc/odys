@@ -16,8 +16,8 @@ class ObjectiveTerm(BaseModel):
 
     Attributes:
         weight: Relative importance of this objective term in the overall
-        objective function. Must be non-negative; a weight of 0 keeps the
-        term in the config while excluding it from the objective.
+            objective function. Must be non-negative; a weight of 0 keeps the
+            term in the config while excluding it from the objective.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")

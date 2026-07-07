@@ -3,7 +3,7 @@ site_name = "Odys"
 site_url = "https://ramirocrc.github.io/odys"
 site_description = "Python framework for optimizing multi-energy systems"
 site_author = "Ramiro Criach"
-copyright = 'Maintained by <a href="https://ramirocrc.com">ramirocrc</a>.'
+copyright = "Maintained by Ramiro Criach"
 repo_url = "https://github.com/ramirocrc/odys"
 repo_name = "ramirocrc/odys"
 edit_uri = "edit/main/docs/"
@@ -196,6 +196,7 @@ generic = true
 custom_fences = [
   { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
 ]
+
 [project.markdown_extensions.pymdownx.highlight]
 pygments_lang_class = true
 
