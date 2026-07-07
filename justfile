@@ -59,10 +59,6 @@ docs-test: generate-plots
     @echo "🚀 Testing docs build"
     uv run --locked zensical build --strict
 
-docs-deploy:
-    @echo "🚀 Deploying docs"
-    uv run --locked zensical gh-deploy --force
-
 examples:
     @echo "🚀 Running all examples"
     for f in examples/*.py; do echo "▶ Running $f"; uv run --locked python "$f"; done
