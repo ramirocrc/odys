@@ -65,3 +65,30 @@ def test_shutdown_cost_fillna_preserves_explicit_values_alongside_unset_ones(
 
     assert filled.sel(generator="gen_with_shutdown_cost").item() == EXPLICIT_SHUTDOWN_COST
     assert filled.sel(generator="gen_without_shutdown_cost").item() == 0.0
+
+
+def test_min_down_time_reflects_explicit_value() -> None:
+    generator = Generator(
+        name="gen_with_min_down_time",
+        nominal_power=STANDARD_NOMINAL_POWER,
+        variable_cost=STANDARD_VARIABLE_COST,
+        min_down_time=3,
+    )
+    params = GeneratorParameters([generator])
+
+    value = params.min_down_time.sel(generator="gen_with_min_down_time").item()
+
+    assert value == 3
+
+
+def test_min_down_time_defaults_to_one_when_not_set() -> None:
+    generator = Generator(
+        name="gen_without_min_down_time",
+        nominal_power=STANDARD_NOMINAL_POWER,
+        variable_cost=STANDARD_VARIABLE_COST,
+    )
+    params = GeneratorParameters([generator])
+
+    value = params.min_down_time.sel(generator="gen_without_min_down_time").item()
+
+    assert value == 1

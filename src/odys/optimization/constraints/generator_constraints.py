@@ -6,7 +6,7 @@ from odys.optimization.model.milp_model import EnergyMILPModel
 
 
 class GeneratorConstraints(ConstraintGroup):
-    """Builds constraints for generator power limits, ramping, startup/shutdown, and min uptime."""
+    """Builds constraints for generator power limits, ramping, startup/shutdown, and min up/down time."""
 
     def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and generator parameters."""
@@ -104,6 +104,24 @@ class GeneratorConstraints(ConstraintGroup):
                 ModelConstraint(
                     constraint=constraint_generator,
                     name=f"generator_min_uptime_{generator}_constraint",
+                ),
+            )
+        return constraints
+
+    @constraint
+    def _get_min_downtime_constraint(self) -> list[ModelConstraint]:
+        constraints = []
+        for generator in self.params.index.values:
+            min_down_time = int(self.params.min_down_time.sel(generator=generator))
+            generator_status = self.model.generator_status.sel(generator=generator)
+            generator_startup = self.model.generator_startup.sel(generator=generator)
+            constraint_generator = (1 - generator_status).rolling(
+                time=min_down_time,
+            ).sum() >= min_down_time * generator_startup.shift(time=-1)
+            constraints.append(
+                ModelConstraint(
+                    constraint=constraint_generator,
+                    name=f"generator_min_downtime_{generator}_constraint",
                 ),
             )
         return constraints
