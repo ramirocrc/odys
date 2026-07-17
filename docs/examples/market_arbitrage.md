@@ -77,7 +77,7 @@ Now the solver compares the cost of generating locally with the market price at 
 
 The chart below compares local generation against market purchases. The top panel shows the dispatch decision, while the bottom panel displays market prices alongside the CCGT marginal cost reference line. This layout makes it easy to see exactly when the optimizer switches between the two sources.
 
-<iframe src="/assets/examples/market_arbitrage.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/examples/market_arbitrage.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
 
 The dispatch should flip around the 50 $/MWh threshold:
 
