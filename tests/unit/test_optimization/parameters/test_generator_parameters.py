@@ -8,6 +8,7 @@ from odys.optimization.parameters.generator_parameters import GeneratorParameter
 STANDARD_NOMINAL_POWER = 100.0
 STANDARD_VARIABLE_COST = 20.0
 EXPLICIT_SHUTDOWN_COST = 15.0
+EXPLICIT_MIN_DOWN_TIME = 3
 
 
 @pytest.fixture
@@ -72,13 +73,13 @@ def test_min_down_time_reflects_explicit_value() -> None:
         name="gen_with_min_down_time",
         nominal_power=STANDARD_NOMINAL_POWER,
         variable_cost=STANDARD_VARIABLE_COST,
-        min_down_time=3,
+        min_down_time=EXPLICIT_MIN_DOWN_TIME,
     )
     params = GeneratorParameters([generator])
 
     value = params.min_down_time.sel(generator="gen_with_min_down_time").item()
 
-    assert value == 3
+    assert value == EXPLICIT_MIN_DOWN_TIME
 
 
 def test_min_down_time_defaults_to_one_when_not_set() -> None:
