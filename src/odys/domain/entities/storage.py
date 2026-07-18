@@ -71,8 +71,8 @@ class Storage(EnergyEntity):
         le=1,
         description="Maximum state of charge as a fraction of capacity (0-1).",
     )
-    degradation_cost: float | None = Field(
-        default=None,
+    degradation_cost: float = Field(
+        default=0.0,
         strict=True,
         ge=0,
         description="Degradation cost, in currency per MWh cycled.",

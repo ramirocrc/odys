@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Storage.degradation_cost` is now included in the objective function, applied to total energy throughput (charge + discharge) converted to MWh via the scenario timestep
+
+### Changed
+
+- `Storage.degradation_cost` now defaults to `0.0` instead of `None`, matching `Generator.startup_cost`. **Breaking:** explicitly passing `degradation_cost=None` is no longer accepted; omit the field or pass a float.
+
 ## [0.2.0] - 2026-07-05
 
 ### Added

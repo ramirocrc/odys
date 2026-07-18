@@ -73,3 +73,9 @@ def test_soc_values_outside_bounds_raises_error(
 
     with pytest.raises(OdysValidationError, match=expected_match):
         Storage(**invalid_battery_params)
+
+
+def test_degradation_cost_defaults_to_zero(battery_base_params: MappingProxyType[str, Any]) -> None:
+    storage = Storage(**dict(battery_base_params))
+
+    assert storage.degradation_cost == 0.0
