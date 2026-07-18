@@ -83,7 +83,7 @@ At this point you want to look at the generator and battery outputs together. Th
 
 The chart below shows how storage changes the dispatch. The top panel shows generator output and battery power flow (discharge positive, charging negative), while the bottom panel shows the battery state of charge.
 
-<iframe src="/assets/examples/battery_dispatch.html" style="width:100%; height:1000px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/examples/battery_dispatch.html" style="width:100%; height:1000px; border:none;" loading="lazy"></iframe>
 
 The output should show several distinct behaviors:
 

@@ -96,7 +96,7 @@ At this point the solver is doing the real work: it balances the load in every s
 
 The chart below shows the generator dispatch over time as stacked bars. Solar PV is used first whenever available (zero marginal cost), and CCGT fills the remaining demand. The dashed green line shows the available solar capacity, while the dashed gray line shows the constant load.
 
-<iframe src="/assets/examples/basic_dispatch.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/examples/basic_dispatch.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 If you print `result.generators.power`, the pattern should be easy to read:
 

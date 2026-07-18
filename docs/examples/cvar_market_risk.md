@@ -16,7 +16,7 @@ We consider three equally likely scenarios. Both market prices vary across scena
 
 The example is built as a single 24-hour timestep because the main decision is one commitment: how much capacity should go to `sdac` before the uncertainty is resolved?
 
-![CVaR decision timeline](/assets/examples/cvar_timeline.svg)
+![CVaR decision timeline](../assets/examples/cvar_timeline.svg)
 
 **Source**: [`examples/cvar_market_risk.py`](https://github.com/ramirocrc/odys/blob/main/examples/cvar_market_risk.py)
 
@@ -147,7 +147,7 @@ profit-only and CVaR-penalized runs. With profit alone, the optimizer sends
 capacity to the riskier sidc market. Adding CVaR shifts most capacity to sdac,
 with a small position in sidc to capture upside.
 
-<iframe src="/assets/examples/cvar_market_risk.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/examples/cvar_market_risk.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 Profit-only result:
 
