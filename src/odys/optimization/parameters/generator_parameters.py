@@ -39,6 +39,7 @@ class GeneratorParameters:
             "min_up_time": [gen.min_up_time for gen in self._generators],
             "min_power": [gen.min_power for gen in self._generators],
             "startup_cost": [gen.startup_cost for gen in self._generators],
+            "shutdown_cost": [gen.shutdown_cost for gen in self._generators],
             "max_ramp_up": [gen.ramp_up for gen in self._generators],
             "max_ramp_down": [gen.ramp_down for gen in self._generators],
         }
@@ -82,6 +83,11 @@ class GeneratorParameters:
     def startup_cost(self) -> xr.DataArray:
         """Return generator startup cost data."""
         return self._dataset["startup_cost"]
+
+    @property
+    def shutdown_cost(self) -> xr.DataArray:
+        """Return generator shutdown cost data."""
+        return self._dataset["shutdown_cost"]
 
     @property
     def max_ramp_up(self) -> xr.DataArray:

@@ -19,7 +19,7 @@ class GeneratorParams(GeneratorBaseParams, total=False):
     min_down_time: int
     min_power: float
     startup_cost: float
-    shutdown_cost: float | None
+    shutdown_cost: float
 
 
 NOMINAL_POWER = 100.0
@@ -80,7 +80,7 @@ def test_generator_creation_with_minimal_required_fields() -> None:
         "min_down_time": 1,
         "min_power": 0.0,
         "startup_cost": 0.0,
-        "shutdown_cost": None,
+        "shutdown_cost": 0.0,
     }
     gen = Generator(**base_params)
     assert gen.name == "test_generator"
@@ -92,7 +92,7 @@ def test_generator_creation_with_minimal_required_fields() -> None:
     assert gen.min_down_time == 1
     assert gen.min_power == 0.0
     assert gen.startup_cost == 0.0
-    assert gen.shutdown_cost is None
+    assert gen.shutdown_cost == 0.0
 
 
 def test_generator_creation_with_all_optional_fields() -> None:
@@ -130,7 +130,7 @@ def test_generator_ramp_up_can_be_zero(
         "min_down_time": 1,
         "min_power": 0.0,
         "startup_cost": 0.0,
-        "shutdown_cost": None,
+        "shutdown_cost": 0.0,
     }
     gen = Generator(**base_params)
     assert gen.ramp_up == 0.0
@@ -149,7 +149,7 @@ def test_generator_ramp_down_can_be_zero(
         "min_down_time": 1,
         "min_power": 0.0,
         "startup_cost": 0.0,
-        "shutdown_cost": None,
+        "shutdown_cost": 0.0,
     }
     gen = Generator(**base_params)
     assert gen.ramp_down == 0.0
@@ -168,7 +168,7 @@ def test_generator_min_power_defaults_to_zero(
         "min_down_time": 1,
         "min_power": 0.0,
         "startup_cost": 0.0,
-        "shutdown_cost": None,
+        "shutdown_cost": 0.0,
     }
     gen = Generator(**base_params)
     assert gen.min_power == 0.0
