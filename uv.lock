@@ -1055,9 +1055,6 @@ docs = [
     { name = "plotly" },
     { name = "zensical" },
 ]
-vulnerability-fixes = [
-    { name = "urllib3" },
-]
 
 [package.metadata]
 requires-dist = [
@@ -1075,27 +1072,27 @@ provides-extras = ["cplex", "gurobi", "scip"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "basedpyright", specifier = ">=1.38.0" },
-    { name = "deptry", specifier = ">=0.24.0" },
-    { name = "nox", specifier = ">=2025.5.12" },
-    { name = "prek", specifier = ">=0.2.30" },
-    { name = "pyrefly", specifier = ">=1.0.0" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "basedpyright", specifier = ">=1.39.9" },
+    { name = "deptry", specifier = ">=0.25.1" },
+    { name = "nox", specifier = ">=2026.7.11" },
+    { name = "prek", specifier = ">=0.4.10" },
+    { name = "pyrefly", specifier = ">=1.1.1" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "radon", specifier = ">=6.0.1" },
-    { name = "rich", specifier = ">=14.2.0" },
-    { name = "ruff", specifier = ">=0.14.13" },
-    { name = "ty", specifier = ">=0.0.12" },
+    { name = "rich", specifier = ">=15.0.0" },
+    { name = "ruff", specifier = ">=0.15.22" },
+    { name = "ty", specifier = ">=0.0.61" },
     { name = "vulture", specifier = ">=2.16" },
-    { name = "zuban", specifier = ">=0.6.1" },
+    { name = "zuban", specifier = ">=0.9.0" },
 ]
 docs = [
     { name = "mkdocstrings-python", specifier = ">=2.0.1" },
     { name = "plotly", specifier = ">=6.0.0" },
     { name = "zensical", specifier = ">=0.0.45" },
 ]
-vulnerability-fixes = [{ name = "urllib3", specifier = ">=2.7.0" }]
+vulnerability-fixes = []
 
 [[package]]
 name = "packaging"
@@ -1937,15 +1934,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/92/ff/5a28bdfd8c3ebec42564ac7d0e54ca3db65044a9314a97f9564fa7a1e926/tzdata-2026.3.tar.gz", hash = "sha256:4a1518b8993086a7982523e071643f3c0e5f213e75b21318e78bcabfff9d1415", size = 198674, upload-time = "2026-07-10T08:50:37.887Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/6d/b53b99a9f2766d095985947a5782f1702cabb129a34f7a802d7197af832f/tzdata-2026.3-py2.py3-none-any.whl", hash = "sha256:dc096730c87af6cab1b171c9d532be840741ff5d459015e7f6947bd7d7e54931", size = 348168, upload-time = "2026-07-10T08:50:36.46Z" },
-]
-
-[[package]]
-name = "urllib3"
-version = "2.7.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
 ]
 
 [[package]]

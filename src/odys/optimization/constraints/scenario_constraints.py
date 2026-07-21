@@ -45,7 +45,7 @@ class ScenarioConstraints(ConstraintGroup):
 
         return ModelConstraint(
             name="power_balance_constraint",
-            constraint=lhs == 0,  # ty: ignore  # pyright: ignore[reportArgumentType]
+            constraint=lhs == 0,  # pyright: ignore[reportArgumentType]
         )
 
     @constraint
