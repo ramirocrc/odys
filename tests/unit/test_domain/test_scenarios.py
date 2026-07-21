@@ -19,22 +19,22 @@ class TestScenario:
     def test_defaults_to_no_profiles(self) -> None:
         scenario = Scenario()
         assert scenario.available_capacity_profiles is None
-        assert scenario.load_profiles is None
+        assert scenario.fixed_load_profiles is None
         assert scenario.market_prices is None
 
     def test_accepts_all_profiles(self) -> None:
         scenario = Scenario(
             available_capacity_profiles={"gen1": CAPACITY_PROFILE},
-            load_profiles={"load1": LOAD_PROFILE},
+            fixed_load_profiles={"load1": LOAD_PROFILE},
             market_prices={"market1": MARKET_PRICES},
         )
         assert scenario.available_capacity_profiles == {"gen1": CAPACITY_PROFILE}
-        assert scenario.load_profiles == {"load1": LOAD_PROFILE}
+        assert scenario.fixed_load_profiles == {"load1": LOAD_PROFILE}
         assert scenario.market_prices == {"market1": MARKET_PRICES}
 
     def test_is_frozen(self) -> None:
         scenario = Scenario()
-        frozen_field = "load_profiles"
+        frozen_field = "fixed_load_profiles"
         with pytest.raises(ValidationError, match="Instance is frozen"):
             setattr(scenario, frozen_field, {"load1": LOAD_PROFILE})
 
@@ -48,11 +48,11 @@ class TestStochasticScenario:
         scenario = StochasticScenario(
             name="s1",
             probability=1.0,
-            load_profiles={"load1": LOAD_PROFILE},
+            fixed_load_profiles={"load1": LOAD_PROFILE},
         )
         assert scenario.name == "s1"
         assert scenario.probability == 1.0
-        assert scenario.load_profiles == {"load1": LOAD_PROFILE}
+        assert scenario.fixed_load_profiles == {"load1": LOAD_PROFILE}
 
     @pytest.mark.parametrize("probability", [0.0, 0.5, 1.0])
     def test_accepts_probability_within_bounds(self, probability: float) -> None:

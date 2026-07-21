@@ -45,6 +45,7 @@ def optimize_algebraic_model(
         termination_condition=TerminationCondition(termination_condition),
         solution=milp_model.linopy_model.solution,
         objective_value=milp_model.linopy_model.objective.value,
+        parameters=milp_model.parameters,
     )
 
 

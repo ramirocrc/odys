@@ -37,19 +37,17 @@ Let's set up our first system.
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, Generator, Load, Scenario
+from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario
 
 generator = Generator(name="gen", nominal_power=100.0, variable_cost=50.0)
-load = Load(name="demand")
+load = FixedLoad(name="demand")
 
-portfolio = AssetPortfolio()
-portfolio.add_asset(generator)
-portfolio.add_asset(load)
+portfolio = AssetPortfolio([generator, load])
 
 energy_system = EnergySystem(
     portfolio=portfolio,
     scenarios=Scenario(
-        load_profiles={"demand": [60, 90, 40, 70]},
+        fixed_load_profiles={"demand": [60, 90, 40, 70]},
     ),
     timestep=timedelta(hours=1),
     number_of_steps=4,
@@ -78,7 +76,7 @@ For a single deterministic scenario:
 from odys import Scenario
 
 scenario = Scenario(
-    load_profiles={"demand": [60, 90, 40, 70]},
+    fixed_load_profiles={"demand": [60, 90, 40, 70]},
     available_capacity_profiles={"gen": [100, 80, 100, 100]},
 )
 ```
@@ -92,13 +90,13 @@ scenarios = [
     StochasticScenario(
         name="low_wind",
         probability=0.3,
-        load_profiles={"demand": [80, 90, 70, 60]},
+        fixed_load_profiles={"demand": [80, 90, 70, 60]},
         available_capacity_profiles={"wind": [30, 20, 40, 25]},
     ),
     StochasticScenario(
         name="high_wind",
         probability=0.7,
-        load_profiles={"demand": [80, 90, 70, 60]},
+        fixed_load_profiles={"demand": [80, 90, 70, 60]},
         available_capacity_profiles={"wind": [120, 140, 100, 130]},
     ),
 ]

@@ -86,9 +86,18 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 
 | Symbol | Meaning |
 | ------ | ------- |
-| $d_{l,t,s}$ | Load demand |
+| $d^{\text{fixed}}_{l,t,s}$ | Fixed load demand |
+| $d^{\text{base}}_{l,t,s}$ | Flexible load base demand |
+| $\Delta d_{l,t,s}$ | Flexible load adjustment (positive = increase, negative = decrease) |
+| $\Delta d^{\max+}_l$ | Maximum increase above base profile |
+| $\Delta d^{\max-}_l$ | Maximum decrease below base profile |
+| $v_l$ | Value of consumption (economic value per MWh) |
 
-The power-balance equation uses generation, storage discharge, and market buys on the supply side, and load, storage charge, and market sells on the demand side.
+The power-balance equation uses generation, storage discharge, and market buys on the supply side, and load (fixed + flexible base + adjustment), storage charge, and market sells on the demand side.
+
+Flexible load adjustment is bounded: $-\Delta d^{\max-}_l \leq \Delta d_{l,t,s} \leq \Delta d^{\max+}_l$.
+
+The objective includes a profit term $\Delta d_{l,t,s} \cdot v_l$ for flexible loads. The procurement cost of adjusting load is captured implicitly through the power balance: increasing load requires additional supply from generators or markets, whose costs already appear in the objective.
 
 ## Sign conventions
 

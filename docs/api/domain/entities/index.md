@@ -12,7 +12,8 @@ Domain entity models.
 
 - `base`
 - `generator`
-- `load`
+- `fixed_load`
+- `flexible_load`
 - `market`
 - `portfolio`
 - `storage`

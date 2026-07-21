@@ -7,8 +7,8 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
@@ -38,7 +38,7 @@ def asset_portfolio_sample(
     generator1: Generator,
     generator2: Generator,
     battery1: Storage,
-    load1: Load,
+    load1: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator1, generator2, battery1, load1])
 
@@ -56,7 +56,7 @@ def energy_system_sample(
             available_capacity_profiles={
                 "gen1": [80, 80, 100],
             },
-            load_profiles={
+            fixed_load_profiles={
                 "load1": demand_profile_sample,
             },
         ),
@@ -76,7 +76,7 @@ def energy_system_with_multiple_scenarios(
                 "gen1": [80, 80, 100],
                 "gen2": [150, 150, 150],
             },
-            load_profiles={
+            fixed_load_profiles={
                 "load1": demand_profile_sample,
             },
             market_prices={
@@ -91,7 +91,7 @@ def energy_system_with_multiple_scenarios(
                 "gen1": [90, 70, 80],
                 "gen2": [120, 140, 130],
             },
-            load_profiles={
+            fixed_load_profiles={
                 "load1": demand_profile_sample,
             },
             market_prices={
@@ -139,20 +139,17 @@ class TestScenarioConstraints:
         discharge_total = self.linopy_model.variables["storage_power_out"].sum("storage")
         charge_total = self.linopy_model.variables["storage_power_in"].sum("storage")
 
-        # Create demand array with the proper dimensions to match actual constraint
+        # Fixed loads are summed over the load dimension, so no load dimension in the constraint
         demand_data = [
-            [
-                self.demand_profile_sample,  # load1 profile
-            ],
+            self.demand_profile_sample,  # Sum of all fixed loads
         ]
         demand_array = xr.DataArray(
             demand_data,
             coords={
                 "scenario": ["deterministic_scenario"],
-                "load": ["load1"],
                 "time": [str(t) for t in self.time_index],
             },
-            dims=["scenario", "load", "time"],
+            dims=["scenario", "time"],
         )
 
         expected_expr = generation_total + discharge_total - charge_total == demand_array

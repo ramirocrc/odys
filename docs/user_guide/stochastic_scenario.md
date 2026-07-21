@@ -19,7 +19,7 @@ low_wind = StochasticScenario(
     available_capacity_profiles={
         "wind_farm": [30, 20, 40, 25],
     },
-    load_profiles={"demand": [100, 120, 80, 90]},
+    fixed_load_profiles={"demand": [100, 120, 80, 90]},
 )
 
 high_wind = StochasticScenario(
@@ -28,7 +28,7 @@ high_wind = StochasticScenario(
     available_capacity_profiles={
         "wind_farm": [120, 140, 100, 130],
     },
-    load_profiles={"demand": [100, 120, 80, 90]},
+    fixed_load_profiles={"demand": [100, 120, 80, 90]},
 )
 ```
 
@@ -40,7 +40,8 @@ high_wind = StochasticScenario(
 | ----------------------------- | ------------------------ | -------- | ------- | ------------------------------------------------------------ |
 | `name`                        | `str`                    | Yes      | -       | Unique identifier for the scenario                           |
 | `probability`                 | `float`                  | Yes      | -       | Probability (0-1) of this scenario occurring                 |
-| `load_profiles`               | `dict[str, list[float]]` | No       | `None`  | Load values per timestep, keyed by load name                 |
+| `fixed_load_profiles`         | `dict[str, list[float]]` | No       | `None`  | Load values per timestep, keyed by load name                 |
+| `flexible_load_base_profiles` | `dict[str, list[float]]` | No       | `None`  | Base load values per timestep, keyed by flexible load name   |
 | `available_capacity_profiles` | `dict[str, list[float]]` | No       | `None`  | Max available capacity per timestep, keyed by generator name |
 | `market_prices`               | `dict[str, list[float]]` | No       | `None`  | Market prices per timestep, keyed by market name             |
 
@@ -54,14 +55,14 @@ Odys enforces two rules when you pass a list of stochastic scenarios to the `Ene
 ```python
 # This will fail: probabilities sum to 0.8
 scenarios = [
-    StochasticScenario(name="a", probability=0.5, load_profiles={"demand": [100]}),
-    StochasticScenario(name="b", probability=0.3, load_profiles={"demand": [100]}),
+    StochasticScenario(name="a", probability=0.5, fixed_load_profiles={"demand": [100]}),
+    StochasticScenario(name="b", probability=0.3, fixed_load_profiles={"demand": [100]}),
 ]
 
 # This will fail: duplicate names
 scenarios = [
-    StochasticScenario(name="scenario", probability=0.5, load_profiles={"demand": [100]}),
-    StochasticScenario(name="scenario", probability=0.5, load_profiles={"demand": [100]}),
+    StochasticScenario(name="scenario", probability=0.5, fixed_load_profiles={"demand": [100]}),
+    StochasticScenario(name="scenario", probability=0.5, fixed_load_profiles={"demand": [100]}),
 ]
 ```
 
@@ -91,7 +92,8 @@ Everything else works the same -- the optimizer just considers multiple futures 
 Each scenario can have different values for any combination of:
 
 - **`available_capacity_profiles`** -- model different wind/solar outputs
-- **`load_profiles`** -- model demand uncertainty
+- **`fixed_load_profiles`** -- model demand uncertainty
+- **`flexible_load_base_profiles`** -- model flexible demand uncertainty
 - **`market_prices`** -- model price volatility
 
 This means you can capture several types of uncertainty in a single optimization run.

@@ -34,10 +34,10 @@ The generator gives us a local source of electricity, and the market gives us an
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, Generator, Load, LoadType, Scenario, TradeDirection
+from odys import AssetPortfolio, EnergyMarket, EnergySystem, FixedLoad, Generator, Scenario, TradeDirection
 
 generator_1 = Generator(name="ccgt", nominal_power=100, variable_cost=50)
-load = Load(name="load", type=LoadType.Fixed)
+load = FixedLoad(name="load")
 
 market = EnergyMarket(
     name="market",
@@ -54,7 +54,7 @@ The buy-only restriction is important. It keeps the example focused on procureme
 ```python
 scenario = Scenario(
     available_capacity_profiles={"ccgt": 24 * [100]},
-    load_profiles={"load": 24 * [70]},
+    fixed_load_profiles={"load": 24 * [70]},
     market_prices={"market": [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]},
 )
 ```

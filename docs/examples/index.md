@@ -13,6 +13,7 @@ Each example is self-contained -- you can copy-paste it and run it directly.
 |---|---|
 | [Basic Dispatch](basic_dispatch.md) | Cheapest generation meeting a fixed load |
 | [Battery Dispatch](battery_dispatch.md) | Using storage to shift solar output over time |
+| [Flexible Load Market](flexible_load_market.md) | Shifting industrial consumption to low-price hours |
 | [Market Arbitrage](market_arbitrage.md) | Choosing between self-generation and market purchases |
 | [CVaR Market Risk](cvar_market_risk.md) | Risk-aware market allocation under uncertainty |
 
@@ -23,6 +24,7 @@ All examples are available in the [`examples/`](https://github.com/ramirocrc/ody
 ```bash
 python examples/basic_dispatch.py
 python examples/battery_dispatch.py
+python examples/flexible_load_market.py
 python examples/market_arbitrage.py
 python examples/cvar_market_risk.py
 ```

@@ -3,8 +3,8 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.exceptions import OdysError
@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def load1() -> Load:
-    return Load(name="load1")
+def load1() -> FixedLoad:
+    return FixedLoad(name="load1")
 
 
 @pytest.fixture
-def asset_portfolio_sample(load1: Load) -> AssetPortfolio:
+def asset_portfolio_sample(load1: FixedLoad) -> AssetPortfolio:
     return AssetPortfolio(
         assets=[
             Generator(
@@ -57,7 +57,7 @@ def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> EnergySystem
         timestep=timedelta(hours=1),
         scenarios=Scenario(
             available_capacity_profiles={},
-            load_profiles={"load1": demand_profile},
+            fixed_load_profiles={"load1": demand_profile},
         ),
     )
 

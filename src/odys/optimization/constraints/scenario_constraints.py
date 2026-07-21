@@ -1,5 +1,6 @@
 """Scenario-level constraints for the optimization model."""
 
+from odys.domain.exceptions import OdysValidationError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.model.milp_model import EnergyMILPModel
@@ -31,8 +32,16 @@ class ScenarioConstraints(ConstraintGroup):
             lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)
             lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)
 
-        if self._params.scenarios.load_profiles is not None:
-            lhs += -self._params.scenarios.load_profiles
+        if self._params.scenarios.fixed_load_profiles is not None:
+            lhs += -self._params.scenarios.fixed_load_profiles
+
+        if not self._params.flexible_loads.is_empty:
+            base_profiles = self._params.scenarios.flexible_load_base_profiles
+            if base_profiles is None:
+                msg = "Flexible loads exist but base profiles are missing"
+                raise OdysValidationError(msg)
+            lhs += -base_profiles.sum(ModelDimension.FlexibleLoads)
+            lhs += -self.model.load_adjustment.sum(ModelDimension.FlexibleLoads)
 
         return ModelConstraint(
             name="power_balance_constraint",

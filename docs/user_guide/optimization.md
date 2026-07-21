@@ -32,9 +32,10 @@ The profit term is:
 $$
 \Pi_s = \sum_{t,m} \lambda_{m,t,s}\left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right)
 - \sum_{t,g}\left(c_g p_{g,t,s} + C^{start}_g y^{start}_{g,t,s}\right)
++ \sum_{t,l} \Delta d_{l,t,s} \cdot v_l
 $$
 
-The current implementation includes market revenue/cost when market prices are provided, generator variable cost, and generator startup cost.
+The current implementation includes market revenue/cost when market prices are provided, generator variable cost, generator startup cost, and flexible load value of consumption.
 
 The risk term penalizes low-profit scenarios through CVaR. By default, that term is ignored, so the model behaves as risk-neutral. Use CVaR when you want to protect against bad outcomes, not just maximize expected profit.
 
@@ -193,6 +194,16 @@ $$
 
 where $x$ is each market variable: buy volume, sell volume, and trade mode.
 
+### Flexible load constraints
+
+For each flexible load:
+
+$$
+-\Delta d^{\max-}_l \le \Delta d_{l,t,s} \le \Delta d^{\max+}_l
+$$
+
+The adjustment variable $\Delta d_{l,t,s}$ is bounded by the maximum decrease and maximum increase. The actual consumption is $d_{l,t,s} = d^{\text{base}}_{l,t,s} + \Delta d_{l,t,s}$.
+
 ## Reading results
 
 The `optimize()` call returns an `OptimizationResults` object:
@@ -226,6 +237,10 @@ result.storages.state_of_charge  # SOC at each timestep
 # Markets
 result.markets.sell_volume  # MW sold per market per timestep
 result.markets.buy_volume  # MW bought per market per timestep
+
+# Flexible loads
+result.flexible_loads.load_adjustment  # MW adjustment per flexible load per timestep
+result.flexible_loads.actual_load      # MW consumed (base + adjustment)
 ```
 
 All of these are `pandas.DataFrame` objects, so you can use the full pandas API to slice, filter, and plot.

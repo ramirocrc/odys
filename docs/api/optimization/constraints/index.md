@@ -12,6 +12,7 @@ MILP constraint builders.
 
 - `constraints_group`
 - `cvar_constraints`
+- `flexible_load_constraints`
 - `generator_constraints`
 - `market_constraints`
 - `model_constraint`

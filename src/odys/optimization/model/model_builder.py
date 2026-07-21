@@ -7,6 +7,7 @@ variables, constraints, and objectives into a solvable MILP model.
 from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup
 from odys.optimization.constraints.cvar_constraints import CVaRConstraints
+from odys.optimization.constraints.flexible_load_constraints import FlexibleLoadConstraints
 from odys.optimization.constraints.generator_constraints import (
     GeneratorConstraints,
 )
@@ -145,6 +146,9 @@ class EnergyAlgebraicModelBuilder:
 
         if params.has_markets:
             groups.append(MarketConstraints(self._milp_model))
+
+        if params.has_flexible_loads:
+            groups.append(FlexibleLoadConstraints(self._milp_model))
 
         groups.append(ScenarioConstraints(self._milp_model))
 

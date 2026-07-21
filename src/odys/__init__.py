@@ -7,8 +7,9 @@ storages, and other energy assets using mathematical optimization techniques.
 
 from importlib.metadata import version
 
+from odys.domain.entities.fixed_load import FixedLoad
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load, LoadType
 from odys.domain.entities.market import EnergyMarket, TradeDirection
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
@@ -24,9 +25,9 @@ __all__ = [
     "CVaRTerm",
     "EnergyMarket",
     "EnergySystem",
+    "FixedLoad",
+    "FlexibleLoad",
     "Generator",
-    "Load",
-    "LoadType",
     "Objective",
     "ProfitTerm",
     "Scenario",

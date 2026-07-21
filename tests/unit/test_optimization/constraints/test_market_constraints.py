@@ -5,8 +5,8 @@ import linopy
 import pytest
 from linopy.testing import assert_conequal
 
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.market import EnergyMarket, TradeDirection
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.scenarios import Scenario
@@ -50,8 +50,8 @@ def generator1() -> Generator:
 
 
 @pytest.fixture
-def load1() -> Load:
-    return Load(name="load1")
+def load1() -> FixedLoad:
+    return FixedLoad(name="load1")
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def time_index(demand_profile_sample: list[float]) -> list[int]:
 @pytest.fixture
 def asset_portfolio_single_market(
     generator1: Generator,
-    load1: Load,
+    load1: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator1, load1])
 
@@ -75,7 +75,7 @@ def asset_portfolio_single_market(
 @pytest.fixture
 def asset_portfolio_mixed_markets(
     generator1: Generator,
-    load1: Load,
+    load1: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator1, load1])
 
@@ -93,7 +93,7 @@ def energy_system_single_market(
         markets=market_buy_and_sell,
         scenarios=Scenario(
             available_capacity_profiles={},
-            load_profiles={"load1": demand_profile_sample},
+            fixed_load_profiles={"load1": demand_profile_sample},
             market_prices={"market_both": [10, 20, 30]},
         ),
     )
@@ -114,7 +114,7 @@ def energy_system_mixed_markets(
         markets=[market_buy_only, market_sell_only, market_buy_and_sell],
         scenarios=Scenario(
             available_capacity_profiles={},
-            load_profiles={"load1": demand_profile_sample},
+            fixed_load_profiles={"load1": demand_profile_sample},
             market_prices={
                 "market_buy": [10, 20, 30],
                 "market_sell": [10, 20, 30],
@@ -262,7 +262,7 @@ class TestMarketConstraintsEdgeCases:
     def test_empty_markets_no_constraints(
         self,
         generator1: Generator,
-        load1: Load,
+        load1: FixedLoad,
         demand_profile_sample: list[float],
     ) -> None:
         portfolio = AssetPortfolio(assets=[generator1, load1])
@@ -273,7 +273,7 @@ class TestMarketConstraintsEdgeCases:
             timestep=timedelta(hours=1),
             scenarios=Scenario(
                 available_capacity_profiles={},
-                load_profiles={"load1": demand_profile_sample},
+                fixed_load_profiles={"load1": demand_profile_sample},
             ),
         )
 

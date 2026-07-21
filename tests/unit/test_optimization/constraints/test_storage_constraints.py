@@ -7,8 +7,8 @@ import xarray as xr
 from linopy.testing import assert_conequal
 
 from odys import Scenario
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.energy_system import EnergySystem
@@ -37,7 +37,7 @@ def asset_portfolio_sample(
     generator1: Generator,
     generator2: Generator,
     storage1: Storage,
-    load1: Load,
+    load1: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator1, generator2, storage1, load1])
 
@@ -53,7 +53,7 @@ def energy_system_sample(
         timestep=timedelta(hours=1),
         scenarios=Scenario(
             available_capacity_profiles={},
-            load_profiles={"load1": demand_profile_sample},
+            fixed_load_profiles={"load1": demand_profile_sample},
         ),
     )
 
@@ -209,7 +209,7 @@ class TestStorageConstraintsSubHourlyTimestep:
             timestep=timedelta(minutes=15),
             scenarios=Scenario(
                 available_capacity_profiles={},
-                load_profiles={"load1": demand_profile_sample},
+                fixed_load_profiles={"load1": demand_profile_sample},
             ),
         )
 

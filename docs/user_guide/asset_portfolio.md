@@ -11,11 +11,10 @@ We use a separate portfolio object because it keeps asset management clean. You 
 ## Basic usage
 
 ```python
-from odys import AssetPortfolio, Generator, Load, Storage
+from odys import AssetPortfolio, FixedLoad, Generator, Storage
 
-portfolio = AssetPortfolio()
-portfolio.add_asset(Generator(name="gen", nominal_power=100.0, variable_cost=50.0))
-portfolio.add_asset(
+portfolio = AssetPortfolio([
+    Generator(name="gen", nominal_power=100.0, variable_cost=50.0),
     Storage(
         name="bess",
         capacity=50.0,
@@ -23,25 +22,22 @@ portfolio.add_asset(
         efficiency_charging=0.95,
         efficiency_discharging=0.95,
         soc_start=0.5,
-    )
-)
-portfolio.add_asset(Load(name="demand"))
+    ),
+    FixedLoad(name="demand"),
+])
 ```
 
-## Adding assets
+## Creating a portfolio
 
-Use `add_asset()` to add any `EnergyAsset` (generators, storages, loads):
+Pass a list of assets to the `AssetPortfolio` constructor:
 
 ```python
-portfolio = AssetPortfolio()
-portfolio.add_asset(generator)
-portfolio.add_asset(battery)
-portfolio.add_asset(load)
+portfolio = AssetPortfolio([generator, battery, fixed_load, flexible_load])
 ```
 
 !!! warning
 
-    Asset names must be unique within a portfolio. Adding two assets with the same `name` raises a `ValueError`.
+    Asset names must be unique within a portfolio. Adding two assets with the same `name` raises an `OdysValidationError`.
 
 ## Accessing assets
 
@@ -64,7 +60,8 @@ The portfolio has convenience properties to get assets by type:
 ```python
 portfolio.generators  # tuple of all Generator assets
 portfolio.storages  # tuple of all Storage assets
-portfolio.loads  # tuple of all Load assets
+portfolio.fixed_loads  # tuple of all FixedLoad assets
+portfolio.flexible_loads  # tuple of all FlexibleLoad assets
 ```
 
 These return tuples, so they're safe to iterate over without worrying about accidental modification.

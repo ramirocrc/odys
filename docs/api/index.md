@@ -32,8 +32,9 @@ Use this section to find the public import surface first, then drill into intern
 - `odys.domain`
   - `odys.domain.entities`
     - `odys.domain.entities.base`
+    - `odys.domain.entities.fixed_load`
+    - `odys.domain.entities.flexible_load`
     - `odys.domain.entities.generator`
-    - `odys.domain.entities.load`
     - `odys.domain.entities.market`
     - `odys.domain.entities.portfolio`
     - `odys.domain.entities.storage`
@@ -46,6 +47,7 @@ Use this section to find the public import surface first, then drill into intern
   - `odys.optimization.constraints`
     - `odys.optimization.constraints.constraints_group`
     - `odys.optimization.constraints.cvar_constraints`
+    - `odys.optimization.constraints.flexible_load_constraints`
     - `odys.optimization.constraints.generator_constraints`
     - `odys.optimization.constraints.market_constraints`
     - `odys.optimization.constraints.model_constraint`
@@ -60,8 +62,8 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.optimization.model.sets`
     - `odys.optimization.model.variables`
   - `odys.optimization.parameters`
+    - `odys.optimization.parameters.flexible_load_parameters`
     - `odys.optimization.parameters.generator_parameters`
-    - `odys.optimization.parameters.load_parameters`
     - `odys.optimization.parameters.market_parameters`
     - `odys.optimization.parameters.parameters`
     - `odys.optimization.parameters.scenario_parameters`

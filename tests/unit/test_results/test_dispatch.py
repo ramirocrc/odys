@@ -1,7 +1,7 @@
 import pytest
 import xarray as xr
 
-from odys.results.dispatch import GeneratorDispatch, MarketDispatch, StorageDispatch
+from odys.results.dispatch import FlexibleLoadDispatch, GeneratorDispatch, MarketDispatch, StorageDispatch
 
 EXPECTED_GENERATOR_COUNT = 2
 EXPECTED_STORAGE_COUNT = 2
@@ -293,3 +293,90 @@ def test_to_dataframe(generator_dispatch: GeneratorDispatch) -> None:
 
     assert not dataframe.empty
     assert "power" in dataframe.columns
+
+
+EXPECTED_FLEXIBLE_LOAD_COUNT = 2
+EXPECTED_ACTUAL_LOAD_FIRST_VALUE = 110.0  # base (100) + adjustment (10)
+
+
+@pytest.fixture
+def flexible_load_dispatch() -> FlexibleLoadDispatch:
+    flexible_load_names = ["flex_load_1", "flex_load_2"]
+    timesteps = [0, 1]
+
+    load_adjustment = xr.DataArray(
+        [[10.0, -5.0], [20.0, -10.0]],
+        dims=["flexible_load", "time"],
+        coords={"flexible_load": flexible_load_names, "time": timesteps},
+    )
+
+    base_profiles = xr.DataArray(
+        [[100.0, 100.0], [80.0, 80.0]],
+        dims=["flexible_load", "time"],
+        coords={"flexible_load": flexible_load_names, "time": timesteps},
+    )
+
+    return FlexibleLoadDispatch(
+        load_adjustment=load_adjustment,
+        base_profiles=base_profiles,
+    )
+
+
+def test_flexible_load_getitem(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    load = flexible_load_dispatch["flex_load_1"]
+
+    assert isinstance(load, FlexibleLoadDispatch)
+    assert len(load.load_adjustment) == EXPECTED_TIMESTEP_COUNT
+
+
+def test_flexible_load_iter(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    items = list(flexible_load_dispatch)
+
+    assert len(items) == EXPECTED_FLEXIBLE_LOAD_COUNT
+    assert all(isinstance(item, FlexibleLoadDispatch) for item in items)
+
+
+def test_flexible_load_len(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    assert len(flexible_load_dispatch) == EXPECTED_FLEXIBLE_LOAD_COUNT
+
+
+def test_flexible_load_contains(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    assert "flex_load_1" in flexible_load_dispatch
+    assert "flex_load_2" in flexible_load_dispatch
+    assert "flex_load_3" not in flexible_load_dispatch
+
+
+def test_flexible_load_load_adjustment(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    load_adjustment = flexible_load_dispatch.load_adjustment
+
+    assert len(load_adjustment) == EXPECTED_FLEXIBLE_LOAD_COUNT * EXPECTED_TIMESTEP_COUNT
+
+
+def test_flexible_load_actual_load(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    actual_load = flexible_load_dispatch.actual_load
+
+    assert len(actual_load) == EXPECTED_FLEXIBLE_LOAD_COUNT * EXPECTED_TIMESTEP_COUNT
+    # Check first value: base (100) + adjustment (10) = 110
+    assert actual_load.iloc[0] == EXPECTED_ACTUAL_LOAD_FIRST_VALUE
+
+
+def test_flexible_load_to_dataset(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    dataset = flexible_load_dispatch.to_dataset()
+
+    assert isinstance(dataset, xr.Dataset)
+    assert "load_adjustment" in dataset.data_vars
+    assert "actual_load" in dataset.data_vars
+
+
+def test_flexible_load_to_dataframe(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    dataframe = flexible_load_dispatch.to_dataframe()
+
+    assert not dataframe.empty
+    assert "load_adjustment" in dataframe.columns
+    assert "actual_load" in dataframe.columns
+
+
+def test_flexible_load_repr(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    representation = repr(flexible_load_dispatch)
+
+    assert "FlexibleLoadDispatch" in representation

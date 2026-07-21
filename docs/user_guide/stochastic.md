@@ -35,7 +35,7 @@ low_wind = StochasticScenario(
     available_capacity_profiles={
         "wind_farm": [30, 20, 40, 25, 35, 30, 20],
     },
-    load_profiles={
+    fixed_load_profiles={
         "load": [180, 180, 150, 50, 80, 90, 100],
     },
 )
@@ -46,7 +46,7 @@ high_wind = StochasticScenario(
     available_capacity_profiles={
         "wind_farm": [120, 140, 100, 130, 110, 150, 140],
     },
-    load_profiles={
+    fixed_load_profiles={
         "load": [180, 180, 150, 50, 80, 90, 100],
     },
 )
@@ -60,7 +60,8 @@ Each `StochasticScenario` has:
 | ----------------------------- | ------------------------ | -------- | ------------------------------------------------------------ |
 | `name`                        | `str`                    | Yes      | Unique name for the scenario                                 |
 | `probability`                 | `float`                  | Yes      | Probability (0-1) of this scenario occurring                 |
-| `load_profiles`               | `dict[str, list[float]]` | No       | Load values per timestep, keyed by load name                 |
+| `fixed_load_profiles`         | `dict[str, list[float]]` | No       | Load values per timestep, keyed by load name                 |
+| `flexible_load_base_profiles` | `dict[str, list[float]]` | No       | Base load values per timestep, keyed by flexible load name   |
 | `available_capacity_profiles` | `dict[str, list[float]]` | No       | Max available capacity per timestep, keyed by generator name |
 | `market_prices`               | `dict[str, list[float]]` | No       | Market prices per timestep, keyed by market name             |
 
@@ -94,7 +95,8 @@ Everything else works the same -- the optimizer just considers multiple futures 
 You can vary any combination of:
 
 - **`available_capacity_profiles`** -- model different wind/solar outputs
-- **`load_profiles`** -- model demand uncertainty
+- **`fixed_load_profiles`** -- model demand uncertainty
+- **`flexible_load_base_profiles`** -- model flexible demand uncertainty
 - **`market_prices`** -- model price volatility
 
 Anything you don't include in a scenario stays unconstrained (e.g., if you don't specify `available_capacity_profiles`, generators can produce up to their `nominal_power` in that scenario).

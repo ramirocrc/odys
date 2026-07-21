@@ -15,8 +15,8 @@ from pydantic import BaseModel, ConfigDict
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.model.sets import ModelDimension, ModelIndex
 from odys.optimization.model.variables import ModelVariable
+from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadIndex
 from odys.optimization.parameters.generator_parameters import GeneratorIndex
-from odys.optimization.parameters.load_parameters import LoadIndex
 from odys.optimization.parameters.market_parameters import MarketIndex
 from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioIndex, TimeIndex
@@ -32,7 +32,7 @@ class EnergyModelIndices(BaseModel):
     time: TimeIndex
     generators: GeneratorIndex
     storages: StorageIndex
-    loads: LoadIndex
+    flexible_loads: FlexibleLoadIndex
     markets: MarketIndex
 
     def get_index(self, dimension: ModelDimension) -> ModelIndex:
@@ -42,7 +42,7 @@ class EnergyModelIndices(BaseModel):
             ModelDimension.Time: self.time,
             ModelDimension.Generators: self.generators,
             ModelDimension.Storages: self.storages,
-            ModelDimension.Loads: self.loads,
+            ModelDimension.FlexibleLoads: self.flexible_loads,
             ModelDimension.Markets: self.markets,
         }
         return mapping[dimension]
@@ -69,7 +69,7 @@ class EnergyMILPModel:
             time=self._parameters.scenarios.time_index,
             generators=self._parameters.generators.index,
             storages=self._parameters.storages.index,
-            loads=self._parameters.loads.index,
+            flexible_loads=self._parameters.flexible_loads.index,
             markets=self._parameters.markets.index,
         )
 
@@ -144,6 +144,11 @@ class EnergyMILPModel:
         return self._linopy_model.variables[ModelVariable.MARKET_TRADE_MODE.var_name]
 
     @property
+    def load_adjustment(self) -> Variable:
+        """Return the load adjustment variable."""
+        return self._linopy_model.variables[ModelVariable.LOAD_ADJUSTMENT.var_name]
+
+    @property
     def cvar_value_at_risk(self) -> Variable:
         """Return the value at risk, scalar variable."""
         return self._linopy_model.variables[ModelVariable.VALUE_AT_RISK.var_name]
@@ -178,6 +183,13 @@ class EnergyMILPModel:
                 ).sum([ModelDimension.Time, ModelDimension.Generators]),
             )
 
+        if not self._parameters.flexible_loads.is_empty:
+            profit_terms.append(
+                (self.load_adjustment * self._parameters.flexible_loads.value_of_consumption).sum(
+                    [ModelDimension.Time, ModelDimension.FlexibleLoads],
+                ),
+            )
+
         if not self._parameters.storages.is_empty:
             timestep_hours = self._parameters.timestep / timedelta(hours=1)
             profit_terms.append(
@@ -189,7 +201,10 @@ class EnergyMILPModel:
             )
 
         if not profit_terms:
-            msg = "per_scenario_profit requires at least one revenue or cost source (markets or generators)"
+            msg = (
+                "per_scenario_profit requires at least one revenue or cost source "
+                "(markets, generators, or flexible loads)"
+            )
             raise OdysValidationError(msg)
 
         return cast("linopy.LinearExpression", sum(profit_terms))

@@ -44,7 +44,7 @@ when should you simply buy?
 
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, Generator, Load, LoadType, Scenario, TradeDirection
+from odys import AssetPortfolio, EnergyMarket, EnergySystem, FixedLoad, Generator, Scenario, TradeDirection
 from odys.results.optimization_results import OptimalDisptachResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
@@ -59,7 +59,9 @@ def run_market_arbitrage() -> OptimalDisptachResults:
         nominal_power=100,
         variable_cost=50,
     )
-    load = Load(name="load", type=LoadType.Fixed)
+    load = FixedLoad(
+        name="load",
+    )
 
     market = EnergyMarket(
         name="market",
@@ -73,7 +75,7 @@ def run_market_arbitrage() -> OptimalDisptachResults:
         available_capacity_profiles={
             "ccgt": 24 * [100],
         },
-        load_profiles={
+        fixed_load_profiles={
             "load": 24 * [70],
         },
         market_prices={

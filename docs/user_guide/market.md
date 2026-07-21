@@ -107,7 +107,7 @@ scenario = Scenario(
     market_prices={
         "day_ahead": [50, 55, 45, 60, 70, 65, 50],
     },
-    load_profiles={"load": [100, 120, 80, 90, 110, 100, 95]},
+    fixed_load_profiles={"load": [100, 120, 80, 90, 110, 100, 95]},
 )
 ```
 
