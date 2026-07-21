@@ -43,6 +43,7 @@ class StorageParameters:
             "soc_end": [storage.soc_end for storage in self._storages],
             "soc_min": [storage.soc_min for storage in self._storages],
             "soc_max": [storage.soc_max for storage in self._storages],
+            "degradation_cost": [storage.degradation_cost for storage in self._storages],
         }
         dim = self._index.dimension
         self._dataset = xr.Dataset(
@@ -104,3 +105,8 @@ class StorageParameters:
     def soc_max(self) -> xr.DataArray:
         """Return storage maximum state of charge data."""
         return self._dataset["soc_max"]
+
+    @property
+    def degradation_cost(self) -> xr.DataArray:
+        """Return storage degradation cost data."""
+        return self._dataset["degradation_cost"]

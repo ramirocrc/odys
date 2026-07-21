@@ -70,6 +70,7 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $\eta^{rt}_b$ | Round-trip efficiency |
 | $z_{b,t,s}$ | Binary charging mode |
 | $\Delta t$ | Timestep length in hours |
+| $C^{deg}_b$ | Storage degradation cost |
 
 ## Market symbols
 

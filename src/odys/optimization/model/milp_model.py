@@ -4,6 +4,7 @@ This module provides the EnergyMILPModel class that wraps a linopy Model
 with typed accessors for energy system decision variables.
 """
 
+from datetime import timedelta
 from functools import cached_property
 from typing import cast
 
@@ -176,6 +177,17 @@ class EnergyMILPModel:
                     + self.generator_shutdown * self._parameters.generators.shutdown_cost
                 ).sum([ModelDimension.Time, ModelDimension.Generators]),
             )
+
+        if not self._parameters.storages.is_empty:
+            timestep_hours = self._parameters.timestep / timedelta(hours=1)
+            profit_terms.append(
+                -(
+                    (self.storage_power_in + self.storage_power_out)
+                    * timestep_hours
+                    * self._parameters.storages.degradation_cost
+                ).sum([ModelDimension.Time, ModelDimension.Storages]),
+            )
+
         if not profit_terms:
             msg = "per_scenario_profit requires at least one revenue or cost source (markets or generators)"
             raise OdysValidationError(msg)

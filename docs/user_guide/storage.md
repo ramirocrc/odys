@@ -38,7 +38,7 @@ storage = Storage(
 | `soc_end`                | `float` | No       | `None`  | Required final state of charge (0-1). If `None`, the optimizer is free to choose |
 | `soc_min`                | `float` | No       | `0.0`   | Minimum allowed state of charge (0-1)                                            |
 | `soc_max`                | `float` | No       | `1.0`   | Maximum allowed state of charge (0-1)                                            |
-| `degradation_cost`       | `float` | No       | `None`  | Accepted by the model object, but not included in the current objective          |
+| `degradation_cost`       | `float` | No       | `0.0`   | Cost per MWh cycled (charged or discharged), included in the objective          |
 | `self_discharge_rate`    | `float` | No       | `None`  | Accepted by the model object, but not included in the current storage dynamics   |
 
 ## State of charge (SOC)
@@ -125,7 +125,11 @@ $$
 
 ## Degradation cost
 
-`Storage` accepts a `degradation_cost` field, but the current optimization objective does not include a degradation-cost term.
+`Storage` accepts a `degradation_cost` field modeling battery wear, in currency per MWh cycled. It's applied to total energy throughput; both charging and discharging count toward cycling, and included in the objective as:
+
+$$
+C^{degradation}_{b,t} = c^{deg}_b \, \Delta t \, (p^{ch}_{b,t} + p^{dis}_{b,t})
+$$
 
 ```python
 storage = Storage(
@@ -138,6 +142,8 @@ storage = Storage(
     degradation_cost=5.0,  # 5 currency units per MWh cycled
 )
 ```
+
+This makes the optimizer weigh the value of cycling the battery against the wear it causes, discouraging unnecessary charge/discharge cycles.
 
 ## Results
 
