@@ -77,8 +77,8 @@ class Storage(EnergyEntity):
         ge=0,
         description="Degradation cost, in currency per MWh cycled.",
     )
-    self_discharge_rate: float | None = Field(
-        default=None,
+    self_discharge_rate: float = Field(
+        default=0.0,
         strict=True,
         ge=0,
         le=1,
