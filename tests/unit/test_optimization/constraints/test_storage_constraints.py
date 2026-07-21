@@ -96,6 +96,7 @@ class TestStorageConstraints:
         eff_ch = self.storage1.efficiency_charging
         eff_disch = self.storage1.efficiency_discharging
         dt = 1.0  # timestep in hours
+        self_discharge_rate = self.storage1.self_discharge_rate or 0.0
 
         for t in self.time_index[1:]:  # Skip t=0
             actual_t = actual_constraint.sel(time=str(t), storage="batt1")
@@ -107,7 +108,7 @@ class TestStorageConstraints:
             capacity = self.storage1.capacity
             expected_expr = (
                 soc_t
-                == soc_t_minus_1
+                == soc_t_minus_1 * (1 - self_discharge_rate * dt)
                 + eff_ch * storage_charge_t * dt / capacity
                 - 1 / eff_disch * storage_discharge_t * dt / capacity
             )
@@ -236,6 +237,8 @@ class TestStorageConstraintsSubHourlyTimestep:
         eff_ch = storage1.efficiency_charging
         eff_disch = storage1.efficiency_discharging
         dt = 0.25  # 15 minutes in hours
+        self_discharge_rate = storage1.self_discharge_rate or 0.0
+
         capacity = storage1.capacity
 
         for t in time_index[1:]:
@@ -247,7 +250,10 @@ class TestStorageConstraintsSubHourlyTimestep:
             discharge_t = storage_discharge.sel(time=str(t), storage="batt1")
 
             expected_expr = (
-                soc_t == soc_t_minus_1 + eff_ch * charge_t * dt / capacity - 1 / eff_disch * discharge_t * dt / capacity
+                soc_t
+                == soc_t_minus_1 * (1 - self_discharge_rate * dt)
+                + eff_ch * charge_t * dt / capacity
+                - 1 / eff_disch * discharge_t * dt / capacity
             )
 
             assert_conequal(expected_expr, actual_t.lhs == actual_t.rhs)

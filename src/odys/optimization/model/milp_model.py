@@ -173,7 +173,7 @@ class EnergyMILPModel:
                 -(
                     self.generator_power * self._parameters.generators.variable_cost
                     + self.generator_startup * self._parameters.generators.startup_cost
-                    + self.generator_shutdown * self._parameters.generators.shutdown_cost.fillna(0.0)
+                    + self.generator_shutdown * self._parameters.generators.shutdown_cost
                 ).sum([ModelDimension.Time, ModelDimension.Generators]),
             )
         if not profit_terms:

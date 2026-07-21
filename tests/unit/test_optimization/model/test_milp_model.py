@@ -78,7 +78,7 @@ class TestPerScenarioProfitShutdownCost:
         expected_profit = -(
             model.generator_power * model.parameters.generators.variable_cost
             + model.generator_startup * model.parameters.generators.startup_cost
-            + model.generator_shutdown * model.parameters.generators.shutdown_cost.fillna(0.0)
+            + model.generator_shutdown * model.parameters.generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators])
 
         assert_linequal(actual_profit, expected_profit)

@@ -57,7 +57,7 @@ $$
 | `min_up_time`   | `int`   | No       | `1`     | Minimum number of timesteps the generator must stay on  |
 | `min_down_time` | `int`   | No       | `1`     | Minimum number of timesteps the generator must stay off |
 | `startup_cost`  | `float` | No       | `0.0`   | Cost incurred each time the generator starts up         |
-| `shutdown_cost` | `float` | No       | `None`  | Cost incurred each time the generator shuts down (treated as 0 if not set) |
+| `shutdown_cost` | `float` | No       | `0.0`   | Cost incurred each time the generator shuts down         |
 
 ## Ramp constraints
 
