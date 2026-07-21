@@ -38,10 +38,7 @@ class StorageParameters:
             "max_power": [storage.max_power for storage in self._storages],
             "efficiency_charging": [storage.efficiency_charging for storage in self._storages],
             "efficiency_discharging": [storage.efficiency_discharging for storage in self._storages],
-            "self_discharge_rate": [
-            storage.self_discharge_rate if storage.self_discharge_rate is not None else 0.0
-            for storage in self._storages
-            ],
+            "self_discharge_rate": [storage.self_discharge_rate for storage in self._storages],
             "soc_start": [storage.soc_start for storage in self._storages],
             "soc_end": [storage.soc_end for storage in self._storages],
             "soc_min": [storage.soc_min for storage in self._storages],
@@ -82,7 +79,7 @@ class StorageParameters:
     def efficiency_discharging(self) -> xr.DataArray:
         """Return storage discharging efficiency data."""
         return self._dataset["efficiency_discharging"]
-    
+
     @property
     def self_discharge_rate(self) -> xr.DataArray:
         """Return storage self discharge rate data."""

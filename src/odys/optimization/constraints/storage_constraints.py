@@ -39,8 +39,7 @@ class StorageConstraints(ConstraintGroup):
         time_coords = self.model.storage_soc.coords[ModelDimension.Time.value]
         dt = self._timestep_hours
         constraint_expr = self.model.storage_soc - (
-            self.model.storage_soc.shift(time=1)
-            * (1 - self.params.self_discharge_rate * dt)
+            self.model.storage_soc.shift(time=1) * (1 - self.params.self_discharge_rate * dt)
             + self.params.efficiency_charging * self.model.storage_power_in * dt / self.params.capacity
             - 1 / self.params.efficiency_discharging * self.model.storage_power_out * dt / self.params.capacity
         )
