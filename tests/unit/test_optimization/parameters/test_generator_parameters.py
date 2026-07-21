@@ -6,6 +6,7 @@ from odys.optimization.parameters.generator_parameters import GeneratorParameter
 STANDARD_NOMINAL_POWER = 100.0
 STANDARD_VARIABLE_COST = 20.0
 EXPLICIT_SHUTDOWN_COST = 15.0
+EXPLICIT_MIN_DOWN_TIME = 3
 
 
 @pytest.fixture
@@ -51,3 +52,30 @@ def test_shutdown_cost_preserves_explicit_values_alongside_defaulted_ones(
 
     assert params.shutdown_cost.sel(generator="gen_with_shutdown_cost").item() == EXPLICIT_SHUTDOWN_COST
     assert params.shutdown_cost.sel(generator="gen_without_shutdown_cost").item() == 0.0
+
+
+def test_min_down_time_reflects_explicit_value() -> None:
+    generator = Generator(
+        name="gen_with_min_down_time",
+        nominal_power=STANDARD_NOMINAL_POWER,
+        variable_cost=STANDARD_VARIABLE_COST,
+        min_down_time=EXPLICIT_MIN_DOWN_TIME,
+    )
+    params = GeneratorParameters([generator])
+
+    value = params.min_down_time.sel(generator="gen_with_min_down_time").item()
+
+    assert value == EXPLICIT_MIN_DOWN_TIME
+
+
+def test_min_down_time_defaults_to_one_when_not_set() -> None:
+    generator = Generator(
+        name="gen_without_min_down_time",
+        nominal_power=STANDARD_NOMINAL_POWER,
+        variable_cost=STANDARD_VARIABLE_COST,
+    )
+    params = GeneratorParameters([generator])
+
+    value = params.min_down_time.sel(generator="gen_without_min_down_time").item()
+
+    assert value == 1

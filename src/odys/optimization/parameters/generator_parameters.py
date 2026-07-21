@@ -37,6 +37,7 @@ class GeneratorParameters:
             "nominal_power": [gen.nominal_power for gen in self._generators],
             "variable_cost": [gen.variable_cost for gen in self._generators],
             "min_up_time": [gen.min_up_time for gen in self._generators],
+            "min_down_time": [gen.min_down_time for gen in self._generators],
             "min_power": [gen.min_power for gen in self._generators],
             "startup_cost": [gen.startup_cost for gen in self._generators],
             "shutdown_cost": [gen.shutdown_cost for gen in self._generators],
@@ -73,6 +74,11 @@ class GeneratorParameters:
     def min_up_time(self) -> xr.DataArray:
         """Return generator minimum up time data."""
         return self._dataset["min_up_time"]
+
+    @property
+    def min_down_time(self) -> xr.DataArray:
+        """Return generator minimum down time data."""
+        return self._dataset["min_down_time"]
 
     @property
     def min_power(self) -> xr.DataArray:
