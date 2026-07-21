@@ -3,8 +3,8 @@ from datetime import timedelta
 import pytest
 from linopy.testing import assert_linequal
 
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.scenarios import Scenario
@@ -27,8 +27,8 @@ DEMAND_PROFILE: list[float] = [50.0, 80.0, 60.0]
 
 
 @pytest.fixture
-def load1() -> Load:
-    return Load(name="load1")
+def load1() -> FixedLoad:
+    return FixedLoad(name="load1")
 
 
 @pytest.fixture
@@ -84,14 +84,14 @@ def storage_without_degradation_cost() -> Storage:
     )
 
 
-def _build_milp_model(assets: list[Generator | Storage], load: Load) -> EnergyMILPModel:
+def _build_milp_model(assets: list[Generator | Storage], load: FixedLoad) -> EnergyMILPModel:
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(assets=[*assets, load]),
         number_of_steps=len(DEMAND_PROFILE),
         timestep=TIMESTEP,
         scenarios=Scenario(
             available_capacity_profiles={},
-            load_profiles={load.name: DEMAND_PROFILE},
+            fixed_load_profiles={load.name: DEMAND_PROFILE},
         ),
     )
     return build_model(energy_system.build_parameters())
@@ -107,7 +107,7 @@ class TestPerScenarioProfitDegradationCost:
         storage_fixture_name: str,
         request: pytest.FixtureRequest,
         generator1: Generator,
-        load1: Load,
+        load1: FixedLoad,
     ) -> None:
         storage: Storage = request.getfixturevalue(storage_fixture_name)
         model = _build_milp_model([generator1, storage], load1)
@@ -127,7 +127,7 @@ class TestPerScenarioProfitDegradationCost:
 
         assert_linequal(actual_profit, expected_profit)
 
-    def test_profit_requires_no_storages_still_works(self, generator1: Generator, load1: Load) -> None:
+    def test_profit_requires_no_storages_still_works(self, generator1: Generator, load1: FixedLoad) -> None:
         model = _build_milp_model([generator1], load1)
 
         actual_profit = model.per_scenario_profit()
@@ -150,7 +150,7 @@ class TestPerScenarioProfitShutdownCost:
         self,
         generator_fixture_name: str,
         request: pytest.FixtureRequest,
-        load1: Load,
+        load1: FixedLoad,
     ) -> None:
         generator: Generator = request.getfixturevalue(generator_fixture_name)
         model = _build_milp_model([generator], load1)
