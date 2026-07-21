@@ -38,10 +38,12 @@ class StorageParameters:
             "max_power": [storage.max_power for storage in self._storages],
             "efficiency_charging": [storage.efficiency_charging for storage in self._storages],
             "efficiency_discharging": [storage.efficiency_discharging for storage in self._storages],
+            "self_discharge_rate": [storage.self_discharge_rate for storage in self._storages],
             "soc_start": [storage.soc_start for storage in self._storages],
             "soc_end": [storage.soc_end for storage in self._storages],
             "soc_min": [storage.soc_min for storage in self._storages],
             "soc_max": [storage.soc_max for storage in self._storages],
+            "degradation_cost": [storage.degradation_cost for storage in self._storages],
         }
         dim = self._index.dimension
         self._dataset = xr.Dataset(
@@ -80,6 +82,11 @@ class StorageParameters:
         return self._dataset["efficiency_discharging"]
 
     @property
+    def self_discharge_rate(self) -> xr.DataArray:
+        """Return storage self discharge rate data."""
+        return self._dataset["self_discharge_rate"]
+
+    @property
     def soc_start(self) -> xr.DataArray:
         """Return storage initial state of charge data."""
         return self._dataset["soc_start"]
@@ -98,3 +105,8 @@ class StorageParameters:
     def soc_max(self) -> xr.DataArray:
         """Return storage maximum state of charge data."""
         return self._dataset["soc_max"]
+
+    @property
+    def degradation_cost(self) -> xr.DataArray:
+        """Return storage degradation cost data."""
+        return self._dataset["degradation_cost"]

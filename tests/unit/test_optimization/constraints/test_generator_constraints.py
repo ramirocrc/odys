@@ -17,13 +17,14 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def generator1() -> Generator:
-    """Override conftest generator1 with ramp/min_power/min_up_time params."""
+    """Override conftest generator1 with ramp/min_power/min_up_time/min_down_time params."""
     return Generator(
         name="gen1",
         nominal_power=100.0,
         variable_cost=20.0,
         min_power=10.0,
         min_up_time=2,
+        min_down_time=2,
         ramp_up=50.0,
         ramp_down=40.0,
     )
@@ -31,13 +32,14 @@ def generator1() -> Generator:
 
 @pytest.fixture
 def generator2() -> Generator:
-    """Override conftest generator2 with ramp/min_power/min_up_time params."""
+    """Override conftest generator2 with ramp/min_power/min_up_time/min_down_time params."""
     return Generator(
         name="gen2",
         nominal_power=150.0,
         variable_cost=25.0,
         min_power=15.0,
         min_up_time=3,
+        min_down_time=3,
         ramp_up=75.0,
         ramp_down=60.0,
     )
@@ -194,6 +196,30 @@ class TestGeneratorConstraints:
         gen2_expected_expr = gen2_status.rolling(
             time=self.generator2.min_up_time,
         ).sum() >= self.generator2.min_up_time * gen2_shutdown.shift(time=-1)
+        assert_conequal(gen2_expected_expr, gen2_actual_constraint.lhs >= gen2_actual_constraint.rhs)
+
+    def test_constraint_generator_min_downtime(self) -> None:
+        gen1_constraint_name = f"generator_min_downtime_{self.generator1.name}_constraint"
+        gen2_constraint_name = f"generator_min_downtime_{self.generator2.name}_constraint"
+
+        gen1_actual_constraint = self.linopy_model.constraints[gen1_constraint_name]
+        gen2_actual_constraint = self.linopy_model.constraints[gen2_constraint_name]
+
+        generator_status = self.linopy_model.variables["generator_status"]
+        generator_startup = self.linopy_model.variables["generator_startup"]
+
+        gen1_status = generator_status.sel(generator=self.generator1.name)
+        gen1_startup = generator_startup.sel(generator=self.generator1.name)
+        gen1_expected_expr = (1 - gen1_status).rolling(
+            time=self.generator1.min_down_time,
+        ).sum() >= self.generator1.min_down_time * gen1_startup.shift(time=-1)
+        assert_conequal(gen1_expected_expr, gen1_actual_constraint.lhs >= gen1_actual_constraint.rhs)
+
+        gen2_status = generator_status.sel(generator=self.generator2.name)
+        gen2_startup = generator_startup.sel(generator=self.generator2.name)
+        gen2_expected_expr = (1 - gen2_status).rolling(
+            time=self.generator2.min_down_time,
+        ).sum() >= self.generator2.min_down_time * gen2_startup.shift(time=-1)
         assert_conequal(gen2_expected_expr, gen2_actual_constraint.lhs >= gen2_actual_constraint.rhs)
 
     def test_constraint_generator_min_power(self) -> None:

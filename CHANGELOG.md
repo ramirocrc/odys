@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flexible loads: adjustable demand that optimizer can increase/decrease within bounds
 - `FlexibleLoadDispatch` results class with `load_adjustment` and `actual_load` properties
 - `results.flexible_loads` API for accessing flexible load dispatch results
+- `Storage.degradation_cost` is now included in the objective function, applied to total energy throughput (charge + discharge) converted to MWh via the scenario timestep
 
 ### Changed
 
 - Relaxed power demand validation for flexible loads to account for max_decrease capability
 - Updated error message in `per_scenario_profit` to include flexible loads as a valid profit source
+- `Storage.degradation_cost` now defaults to `0.0` instead of `None`, matching `Generator.startup_cost`. **Breaking:** explicitly passing `degradation_cost=None` is no longer accepted; omit the field or pass a float.
 
 ## [0.2.0] - 2026-07-05
 

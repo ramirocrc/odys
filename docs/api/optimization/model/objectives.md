@@ -26,6 +26,7 @@ The per-scenario profit implementation is:
 $$
 \Pi_s = \sum_{t,m} \lambda_{m,t,s}\left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right)
 - \sum_{t,g}\left(c_g p_{g,t,s} + C^{start}_g y^{start}_{g,t,s}\right)
+- \sum_{t,b} C^{deg}_b \, \Delta t \left(p^{ch}_{b,t,s} + p^{dis}_{b,t,s}\right)
 $$
 
 See also [domain.objective](../../domain/objective.md) for the public configuration interface.
