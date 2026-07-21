@@ -19,6 +19,8 @@ STANDARD_CAPACITY = 100.0
 STANDARD_MAX_POWER = 50.0
 STANDARD_SOC_START = 0.5
 STANDARD_DEGRADATION_COST = 5.0
+STANDARD_STARTUP_COST = 10.0
+STANDARD_SHUTDOWN_COST = 15.0
 TIMESTEP = timedelta(hours=1)
 
 DEMAND_PROFILE: list[float] = [50.0, 80.0, 60.0]
@@ -35,6 +37,27 @@ def generator1() -> Generator:
         name="gen1",
         nominal_power=STANDARD_NOMINAL_POWER,
         variable_cost=STANDARD_VARIABLE_COST,
+    )
+
+
+@pytest.fixture
+def generator_with_shutdown_cost() -> Generator:
+    return Generator(
+        name="gen_with_shutdown_cost",
+        nominal_power=STANDARD_NOMINAL_POWER,
+        variable_cost=STANDARD_VARIABLE_COST,
+        startup_cost=STANDARD_STARTUP_COST,
+        shutdown_cost=STANDARD_SHUTDOWN_COST,
+    )
+
+
+@pytest.fixture
+def generator_without_shutdown_cost() -> Generator:
+    return Generator(
+        name="gen_without_shutdown_cost",
+        nominal_power=STANDARD_NOMINAL_POWER,
+        variable_cost=STANDARD_VARIABLE_COST,
+        startup_cost=STANDARD_STARTUP_COST,
     )
 
 
@@ -95,6 +118,7 @@ class TestPerScenarioProfitDegradationCost:
         expected_profit = -(
             model.generator_power * model.parameters.generators.variable_cost
             + model.generator_startup * model.parameters.generators.startup_cost
+            + model.generator_shutdown * model.parameters.generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators]) - (
             (model.storage_power_in + model.storage_power_out)
             * timestep_hours
@@ -111,6 +135,32 @@ class TestPerScenarioProfitDegradationCost:
         expected_profit = -(
             model.generator_power * model.parameters.generators.variable_cost
             + model.generator_startup * model.parameters.generators.startup_cost
+            + model.generator_shutdown * model.parameters.generators.shutdown_cost
+        ).sum([ModelDimension.Time, ModelDimension.Generators])
+
+        assert_linequal(actual_profit, expected_profit)
+
+
+class TestPerScenarioProfitShutdownCost:
+    @pytest.mark.parametrize(
+        "generator_fixture_name",
+        ["generator_with_shutdown_cost", "generator_without_shutdown_cost"],
+    )
+    def test_profit_includes_shutdown_cost_term(
+        self,
+        generator_fixture_name: str,
+        request: pytest.FixtureRequest,
+        load1: Load,
+    ) -> None:
+        generator: Generator = request.getfixturevalue(generator_fixture_name)
+        model = _build_milp_model([generator], load1)
+
+        actual_profit = model.per_scenario_profit()
+
+        expected_profit = -(
+            model.generator_power * model.parameters.generators.variable_cost
+            + model.generator_startup * model.parameters.generators.startup_cost
+            + model.generator_shutdown * model.parameters.generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators])
 
         assert_linequal(actual_profit, expected_profit)

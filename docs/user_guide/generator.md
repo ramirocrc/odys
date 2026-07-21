@@ -55,9 +55,9 @@ $$
 | `ramp_up`       | `float` | No       | `None`  | Max increase in power per hour                          |
 | `ramp_down`     | `float` | No       | `None`  | Max decrease in power per hour                          |
 | `min_up_time`   | `int`   | No       | `1`     | Minimum number of timesteps the generator must stay on  |
-| `min_down_time` | `int`   | No       | `1`     | Accepted by the model object, but not enforced by the current optimization constraints |
+| `min_down_time` | `int`   | No       | `1`     | Minimum number of timesteps the generator must stay off |
 | `startup_cost`  | `float` | No       | `0.0`   | Cost incurred each time the generator starts up         |
-| `shutdown_cost` | `float` | No       | `None`  | Accepted by the model object, but not included in the current objective |
+| `shutdown_cost` | `float` | No       | `0.0`   | Cost incurred each time the generator shuts down         |
 
 ## Ramp constraints
 
@@ -94,9 +94,28 @@ gen = Generator(
 )
 ```
 
-## Startup cost and shutdown tracking
+## Minimum down time
 
-Startup cost is included in the objective. Shutdown events are tracked as decision variables, but `shutdown_cost` is not currently included in the objective.
+The current optimization model enforces minimum down time with a rolling constraint tied to startup events:
+
+$$
+\sum_{\tau=t-D_g+1}^{t} (1 - u_{g,\tau}) \ge D_g y^{start}_{g,t+1}
+$$
+
+where $D_g$ is the minimum down time.
+
+```python
+gen = Generator(
+    name="coal_plant",
+    nominal_power=500.0,
+    variable_cost=25.0,
+    min_down_time=3,  # once off, stays off for at least 3 steps
+)
+```
+
+## Startup cost and shutdown cost
+
+Both startup and shutdown cost are included in the objective.
 
 ```python
 gen = Generator(
@@ -104,10 +123,11 @@ gen = Generator(
     nominal_power=50.0,
     variable_cost=80.0,
     startup_cost=500.0,
+    shutdown_cost=200.0,
 )
 ```
 
-This makes the optimizer think twice before turning the generator on, which is realistic for many thermal plants. Notice how the startup cost creates a tradeoff: the optimizer weighs the cost of starting up against the benefit of running.
+This makes the optimizer think twice before turning the generator on or off, which is realistic for many thermal plants. The optimizer weighs these costs against the benefit of running.
 
 Startup and shutdown are represented with binary transition variables:
 

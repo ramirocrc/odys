@@ -46,6 +46,7 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $R^{up}_g$ | Ramp-up limit |
 | $R^{down}_g$ | Ramp-down limit |
 | $U_g$ | Minimum up time |
+| $D_g$ | Minimum down time |
 | $\epsilon_g$ | Small numerical lower bound used when the generator is on |
 | $A_{g,t,s}$ | Available-capacity profile |
 | $c_g$ | Generator variable cost |
