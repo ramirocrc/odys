@@ -21,8 +21,8 @@ from odys.domain.scenarios import (
 )
 from odys.domain.validation import validate_energy_system_inputs
 from odys.optimization.model.model_builder import build_model
+from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
-from odys.optimization.parameters.load_parameters import LoadParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
 from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioParameters
@@ -103,7 +103,8 @@ class EnergySystem(BaseModel):
                     name="deterministic_scenario",
                     probability=1.0,
                     available_capacity_profiles=self.scenarios.available_capacity_profiles,
-                    load_profiles=self.scenarios.load_profiles,
+                    fixed_load_profiles=self.scenarios.fixed_load_profiles,
+                    flexible_load_base_profiles=self.scenarios.flexible_load_base_profiles,
                     market_prices=self.scenarios.market_prices,
                 ),
             )
@@ -122,14 +123,14 @@ class EnergySystem(BaseModel):
         """Build parameters from this energy system for the optimization model."""
         generator_params = GeneratorParameters(self.portfolio.generators)
         storage_params = StorageParameters(self.portfolio.storages)
-        load_params = LoadParameters(self.portfolio.loads)
+        flexible_load_params = FlexibleLoadParameters(self.portfolio.flexible_loads)
         market_params = MarketParameters(self.collection_of_markets)
         scenario_params = ScenarioParameters(
             number_of_timesteps=self.number_of_steps,
             scenarios=self.collection_of_scenarios,
             generators_index=generator_params.index,
             storages_index=storage_params.index,
-            loads_index=load_params.index,
+            flexible_loads_index=flexible_load_params.index,
             markets_index=market_params.index,
         )
 
@@ -137,7 +138,7 @@ class EnergySystem(BaseModel):
             timestep=self.timestep,
             generators=generator_params,
             storages=storage_params,
-            loads=load_params,
+            flexible_loads=flexible_load_params,
             markets=market_params,
             scenarios=scenario_params,
             objective=self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0)),

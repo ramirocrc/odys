@@ -2,8 +2,8 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.scenarios import StochasticScenario
@@ -42,8 +42,8 @@ def battery() -> Storage:
 
 
 @pytest.fixture
-def load() -> Load:
-    return Load(name="load1")
+def load() -> FixedLoad:
+    return FixedLoad(name="load1")
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def portfolio_with_battery(
     wind_generator: Generator,
     gas_generator: Generator,
     battery: Storage,
-    load: Load,
+    load: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio([wind_generator, gas_generator, battery, load])
 
@@ -60,7 +60,7 @@ def portfolio_with_battery(
 def portfolio_without_battery(
     wind_generator: Generator,
     gas_generator: Generator,
-    load: Load,
+    load: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio([wind_generator, gas_generator, load])
 
@@ -75,7 +75,7 @@ def scenarios() -> list[StochasticScenario]:
                 "wind_farm": [150.0, 120.0, 100.0],
                 "gas_plant": [100.0, 100.0, 100.0],
             },
-            load_profiles={
+            fixed_load_profiles={
                 "load1": [120.0, 100.0, 80.0],
             },
         ),
@@ -86,7 +86,7 @@ def scenarios() -> list[StochasticScenario]:
                 "wind_farm": [50.0, 30.0, 20.0],
                 "gas_plant": [100.0, 100.0, 100.0],
             },
-            load_profiles={
+            fixed_load_profiles={
                 "load1": [120.0, 100.0, 80.0],
             },
         ),

@@ -6,8 +6,8 @@ import pandas as pd
 import pytest
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
@@ -37,9 +37,9 @@ MARKET_LOW_PRICES: list[float] = [25.0, 30.0, 28.0]
 
 
 @pytest.fixture
-def standard_load() -> Load:
+def standard_load() -> FixedLoad:
     """Standard load fixture for reuse across tests."""
-    return Load(name="load1")
+    return FixedLoad(name="load1")
 
 
 @pytest.fixture
@@ -127,7 +127,7 @@ def _create_expected_dataframe(
 def _create_energy_system(
     assets: list[EnergyEntity],
     load_profile: list[float],
-    load: Load,
+    load: FixedLoad,
     markets: list[EnergyMarket] | None = None,
     market_prices: dict[str, list[float]] | None = None,
 ) -> EnergySystem:
@@ -141,7 +141,7 @@ def _create_energy_system(
         number_of_steps=len(load_profile),
         scenarios=Scenario(
             available_capacity_profiles={},
-            load_profiles={load.name: load_profile},
+            fixed_load_profiles={load.name: load_profile},
             market_prices=market_prices,
         ),
     )
@@ -159,7 +159,7 @@ def _create_single_generator_system() -> SystemTestCase:
         variable_cost=EXPENSIVE_COST,
     )
 
-    load = Load(name="load1")
+    load = FixedLoad(name="load1")
     energy_system = _create_energy_system([generator], SIMPLE_LOAD_PROFILE, load)
 
     expected_generator_results = _create_expected_dataframe(
@@ -197,7 +197,7 @@ def _create_three_generators_system() -> SystemTestCase:
         variable_cost=VERY_EXPENSIVE_COST,
     )
 
-    load = Load(name="load1")
+    load = FixedLoad(name="load1")
     energy_system = _create_energy_system(
         [generator_cheap, generator_medium, generator_expensive],
         RAMPING_LOAD_PROFILE,
@@ -242,7 +242,7 @@ def _create_generator_and_battery_system() -> SystemTestCase:
         soc_end=0.5,
     )
 
-    load = Load(name="load1")
+    load = FixedLoad(name="load1")
     energy_system = _create_energy_system([generator, battery], STORAGE_TEST_PROFILE, load)
 
     expected_generator_results = _create_expected_dataframe(
@@ -286,7 +286,7 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
         soc_end=0.5,
     )
 
-    load = Load(name="load1")
+    load = FixedLoad(name="load1")
     energy_system = _create_energy_system([generator, battery], SHORT_STORAGE_PROFILE, load)
 
     expected_generator_results = _create_expected_dataframe(
@@ -326,7 +326,7 @@ def _create_generator_load_and_market_system() -> SystemTestCase:
         max_trading_volume_per_step=STANDARD_GENERATOR_POWER,
     )
 
-    load = Load(name="load1")
+    load = FixedLoad(name="load1")
     load_profile = [50.0, 75.0, 100.0]
 
     energy_system = _create_energy_system(
@@ -371,7 +371,7 @@ def _create_generator_and_two_markets_system() -> SystemTestCase:
         max_trading_volume_per_step=50.0,
     )
 
-    load = Load(name="load1")
+    load = FixedLoad(name="load1")
     load_profile = [30.0, 40.0, 50.0]
 
     energy_system = _create_energy_system(
@@ -409,7 +409,7 @@ def _create_market_only_system() -> SystemTestCase:
         max_trading_volume_per_step=200.0,
     )
 
-    load = Load(name="load1")
+    load = FixedLoad(name="load1")
     load_profile = [40.0, 50.0, 60.0]
 
     energy_system = _create_energy_system(

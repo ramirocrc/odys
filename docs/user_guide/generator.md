@@ -138,7 +138,7 @@ scenario = Scenario(
     available_capacity_profiles={
         "gas_turbine": [100, 100, 50, 50, 100, 100, 100],
     },
-    load_profiles={"load": [80, 90, 70, 60, 85, 95, 80]},
+    fixed_load_profiles={"load": [80, 90, 70, 60, 85, 95, 80]},
 )
 ```
 

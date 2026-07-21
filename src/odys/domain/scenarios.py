@@ -34,10 +34,20 @@ class Scenario(BaseModel):
 
     available_capacity_profiles: Mapping[str, Sequence[float]] | None = Field(
         default=None,
-        description="Available capacity for each asset.",
+        description="Available capacity for each generator.",
     )
-    load_profiles: Mapping[str, Sequence[float]] | None = Field(default=None, description="Load profiles")
-    market_prices: Mapping[str, Sequence[float]] | None = Field(default=None, description="Market prices.")
+    fixed_load_profiles: Mapping[str, Sequence[float]] | None = Field(
+        default=None,
+        description="Load profiles for fixed loads.",
+    )
+    flexible_load_base_profiles: Mapping[str, Sequence[float]] | None = Field(
+        default=None,
+        description="Base load profiles for flexible loads.",
+    )
+    market_prices: Mapping[str, Sequence[float]] | None = Field(
+        default=None,
+        description="Market prices.",
+    )
 
 
 class StochasticScenario(Scenario):

@@ -2,8 +2,8 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
 from odys.domain.scenarios import Scenario
@@ -31,7 +31,7 @@ def energy_system_sample() -> EnergySystem:
         soc_start=1.0,
         soc_end=0.5,
     )
-    load_1 = Load(name="load_1")
+    load_1 = FixedLoad(name="load_1")
     portfolio = AssetPortfolio([generator_1, generator_2, battery_1, load_1])
 
     demand_profile = [50, 75, 100, 125, 150]
@@ -41,7 +41,7 @@ def energy_system_sample() -> EnergySystem:
         timestep=timedelta(minutes=30),
         scenarios=Scenario(
             available_capacity_profiles={},
-            load_profiles={"load_1": demand_profile},
+            fixed_load_profiles={"load_1": demand_profile},
         ),
     )
 

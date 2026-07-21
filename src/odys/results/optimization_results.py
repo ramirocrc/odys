@@ -6,7 +6,9 @@ from linopy.constants import SolverStatus, TerminationCondition
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import ModelVariable
+from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.results.dispatch import (
+    FlexibleLoadDispatch,
     GeneratorDispatch,
     MarketDispatch,
     StorageDispatch,
@@ -21,10 +23,12 @@ class OptimalDisptachResults:
     """
 
     __slots__ = (
+        "_has_flexible_loads",
         "_has_generators",
         "_has_markets",
         "_has_storages",
         "_objective_value",
+        "_parameters",
         "_solution",
         "_solver_status",
         "_termination_condition",
@@ -37,6 +41,7 @@ class OptimalDisptachResults:
         termination_condition: TerminationCondition,
         solution: xr.Dataset,
         objective_value: float | None,
+        parameters: EnergySystemParameters,
     ) -> None:
         """Initialize OptimalDisptachResults."""
         self._solver_status = solver_status
@@ -49,6 +54,8 @@ class OptimalDisptachResults:
         self._has_generators = ModelDimension.Generators in solution.dims
         self._has_storages = ModelDimension.Storages in solution.dims
         self._has_markets = ModelDimension.Markets in solution.dims
+        self._has_flexible_loads = ModelDimension.FlexibleLoads in solution.dims
+        self._parameters = parameters
 
     @property
     def solver_status(self) -> str:
@@ -110,6 +117,27 @@ class OptimalDisptachResults:
         return MarketDispatch(
             sell_volume=self._solution[ModelVariable.MARKET_SELL.var_name],
             buy_volume=self._solution[ModelVariable.MARKET_BUY.var_name],
+        )
+
+    @property
+    def flexible_loads(self) -> FlexibleLoadDispatch:
+        """Get flexible load dispatch results."""
+        self._validate_terminated_successfully()
+        if not self._has_flexible_loads:
+            msg = "This model does not contain flexible load results"
+            raise OdysNoResultsError(msg)
+
+        base_profiles = self._parameters.scenarios.flexible_load_base_profiles
+        if base_profiles is None:
+            msg = "Flexible loads exist but base profiles are missing"
+            raise OdysNoResultsError(msg)
+
+        if ModelDimension.Scenarios in base_profiles.dims and len(base_profiles.coords[ModelDimension.Scenarios]) == 1:
+            base_profiles = base_profiles.squeeze(ModelDimension.Scenarios, drop=True)
+
+        return FlexibleLoadDispatch(
+            load_adjustment=self._solution[ModelVariable.LOAD_ADJUSTMENT.var_name],
+            base_profiles=base_profiles,
         )
 
     @property

@@ -10,8 +10,9 @@ from types import MappingProxyType
 from typing import TypeVar
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.fixed_load import FixedLoad
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.storage import Storage
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.model.registry import AssetRegistry
@@ -108,14 +109,34 @@ class AssetPortfolio:
         return self._get_assets_by_type(Storage)
 
     @property
-    def loads(self) -> tuple[Load, ...]:
-        """Get all the loads in the portfolio.
+    def fixed_loads(self) -> tuple[FixedLoad, ...]:
+        """Get all fixed loads in the portfolio.
 
         Returns:
-            A tuple containing all Load assets.
+            A tuple containing all FixedLoad assets.
 
         """
-        return self._get_assets_by_type(Load)
+        return self._get_assets_by_type(FixedLoad)
+
+    @property
+    def flexible_loads(self) -> tuple[FlexibleLoad, ...]:
+        """Get all flexible loads in the portfolio.
+
+        Returns:
+            A tuple containing all FlexibleLoad assets.
+
+        """
+        return self._get_assets_by_type(FlexibleLoad)
+
+    @property
+    def loads(self) -> tuple[FixedLoad | FlexibleLoad, ...]:
+        """Get all loads (fixed and flexible) in the portfolio.
+
+        Returns:
+            A tuple containing all load assets.
+
+        """
+        return tuple(asset for asset in self._assets.values() if isinstance(asset, (FixedLoad, FlexibleLoad)))
 
     def assets_by_type(self, asset_type: AssetRegistry) -> tuple[EnergyEntity, ...]:
         """Get all assets of a specific type from the portfolio.

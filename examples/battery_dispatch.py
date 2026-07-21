@@ -46,7 +46,7 @@ gas.
 
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario, Storage
+from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario, Storage
 from odys.results.optimization_results import OptimalDisptachResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
@@ -66,7 +66,9 @@ def run_battery_dispatch() -> OptimalDisptachResults:
         nominal_power=150,
         variable_cost=0,
     )
-    load = Load(name="load", type=LoadType.Fixed)
+    load = FixedLoad(
+        name="load",
+    )
 
     battery = Storage(
         name="battery",
@@ -82,7 +84,7 @@ def run_battery_dispatch() -> OptimalDisptachResults:
             "ccgt": 24 * [100],
             "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
         },
-        load_profiles={
+        fixed_load_profiles={
             "load": 24 * [70],
         },
     )

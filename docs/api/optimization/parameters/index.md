@@ -10,8 +10,8 @@ Model parameter builders.
 
 ## Modules
 
+- `flexible_load_parameters`
 - `generator_parameters`
-- `load_parameters`
 - `market_parameters`
 - `parameters`
 - `scenario_parameters`

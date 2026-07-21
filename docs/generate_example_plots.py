@@ -21,6 +21,7 @@ from plotly.subplots import make_subplots
 from examples.basic_dispatch import run_basic_dispatch  # pyrefly: ignore
 from examples.battery_dispatch import run_battery_dispatch  # pyrefly: ignore
 from examples.cvar_market_risk import run_cvar_market_risk  # pyrefly: ignore
+from examples.flexible_load_market import run_flexible_load_market  # pyrefly: ignore
 from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
 
 OUTPUT_DIR = Path(__file__).parent / "assets" / "examples"
@@ -36,6 +37,8 @@ MARKET_BUY_COLOR = "#3498DB"
 MARKET_PRICE_COLOR = "#E74C3C"
 SDAC_COLOR = "#3498DB"
 SIDC_COLOR = "#E67E22"
+FLEXIBLE_LOAD_COLOR = "#3498DB"
+VALUE_OF_CONSUMPTION_COLOR = "#E67E22"
 
 
 def _save_figure(fig: go.Figure, name: str) -> None:
@@ -319,6 +322,87 @@ def generate_market_arbitrage() -> None:
     _save_figure(fig, "market_arbitrage")
 
 
+def generate_flexible_load_market() -> None:
+    """Two-panel chart: load consumption + market prices."""
+    result = run_flexible_load_market()
+    actual_load = result.flexible_loads.actual_load
+    steps = list(range(1, len(actual_load) + 1))
+
+    market_prices = [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.12,
+        subplot_titles=("Load Consumption", "Market Prices"),
+        row_heights=[0.5, 0.5],
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=steps,
+            y=[60] * len(steps),
+            mode="lines",
+            name="Base Load (60 MW)",
+            line=dict(color=LOAD_COLOR, width=2, dash="dash"),
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=steps,
+            y=actual_load.values,
+            mode="lines+markers",
+            name="Actual Consumption",
+            line=dict(color=FLEXIBLE_LOAD_COLOR, width=2),
+            marker=dict(size=6),
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=steps,
+            y=market_prices,
+            mode="lines+markers",
+            name="Market Price ($/MWh)",
+            line=dict(color=MARKET_PRICE_COLOR, width=2),
+            marker=dict(size=8),
+        ),
+        row=2,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=steps,
+            y=[70] * len(steps),
+            mode="lines",
+            name="Value of Consumption (70 $/MWh)",
+            line=dict(color=VALUE_OF_CONSUMPTION_COLOR, width=2, dash="dash"),
+        ),
+        row=2,
+        col=1,
+    )
+
+    fig.update_layout(
+        hovermode="x unified",
+        legend=dict(x=0.5, y=1.02, xanchor="center", yanchor="bottom", orientation="h"),
+        margin=dict(l=40, r=40, t=60, b=40),
+    )
+
+    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 100])
+    fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
+
+    _save_figure(fig, "flexible_load_market")
+
+
 def generate_cvar_market_risk() -> None:
     """Side-by-side grouped bar charts of market allocation for both runs."""
     result_profit, result_cvar = run_cvar_market_risk()
@@ -411,6 +495,7 @@ if __name__ == "__main__":
     print("Generating example plots...")
     generate_basic_dispatch()
     generate_battery_dispatch()
+    generate_flexible_load_market()
     generate_market_arbitrage()
     generate_cvar_market_risk()
     print("Done!")

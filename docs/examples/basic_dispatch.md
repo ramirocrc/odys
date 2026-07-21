@@ -35,11 +35,11 @@ Start by creating the two generators and the fixed load. This is the part where 
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario
+from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario
 
 ccgt = Generator(name="ccgt", nominal_power=100, variable_cost=50)
 solar_pv = Generator(name="solar_pv", nominal_power=150, variable_cost=0)
-load = Load(name="load", type=LoadType.Fixed)
+load = FixedLoad(name="load")
 portfolio = AssetPortfolio([ccgt, solar_pv, load])
 ```
 
@@ -71,7 +71,7 @@ scenario = Scenario(
         "ccgt": 24 * [100],
         "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
     },
-    load_profiles={"load": 24 * [70]},
+    fixed_load_profiles={"load": 24 * [70]},
 )
 ```
 

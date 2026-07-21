@@ -9,8 +9,8 @@ from datetime import timedelta
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.objective import Objective
+from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
-from odys.optimization.parameters.load_parameters import LoadParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioParameters
 from odys.optimization.parameters.storage_parameters import StorageParameters
@@ -24,7 +24,7 @@ class EnergySystemParameters(BaseModel):
     timestep: timedelta
     generators: GeneratorParameters
     storages: StorageParameters
-    loads: LoadParameters
+    flexible_loads: FlexibleLoadParameters
     markets: MarketParameters
     scenarios: ScenarioParameters
     objective: Objective
@@ -40,9 +40,9 @@ class EnergySystemParameters(BaseModel):
         return not self.storages.is_empty
 
     @property
-    def has_loads(self) -> bool:
-        """Return True if there are loads."""
-        return not self.loads.is_empty
+    def has_flexible_loads(self) -> bool:
+        """Return True if there are flexible loads."""
+        return not self.flexible_loads.is_empty
 
     @property
     def has_markets(self) -> bool:

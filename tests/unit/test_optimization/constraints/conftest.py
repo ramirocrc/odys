@@ -3,8 +3,8 @@ from datetime import timedelta
 import pytest
 from linopy import Model
 
+from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.parameters.parameters import EnergySystemParameters
@@ -29,8 +29,8 @@ def generator2() -> Generator:
 
 
 @pytest.fixture
-def load1() -> Load:
-    return Load(name="load1")
+def load1() -> FixedLoad:
+    return FixedLoad(name="load1")
 
 
 @pytest.fixture

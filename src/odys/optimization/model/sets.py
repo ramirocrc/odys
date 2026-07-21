@@ -14,7 +14,7 @@ class ModelDimension(StrEnum):
     Time = "time"
     Generators = "generator"
     Storages = "storage"
-    Loads = "load"
+    FlexibleLoads = "flexible_load"
     Markets = "market"
 
 

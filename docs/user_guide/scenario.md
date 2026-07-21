@@ -14,36 +14,51 @@ Let's define a scenario.
 from odys import Scenario
 
 scenario = Scenario(
-    load_profiles={"demand": [60, 90, 40, 70]},
+    fixed_load_profiles={"demand": [60, 90, 40, 70]},
 )
 ```
 
-This tells the optimizer: "here's what demand looks like over four timesteps." The key `"demand"` must match the `name` of a `Load` in your portfolio.
+This tells the optimizer: "here's what demand looks like over four timesteps." The key `"demand"` must match the `name` of a `FixedLoad` in your portfolio.
 
 ## Fields
 
 | Field                         | Type                     | Required | Default | Description                                                  |
 | ----------------------------- | ------------------------ | -------- | ------- | ------------------------------------------------------------ |
-| `load_profiles`               | `dict[str, list[float]]` | No       | `None`  | Load values per timestep, keyed by load name                 |
+| `fixed_load_profiles`         | `dict[str, list[float]]` | No       | `None`  | Load values per timestep for fixed loads, keyed by load name |
+| `flexible_load_base_profiles` | `dict[str, list[float]]` | No       | `None`  | Base load values per timestep for flexible loads, keyed by load name |
 | `available_capacity_profiles` | `dict[str, list[float]]` | No       | `None`  | Max available capacity per timestep, keyed by generator name |
 | `market_prices`               | `dict[str, list[float]]` | No       | `None`  | Market prices per timestep, keyed by market name             |
 
 All fields are optional -- you only include what you need. If a field is omitted, the optimizer won't apply that constraint (e.g., generators without an `available_capacity_profiles` entry can produce up to their `nominal_power`).
 
-## Load profiles
+## Fixed load profiles
 
-Specify how much power each load demands at each timestep:
+Specify how much power each fixed load demands at each timestep:
 
 ```python
 scenario = Scenario(
-    load_profiles={
+    fixed_load_profiles={
         "factory": [100, 120, 80, 90],
         "office": [20, 25, 15, 20],
     },
 )
 ```
 
-The keys must match the `name` of a [Load](load.md) in your portfolio.
+The keys must match the `name` of a [FixedLoad](load.md#fixed-loads) in your portfolio.
+
+## Flexible load base profiles
+
+Specify the base demand for each flexible load at each timestep. The optimizer can adjust consumption up or down from this base:
+
+```python
+scenario = Scenario(
+    flexible_load_base_profiles={
+        "industrial_process": [80, 80, 80, 80],
+    },
+)
+```
+
+The keys must match the `name` of a [FlexibleLoad](load.md#flexible-loads) in your portfolio.
 
 ## Available capacity profiles
 
@@ -55,7 +70,7 @@ scenario = Scenario(
         "wind_farm": [80, 60, 90, 70],
         "solar": [0, 50, 80, 30],
     },
-    load_profiles={"demand": [100, 120, 80, 90]},
+    fixed_load_profiles={"demand": [100, 120, 80, 90]},
 )
 ```
 
@@ -70,7 +85,7 @@ scenario = Scenario(
     market_prices={
         "day_ahead": [50, 55, 45, 60],
     },
-    load_profiles={"demand": [100, 120, 80, 90]},
+    fixed_load_profiles={"demand": [100, 120, 80, 90]},
 )
 ```
 
@@ -78,14 +93,17 @@ The keys must match the `name` of an `EnergyMarket` passed to the `EnergySystem`
 
 ## Putting it all together
 
-A scenario with all three fields might look like:
+A scenario with all four fields might look like:
 
 ```python
 from odys import Scenario
 
 scenario = Scenario(
-    load_profiles={
+    fixed_load_profiles={
         "demand": [100, 120, 80, 90],
+    },
+    flexible_load_base_profiles={
+        "industrial_process": [80, 80, 80, 80],
     },
     available_capacity_profiles={
         "wind_farm": [80, 60, 90, 70],

@@ -36,11 +36,11 @@ The battery is the new ingredient. It does not create energy on its own, but it 
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, Generator, Load, LoadType, Scenario, Storage
+from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario, Storage
 
 generator_1 = Generator(name="ccgt", nominal_power=100, variable_cost=50)
 generator_2 = Generator(name="solar_pv", nominal_power=150, variable_cost=0)
-load = Load(name="load", type=LoadType.Fixed)
+load = FixedLoad(name="load")
 battery = Storage(name="battery", capacity=300, max_power=200, soc_start=0, soc_end=0)
 portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
 ```
@@ -63,7 +63,7 @@ scenario = Scenario(
         "ccgt": 24 * [100],
         "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
     },
-    load_profiles={"load": 24 * [70]},
+    fixed_load_profiles={"load": 24 * [70]},
 )
 ```
 

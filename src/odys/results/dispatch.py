@@ -245,3 +245,70 @@ class MarketDispatch:
     def __repr__(self) -> str:
         """String representation."""
         return f"MarketDispatch(names={self._market_names!r})"
+
+
+class FlexibleLoadDispatch:
+    """Dispatch results for flexible loads in the portfolio."""
+
+    __slots__ = (
+        "_base_profiles",
+        "_flexible_load_names",
+        "_load_adjustment",
+    )
+
+    def __init__(
+        self,
+        load_adjustment: xr.DataArray,
+        base_profiles: xr.DataArray,
+    ) -> None:
+        """Initialize flexible load dispatch results."""
+        self._load_adjustment = load_adjustment
+        self._base_profiles = base_profiles
+        self._flexible_load_names = load_adjustment.coords[ModelDimension.FlexibleLoads]
+
+    def __getitem__(self, key: str) -> FlexibleLoadDispatch:
+        """Return new instance for a specific flexible load."""
+        return FlexibleLoadDispatch(
+            load_adjustment=self._load_adjustment.sel(flexible_load=key),
+            base_profiles=self._base_profiles.sel(flexible_load=key),
+        )
+
+    def __iter__(self) -> Iterator[FlexibleLoadDispatch]:
+        """Iterate over dispatch instances."""
+        for name in self._flexible_load_names:
+            yield self[name]
+
+    def __len__(self) -> int:
+        """Number of flexible loads."""
+        return len(self._flexible_load_names)
+
+    def __contains__(self, key: str) -> bool:
+        """Check if flexible load exists by name."""
+        return key in self._flexible_load_names
+
+    @property
+    def load_adjustment(self) -> pd.Series:
+        """Load adjustment from base profile (MW)."""
+        return self._load_adjustment.to_series()
+
+    @property
+    def actual_load(self) -> pd.Series:
+        """Actual consumption = base profile + adjustment (MW)."""
+        return (self._base_profiles + self._load_adjustment).to_series()
+
+    def to_dataset(self) -> xr.Dataset:
+        """Return dispatch results as an xarray Dataset."""
+        return xr.Dataset(
+            data_vars={
+                "load_adjustment": self._load_adjustment,
+                "actual_load": self._base_profiles + self._load_adjustment,
+            },
+        )
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Return dispatch results as a pandas DataFrame."""
+        return self.to_dataset().to_dataframe()
+
+    def __repr__(self) -> str:
+        """String representation."""
+        return f"FlexibleLoadDispatch(names={self._flexible_load_names!r})"

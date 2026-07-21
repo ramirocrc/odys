@@ -8,19 +8,20 @@ from dataclasses import dataclass
 from enum import Enum
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.storage import Storage
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import (
+    FLEXIBLE_LOAD_VARIABLES,
     GENERATOR_VARIABLES,
     MARKET_VARIABLES,
     STORAGE_VARIABLES,
     ModelVariable,
 )
+from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
-from odys.optimization.parameters.load_parameters import LoadParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
 from odys.optimization.parameters.storage_parameters import StorageParameters
 
@@ -30,7 +31,7 @@ class AssetSpec:
     """Specification for a registered asset type."""
 
     entity_class: type[EnergyEntity]
-    parameter_class: type[GeneratorParameters | StorageParameters | MarketParameters | LoadParameters]
+    parameter_class: type[GeneratorParameters | StorageParameters | MarketParameters | FlexibleLoadParameters]
     dimension: ModelDimension
     variables: tuple[ModelVariable, ...]
 
@@ -59,11 +60,11 @@ class AssetRegistry(Enum):
         variables=tuple(MARKET_VARIABLES),
     )
 
-    LOAD = AssetSpec(
-        entity_class=Load,
-        parameter_class=LoadParameters,
-        dimension=ModelDimension.Loads,
-        variables=(),
+    FLEXIBLE_LOAD = AssetSpec(
+        entity_class=FlexibleLoad,
+        parameter_class=FlexibleLoadParameters,
+        dimension=ModelDimension.FlexibleLoads,
+        variables=tuple(FLEXIBLE_LOAD_VARIABLES),
     )
 
     @property
@@ -82,7 +83,7 @@ class AssetRegistry(Enum):
     @classmethod
     def all_parameter_classes(
         cls,
-    ) -> list[type[GeneratorParameters | StorageParameters | MarketParameters | LoadParameters]]:
+    ) -> list[type[GeneratorParameters | StorageParameters | MarketParameters | FlexibleLoadParameters]]:
         """Get all parameter classes from registered asset types."""
         return [member.spec.parameter_class for member in cls]
 

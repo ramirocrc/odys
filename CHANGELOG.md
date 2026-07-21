@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Flexible loads: adjustable demand that optimizer can increase/decrease within bounds
+- `FlexibleLoadDispatch` results class with `load_adjustment` and `actual_load` properties
+- `results.flexible_loads` API for accessing flexible load dispatch results
+
+### Changed
+
+- Relaxed power demand validation for flexible loads to account for max_decrease capability
+- Updated error message in `per_scenario_profit` to include flexible loads as a valid profit source
+
 ## [0.2.0] - 2026-07-05
 
 ### Added

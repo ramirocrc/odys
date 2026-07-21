@@ -5,10 +5,11 @@ checks on energy system configurations. Each function validates a specific
 invariant and raises OdysValidationError on failure.
 """
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
+from odys.domain.entities.fixed_load import FixedLoad
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.load import Load
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
@@ -34,7 +35,8 @@ def validate_energy_system_inputs(
         OdysValidationError: If any validation check fails.
 
     """
-    validate_loads_consistent_with_scenarios(portfolio.loads, scenarios)
+    validate_fixed_loads_consistent_with_scenarios(portfolio.fixed_loads, scenarios)
+    validate_flexible_loads_consistent_with_scenarios(portfolio.flexible_loads, scenarios)
     validate_markets_consistent_with_scenarios(markets, scenarios)
 
     for scenario in scenarios:
@@ -42,54 +44,113 @@ def validate_energy_system_inputs(
         validate_load_profiles(scenario, number_of_steps)
 
         if not markets:
-            validate_enough_power_to_meet_demand(scenario, portfolio.generators, portfolio.storages)
+            validate_enough_power_to_meet_demand(
+                scenario,
+                portfolio.generators,
+                portfolio.storages,
+                portfolio.flexible_loads,
+            )
             validate_enough_energy_to_meet_demand(scenario)
 
 
-def validate_loads_consistent_with_scenarios(
-    loads: Sequence[Load],
+def validate_fixed_loads_consistent_with_scenarios(
+    fixed_loads: Sequence[FixedLoad],
     scenarios: tuple[StochasticScenario, ...],
 ) -> None:
-    """Validate consistency between portfolio loads and scenario load profiles.
+    """Validate consistency between portfolio fixed loads and scenario load profiles.
 
-    If there are loads in the portfolio, each scenario must have a profile for each load.
-    If there are no loads, all scenarios should have load_profiles=None.
+    If there are fixed loads in the portfolio, each scenario must have a profile for each.
+    If there are no fixed loads, all scenarios should have fixed_load_profiles=None.
 
     Args:
-        loads: Loads from the asset portfolio.
+        fixed_loads: Fixed loads from the asset portfolio.
         scenarios: Stochastic scenarios to validate against.
 
     Raises:
         OdysValidationError: If load profiles are inconsistent with portfolio loads.
 
     """
-    has_loads = bool(loads)
+    has_fixed_loads = bool(fixed_loads)
 
     for scenario in scenarios:
-        if has_loads:
-            if scenario.load_profiles is None:
+        if has_fixed_loads:
+            if scenario.fixed_load_profiles is None:
                 msg = (
-                    f"Portfolio contains loads {[load.name for load in loads]}, "
-                    f"but scenario '{scenario.name}' has no load profiles."
+                    f"Portfolio contains fixed loads {[load.name for load in fixed_loads]}, "
+                    f"but scenario '{scenario.name}' has no fixed load profiles."
                 )
                 raise OdysValidationError(msg)
 
-            portfolio_load_names = {load.name for load in loads}
-            scenario_load_names = set(scenario.load_profiles.keys())
+            portfolio_load_names = {load.name for load in fixed_loads}
+            scenario_load_names = set(scenario.fixed_load_profiles.keys())
 
             missing_loads = portfolio_load_names - scenario_load_names
             if missing_loads:
-                msg = f"Scenario '{scenario.name}' is missing load profiles for: {sorted(missing_loads)}"
+                msg = f"Scenario '{scenario.name}' is missing fixed load profiles for: {sorted(missing_loads)}"
                 raise OdysValidationError(msg)
 
             extra_loads = scenario_load_names - portfolio_load_names
             if extra_loads:
-                msg = f"Scenario '{scenario.name}' has load profiles for loads not in portfolio: {sorted(extra_loads)}"
+                msg = (
+                    f"Scenario '{scenario.name}' has fixed load profiles for loads not in portfolio: "
+                    f"{sorted(extra_loads)}"
+                )
                 raise OdysValidationError(msg)
-        elif scenario.load_profiles is not None:
+        elif scenario.fixed_load_profiles is not None:
             msg = (
-                f"Portfolio contains no loads, but scenario '{scenario.name}' "
-                f"has load profiles: {list(scenario.load_profiles.keys())}"
+                f"Portfolio contains no fixed loads, but scenario '{scenario.name}' "
+                f"has fixed load profiles: {list(scenario.fixed_load_profiles.keys())}"
+            )
+            raise OdysValidationError(msg)
+
+
+def validate_flexible_loads_consistent_with_scenarios(
+    flexible_loads: Sequence[FlexibleLoad],
+    scenarios: tuple[StochasticScenario, ...],
+) -> None:
+    """Validate consistency between portfolio flexible loads and scenario base profiles.
+
+    If there are flexible loads in the portfolio, each scenario must have a base profile for each.
+    If there are no flexible loads, all scenarios should have flexible_load_base_profiles=None.
+
+    Args:
+        flexible_loads: Flexible loads from the asset portfolio.
+        scenarios: Stochastic scenarios to validate against.
+
+    Raises:
+        OdysValidationError: If base profiles are inconsistent with portfolio loads.
+
+    """
+    has_flexible_loads = bool(flexible_loads)
+
+    for scenario in scenarios:
+        if has_flexible_loads:
+            if scenario.flexible_load_base_profiles is None:
+                msg = (
+                    f"Portfolio contains flexible loads {[load.name for load in flexible_loads]}, "
+                    f"but scenario '{scenario.name}' has no flexible load base profiles."
+                )
+                raise OdysValidationError(msg)
+
+            portfolio_load_names = {load.name for load in flexible_loads}
+            scenario_load_names = set(scenario.flexible_load_base_profiles.keys())
+
+            missing_loads = portfolio_load_names - scenario_load_names
+            if missing_loads:
+                msg = f"Scenario '{scenario.name}' is missing flexible load base profiles for: {sorted(missing_loads)}"
+                raise OdysValidationError(msg)
+
+            extra_loads = scenario_load_names - portfolio_load_names
+            if extra_loads:
+                msg = (
+                    f"Scenario '{scenario.name}' has flexible load base profiles for loads not in portfolio: "
+                    f"{sorted(extra_loads)}"
+                )
+                raise OdysValidationError(msg)
+        elif scenario.flexible_load_base_profiles is not None:
+            msg = (
+                f"Portfolio contains no flexible loads, but scenario '{scenario.name}' "
+                f"has flexible load base profiles: {list(scenario.flexible_load_base_profiles.keys())}"
             )
             raise OdysValidationError(msg)
 
@@ -156,16 +217,23 @@ def validate_load_profiles(scenario: StochasticScenario, number_of_steps: int) -
         OdysValidationError: If a load profile length doesn't match the number of time steps.
 
     """
-    if scenario.load_profiles is None:
-        return
+    if scenario.fixed_load_profiles is not None:
+        for load_name, load_profile in scenario.fixed_load_profiles.items():
+            if len(load_profile) != number_of_steps:
+                msg = (
+                    f"Length of fixed load profile {load_name} ({len(load_profile)})"
+                    f" does not match the number of time steps ({number_of_steps})."
+                )
+                raise OdysValidationError(msg)
 
-    for load_name, load_profile in scenario.load_profiles.items():
-        if len(load_profile) != number_of_steps:
-            msg = (
-                f"Length of load profile {load_name} ({len(load_profile)})"
-                f" does not match the number of time steps ({number_of_steps})."
-            )
-            raise OdysValidationError(msg)
+    if scenario.flexible_load_base_profiles is not None:
+        for load_name, load_profile in scenario.flexible_load_base_profiles.items():
+            if len(load_profile) != number_of_steps:
+                msg = (
+                    f"Length of flexible load base profile {load_name} ({len(load_profile)})"
+                    f" does not match the number of time steps ({number_of_steps})."
+                )
+                raise OdysValidationError(msg)
 
 
 def validate_available_capacity_profiles(
@@ -211,10 +279,51 @@ def validate_available_capacity_profiles(
                 raise OdysValidationError(msg)
 
 
+def _validate_fixed_load_power_demand(
+    scenario: StochasticScenario,
+    fixed_load_profiles: Mapping[str, Sequence[float]],
+    max_available_power: float,
+) -> None:
+    """Validate that fixed load demand can be met."""
+    for load_name, load_profile in fixed_load_profiles.items():
+        for t, demand_t in enumerate(load_profile):
+            if max_available_power < demand_t:
+                msg = (
+                    f"Infeasible problem in scenario '{scenario.name}' for fixed load '{load_name}' "
+                    f"at time index {t}: Demand = {demand_t}, but maximum available "
+                    f"generation + storage = {max_available_power}."
+                )
+                raise OdysValidationError(msg)
+
+
+def _validate_flexible_load_power_demand(
+    scenario: StochasticScenario,
+    flexible_loads: Sequence[FlexibleLoad],
+    flexible_load_base_profiles: Mapping[str, Sequence[float]],
+    max_available_power: float,
+) -> None:
+    """Validate that flexible load minimum demand can be met."""
+    flexible_load_map = {load.name: load for load in flexible_loads}
+    for load_name, load_profile in flexible_load_base_profiles.items():
+        flexible_load = flexible_load_map.get(load_name)
+        if flexible_load is None:
+            continue
+        for t, demand_t in enumerate(load_profile):
+            min_possible_demand = max(0.0, demand_t - flexible_load.max_decrease)
+            if max_available_power < min_possible_demand:
+                msg = (
+                    f"Infeasible problem in scenario '{scenario.name}' for flexible load '{load_name}' "
+                    f"at time index {t}: Minimum possible demand (base - max_decrease) = {min_possible_demand}, "
+                    f"but maximum available generation + storage = {max_available_power}."
+                )
+                raise OdysValidationError(msg)
+
+
 def validate_enough_power_to_meet_demand(
     scenario: StochasticScenario,
     generators: Sequence[Generator],
     storages: Sequence[Storage],
+    flexible_loads: Sequence[FlexibleLoad] | None = None,
 ) -> None:
     """Validate that maximum available power can meet peak demand.
 
@@ -225,28 +334,33 @@ def validate_enough_power_to_meet_demand(
         scenario: Scenario with load profiles to check against.
         generators: Generators in the portfolio.
         storages: Storages in the portfolio.
+        flexible_loads: Flexible loads in the portfolio.
 
     Raises:
         OdysValidationError: If maximum available power is insufficient for peak demand.
 
     """
-    if scenario.load_profiles is None:
+    has_fixed = scenario.fixed_load_profiles is not None
+    has_flexible = scenario.flexible_load_base_profiles is not None
+
+    if not has_fixed and not has_flexible:
         msg = "Load profile is empty, there is nothing to balance."
         raise OdysValidationError(msg)
 
     cumulative_generators_power = sum(gen.nominal_power for gen in generators)
-    # TODO: We assume full capacity can be discharged -> Needs to be limited by max power
     cumulative_storage_capacities = sum(storage.capacity for storage in storages)
     max_available_power = cumulative_generators_power + cumulative_storage_capacities
 
-    for load_name, load_profile in scenario.load_profiles.items():
-        for t, demand_t in enumerate(load_profile):
-            if max_available_power < demand_t:
-                msg = (
-                    f"Infeasible problem in scenario '{scenario.name}' for load '{load_name}' at time index {t}: "
-                    f"Demand = {demand_t}, but maximum available generation + storage = {max_available_power}."
-                )
-                raise OdysValidationError(msg)
+    if has_fixed and scenario.fixed_load_profiles is not None:
+        _validate_fixed_load_power_demand(scenario, scenario.fixed_load_profiles, max_available_power)
+
+    if has_flexible and flexible_loads and scenario.flexible_load_base_profiles is not None:
+        _validate_flexible_load_power_demand(
+            scenario,
+            flexible_loads,
+            scenario.flexible_load_base_profiles,
+            max_available_power,
+        )
 
 
 def validate_enough_energy_to_meet_demand(scenario: StochasticScenario) -> None:  # noqa: ARG001
@@ -255,5 +369,4 @@ def validate_enough_energy_to_meet_demand(scenario: StochasticScenario) -> None:
     Checks that the total energy available from generators and batteries
     can meet the total energy demand over the time horizon.
     """
-    # TODO: Implement energy adequacy validation
     return

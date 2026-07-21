@@ -108,6 +108,12 @@ class ModelVariable(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
         lower_bound_type=BoundType.UNBOUNDED,
     )
+    LOAD_ADJUSTMENT = VariableSpec(
+        name="load_adjustment",
+        is_binary=False,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.FlexibleLoads],
+        lower_bound_type=BoundType.UNBOUNDED,
+    )
     VALUE_AT_RISK = VariableSpec(
         name="value_at_risk",
         is_binary=False,
@@ -133,11 +139,11 @@ class ModelVariable(Enum):
 
     @property
     def asset_dimension(self) -> ModelDimension | None:
-        """Get the asset dimension (Generators or Storages) if present."""
+        """Get the asset dimension (Generators, Storages, or FlexibleLoads) if present."""
         if self.value.dimensions is None:
             return None
         for dim in self.value.dimensions:
-            if dim in (ModelDimension.Generators, ModelDimension.Storages):
+            if dim in (ModelDimension.Generators, ModelDimension.Storages, ModelDimension.FlexibleLoads):
                 return dim
         return None
 
@@ -157,6 +163,9 @@ GENERATOR_VARIABLES = [
 ]
 STORAGE_VARIABLES = [
     var for var in ModelVariable if var.value.dimensions and ModelDimension.Storages in var.value.dimensions
+]
+FLEXIBLE_LOAD_VARIABLES = [
+    var for var in ModelVariable if var.value.dimensions and ModelDimension.FlexibleLoads in var.value.dimensions
 ]
 MARKET_VARIABLES = [
     var for var in ModelVariable if var.value.dimensions and ModelDimension.Markets in var.value.dimensions
