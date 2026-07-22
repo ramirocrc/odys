@@ -375,6 +375,7 @@ def test_flexible_load_stochastic_scenarios() -> None:
     assert load_adjustment.min() >= -MAX_DECREASE
     assert load_adjustment.max() <= MAX_INCREASE
 
+
 def test_multiple_flexible_loads_different_value_of_consumption() -> None:
     """Test prioritization of flexible loads with different value_of_consumption."""
     generator = Generator(
@@ -402,9 +403,7 @@ def test_multiple_flexible_loads_different_value_of_consumption() -> None:
         max_trading_volume_per_step=1000.0,
     )
 
-    portfolio = AssetPortfolio(
-        [generator, flex_load_high, flex_load_low]
-    )
+    portfolio = AssetPortfolio([generator, flex_load_high, flex_load_low])
 
     system = EnergySystem(
         portfolio=portfolio,
