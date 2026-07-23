@@ -43,13 +43,15 @@ def validate_energy_system_inputs(
         validate_available_capacity_profiles(scenario, portfolio, number_of_steps)
         validate_load_profiles(scenario, number_of_steps)
 
+        validate_enough_power_to_meet_demand(
+            scenario,
+            portfolio.generators,
+            portfolio.storages,
+            markets,
+            portfolio.flexible_loads,
+        )
+
         if not markets:
-            validate_enough_power_to_meet_demand(
-                scenario,
-                portfolio.generators,
-                portfolio.storages,
-                portfolio.flexible_loads,
-            )
             validate_enough_energy_to_meet_demand(scenario)
 
 
@@ -282,16 +284,16 @@ def validate_available_capacity_profiles(
 def _validate_fixed_load_power_demand(
     scenario: StochasticScenario,
     fixed_load_profiles: Mapping[str, Sequence[float]],
-    max_available_power: float,
+    max_available_power: Sequence[float],
 ) -> None:
     """Validate that fixed load demand can be met."""
     for load_name, load_profile in fixed_load_profiles.items():
         for t, demand_t in enumerate(load_profile):
-            if max_available_power < demand_t:
+            if max_available_power[t] < demand_t:
                 msg = (
                     f"Infeasible problem in scenario '{scenario.name}' for fixed load '{load_name}' "
                     f"at time index {t}: Demand = {demand_t}, but maximum available "
-                    f"generation + storage = {max_available_power}."
+                    f"generation + storage + market volume = {max_available_power[t]}."
                 )
                 raise OdysValidationError(msg)
 
@@ -300,7 +302,7 @@ def _validate_flexible_load_power_demand(
     scenario: StochasticScenario,
     flexible_loads: Sequence[FlexibleLoad],
     flexible_load_base_profiles: Mapping[str, Sequence[float]],
-    max_available_power: float,
+    max_available_power: Sequence[float],
 ) -> None:
     """Validate that flexible load minimum demand can be met."""
     flexible_load_map = {load.name: load for load in flexible_loads}
@@ -310,46 +312,85 @@ def _validate_flexible_load_power_demand(
             continue
         for t, demand_t in enumerate(load_profile):
             min_possible_demand = max(0.0, demand_t - flexible_load.max_decrease)
-            if max_available_power < min_possible_demand:
+            if max_available_power[t] < min_possible_demand:
                 msg = (
                     f"Infeasible problem in scenario '{scenario.name}' for flexible load '{load_name}' "
                     f"at time index {t}: Minimum possible demand (base - max_decrease) = {min_possible_demand}, "
-                    f"but maximum available generation + storage = {max_available_power}."
+                    f"but maximum available generation + storage + market volume = {max_available_power[t]}."
                 )
                 raise OdysValidationError(msg)
+
+
+def _max_available_power_profile(
+    scenario: StochasticScenario,
+    generators: Sequence[Generator],
+    storages: Sequence[Storage],
+    markets: Sequence[EnergyMarket],
+    number_of_steps: int,
+) -> list[float]:
+    """Compute the maximum available power at each timestep.
+
+    Sums, per timestep: each generator's available capacity (its scenario
+    ``available_capacity_profiles`` entry if present, otherwise its static
+    ``nominal_power``), each storage's ``max_power``, and each market's
+    ``max_trading_volume_per_step``.
+    """
+    capacity_profiles = scenario.available_capacity_profiles or {}
+
+    baseline = sum(storage.max_power for storage in storages) + sum(
+        market.max_trading_volume_per_step for market in markets
+    )
+    profile = [baseline] * number_of_steps
+
+    for generator in generators:
+        available_profile = capacity_profiles.get(generator.name)
+        for t in range(number_of_steps):
+            profile[t] += available_profile[t] if available_profile is not None else generator.nominal_power
+
+    return profile
 
 
 def validate_enough_power_to_meet_demand(
     scenario: StochasticScenario,
     generators: Sequence[Generator],
     storages: Sequence[Storage],
+    markets: Sequence[EnergyMarket],
     flexible_loads: Sequence[FlexibleLoad] | None = None,
 ) -> None:
-    """Validate that maximum available power can meet peak demand.
+    """Validate that maximum available power can meet peak demand at every timestep.
 
-    Checks that the sum of generator nominal power and storage capacity
-    can meet the maximum demand at any time period.
+    Checks, at each timestep, that the sum of generator available capacity
+    (scenario capacity profile if given, otherwise nominal power), storage
+    max power, and market max trading volume can meet demand.
 
     Args:
         scenario: Scenario with load profiles to check against.
         generators: Generators in the portfolio.
         storages: Storages in the portfolio.
+        markets: Markets in the portfolio.
         flexible_loads: Flexible loads in the portfolio.
 
     Raises:
-        OdysValidationError: If maximum available power is insufficient for peak demand.
+        OdysValidationError: If maximum available power is insufficient for peak demand
+            at any timestep.
 
     """
-    has_fixed = scenario.fixed_load_profiles is not None
-    has_flexible = scenario.flexible_load_base_profiles is not None
+    has_fixed = bool(scenario.fixed_load_profiles)
+    has_flexible = bool(scenario.flexible_load_base_profiles)
 
     if not has_fixed and not has_flexible:
         msg = "Load profile is empty, there is nothing to balance."
         raise OdysValidationError(msg)
 
-    cumulative_generators_power = sum(gen.nominal_power for gen in generators)
-    cumulative_storage_capacities = sum(storage.capacity for storage in storages)
-    max_available_power = cumulative_generators_power + cumulative_storage_capacities
+    if has_fixed and scenario.fixed_load_profiles is not None:
+        number_of_steps = len(next(iter(scenario.fixed_load_profiles.values())))
+    elif scenario.flexible_load_base_profiles is not None:
+        number_of_steps = len(next(iter(scenario.flexible_load_base_profiles.values())))
+    else:
+        msg = "Load profile is empty, there is nothing to balance."
+        raise OdysValidationError(msg)
+
+    max_available_power = _max_available_power_profile(scenario, generators, storages, markets, number_of_steps)
 
     if has_fixed and scenario.fixed_load_profiles is not None:
         _validate_fixed_load_power_demand(scenario, scenario.fixed_load_profiles, max_available_power)
