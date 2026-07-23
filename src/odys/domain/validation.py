@@ -363,6 +363,10 @@ def validate_enough_power_to_meet_demand(
     (scenario capacity profile if given, otherwise nominal power), storage
     max power, and market max trading volume can meet demand.
 
+    If there is no fixed or flexible load at all (e.g. a market-only merchant
+    generator with no obligation to serve any load), this is a no-op: there is
+    no forced demand to validate against.
+
     Args:
         scenario: Scenario with load profiles to check against.
         generators: Generators in the portfolio.
@@ -372,15 +376,19 @@ def validate_enough_power_to_meet_demand(
 
     Raises:
         OdysValidationError: If maximum available power is insufficient for peak demand
-            at any timestep.
+            at any timestep, or if there is no load and no market at all.
 
     """
     has_fixed = bool(scenario.fixed_load_profiles)
     has_flexible = bool(scenario.flexible_load_base_profiles)
+    has_markets = bool(markets)
 
-    if not has_fixed and not has_flexible:
+    if not has_fixed and not has_flexible and not has_markets:
         msg = "Load profile is empty, there is nothing to balance."
         raise OdysValidationError(msg)
+
+    if not has_fixed and not has_flexible:
+        return
 
     if has_fixed and scenario.fixed_load_profiles is not None:
         number_of_steps = len(next(iter(scenario.fixed_load_profiles.values())))

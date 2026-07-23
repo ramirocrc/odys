@@ -291,6 +291,15 @@ class TestValidateEnoughPowerToMeetDemand:
         with pytest.raises(OdysValidationError, match="Load profile is empty"):
             validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
 
+    def test_market_only_no_loads_is_valid(
+        self,
+        generator: Generator,
+        storage: Storage,
+        market: EnergyMarket,
+    ) -> None:
+        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
+        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
+
     def test_demand_exceeds_capacity(self, generator: Generator, storage: Storage) -> None:
         scenario = StochasticScenario(
             name="s1",
