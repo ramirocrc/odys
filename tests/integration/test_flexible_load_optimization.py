@@ -374,3 +374,60 @@ def test_flexible_load_stochastic_scenarios() -> None:
 
     assert load_adjustment.min() >= -MAX_DECREASE
     assert load_adjustment.max() <= MAX_INCREASE
+
+
+def test_multiple_flexible_loads_different_value_of_consumption() -> None:
+    """Test prioritization of flexible loads with different value_of_consumption."""
+    generator = Generator(
+        name="gen1",
+        nominal_power=300.0,
+        variable_cost=40.0,
+    )
+
+    flex_load_high = FlexibleLoad(
+        name="flex_load_high",
+        max_increase=30.0,
+        max_decrease=20.0,
+        value_of_consumption=80.0,
+    )
+
+    flex_load_low = FlexibleLoad(
+        name="flex_load_low",
+        max_increase=30.0,
+        max_decrease=20.0,
+        value_of_consumption=40.0,
+    )
+
+    market = EnergyMarket(
+        name="market1",
+        max_trading_volume_per_step=1000.0,
+    )
+
+    portfolio = AssetPortfolio([generator, flex_load_high, flex_load_low])
+
+    system = EnergySystem(
+        portfolio=portfolio,
+        markets=market,
+        timestep=timedelta(hours=1),
+        number_of_steps=3,
+        scenarios=Scenario(
+            flexible_load_base_profiles={
+                "flex_load_high": [100.0, 100.0, 100.0],
+                "flex_load_low": [100.0, 100.0, 100.0],
+            },
+            market_prices={
+                "market1": [60.0, 60.0, 60.0],
+            },
+        ),
+    )
+
+    results = system.optimize()
+
+    high_adj = results.flexible_loads["flex_load_high"].load_adjustment
+    low_adj = results.flexible_loads["flex_load_low"].load_adjustment
+
+    # High-value load should increase
+    assert high_adj.sum().item() > 0
+
+    # Low-value load should decrease
+    assert low_adj.sum().item() < 0
