@@ -205,6 +205,68 @@ def test_flexible_load_with_fixed_load() -> None:
         assert abs(supply - total_load) < TOLERANCE, f"Power balance not satisfied at time {t}"
 
 
+def test_flexible_load_with_generator_capacity_constraint() -> None:
+    """Test that a flexible load decreases when generator capacity can't cover base demand.
+
+    No market is configured, so the generator is the only supply source. At t=1 the
+    generator's available capacity (80 MW) drops below what fixed_load + flex base
+    profile would require (60 + 50 = 110 MW), forcing the flexible load to decrease by
+    exactly the shortfall to keep the power balance feasible. At t=0 and t=2, capacity
+    is ample (150 MW), so the optimizer follows its economic incentive instead: since
+    value_of_consumption (100) > generator variable_cost (40), it increases the load to
+    max_increase.
+    """
+    generator = Generator(
+        name="gen1",
+        nominal_power=150.0,
+        variable_cost=40.0,
+    )
+
+    fixed_load = FixedLoad(name="fixed_load")
+    flexible_load = FlexibleLoad(
+        name="flex_load",
+        max_increase=30.0,
+        max_decrease=40.0,
+        value_of_consumption=100.0,
+    )
+
+    portfolio = AssetPortfolio([generator, fixed_load, flexible_load])
+
+    system = EnergySystem(
+        portfolio=portfolio,
+        timestep=timedelta(hours=1),
+        number_of_steps=3,
+        scenarios=Scenario(
+            available_capacity_profiles={"gen1": [150.0, 80.0, 150.0]},
+            fixed_load_profiles={"fixed_load": [60.0, 60.0, 60.0]},
+            flexible_load_base_profiles={"flex_load": [50.0, 50.0, 50.0]},
+        ),
+    )
+
+    results = system.optimize()
+
+    flex_dispatch = results.flexible_loads
+    load_adjustment = flex_dispatch.load_adjustment
+    actual_load = flex_dispatch.actual_load
+
+    expected_adjustment = [30.0, -30.0, 30.0]
+    for t, expected in enumerate(expected_adjustment):
+        assert abs(load_adjustment.iloc[t] - expected) < TOLERANCE, f"Unexpected load_adjustment at time {t}"
+
+    assert load_adjustment.min() >= -flexible_load.max_decrease
+    assert load_adjustment.max() <= flexible_load.max_increase
+
+    solution = results.to_dataset()
+    gen_power = solution["generator_power"]
+    available_capacity = [150.0, 80.0, 150.0]
+
+    for t in range(3):
+        total_load = 60.0 + actual_load.iloc[t]
+        gen_at_t = gen_power.isel(time=t).values
+        assert gen_at_t <= available_capacity[t] + TOLERANCE, f"Generator power exceeds available capacity at time {t}"
+        assert abs(gen_at_t - total_load) < TOLERANCE, f"Power balance not satisfied at time {t}"
+
+
 def test_multiple_flexible_loads() -> None:
     """Test system with two flexible loads in one portfolio."""
     generator = Generator(
