@@ -379,35 +379,35 @@ def validate_enough_power_to_meet_demand(
             at any timestep, or if there is no load and no market at all.
 
     """
-    has_fixed = bool(scenario.fixed_load_profiles)
-    has_flexible = bool(scenario.flexible_load_base_profiles)
+    fixed_load_profiles = scenario.fixed_load_profiles
+    flexible_load_base_profiles = scenario.flexible_load_base_profiles
     has_markets = bool(markets)
 
-    if not has_fixed and not has_flexible and not has_markets:
+    if not fixed_load_profiles and not flexible_load_base_profiles and not has_markets:
         msg = "Load profile is empty, there is nothing to balance."
         raise OdysValidationError(msg)
 
-    if not has_fixed and not has_flexible:
+    if not fixed_load_profiles and not flexible_load_base_profiles:
         return
 
-    if has_fixed and scenario.fixed_load_profiles is not None:
-        number_of_steps = len(next(iter(scenario.fixed_load_profiles.values())))
-    elif scenario.flexible_load_base_profiles is not None:
-        number_of_steps = len(next(iter(scenario.flexible_load_base_profiles.values())))
+    if fixed_load_profiles:
+        number_of_steps = len(next(iter(fixed_load_profiles.values())))
+    elif flexible_load_base_profiles:
+        number_of_steps = len(next(iter(flexible_load_base_profiles.values())))
     else:
         msg = "Load profile is empty, there is nothing to balance."
         raise OdysValidationError(msg)
 
     max_available_power = _max_available_power_profile(scenario, generators, storages, markets, number_of_steps)
 
-    if has_fixed and scenario.fixed_load_profiles is not None:
-        _validate_fixed_load_power_demand(scenario, scenario.fixed_load_profiles, max_available_power)
+    if fixed_load_profiles:
+        _validate_fixed_load_power_demand(scenario, fixed_load_profiles, max_available_power)
 
-    if has_flexible and flexible_loads and scenario.flexible_load_base_profiles is not None:
+    if flexible_load_base_profiles and flexible_loads:
         _validate_flexible_load_power_demand(
             scenario,
             flexible_loads,
-            scenario.flexible_load_base_profiles,
+            flexible_load_base_profiles,
             max_available_power,
         )
 

@@ -328,6 +328,19 @@ class TestValidateEnoughPowerToMeetDemand:
             (flexible_load,),
         )
 
+    def test_unrelated_flexible_load_name_is_skipped(
+        self,
+        generator: Generator,
+        storage: Storage,
+        flexible_load: FlexibleLoad,
+    ) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            flexible_load_base_profiles={"unrelated_load": [80.0, 150.0, 90.0, 100.0]},
+        )
+        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (), (flexible_load,))
+
     def test_flexible_load_infeasible_even_with_decrease(
         self,
         generator: Generator,
