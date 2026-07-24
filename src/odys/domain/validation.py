@@ -37,6 +37,7 @@ def validate_energy_system_inputs(
     """
     validate_fixed_loads_consistent_with_scenarios(portfolio.fixed_loads, scenarios)
     validate_flexible_loads_consistent_with_scenarios(portfolio.flexible_loads, scenarios)
+    validate_flexible_load_max_decrease_within_base_profile(portfolio.flexible_loads, scenarios)
     validate_markets_consistent_with_scenarios(markets, scenarios)
 
     for scenario in scenarios:
@@ -153,6 +154,46 @@ def validate_flexible_loads_consistent_with_scenarios(
                 f"has flexible load base profiles: {list(scenario.flexible_load_base_profiles.keys())}"
             )
             raise OdysValidationError(msg)
+
+
+def validate_flexible_load_max_decrease_within_base_profile(
+    flexible_loads: Sequence[FlexibleLoad],
+    scenarios: tuple[StochasticScenario, ...],
+) -> None:
+    """Validate that max_decrease never exceeds the base profile at any timestep.
+
+    If max_decrease is greater than the base load at a given timestep, the
+    optimizer would be allowed to push actual load (base - decrease) below
+    zero, which is not physically meaningful for a load.
+
+    Args:
+        flexible_loads: Flexible loads from the asset portfolio.
+        scenarios: Stochastic scenarios to validate against.
+
+    Raises:
+        OdysValidationError: If max_decrease exceeds the base profile at any timestep.
+
+    """
+    flexible_load_map = {load.name: load for load in flexible_loads}
+
+    for scenario in scenarios:
+        if scenario.flexible_load_base_profiles is None:
+            continue
+
+        for load_name, base_profile in scenario.flexible_load_base_profiles.items():
+            flexible_load = flexible_load_map.get(load_name)
+            if flexible_load is None:
+                continue
+
+            for t, base_t in enumerate(base_profile):
+                if flexible_load.max_decrease > base_t:
+                    msg = (
+                        f"Flexible load '{load_name}' in scenario '{scenario.name}' has "
+                        f"max_decrease ({flexible_load.max_decrease}) greater than the base "
+                        f"profile value ({base_t}) at time index {t}. This would allow "
+                        "actual load to go negative."
+                    )
+                    raise OdysValidationError(msg)
 
 
 def validate_markets_consistent_with_scenarios(
