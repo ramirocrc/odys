@@ -15,6 +15,7 @@ from odys.domain.validation import (
     validate_enough_energy_to_meet_demand,
     validate_enough_power_to_meet_demand,
     validate_fixed_loads_consistent_with_scenarios,
+    validate_flexible_load_max_decrease_within_base_profile,
     validate_flexible_loads_consistent_with_scenarios,
     validate_load_profiles,
     validate_markets_consistent_with_scenarios,
@@ -166,6 +167,48 @@ class TestValidateFlexibleLoadsConsistentWithScenarios:
         )
         with pytest.raises(OdysValidationError, match="Portfolio contains no flexible loads"):
             validate_flexible_loads_consistent_with_scenarios((), (scenario,))
+
+
+# --- validate_flexible_load_max_decrease_within_base_profile ---
+
+
+class TestValidateFlexibleLoadMaxDecreaseWithinBaseProfile:
+    def test_valid(self, flexible_load: FlexibleLoad) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            flexible_load_base_profiles={"flex_load1": DEMAND_PROFILE},
+        )
+        validate_flexible_load_max_decrease_within_base_profile((flexible_load,), (scenario,))
+
+    def test_no_loads_no_profiles(self) -> None:
+        scenario = StochasticScenario(name="s1", probability=1.0, flexible_load_base_profiles=None)
+        validate_flexible_load_max_decrease_within_base_profile((), (scenario,))
+
+    def test_max_decrease_exceeds_base_profile(self, flexible_load: FlexibleLoad) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            flexible_load_base_profiles={"flex_load1": [80.0, 20.0, 90.0, 100.0]},
+        )
+        with pytest.raises(OdysValidationError, match="would allow actual load to go negative"):
+            validate_flexible_load_max_decrease_within_base_profile((flexible_load,), (scenario,))
+
+    def test_max_decrease_equals_base_profile_is_valid(self, flexible_load: FlexibleLoad) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            flexible_load_base_profiles={"flex_load1": [MAX_DECREASE, 80.0, 90.0, 100.0]},
+        )
+        validate_flexible_load_max_decrease_within_base_profile((flexible_load,), (scenario,))
+
+    def test_unrelated_flexible_load_name_is_ignored(self) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            flexible_load_base_profiles={"unrelated_load": [0.0, 0.0]},
+        )
+        validate_flexible_load_max_decrease_within_base_profile((), (scenario,))
 
 
 # --- validate_markets_consistent_with_scenarios ---
