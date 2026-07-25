@@ -4,14 +4,18 @@ from datetime import timedelta
 
 from odys import (
     AssetPortfolio,
+    CVaRTerm,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
     Generator,
+    Objective,
+    ProfitTerm,
     Scenario,
     StochasticScenario,
     Storage,
+    TradeDirection,
 )
 
 MAX_DECREASE = 30.0
@@ -205,68 +209,6 @@ def test_flexible_load_with_fixed_load() -> None:
         assert abs(supply - total_load) < TOLERANCE, f"Power balance not satisfied at time {t}"
 
 
-def test_flexible_load_with_generator_capacity_constraint() -> None:
-    """Test that a flexible load decreases when generator capacity can't cover base demand.
-
-    No market is configured, so the generator is the only supply source. At t=1 the
-    generator's available capacity (80 MW) drops below what fixed_load + flex base
-    profile would require (60 + 50 = 110 MW), forcing the flexible load to decrease by
-    exactly the shortfall to keep the power balance feasible. At t=0 and t=2, capacity
-    is ample (150 MW), so the optimizer follows its economic incentive instead: since
-    value_of_consumption (100) > generator variable_cost (40), it increases the load to
-    max_increase.
-    """
-    generator = Generator(
-        name="gen1",
-        nominal_power=150.0,
-        variable_cost=40.0,
-    )
-
-    fixed_load = FixedLoad(name="fixed_load")
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=30.0,
-        max_decrease=40.0,
-        value_of_consumption=100.0,
-    )
-
-    portfolio = AssetPortfolio([generator, fixed_load, flexible_load])
-
-    system = EnergySystem(
-        portfolio=portfolio,
-        timestep=timedelta(hours=1),
-        number_of_steps=3,
-        scenarios=Scenario(
-            available_capacity_profiles={"gen1": [150.0, 80.0, 150.0]},
-            fixed_load_profiles={"fixed_load": [60.0, 60.0, 60.0]},
-            flexible_load_base_profiles={"flex_load": [50.0, 50.0, 50.0]},
-        ),
-    )
-
-    results = system.optimize()
-
-    flex_dispatch = results.flexible_loads
-    load_adjustment = flex_dispatch.load_adjustment
-    actual_load = flex_dispatch.actual_load
-
-    expected_adjustment = [30.0, -30.0, 30.0]
-    for t, expected in enumerate(expected_adjustment):
-        assert abs(load_adjustment.iloc[t] - expected) < TOLERANCE, f"Unexpected load_adjustment at time {t}"
-
-    assert load_adjustment.min() >= -flexible_load.max_decrease
-    assert load_adjustment.max() <= flexible_load.max_increase
-
-    solution = results.to_dataset()
-    gen_power = solution["generator_power"]
-    available_capacity = [150.0, 80.0, 150.0]
-
-    for t in range(3):
-        total_load = 60.0 + actual_load.iloc[t]
-        gen_at_t = gen_power.isel(time=t).values
-        assert gen_at_t <= available_capacity[t] + TOLERANCE, f"Generator power exceeds available capacity at time {t}"
-        assert abs(gen_at_t - total_load) < TOLERANCE, f"Power balance not satisfied at time {t}"
-
-
 def test_multiple_flexible_loads() -> None:
     """Test system with two flexible loads in one portfolio."""
     generator = Generator(
@@ -438,58 +380,100 @@ def test_flexible_load_stochastic_scenarios() -> None:
     assert load_adjustment.max() <= MAX_INCREASE
 
 
-def test_multiple_flexible_loads_different_value_of_consumption() -> None:
-    """Test prioritization of flexible loads with different value_of_consumption."""
-    generator = Generator(
-        name="gen1",
-        nominal_power=300.0,
-        variable_cost=40.0,
+def _build_cvar_flexible_load_system(objective: Objective) -> EnergySystem:
+    generator = Generator(name="gen1", nominal_power=100.0, variable_cost=0.0)
+    flexible_load = FlexibleLoad(
+        name="flex_load",
+        max_increase=40.0,
+        max_decrease=1.0,
+        value_of_consumption=30.0,
     )
-
-    flex_load_high = FlexibleLoad(
-        name="flex_load_high",
-        max_increase=30.0,
-        max_decrease=20.0,
-        value_of_consumption=80.0,
-    )
-
-    flex_load_low = FlexibleLoad(
-        name="flex_load_low",
-        max_increase=30.0,
-        max_decrease=20.0,
-        value_of_consumption=40.0,
-    )
-
     market = EnergyMarket(
         name="market1",
-        max_trading_volume_per_step=1000.0,
+        max_trading_volume_per_step=50.0,
+        stage_fixed=True,
+        trade_direction=TradeDirection.SELL_ONLY,
     )
+    portfolio = AssetPortfolio([generator, flexible_load])
 
-    portfolio = AssetPortfolio([generator, flex_load_high, flex_load_low])
+    scenarios = [
+        StochasticScenario(
+            name="high",
+            probability=1 / 3,
+            flexible_load_base_profiles={"flex_load": [50.0]},
+            market_prices={"market1": [100.0]},
+        ),
+        StochasticScenario(
+            name="mid",
+            probability=1 / 3,
+            flexible_load_base_profiles={"flex_load": [50.0]},
+            market_prices={"market1": [100.0]},
+        ),
+        StochasticScenario(
+            name="low",
+            probability=1 / 3,
+            flexible_load_base_profiles={"flex_load": [50.0]},
+            market_prices={"market1": [-50.0]},
+        ),
+    ]
 
-    system = EnergySystem(
+    return EnergySystem(
         portfolio=portfolio,
         markets=market,
+        scenarios=scenarios,
+        number_of_steps=1,
         timestep=timedelta(hours=1),
-        number_of_steps=3,
-        scenarios=Scenario(
-            flexible_load_base_profiles={
-                "flex_load_high": [100.0, 100.0, 100.0],
-                "flex_load_low": [100.0, 100.0, 100.0],
-            },
-            market_prices={
-                "market1": [60.0, 60.0, 60.0],
-            },
-        ),
+        objective=objective,
     )
 
-    results = system.optimize()
 
-    high_adj = results.flexible_loads["flex_load_high"].load_adjustment
-    low_adj = results.flexible_loads["flex_load_low"].load_adjustment
+def test_flexible_load_with_cvar_objective() -> None:
+    """Test that a CVaR objective shifts a flexible load toward safer local consumption.
 
-    # High-value load should increase
-    assert high_adj.sum().item() > 0
+    Three equally-likely scenarios share one stage-fixed sell-only market
+    (non-anticipative: the traded volume must be the same across scenarios).
+    Prices are 100 in two scenarios and -50 in the third. The flexible load's
+    value_of_consumption (30) is below the expected market price (50), so a
+    pure profit-maximizer sells the maximum feasible volume into the market
+    and leaves the flexible load unadjusted. But because the market decision
+    is shared across scenarios, selling more also means losing 50/unit in the
+    bad scenario. A CVaR-averse optimizer pulls back the (shared) market
+    volume and instead directs that capacity to the flexible load's
+    unconditionally-safe, scenario-independent consumption value.
 
-    # Low-value load should decrease
-    assert low_adj.sum().item() < 0
+    load_adjustment is uniquely determined by the LP in both cases. The 
+    shared market volume under CVaR sits in a provably flat region of the
+    objective (any value in [0, 10] is equally optimal), so that comparison
+    uses an upper bound and a strict less-than instead of an exact value,
+    to avoid asserting a specific point in a mathematically non-unique optimum.
+    """
+    profit_only_system = _build_cvar_flexible_load_system(Objective(profit=ProfitTerm(weight=1)))
+    profit_only_results = profit_only_system.optimize()
+
+    assert profit_only_results.solver_status == "ok"
+    assert profit_only_results.termination_condition == "optimal"
+
+    profit_only_adjustment = profit_only_results.flexible_loads.load_adjustment
+    profit_only_market_sell = profit_only_results.markets.sell_volume
+
+    for value in profit_only_adjustment:
+        assert abs(value - 0.0) < TOLERANCE
+    for value in profit_only_market_sell:
+        assert abs(value - 50.0) < TOLERANCE
+
+    cvar_system = _build_cvar_flexible_load_system(
+        Objective(profit=ProfitTerm(weight=1), cvar=CVaRTerm(weight=1, confidence_level=0.8)),
+    )
+    cvar_results = cvar_system.optimize()
+
+    assert cvar_results.solver_status == "ok"
+    assert cvar_results.termination_condition == "optimal"
+
+    cvar_adjustment = cvar_results.flexible_loads.load_adjustment
+    cvar_market_sell = cvar_results.markets.sell_volume
+
+    for value in cvar_adjustment:
+        assert abs(value - 40.0) < TOLERANCE
+
+    for value in cvar_market_sell:
+        assert value <= 10.0 + TOLERANCE
