@@ -9,6 +9,8 @@ from datetime import timedelta
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.objective import Objective
+from odys.optimization.parameters.charger_parameters import ChargerParameters
+from odys.optimization.parameters.electric_vehicle_parameters import ElectricVehicleParameters
 from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
@@ -28,6 +30,8 @@ class EnergySystemParameters(BaseModel):
     markets: MarketParameters
     scenarios: ScenarioParameters
     objective: Objective
+    chargers: ChargerParameters
+    electric_vehicles: ElectricVehicleParameters
 
     @property
     def has_generators(self) -> bool:
@@ -48,3 +52,13 @@ class EnergySystemParameters(BaseModel):
     def has_markets(self) -> bool:
         """Return True if there are markets."""
         return not self.markets.is_empty
+
+    @property
+    def has_chargers(self) -> bool:
+        """Return True if there are chargers."""
+        return not self.chargers.is_empty
+
+    @property
+    def has_electric_vehicles(self) -> bool:
+        """Return True if there are electric vehicles."""
+        return not self.electric_vehicles.is_empty

@@ -16,6 +16,8 @@ class ModelDimension(StrEnum):
     Storages = "storage"
     FlexibleLoads = "flexible_load"
     Markets = "market"
+    Chargers = "charger"
+    EVs = "ev"
 
 
 class ModelIndex(BaseModel, ABC):

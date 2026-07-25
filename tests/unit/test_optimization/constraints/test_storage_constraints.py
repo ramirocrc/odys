@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 def storage1() -> Storage:
     return Storage(
         name="batt1",
-        max_power=200.0,
+        max_charge_power=200.0,
+        max_discharge_power=200.0,
         capacity=100.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.8,
@@ -71,7 +72,7 @@ class TestStorageConstraints:
         storage_charge = self.linopy_model.variables["storage_power_in"]
         storage_charge_mode = self.linopy_model.variables["storage_charge_mode"]
 
-        expected_expr = storage_charge <= storage_charge_mode * self.storage1.max_power
+        expected_expr = storage_charge <= storage_charge_mode * self.storage1.max_charge_power
 
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
@@ -81,7 +82,10 @@ class TestStorageConstraints:
         storage_discharge = self.linopy_model.variables["storage_power_out"]
         storage_charge_mode = self.linopy_model.variables["storage_charge_mode"]
 
-        expected_expr = storage_discharge + storage_charge_mode * self.storage1.max_power <= self.storage1.max_power
+        expected_expr = (
+            storage_discharge + storage_charge_mode * self.storage1.max_discharge_power
+            <= self.storage1.max_discharge_power
+        )
 
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
@@ -295,3 +299,76 @@ class TestStorageConstraintsSubHourlyTimestep:
         )
 
         assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
+
+
+class TestStorageSocEndOptional:
+    """Verify the soc_end constraint only covers storages that define a final SOC target."""
+
+    @pytest.fixture
+    def storage_without_soc_end(self) -> Storage:
+        return Storage(
+            name="batt_free_end",
+            max_charge_power=200.0,
+            max_discharge_power=200.0,
+            capacity=100.0,
+            soc_start=0.5,
+        )
+
+    def _build_linopy_model(
+        self,
+        storages: list[Storage],
+        generator1: Generator,
+        load1: FixedLoad,
+        demand_profile_sample: list[float],
+    ) -> linopy.Model:
+        energy_system = EnergySystem(
+            portfolio=AssetPortfolio(assets=[generator1, load1, *storages]),
+            number_of_steps=len(demand_profile_sample),
+            timestep=timedelta(hours=1),
+            scenarios=Scenario(
+                available_capacity_profiles={},
+                fixed_load_profiles={"load1": demand_profile_sample},
+            ),
+        )
+        return build_model(energy_system.build_parameters()).linopy_model
+
+    def test_constraint_covers_only_storages_with_soc_end(
+        self,
+        storage1: Storage,
+        storage_without_soc_end: Storage,
+        generator1: Generator,
+        load1: FixedLoad,
+        demand_profile_sample: list[float],
+    ) -> None:
+        linopy_model = self._build_linopy_model(
+            [storage1, storage_without_soc_end],
+            generator1,
+            load1,
+            demand_profile_sample,
+        )
+
+        actual_constraint = linopy_model.constraints["storage_soc_end_constraint"]
+
+        assert list(actual_constraint.coords["storage"].values) == [storage1.name]
+
+        last_time = str(len(demand_profile_sample) - 1)
+        soc_last = linopy_model.variables["storage_soc"].sel(time=last_time, storage=[storage1.name])
+        expected_expr = soc_last == storage1.soc_end
+
+        assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
+
+    def test_constraint_absent_when_no_storage_has_soc_end(
+        self,
+        storage_without_soc_end: Storage,
+        generator1: Generator,
+        load1: FixedLoad,
+        demand_profile_sample: list[float],
+    ) -> None:
+        linopy_model = self._build_linopy_model(
+            [storage_without_soc_end],
+            generator1,
+            load1,
+            demand_profile_sample,
+        )
+
+        assert "storage_soc_end_constraint" not in linopy_model.constraints.labels

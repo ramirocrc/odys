@@ -15,6 +15,8 @@ from pydantic import BaseModel, ConfigDict
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.model.sets import ModelDimension, ModelIndex
 from odys.optimization.model.variables import ModelVariable
+from odys.optimization.parameters.charger_parameters import ChargerIndex
+from odys.optimization.parameters.electric_vehicle_parameters import ElectricVehicleIndex
 from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadIndex
 from odys.optimization.parameters.generator_parameters import GeneratorIndex
 from odys.optimization.parameters.market_parameters import MarketIndex
@@ -34,6 +36,8 @@ class EnergyModelIndices(BaseModel):
     storages: StorageIndex
     flexible_loads: FlexibleLoadIndex
     markets: MarketIndex
+    chargers: ChargerIndex
+    electric_vehicles: ElectricVehicleIndex
 
     def get_index(self, dimension: ModelDimension) -> ModelIndex:
         """Return the index for a given dimension."""
@@ -44,6 +48,8 @@ class EnergyModelIndices(BaseModel):
             ModelDimension.Storages: self.storages,
             ModelDimension.FlexibleLoads: self.flexible_loads,
             ModelDimension.Markets: self.markets,
+            ModelDimension.Chargers: self.chargers,
+            ModelDimension.EVs: self.electric_vehicles,
         }
         return mapping[dimension]
 
@@ -71,6 +77,8 @@ class EnergyMILPModel:
             storages=self._parameters.storages.index,
             flexible_loads=self._parameters.flexible_loads.index,
             markets=self._parameters.markets.index,
+            chargers=self._parameters.chargers.index,
+            electric_vehicles=self._parameters.electric_vehicles.index,
         )
 
     @property
@@ -147,6 +155,11 @@ class EnergyMILPModel:
     def load_adjustment(self) -> Variable:
         """Return the load adjustment variable."""
         return self._linopy_model.variables[ModelVariable.LOAD_ADJUSTMENT.var_name]
+
+    @property
+    def charger_ev_assignment(self) -> Variable:
+        """Return the charger-EV assignment binary variable."""
+        return self._linopy_model.variables[ModelVariable.CHARGER_EV_ASSIGNMENT.var_name]
 
     @property
     def cvar_value_at_risk(self) -> Variable:

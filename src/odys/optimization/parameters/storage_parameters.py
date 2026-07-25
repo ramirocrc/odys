@@ -1,17 +1,12 @@
 """Storage parameters for the mathematical optimization model."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, ClassVar
+from collections.abc import Sequence
+from typing import ClassVar
 
 import xarray as xr
 
+from odys.domain.entities.storage import Storage
 from odys.optimization.model.sets import ModelDimension, ModelIndex
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from odys.domain.entities.storage import Storage
 
 
 class StorageIndex(ModelIndex):
@@ -35,7 +30,8 @@ class StorageParameters:
         )
         data = {
             "capacity": [storage.capacity for storage in self._storages],
-            "max_power": [storage.max_power for storage in self._storages],
+            "max_charge_power": [storage.max_charge_power for storage in self._storages],
+            "max_discharge_power": [storage.max_discharge_power for storage in self._storages],
             "efficiency_charging": [storage.efficiency_charging for storage in self._storages],
             "efficiency_discharging": [storage.efficiency_discharging for storage in self._storages],
             "self_discharge_rate": [storage.self_discharge_rate for storage in self._storages],
@@ -67,9 +63,14 @@ class StorageParameters:
         return self._dataset["capacity"]
 
     @property
-    def max_power(self) -> xr.DataArray:
-        """Return storage maximum power data."""
-        return self._dataset["max_power"]
+    def max_charge_power(self) -> xr.DataArray:
+        """Return storage maximum charging power data."""
+        return self._dataset["max_charge_power"]
+
+    @property
+    def max_discharge_power(self) -> xr.DataArray:
+        """Return storage maximum discharging power data."""
+        return self._dataset["max_discharge_power"]
 
     @property
     def efficiency_charging(self) -> xr.DataArray:

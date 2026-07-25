@@ -33,7 +33,8 @@ def battery() -> Storage:
     return Storage(
         name="storage",
         capacity=100.0,
-        max_power=80.0,
+        max_charge_power=80.0,
+        max_discharge_power=80.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.9,
         soc_start=0.5,

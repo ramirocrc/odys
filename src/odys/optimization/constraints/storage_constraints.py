@@ -19,18 +19,18 @@ class StorageConstraints(ConstraintGroup):
 
     @constraint
     def _get_storage_max_charge_constraint(self) -> ModelConstraint:
-        """Maximum charging power limited by max_power when in charging mode."""
+        """Maximum charging power limited by max_charge_power when in charging mode."""
         return ModelConstraint(
-            constraint=self.model.storage_power_in <= self.model.storage_charge_mode * self.params.max_power,
+            constraint=self.model.storage_power_in <= self.model.storage_charge_mode * self.params.max_charge_power,
             name="storage_max_charge_constraint",
         )
 
     @constraint
     def _get_storage_max_discharge_constraint(self) -> ModelConstraint:
-        """Maximum discharging power limited by max_power when in discharging mode."""
+        """Maximum discharging power limited by max_discharge_power when in discharging mode."""
         return ModelConstraint(
-            constraint=self.model.storage_power_out + self.model.storage_charge_mode * self.params.max_power
-            <= self.params.max_power,
+            constraint=self.model.storage_power_out + self.model.storage_charge_mode * self.params.max_discharge_power
+            <= self.params.max_discharge_power,
             name="storage_max_discharge_constraint",
         )
 
@@ -67,11 +67,18 @@ class StorageConstraints(ConstraintGroup):
         )
 
     @constraint
-    def _get_storage_soc_end_constraint(self) -> ModelConstraint:
+    def _get_storage_soc_end_constraint(self) -> ModelConstraint | list[ModelConstraint]:
+        has_soc_end = self.params.soc_end.notnull()
+        if not has_soc_end.any():
+            return []
+
         time_coords = self.model.storage_soc.coords[ModelDimension.Time.value]
         last_time = time_coords.values[-1]
+        lhs = self.model.storage_soc.sel(time=last_time).sel(storage=has_soc_end)
+        rhs = self.params.soc_end.sel(storage=has_soc_end)
+
         return ModelConstraint(
-            constraint=self.model.storage_soc.sel(time=last_time) - self.params.soc_end == 0,
+            constraint=lhs - rhs == 0,
             name="storage_soc_end_constraint",
         )
 

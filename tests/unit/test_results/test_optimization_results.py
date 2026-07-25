@@ -24,7 +24,8 @@ def energy_system_sample() -> EnergySystem:
     )
     battery_1 = Storage(
         name="battery_1",
-        max_power=200.0,
+        max_charge_power=200.0,
+        max_discharge_power=200.0,
         capacity=100.0,
         efficiency_charging=1,
         efficiency_discharging=1,

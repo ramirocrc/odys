@@ -13,7 +13,8 @@ def battery_base_params() -> MappingProxyType[str, Any]:
     return MappingProxyType({
         "name": "test_battery",
         "capacity": 100.0,
-        "max_power": 50.0,
+        "max_charge_power": 50.0,
+        "max_discharge_power": 50.0,
         "efficiency_charging": 0.9,
         "efficiency_discharging": 0.85,
         "soc_start": 0.5,
@@ -24,7 +25,8 @@ def battery_base_params() -> MappingProxyType[str, Any]:
     ("param_name", "invalid_value", "expected_match"),
     [
         ("capacity", 0.0, "Input should be greater than 0"),
-        ("max_power", 0.0, "Input should be greater than 0"),
+        ("max_charge_power", 0.0, "Input should be greater than 0"),
+        ("max_discharge_power", -0.1, "Input should be greater than or equal to 0"),
         ("efficiency_charging", 0.0, "Input should be greater than 0"),
         ("efficiency_charging", 1.1, "Input should be less than or equal to 1"),
         ("efficiency_discharging", 0.0, "Input should be greater than 0"),

@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 def battery1() -> Storage:
     return Storage(
         name="batt1",
-        max_power=200.0,
+        max_charge_power=200.0,
+        max_discharge_power=200.0,
         capacity=100.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.8,
