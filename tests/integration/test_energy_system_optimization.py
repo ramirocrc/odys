@@ -78,7 +78,8 @@ def perfect_battery() -> Storage:
     return Storage(
         name="energy_storage",
         capacity=STANDARD_STORAGE_CAPACITY,
-        max_power=STANDARD_GENERATOR_POWER,
+        max_charge_power=STANDARD_GENERATOR_POWER,
+        max_discharge_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=PERFECT_EFFICIENCY,
         efficiency_discharging=PERFECT_EFFICIENCY,
         soc_start=0.0,
@@ -235,7 +236,8 @@ def _create_generator_and_battery_system() -> SystemTestCase:
     battery = Storage(
         name="energy_storage",
         capacity=STANDARD_STORAGE_CAPACITY,
-        max_power=STANDARD_GENERATOR_POWER,
+        max_charge_power=STANDARD_GENERATOR_POWER,
+        max_discharge_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=PERFECT_EFFICIENCY,
         efficiency_discharging=PERFECT_EFFICIENCY,
         soc_start=0.0,
@@ -279,7 +281,8 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
     battery = Storage(
         name="battery",
         capacity=STANDARD_STORAGE_CAPACITY,
-        max_power=STANDARD_GENERATOR_POWER,
+        max_charge_power=STANDARD_GENERATOR_POWER,
+        max_discharge_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=HALF_EFFICIENCY,
         efficiency_discharging=HALF_EFFICIENCY,
         soc_start=0.0,

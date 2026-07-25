@@ -114,6 +114,12 @@ class ModelVariable(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.FlexibleLoads],
         lower_bound_type=BoundType.UNBOUNDED,
     )
+    CHARGER_EV_ASSIGNMENT = VariableSpec(
+        name="charger_ev_assignment",
+        is_binary=True,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Chargers, ModelDimension.EVs],
+        lower_bound_type=BoundType.UNBOUNDED,
+    )
     VALUE_AT_RISK = VariableSpec(
         name="value_at_risk",
         is_binary=False,
@@ -138,16 +144,6 @@ class ModelVariable(Enum):
         return self.value.dimensions
 
     @property
-    def asset_dimension(self) -> ModelDimension | None:
-        """Get the asset dimension (Generators, Storages, or FlexibleLoads) if present."""
-        if self.value.dimensions is None:
-            return None
-        for dim in self.value.dimensions:
-            if dim in (ModelDimension.Generators, ModelDimension.Storages, ModelDimension.FlexibleLoads):
-                return dim
-        return None
-
-    @property
     def lower_bound_type(self) -> BoundType:
         """Return the lower bound type for this variable."""
         return self.value.lower_bound_type
@@ -169,5 +165,8 @@ FLEXIBLE_LOAD_VARIABLES = [
 ]
 MARKET_VARIABLES = [
     var for var in ModelVariable if var.value.dimensions and ModelDimension.Markets in var.value.dimensions
+]
+CHARGER_VARIABLES = [
+    var for var in ModelVariable if var.value.dimensions and ModelDimension.Chargers in var.value.dimensions
 ]
 CVAR_VARIABLES = [ModelVariable.VALUE_AT_RISK, ModelVariable.SHORTFALL_REVENUE]

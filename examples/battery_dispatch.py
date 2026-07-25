@@ -73,7 +73,8 @@ def run_battery_dispatch() -> OptimalDisptachResults:
     battery = Storage(
         name="battery",
         capacity=300,
-        max_power=200,
+        max_charge_power=200,
+        max_discharge_power=200,
         soc_start=0,
         soc_end=0,
     )

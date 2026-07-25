@@ -16,7 +16,8 @@ from odys.optimization.model.sets import ModelDimension
 STANDARD_NOMINAL_POWER = 100.0
 STANDARD_VARIABLE_COST = 20.0
 STANDARD_CAPACITY = 100.0
-STANDARD_MAX_POWER = 50.0
+STANDARD_MAX_CHARGE_POWER = 50.0
+STANDARD_MAX_DISCHARGE_POWER = 50.0
 STANDARD_SOC_START = 0.5
 STANDARD_DEGRADATION_COST = 5.0
 STANDARD_STARTUP_COST = 10.0
@@ -66,7 +67,8 @@ def storage_with_degradation_cost() -> Storage:
     return Storage(
         name="storage_with_degradation_cost",
         capacity=STANDARD_CAPACITY,
-        max_power=STANDARD_MAX_POWER,
+        max_charge_power=STANDARD_MAX_CHARGE_POWER,
+        max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
         soc_start=STANDARD_SOC_START,
         soc_end=STANDARD_SOC_START,
         degradation_cost=STANDARD_DEGRADATION_COST,
@@ -78,7 +80,8 @@ def storage_without_degradation_cost() -> Storage:
     return Storage(
         name="storage_without_degradation_cost",
         capacity=STANDARD_CAPACITY,
-        max_power=STANDARD_MAX_POWER,
+        max_charge_power=STANDARD_MAX_CHARGE_POWER,
+        max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
         soc_start=STANDARD_SOC_START,
         soc_end=STANDARD_SOC_START,
     )

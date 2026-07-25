@@ -33,7 +33,8 @@ def testing_battery() -> Storage:
     return Storage(
         name="test_battery",
         capacity=50.0,
-        max_power=25.0,
+        max_charge_power=25.0,
+        max_discharge_power=25.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.9,
         soc_start=0.5,
@@ -180,7 +181,8 @@ def portfolio_without_generators() -> AssetPortfolio:
             Storage(
                 name="battery",
                 capacity=50.0,
-                max_power=25.0,
+                max_charge_power=25.0,
+                max_discharge_power=25.0,
                 efficiency_charging=0.9,
                 efficiency_discharging=0.9,
                 soc_start=0.5,

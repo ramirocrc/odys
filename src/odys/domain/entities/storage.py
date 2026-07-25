@@ -25,10 +25,15 @@ class Storage(EnergyEntity):
         gt=0,
         description="Storage capacity in MWh.",
     )
-    max_power: float = Field(
+    max_charge_power: float = Field(
         strict=True,
         gt=0,
-        description="Maximum power in MW.",
+        description="Maximum charging power in MW.",
+    )
+    max_discharge_power: float = Field(
+        strict=True,
+        ge=0,
+        description="Maximum discharging power in MW. 0 = charge-only.",
     )
     efficiency_charging: float = Field(
         default=1,

@@ -21,6 +21,8 @@ from odys.domain.scenarios import (
 )
 from odys.domain.validation import validate_energy_system_inputs
 from odys.optimization.model.model_builder import build_model
+from odys.optimization.parameters.charger_parameters import ChargerParameters
+from odys.optimization.parameters.electric_vehicle_parameters import ElectricVehicleParameters
 from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
@@ -125,6 +127,8 @@ class EnergySystem(BaseModel):
         storage_params = StorageParameters(self.portfolio.storages)
         flexible_load_params = FlexibleLoadParameters(self.portfolio.flexible_loads)
         market_params = MarketParameters(self.collection_of_markets)
+        charger_params = ChargerParameters(self.portfolio.chargers)
+        ev_params = ElectricVehicleParameters(self.number_of_steps, self.portfolio.electric_vehicles)
         scenario_params = ScenarioParameters(
             number_of_timesteps=self.number_of_steps,
             scenarios=self.collection_of_scenarios,
@@ -142,6 +146,8 @@ class EnergySystem(BaseModel):
             markets=market_params,
             scenarios=scenario_params,
             objective=self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0)),
+            chargers=charger_params,
+            electric_vehicles=ev_params,
         )
 
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDisptachResults:

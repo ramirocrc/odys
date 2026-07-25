@@ -266,7 +266,8 @@ def test_flexible_load_with_storage() -> None:
     battery = Storage(
         name="battery",
         capacity=100.0,
-        max_power=50.0,
+        max_charge_power=50.0,
+        max_discharge_power=50.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.9,
         soc_start=0.5,

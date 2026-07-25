@@ -2,16 +2,21 @@
 
 import pytest
 
+from odys.domain.entities.charger import Charger
+from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.storage import Storage
+from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import StochasticScenario
 from odys.domain.validation import (
     validate_available_capacity_profiles,
+    validate_chargers_and_evs_consistency,
+    validate_electric_vehicle_trips,
     validate_enough_energy_to_meet_demand,
     validate_enough_power_to_meet_demand,
     validate_fixed_loads_consistent_with_scenarios,
@@ -23,7 +28,8 @@ from odys.domain.validation import (
 NOMINAL_POWER = 100.0
 VARIABLE_COST = 50.0
 STORAGE_CAPACITY = 50.0
-STORAGE_MAX_POWER = 25.0
+STORAGE_MAX_CHARGE_POWER = 25.0
+STORAGE_MAX_DISCHARGE_POWER = 25.0
 STORAGE_EFFICIENCY = 0.9
 SOC_START = 0.5
 MAX_TRADING_VOLUME = 100.0
@@ -46,7 +52,8 @@ def storage() -> Storage:
     return Storage(
         name="bat1",
         capacity=STORAGE_CAPACITY,
-        max_power=STORAGE_MAX_POWER,
+        max_charge_power=STORAGE_MAX_CHARGE_POWER,
+        max_discharge_power=STORAGE_MAX_DISCHARGE_POWER,
         efficiency_charging=STORAGE_EFFICIENCY,
         efficiency_discharging=STORAGE_EFFICIENCY,
         soc_start=SOC_START,
@@ -352,3 +359,99 @@ class TestValidateEnoughPowerToMeetDemand:
 class TestValidateEnoughEnergyToMeetDemand:
     def test_noop(self, scenario: StochasticScenario) -> None:
         validate_enough_energy_to_meet_demand(scenario)
+
+
+# --- validate_electric_vehicle_trips ---
+
+
+EV_CAPACITY = 50.0
+EV_MAX_CHARGE_POWER = 22.0
+EV_SOC_START = 0.8
+TRIP_ENERGY = 5.0
+EV_NUMBER_OF_STEPS = 24
+
+
+class TestValidateElectricVehicleTrips:
+    def test_valid(self) -> None:
+        trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=TRIP_ENERGY)
+        trip2 = Trip(name="evening", start_time=17, end_time=19, energy_consumption=TRIP_ENERGY)
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=EV_SOC_START,
+            trips=(trip1, trip2),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_no_evs_no_profiles(self) -> None:
+        portfolio = AssetPortfolio()
+        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_overlapping_trips(self) -> None:
+        trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=TRIP_ENERGY)
+        trip2 = Trip(name="overlapping", start_time=9, end_time=11, energy_consumption=TRIP_ENERGY)
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=EV_SOC_START,
+            trips=(trip1, trip2),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        with pytest.raises(OdysValidationError, match="overlap"):
+            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_trips_beyond_horizon(self) -> None:
+        trip1 = Trip(name="late_trip", start_time=20, end_time=30, energy_consumption=TRIP_ENERGY)
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=EV_SOC_START,
+            trips=(trip1,),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        with pytest.raises(OdysValidationError, match="beyond"):
+            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+
+# --- validate_chargers_and_evs_consistency ---
+
+
+CHARGER_MAX_POWER = 50.0
+
+
+def _make_ev() -> ElectricVehicle:
+    return ElectricVehicle(
+        name="ev1",
+        capacity=EV_CAPACITY,
+        max_charge_power=EV_MAX_CHARGE_POWER,
+        max_discharge_power=0.0,
+        soc_start=EV_SOC_START,
+        trips=(),
+    )
+
+
+class TestValidateChargersAndEvsConsistency:
+    def test_both_present(self) -> None:
+        portfolio = AssetPortfolio(assets=[_make_ev(), Charger(name="charger1", max_power=CHARGER_MAX_POWER)])
+        validate_chargers_and_evs_consistency(portfolio)
+
+    def test_both_absent(self) -> None:
+        portfolio = AssetPortfolio()
+        validate_chargers_and_evs_consistency(portfolio)
+
+    def test_evs_without_chargers(self) -> None:
+        portfolio = AssetPortfolio(assets=[_make_ev()])
+        with pytest.raises(OdysValidationError, match="both chargers and electric vehicles"):
+            validate_chargers_and_evs_consistency(portfolio)
+
+    def test_chargers_without_evs(self) -> None:
+        portfolio = AssetPortfolio(assets=[Charger(name="charger1", max_power=CHARGER_MAX_POWER)])
+        with pytest.raises(OdysValidationError, match="both chargers and electric vehicles"):
+            validate_chargers_and_evs_consistency(portfolio)
