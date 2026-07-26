@@ -12,7 +12,7 @@ from odys.optimization.model.sets import ModelDimension, ModelIndex
 from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadIndex
 from odys.optimization.parameters.generator_parameters import GeneratorIndex
 from odys.optimization.parameters.market_parameters import MarketIndex
-from odys.optimization.parameters.storage_parameters import StorageIndex
+from odys.optimization.parameters.standalone_storage_parameters import StandaloneStorageIndex
 
 
 class TimeIndex(ModelIndex):
@@ -35,7 +35,7 @@ class ScenarioParameters:
         number_of_timesteps: int,
         scenarios: Sequence[StochasticScenario],
         generators_index: GeneratorIndex,
-        storages_index: StorageIndex,
+        standalone_storages_index: StandaloneStorageIndex,
         markets_index: MarketIndex,
         flexible_loads_index: FlexibleLoadIndex,
     ) -> None:
@@ -45,14 +45,14 @@ class ScenarioParameters:
             number_of_timesteps: Number of time steps in the scenarios.
             scenarios: Sequence of stochastic scenario objects.
             generators_index: Generator index.
-            storages_index: Storage index.
+            standalone_storages_index: Standalone storage index.
             markets_index: Market index.
             flexible_loads_index: Flexible load index.
         """
         self._number_of_timesteps = number_of_timesteps
         self._scenarios = scenarios
         self._generators_index = generators_index
-        self._storages_index = storages_index
+        self._standalone_storages_index = standalone_storages_index
         self._markets_index = markets_index
         self._flexible_loads_index = flexible_loads_index
         self._time_index = TimeIndex(values=tuple(str(time_step) for time_step in range(number_of_timesteps)))

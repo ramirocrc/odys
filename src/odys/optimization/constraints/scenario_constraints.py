@@ -24,9 +24,13 @@ class ScenarioConstraints(ConstraintGroup):
         if not self._params.generators.is_empty:
             lhs += self.model.generator_power.sum(ModelDimension.Generators)
 
-        if not self._params.storages.is_empty:
-            lhs += self.model.storage_power_out.sum(ModelDimension.Storages)
-            lhs += -self.model.storage_power_in.sum(ModelDimension.Storages)
+        if not self._params.standalone_storages.is_empty:
+            lhs += self.model.standalone_storage_power_out.sum(ModelDimension.StandaloneStorages)
+            lhs += -self.model.standalone_storage_power_in.sum(ModelDimension.StandaloneStorages)
+
+        if not self._params.electric_vehicles.is_empty:
+            lhs += self.model.ev_power_out.sum(ModelDimension.EVs)
+            lhs += -self.model.ev_power_in.sum(ModelDimension.EVs)
 
         if not self._params.markets.is_empty:
             lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)

@@ -15,7 +15,7 @@ from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadPa
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioParameters
-from odys.optimization.parameters.storage_parameters import StorageParameters
+from odys.optimization.parameters.standalone_storage_parameters import StandaloneStorageParameters
 
 
 class EnergySystemParameters(BaseModel):
@@ -25,13 +25,13 @@ class EnergySystemParameters(BaseModel):
 
     timestep: timedelta
     generators: GeneratorParameters
-    storages: StorageParameters
+    standalone_storages: StandaloneStorageParameters
     flexible_loads: FlexibleLoadParameters
     markets: MarketParameters
     scenarios: ScenarioParameters
-    objective: Objective
     chargers: ChargerParameters
     electric_vehicles: ElectricVehicleParameters
+    objective: Objective
 
     @property
     def has_generators(self) -> bool:
@@ -39,9 +39,9 @@ class EnergySystemParameters(BaseModel):
         return not self.generators.is_empty
 
     @property
-    def has_storages(self) -> bool:
-        """Return True if there are storages."""
-        return not self.storages.is_empty
+    def has_standalone_storages(self) -> bool:
+        """Return True if there are standalone storages."""
+        return not self.standalone_storages.is_empty
 
     @property
     def has_flexible_loads(self) -> bool:

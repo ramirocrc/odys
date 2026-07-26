@@ -14,7 +14,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket, TradeDirection
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.entities.trip import Trip
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
 from odys.domain.scenarios import Scenario, StochasticScenario
@@ -38,8 +38,8 @@ __all__ = [
     "Scenario",
     "SolverConfig",
     "SolverName",
+    "StandaloneStorage",
     "StochasticScenario",
-    "Storage",
     "TradeDirection",
     "Trip",
 ]

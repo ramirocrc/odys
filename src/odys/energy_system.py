@@ -28,7 +28,7 @@ from odys.optimization.parameters.generator_parameters import GeneratorParameter
 from odys.optimization.parameters.market_parameters import MarketParameters
 from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioParameters
-from odys.optimization.parameters.storage_parameters import StorageParameters
+from odys.optimization.parameters.standalone_storage_parameters import StandaloneStorageParameters
 from odys.results.optimization_results import OptimalDisptachResults
 from odys.solvers.solver import optimize_algebraic_model
 from odys.solvers.solver_config import SolverConfig
@@ -124,7 +124,7 @@ class EnergySystem(BaseModel):
     def build_parameters(self) -> EnergySystemParameters:
         """Build parameters from this energy system for the optimization model."""
         generator_params = GeneratorParameters(self.portfolio.generators)
-        storage_params = StorageParameters(self.portfolio.storages)
+        standalone_storage_params = StandaloneStorageParameters(self.portfolio.standalone_storages)
         flexible_load_params = FlexibleLoadParameters(self.portfolio.flexible_loads)
         market_params = MarketParameters(self.collection_of_markets)
         charger_params = ChargerParameters(self.portfolio.chargers)
@@ -133,7 +133,7 @@ class EnergySystem(BaseModel):
             number_of_timesteps=self.number_of_steps,
             scenarios=self.collection_of_scenarios,
             generators_index=generator_params.index,
-            storages_index=storage_params.index,
+            standalone_storages_index=standalone_storage_params.index,
             flexible_loads_index=flexible_load_params.index,
             markets_index=market_params.index,
         )
@@ -141,13 +141,13 @@ class EnergySystem(BaseModel):
         return EnergySystemParameters(
             timestep=self.timestep,
             generators=generator_params,
-            storages=storage_params,
+            standalone_storages=standalone_storage_params,
             flexible_loads=flexible_load_params,
             markets=market_params,
             scenarios=scenario_params,
-            objective=self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0)),
             chargers=charger_params,
             electric_vehicles=ev_params,
+            objective=self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0)),
         )
 
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDisptachResults:

@@ -8,7 +8,7 @@ from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysError
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
@@ -37,7 +37,7 @@ def asset_portfolio_sample(load1: FixedLoad) -> AssetPortfolio:
                 nominal_power=150.0,
                 variable_cost=25.0,
             ),
-            Storage(
+            StandaloneStorage(
                 name="battery1",
                 max_charge_power=200.0,
                 max_discharge_power=200.0,
@@ -77,22 +77,22 @@ def test_model_build_components(
     # Variables
     variable_names = linopy_model.variables.labels
     assert "generator_power" in variable_names
-    assert "storage_power_in" in variable_names
-    assert "storage_power_out" in variable_names
-    assert "storage_soc" in variable_names
-    assert "storage_charge_mode" in variable_names
+    assert "standalone_storage_power_in" in variable_names
+    assert "standalone_storage_power_out" in variable_names
+    assert "standalone_storage_soc" in variable_names
+    assert "standalone_storage_charge_mode" in variable_names
     assert "charger_ev_assignment" not in variable_names
 
     # Constraints
     constraint_names = linopy_model.constraints.labels
     assert "power_balance_constraint" in constraint_names
     assert "generator_max_power_constraint" in constraint_names
-    assert "storage_max_charge_constraint" in constraint_names
-    assert "storage_max_discharge_constraint" in constraint_names
-    assert "storage_soc_dynamics_constraint" in constraint_names
-    assert "storage_capacity_constraint" in constraint_names
-    assert "storage_soc_end_constraint" in constraint_names
-    assert "storage_soc_start_constraint" in constraint_names
+    assert "standalone_storage_max_charge_constraint" in constraint_names
+    assert "standalone_storage_max_discharge_constraint" in constraint_names
+    assert "standalone_storage_soc_dynamics_constraint" in constraint_names
+    assert "standalone_storage_capacity_constraint" in constraint_names
+    assert "standalone_storage_soc_end_constraint" in constraint_names
+    assert "standalone_storage_soc_start_constraint" in constraint_names
 
     # Objective
     assert linopy_model.objective is not None

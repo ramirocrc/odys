@@ -231,8 +231,8 @@ result.generators.startup  # startup events
 result.generators.shutdown  # shutdown events
 
 # Storages
-result.storages.net_power  # positive = charging, negative = discharging
-result.storages.state_of_charge  # SOC at each timestep
+result.standalone_storages.net_power  # positive = charging, negative = discharging
+result.standalone_storages.state_of_charge  # SOC at each timestep
 
 # Markets
 result.markets.sell_volume  # MW sold per market per timestep

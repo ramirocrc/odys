@@ -5,7 +5,7 @@ import pytest
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
 
@@ -22,7 +22,7 @@ def energy_system_sample() -> EnergySystem:
         nominal_power=150.0,
         variable_cost=25.0,
     )
-    battery_1 = Storage(
+    battery_1 = StandaloneStorage(
         name="battery_1",
         max_charge_power=200.0,
         max_discharge_power=200.0,

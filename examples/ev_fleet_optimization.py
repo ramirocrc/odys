@@ -68,7 +68,7 @@ from odys import (
     FixedLoad,
     Generator,
     Scenario,
-    Storage,
+    StandaloneStorage,
     TradeDirection,
     Trip,
 )
@@ -183,7 +183,7 @@ def run_ev_fleet_optimization() -> OptimalDisptachResults:
         trips=(Trip(name="ev_10_route", start_time=6, end_time=18, energy_consumption=70, min_soc_at_departure=0.3),),
     )
 
-    battery = Storage(
+    battery = StandaloneStorage(
         name="battery",
         capacity=300,
         max_charge_power=150,
@@ -279,18 +279,24 @@ if __name__ == "__main__":
 
     logger.info("EV charging schedules")
     for ev_name in ["ev_1", "ev_2", "ev_3", "ev_4", "ev_5", "ev_6", "ev_7", "ev_8", "ev_9", "ev_10"]:
-        logger.info("%s net power: %s", ev_name, result.storages.net_power.sel(storage=ev_name).values)
-        logger.info("%s SoC: %s", ev_name, result.storages.soc.sel(storage=ev_name).values)
+        logger.info("%s net power: %s", ev_name, result.electric_vehicles.to_dataset().sel(ev=ev_name).net_power.values)
+        logger.info("%s SoC: %s", ev_name, result.electric_vehicles.to_dataset().sel(ev=ev_name).soc.values)
 
     logger.info("Stationary battery (no charger needed)")
-    logger.info("battery net power: %s", result.storages.net_power.sel(storage="battery").values)
-    logger.info("battery SoC: %s", result.storages.soc.sel(storage="battery").values)
+    logger.info(
+        "battery net power: %s",
+        result.standalone_storages.to_dataset().sel(standalone_storage="battery").net_power.values,
+    )
+    logger.info(
+        "battery SoC: %s",
+        result.standalone_storages.to_dataset().sel(standalone_storage="battery").soc.values,
+    )
 
     logger.info("Solar generation")
-    logger.info(result.generators.power.sel(generator="solar_pv"))
+    logger.info(result.generators.to_dataset().sel(generator="solar_pv").power)
 
     logger.info("Market transactions")
-    logger.info("Buy: %s", result.markets.buy_volume.sel(market="grid_market").values)
-    logger.info("Sell: %s", result.markets.sell_volume.sel(market="grid_market").values)
+    logger.info("Buy: %s", result.markets.to_dataset().sel(market="grid_market").buy_volume.values)
+    logger.info("Sell: %s", result.markets.to_dataset().sel(market="grid_market").sell_volume.values)
 
     logger.info("Objective value: %s", result.objective_value)

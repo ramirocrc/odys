@@ -11,7 +11,7 @@ from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.scenarios import Scenario, StochasticScenario
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def battery1() -> Storage:
-    return Storage(
+def battery1() -> StandaloneStorage:
+    return StandaloneStorage(
         name="batt1",
         max_charge_power=200.0,
         max_discharge_power=200.0,
@@ -38,7 +38,7 @@ def battery1() -> Storage:
 def asset_portfolio_sample(
     generator1: Generator,
     generator2: Generator,
-    battery1: Storage,
+    battery1: StandaloneStorage,
     load1: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator1, generator2, battery1, load1])
@@ -137,8 +137,8 @@ class TestScenarioConstraints:
         actual_constraint = self.linopy_model.constraints["power_balance_constraint"]
 
         generation_total = self.linopy_model.variables["generator_power"].sum("generator")
-        discharge_total = self.linopy_model.variables["storage_power_out"].sum("storage")
-        charge_total = self.linopy_model.variables["storage_power_in"].sum("storage")
+        discharge_total = self.linopy_model.variables["standalone_storage_power_out"].sum("standalone_storage")
+        charge_total = self.linopy_model.variables["standalone_storage_power_in"].sum("standalone_storage")
 
         # Fixed loads are summed over the load dimension, so no load dimension in the constraint
         demand_data = [

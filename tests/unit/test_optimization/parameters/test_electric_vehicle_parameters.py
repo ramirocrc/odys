@@ -89,7 +89,6 @@ def test_ev_parameters_index(ev_parameters: ElectricVehicleParameters) -> None:
 def test_ev_parameters_is_driving(ev_parameters: ElectricVehicleParameters) -> None:
     """Test that is_driving array is correctly built."""
     is_driving = ev_parameters.is_driving
-    assert is_driving is not None
     assert is_driving.dims == (ModelDimension.EVs.value, ModelDimension.Time.value)
     assert is_driving.shape == (2, 24)
 
@@ -109,7 +108,6 @@ def test_ev_parameters_is_driving(ev_parameters: ElectricVehicleParameters) -> N
 def test_ev_parameters_trip_energy(ev_parameters: ElectricVehicleParameters) -> None:
     """Test that trip_energy array is correctly built."""
     trip_energy = ev_parameters.trip_energy
-    assert trip_energy is not None
     assert trip_energy.dims == (ModelDimension.EVs.value, ModelDimension.Time.value)
     assert trip_energy.shape == (2, 24)
 
@@ -129,7 +127,6 @@ def test_ev_parameters_trip_energy(ev_parameters: ElectricVehicleParameters) -> 
 def test_ev_parameters_min_soc_at_departure(ev_parameters: ElectricVehicleParameters) -> None:
     """Test that min_soc_at_departure array is correctly built."""
     min_soc = ev_parameters.min_soc_at_departure
-    assert min_soc is not None
     assert min_soc.dims == (ModelDimension.EVs.value, ModelDimension.Time.value)
     assert min_soc.shape == (2, 24)
 
@@ -158,9 +155,6 @@ def test_ev_parameters_empty_trips() -> None:
     params = ElectricVehicleParameters(24, [ev])
 
     assert not params.is_empty
-    assert params.is_driving is not None
-    assert params.trip_energy is not None
-    assert params.min_soc_at_departure is not None
     assert params.is_driving.shape == (1, 24)
     assert params.trip_energy.shape == (1, 24)
     assert params.min_soc_at_departure.shape == (1, 24)

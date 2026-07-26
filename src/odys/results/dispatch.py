@@ -97,14 +97,14 @@ class GeneratorDispatch:
         return f"GeneratorDispatch(names={self._generator_names!r})"
 
 
-class StorageDispatch:
-    """Dispatch results for storages in the portfolio."""
+class StandaloneStorageDispatch:
+    """Dispatch results for standalone storages in the portfolio."""
 
     __slots__ = (
         "_charge_mode",
         "_net_power",
         "_soc",
-        "_storage_names",
+        "_standalone_storage_names",
     )
 
     def __init__(
@@ -113,32 +113,32 @@ class StorageDispatch:
         soc: xr.DataArray,
         charge_mode: xr.DataArray,
     ) -> None:
-        """Initialize storage dispatch results."""
+        """Initialize standalone storage dispatch results."""
         self._net_power = net_power
         self._soc = soc
         self._charge_mode = charge_mode
-        self._storage_names = net_power.coords[ModelDimension.Storages]
+        self._standalone_storage_names = net_power.coords[ModelDimension.StandaloneStorages]
 
-    def __getitem__(self, key: str) -> StorageDispatch:
-        """Return new instance for a specific storage."""
-        return StorageDispatch(
-            net_power=self._net_power.sel(storage=key),
-            soc=self._soc.sel(storage=key),
-            charge_mode=self._charge_mode.sel(storage=key),
+    def __getitem__(self, key: str) -> StandaloneStorageDispatch:
+        """Return new instance for a specific standalone storage."""
+        return StandaloneStorageDispatch(
+            net_power=self._net_power.sel(standalone_storage=key),
+            soc=self._soc.sel(standalone_storage=key),
+            charge_mode=self._charge_mode.sel(standalone_storage=key),
         )
 
-    def __iter__(self) -> Iterator[StorageDispatch]:
+    def __iter__(self) -> Iterator[StandaloneStorageDispatch]:
         """Iterate over dispatch instances."""
-        for name in self._storage_names:
+        for name in self._standalone_storage_names:
             yield self[name]
 
     def __len__(self) -> int:
-        """Number of storages."""
-        return len(self._storage_names)
+        """Number of standalone storages."""
+        return len(self._standalone_storage_names)
 
     def __contains__(self, key: str) -> bool:
-        """Check if storage exists by name."""
-        return key in self._storage_names
+        """Check if standalone storage exists by name."""
+        return key in self._standalone_storage_names
 
     @property
     def net_power(self) -> pd.Series:
@@ -171,7 +171,84 @@ class StorageDispatch:
 
     def __repr__(self) -> str:
         """String representation."""
-        return f"StorageDispatch(names={self._storage_names!r})"
+        return f"StandaloneStorageDispatch(names={self._standalone_storage_names!r})"
+
+
+class ElectricVehicleDispatch:
+    """Dispatch results for electric vehicles in the portfolio."""
+
+    __slots__ = (
+        "_charge_mode",
+        "_ev_names",
+        "_net_power",
+        "_soc",
+    )
+
+    def __init__(
+        self,
+        net_power: xr.DataArray,
+        soc: xr.DataArray,
+        charge_mode: xr.DataArray,
+    ) -> None:
+        """Initialize electric vehicle dispatch results."""
+        self._net_power = net_power
+        self._soc = soc
+        self._charge_mode = charge_mode
+        self._ev_names = net_power.coords[ModelDimension.EVs]
+
+    def __getitem__(self, key: str) -> ElectricVehicleDispatch:
+        """Return new instance for a specific electric vehicle."""
+        return ElectricVehicleDispatch(
+            net_power=self._net_power.sel(ev=key),
+            soc=self._soc.sel(ev=key),
+            charge_mode=self._charge_mode.sel(ev=key),
+        )
+
+    def __iter__(self) -> Iterator[ElectricVehicleDispatch]:
+        """Iterate over dispatch instances."""
+        for name in self._ev_names:
+            yield self[name]
+
+    def __len__(self) -> int:
+        """Number of electric vehicles."""
+        return len(self._ev_names)
+
+    def __contains__(self, key: str) -> bool:
+        """Check if electric vehicle exists by name."""
+        return key in self._ev_names
+
+    @property
+    def net_power(self) -> pd.Series:
+        """Net power (discharging - charging)."""
+        return self._net_power.to_series()
+
+    @property
+    def soc(self) -> pd.Series:
+        """State of charge (MWh)."""
+        return self._soc.to_series()
+
+    @property
+    def charge_mode(self) -> pd.Series:
+        """Binary charge mode (1=charging, 0=discharging)."""
+        return self._charge_mode.to_series()
+
+    def to_dataset(self) -> xr.Dataset:
+        """Return dispatch results as an xarray Dataset."""
+        return xr.Dataset(
+            data_vars={
+                "net_power": self._net_power,
+                "soc": self._soc,
+                "charge_mode": self._charge_mode,
+            },
+        )
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Return dispatch results as a pandas DataFrame."""
+        return self.to_dataset().to_dataframe()
+
+    def __repr__(self) -> str:
+        """String representation."""
+        return f"ElectricVehicleDispatch(names={self._ev_names!r})"
 
 
 class MarketDispatch:
