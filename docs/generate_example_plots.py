@@ -113,7 +113,7 @@ def generate_battery_dispatch() -> None:
     """Two-panel chart: generator dispatch with battery + battery SOC."""
     result = run_battery_dispatch()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
-    battery_df = result.storages.to_dataframe().droplevel("storage")
+    battery_df = result.standalone_storages.to_dataframe().droplevel("standalone_storage")
     steps = list(range(1, len(gen_df) + 1))
 
     fig = make_subplots(

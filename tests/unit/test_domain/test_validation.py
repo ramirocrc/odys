@@ -9,7 +9,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import StochasticScenario
@@ -48,8 +48,8 @@ def generator() -> Generator:
 
 
 @pytest.fixture
-def storage() -> Storage:
-    return Storage(
+def storage() -> StandaloneStorage:
+    return StandaloneStorage(
         name="bat1",
         capacity=STORAGE_CAPACITY,
         max_charge_power=STORAGE_MAX_CHARGE_POWER,
@@ -76,7 +76,7 @@ def flexible_load() -> FlexibleLoad:
 
 
 @pytest.fixture
-def portfolio(generator: Generator, storage: Storage, load: FixedLoad) -> AssetPortfolio:
+def portfolio(generator: Generator, storage: StandaloneStorage, load: FixedLoad) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator, storage, load])
 
 
@@ -290,15 +290,15 @@ class TestValidateAvailableCapacityProfiles:
 
 
 class TestValidateEnoughPowerToMeetDemand:
-    def test_valid(self, generator: Generator, storage: Storage, scenario: StochasticScenario) -> None:
+    def test_valid(self, generator: Generator, storage: StandaloneStorage, scenario: StochasticScenario) -> None:
         validate_enough_power_to_meet_demand(scenario, (generator,), (storage,))
 
-    def test_no_load_profiles(self, generator: Generator, storage: Storage) -> None:
+    def test_no_load_profiles(self, generator: Generator, storage: StandaloneStorage) -> None:
         scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
         with pytest.raises(OdysValidationError, match="Load profile is empty"):
             validate_enough_power_to_meet_demand(scenario, (generator,), (storage,))
 
-    def test_demand_exceeds_capacity(self, generator: Generator, storage: Storage) -> None:
+    def test_demand_exceeds_capacity(self, generator: Generator, storage: StandaloneStorage) -> None:
         scenario = StochasticScenario(
             name="s1",
             probability=1.0,
@@ -310,7 +310,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_feasible_after_decrease(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         # Base demand (150) > capacity (125), but base - max_decrease (150 - 30 = 120) < capacity
@@ -325,7 +325,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_infeasible_even_with_decrease(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         # Base demand (200) - max_decrease (30) = 170 > capacity (150)
@@ -340,7 +340,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_feasible_with_decrease(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         # Base demand (170) > capacity (150), but base - max_decrease (170 - 30 = 140) < capacity

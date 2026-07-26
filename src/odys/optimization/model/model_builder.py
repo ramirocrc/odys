@@ -7,6 +7,7 @@ variables, constraints, and objectives into a solvable MILP model.
 from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup
 from odys.optimization.constraints.cvar_constraints import CVaRConstraints
+from odys.optimization.constraints.electric_vehicle_constraints import ElectricVehicleConstraints
 from odys.optimization.constraints.flexible_load_constraints import FlexibleLoadConstraints
 from odys.optimization.constraints.generator_constraints import (
     GeneratorConstraints,
@@ -15,8 +16,8 @@ from odys.optimization.constraints.market_constraints import MarketConstraints
 from odys.optimization.constraints.scenario_constraints import (
     ScenarioConstraints,
 )
-from odys.optimization.constraints.storage_constraints import (
-    StorageConstraints,
+from odys.optimization.constraints.standalone_storage_constraints import (
+    StandaloneStorageConstraints,
 )
 from odys.optimization.model.linopy_converter import (
     LinopyVariableParameters,
@@ -141,8 +142,11 @@ class EnergyAlgebraicModelBuilder:
         if params.has_generators:
             groups.append(GeneratorConstraints(self._milp_model))
 
-        if params.has_storages:
-            groups.append(StorageConstraints(self._milp_model))
+        if params.has_standalone_storages:
+            groups.append(StandaloneStorageConstraints(self._milp_model))
+
+        if params.has_electric_vehicles:
+            groups.append(ElectricVehicleConstraints(self._milp_model))
 
         if params.has_markets:
             groups.append(MarketConstraints(self._milp_model))

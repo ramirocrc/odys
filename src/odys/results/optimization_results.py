@@ -8,10 +8,11 @@ from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import ModelVariable
 from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.results.dispatch import (
+    ElectricVehicleDispatch,
     FlexibleLoadDispatch,
     GeneratorDispatch,
     MarketDispatch,
-    StorageDispatch,
+    StandaloneStorageDispatch,
 )
 
 
@@ -23,10 +24,11 @@ class OptimalDisptachResults:
     """
 
     __slots__ = (
+        "_has_electric_vehicles",
         "_has_flexible_loads",
         "_has_generators",
         "_has_markets",
-        "_has_storages",
+        "_has_standalone_storages",
         "_objective_value",
         "_parameters",
         "_solution",
@@ -52,7 +54,8 @@ class OptimalDisptachResults:
         self._objective_value = objective_value
         self._variable_names = set(solution.variables.keys())
         self._has_generators = ModelDimension.Generators in solution.dims
-        self._has_storages = ModelDimension.Storages in solution.dims
+        self._has_standalone_storages = ModelDimension.StandaloneStorages in solution.dims
+        self._has_electric_vehicles = ModelDimension.EVs in solution.dims
         self._has_markets = ModelDimension.Markets in solution.dims
         self._has_flexible_loads = ModelDimension.FlexibleLoads in solution.dims
         self._parameters = parameters
@@ -93,17 +96,31 @@ class OptimalDisptachResults:
         )
 
     @property
-    def storages(self) -> StorageDispatch:
-        """Get storage dispatch results."""
+    def standalone_storages(self) -> StandaloneStorageDispatch:
+        """Get standalone storage dispatch results."""
         self._validate_terminated_successfully()
-        if not self._has_storages:
-            msg = "This model does not contain storage results"
+        if not self._has_standalone_storages:
+            msg = "This model does not contain standalone storage results"
             raise OdysNoResultsError(msg)
 
-        return StorageDispatch(
-            net_power=self._solution[ModelVariable.STORAGE_POWER_NET.var_name],
-            soc=self._solution[ModelVariable.STORAGE_SOC.var_name],
-            charge_mode=self._solution[ModelVariable.STORAGE_CHARGE_MODE.var_name],
+        return StandaloneStorageDispatch(
+            net_power=self._solution[ModelVariable.STANDALONE_STORAGE_POWER_NET.var_name],
+            soc=self._solution[ModelVariable.STANDALONE_STORAGE_SOC.var_name],
+            charge_mode=self._solution[ModelVariable.STANDALONE_STORAGE_CHARGE_MODE.var_name],
+        )
+
+    @property
+    def electric_vehicles(self) -> ElectricVehicleDispatch:
+        """Get electric vehicle dispatch results."""
+        self._validate_terminated_successfully()
+        if not self._has_electric_vehicles:
+            msg = "This model does not contain electric vehicle results"
+            raise OdysNoResultsError(msg)
+
+        return ElectricVehicleDispatch(
+            net_power=self._solution[ModelVariable.EV_POWER_NET.var_name],
+            soc=self._solution[ModelVariable.EV_SOC.var_name],
+            charge_mode=self._solution[ModelVariable.EV_CHARGE_MODE.var_name],
         )
 
     @property

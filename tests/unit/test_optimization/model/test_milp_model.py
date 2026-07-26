@@ -6,7 +6,7 @@ from linopy.testing import assert_linequal
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.model.milp_model import EnergyMILPModel
@@ -63,8 +63,8 @@ def generator_without_shutdown_cost() -> Generator:
 
 
 @pytest.fixture
-def storage_with_degradation_cost() -> Storage:
-    return Storage(
+def storage_with_degradation_cost() -> StandaloneStorage:
+    return StandaloneStorage(
         name="storage_with_degradation_cost",
         capacity=STANDARD_CAPACITY,
         max_charge_power=STANDARD_MAX_CHARGE_POWER,
@@ -76,8 +76,8 @@ def storage_with_degradation_cost() -> Storage:
 
 
 @pytest.fixture
-def storage_without_degradation_cost() -> Storage:
-    return Storage(
+def storage_without_degradation_cost() -> StandaloneStorage:
+    return StandaloneStorage(
         name="storage_without_degradation_cost",
         capacity=STANDARD_CAPACITY,
         max_charge_power=STANDARD_MAX_CHARGE_POWER,
@@ -87,7 +87,7 @@ def storage_without_degradation_cost() -> Storage:
     )
 
 
-def _build_milp_model(assets: list[Generator | Storage], load: FixedLoad) -> EnergyMILPModel:
+def _build_milp_model(assets: list[Generator | StandaloneStorage], load: FixedLoad) -> EnergyMILPModel:
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(assets=[*assets, load]),
         number_of_steps=len(DEMAND_PROFILE),
@@ -112,7 +112,7 @@ class TestPerScenarioProfitDegradationCost:
         generator1: Generator,
         load1: FixedLoad,
     ) -> None:
-        storage: Storage = request.getfixturevalue(storage_fixture_name)
+        storage: StandaloneStorage = request.getfixturevalue(storage_fixture_name)
         model = _build_milp_model([generator1, storage], load1)
 
         actual_profit = model.per_scenario_profit()
@@ -123,10 +123,10 @@ class TestPerScenarioProfitDegradationCost:
             + model.generator_startup * model.parameters.generators.startup_cost
             + model.generator_shutdown * model.parameters.generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators]) - (
-            (model.storage_power_in + model.storage_power_out)
+            (model.standalone_storage_power_in + model.standalone_storage_power_out)
             * timestep_hours
-            * model.parameters.storages.degradation_cost
-        ).sum([ModelDimension.Time, ModelDimension.Storages])
+            * model.parameters.standalone_storages.degradation_cost
+        ).sum([ModelDimension.Time, ModelDimension.StandaloneStorages])
 
         assert_linequal(actual_profit, expected_profit)
 

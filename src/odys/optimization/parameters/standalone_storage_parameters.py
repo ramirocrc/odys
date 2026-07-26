@@ -1,31 +1,31 @@
-"""Storage parameters for the mathematical optimization model."""
+"""Standalone storage parameters for the mathematical optimization model."""
 
 from collections.abc import Sequence
 from typing import ClassVar
 
 import xarray as xr
 
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.optimization.model.sets import ModelDimension, ModelIndex
 
 
-class StorageIndex(ModelIndex):
-    """Index for storage components in the optimization model."""
+class StandaloneStorageIndex(ModelIndex):
+    """Index for standalone storage components in the optimization model."""
 
-    dimension: ClassVar[ModelDimension] = ModelDimension.Storages
+    dimension: ClassVar[ModelDimension] = ModelDimension.StandaloneStorages
 
 
-class StorageParameters:
-    """Parameters for storage assets in the energy system model."""
+class StandaloneStorageParameters:
+    """Parameters for standalone storage assets in the energy system model."""
 
-    def __init__(self, storages: Sequence[Storage] | None = None) -> None:
-        """Initialize storage parameters.
+    def __init__(self, storages: Sequence[StandaloneStorage] | None = None) -> None:
+        """Initialize standalone storage parameters.
 
         Args:
-            storages: Sequence of storage objects.
+            storages: Sequence of standalone storage objects.
         """
         self._storages = list(storages) if storages else []
-        self._index = StorageIndex(
+        self._index = StandaloneStorageIndex(
             values=tuple(storage.name for storage in self._storages),
         )
         data = {
@@ -49,65 +49,65 @@ class StorageParameters:
 
     @property
     def is_empty(self) -> bool:
-        """Return True if there are no storages."""
+        """Return True if there are no standalone storages."""
         return len(self._storages) == 0
 
     @property
-    def index(self) -> StorageIndex:
-        """Return the storage index."""
+    def index(self) -> StandaloneStorageIndex:
+        """Return the standalone storage index."""
         return self._index
 
     @property
     def capacity(self) -> xr.DataArray:
-        """Return storage capacity data."""
+        """Return standalone storage capacity data."""
         return self._dataset["capacity"]
 
     @property
     def max_charge_power(self) -> xr.DataArray:
-        """Return storage maximum charging power data."""
+        """Return standalone storage maximum charging power data."""
         return self._dataset["max_charge_power"]
 
     @property
     def max_discharge_power(self) -> xr.DataArray:
-        """Return storage maximum discharging power data."""
+        """Return standalone storage maximum discharging power data."""
         return self._dataset["max_discharge_power"]
 
     @property
     def efficiency_charging(self) -> xr.DataArray:
-        """Return storage charging efficiency data."""
+        """Return standalone storage charging efficiency data."""
         return self._dataset["efficiency_charging"]
 
     @property
     def efficiency_discharging(self) -> xr.DataArray:
-        """Return storage discharging efficiency data."""
+        """Return standalone storage discharging efficiency data."""
         return self._dataset["efficiency_discharging"]
 
     @property
     def self_discharge_rate(self) -> xr.DataArray:
-        """Return storage self discharge rate data."""
+        """Return standalone storage self discharge rate data."""
         return self._dataset["self_discharge_rate"]
 
     @property
     def soc_start(self) -> xr.DataArray:
-        """Return storage initial state of charge data."""
+        """Return standalone storage initial state of charge data."""
         return self._dataset["soc_start"]
 
     @property
     def soc_end(self) -> xr.DataArray:
-        """Return storage final state of charge data."""
+        """Return standalone storage final state of charge data."""
         return self._dataset["soc_end"]
 
     @property
     def soc_min(self) -> xr.DataArray:
-        """Return storage minimum state of charge data."""
+        """Return standalone storage minimum state of charge data."""
         return self._dataset["soc_min"]
 
     @property
     def soc_max(self) -> xr.DataArray:
-        """Return storage maximum state of charge data."""
+        """Return standalone storage maximum state of charge data."""
         return self._dataset["soc_max"]
 
     @property
     def degradation_cost(self) -> xr.DataArray:
-        """Return storage degradation cost data."""
+        """Return standalone storage degradation cost data."""
         return self._dataset["degradation_cost"]

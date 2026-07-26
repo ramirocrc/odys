@@ -15,7 +15,7 @@ from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.model.registry import AssetRegistry
 
@@ -104,14 +104,14 @@ class AssetPortfolio:
         return self._get_assets_by_type(Generator)
 
     @property
-    def storages(self) -> tuple[Storage, ...]:
-        """Get all storages in the portfolio.
+    def standalone_storages(self) -> tuple[StandaloneStorage, ...]:
+        """Get all standalone storages in the portfolio.
 
         Returns:
-            A tuple containing all Storage assets.
+            A tuple containing all StandaloneStorage assets.
 
         """
-        return self._get_assets_by_type(Storage)
+        return self._get_assets_by_type(StandaloneStorage)
 
     @property
     def fixed_loads(self) -> tuple[FixedLoad, ...]:

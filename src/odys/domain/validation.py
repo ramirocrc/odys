@@ -12,7 +12,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import StochasticScenario
 
@@ -49,7 +49,7 @@ def validate_energy_system_inputs(
             validate_enough_power_to_meet_demand(
                 scenario,
                 portfolio.generators,
-                portfolio.storages,
+                portfolio.standalone_storages,
                 portfolio.flexible_loads,
             )
             validate_enough_energy_to_meet_demand(scenario)
@@ -324,7 +324,7 @@ def _validate_flexible_load_power_demand(
 def validate_enough_power_to_meet_demand(
     scenario: StochasticScenario,
     generators: Sequence[Generator],
-    storages: Sequence[Storage],
+    storages: Sequence[StandaloneStorage],
     flexible_loads: Sequence[FlexibleLoad] | None = None,
 ) -> None:
     """Validate that maximum available power can meet peak demand.

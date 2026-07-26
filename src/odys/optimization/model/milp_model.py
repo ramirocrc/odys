@@ -22,7 +22,7 @@ from odys.optimization.parameters.generator_parameters import GeneratorIndex
 from odys.optimization.parameters.market_parameters import MarketIndex
 from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioIndex, TimeIndex
-from odys.optimization.parameters.storage_parameters import StorageIndex
+from odys.optimization.parameters.standalone_storage_parameters import StandaloneStorageIndex
 
 
 class EnergyModelIndices(BaseModel):
@@ -33,7 +33,7 @@ class EnergyModelIndices(BaseModel):
     scenarios: ScenarioIndex
     time: TimeIndex
     generators: GeneratorIndex
-    storages: StorageIndex
+    standalone_storages: StandaloneStorageIndex
     flexible_loads: FlexibleLoadIndex
     markets: MarketIndex
     chargers: ChargerIndex
@@ -45,7 +45,7 @@ class EnergyModelIndices(BaseModel):
             ModelDimension.Scenarios: self.scenarios,
             ModelDimension.Time: self.time,
             ModelDimension.Generators: self.generators,
-            ModelDimension.Storages: self.storages,
+            ModelDimension.StandaloneStorages: self.standalone_storages,
             ModelDimension.FlexibleLoads: self.flexible_loads,
             ModelDimension.Markets: self.markets,
             ModelDimension.Chargers: self.chargers,
@@ -74,7 +74,7 @@ class EnergyMILPModel:
             scenarios=self._parameters.scenarios.scenario_index,
             time=self._parameters.scenarios.time_index,
             generators=self._parameters.generators.index,
-            storages=self._parameters.storages.index,
+            standalone_storages=self._parameters.standalone_storages.index,
             flexible_loads=self._parameters.flexible_loads.index,
             markets=self._parameters.markets.index,
             chargers=self._parameters.chargers.index,
@@ -112,29 +112,54 @@ class EnergyMILPModel:
         return self._linopy_model.variables[ModelVariable.GENERATOR_SHUTDOWN.var_name]
 
     @property
-    def storage_power_in(self) -> Variable:
-        """Return the storage charging power variable."""
-        return self._linopy_model.variables[ModelVariable.STORAGE_POWER_IN.var_name]
+    def standalone_storage_power_in(self) -> Variable:
+        """Return the standalone storage charging power variable."""
+        return self._linopy_model.variables[ModelVariable.STANDALONE_STORAGE_POWER_IN.var_name]
 
     @property
-    def storage_power_net(self) -> Variable:
-        """Return the storage net power variable (charge - discharge)."""
-        return self._linopy_model.variables[ModelVariable.STORAGE_POWER_NET.var_name]
+    def standalone_storage_power_net(self) -> Variable:
+        """Return the standalone storage net power variable (charge - discharge)."""
+        return self._linopy_model.variables[ModelVariable.STANDALONE_STORAGE_POWER_NET.var_name]
 
     @property
-    def storage_power_out(self) -> Variable:
-        """Return the storage discharging power variable."""
-        return self._linopy_model.variables[ModelVariable.STORAGE_POWER_OUT.var_name]
+    def standalone_storage_power_out(self) -> Variable:
+        """Return the standalone storage discharging power variable."""
+        return self._linopy_model.variables[ModelVariable.STANDALONE_STORAGE_POWER_OUT.var_name]
 
     @property
-    def storage_soc(self) -> Variable:
-        """Return the storage state of charge variable."""
-        return self._linopy_model.variables[ModelVariable.STORAGE_SOC.var_name]
+    def standalone_storage_soc(self) -> Variable:
+        """Return the standalone storage state of charge variable."""
+        return self._linopy_model.variables[ModelVariable.STANDALONE_STORAGE_SOC.var_name]
 
     @property
-    def storage_charge_mode(self) -> Variable:
-        """Return the storage charge/discharge mode indicator variable."""
-        return self._linopy_model.variables[ModelVariable.STORAGE_CHARGE_MODE.var_name]
+    def standalone_storage_charge_mode(self) -> Variable:
+        """Return the standalone storage charge/discharge mode indicator variable."""
+        return self._linopy_model.variables[ModelVariable.STANDALONE_STORAGE_CHARGE_MODE.var_name]
+
+    @property
+    def ev_power_in(self) -> Variable:
+        """Return the EV charging power variable."""
+        return self._linopy_model.variables[ModelVariable.EV_POWER_IN.var_name]
+
+    @property
+    def ev_power_net(self) -> Variable:
+        """Return the EV net power variable (charge - discharge)."""
+        return self._linopy_model.variables[ModelVariable.EV_POWER_NET.var_name]
+
+    @property
+    def ev_power_out(self) -> Variable:
+        """Return the EV discharging power variable."""
+        return self._linopy_model.variables[ModelVariable.EV_POWER_OUT.var_name]
+
+    @property
+    def ev_soc(self) -> Variable:
+        """Return the EV state of charge variable."""
+        return self._linopy_model.variables[ModelVariable.EV_SOC.var_name]
+
+    @property
+    def ev_charge_mode(self) -> Variable:
+        """Return the EV charge/discharge mode indicator variable."""
+        return self._linopy_model.variables[ModelVariable.EV_CHARGE_MODE.var_name]
 
     @property
     def market_sell_volume(self) -> Variable:
@@ -203,14 +228,24 @@ class EnergyMILPModel:
                 ),
             )
 
-        if not self._parameters.storages.is_empty:
+        if not self._parameters.standalone_storages.is_empty:
             timestep_hours = self._parameters.timestep / timedelta(hours=1)
             profit_terms.append(
                 -(
-                    (self.storage_power_in + self.storage_power_out)
+                    (self.standalone_storage_power_in + self.standalone_storage_power_out)
                     * timestep_hours
-                    * self._parameters.storages.degradation_cost
-                ).sum([ModelDimension.Time, ModelDimension.Storages]),
+                    * self._parameters.standalone_storages.degradation_cost
+                ).sum([ModelDimension.Time, ModelDimension.StandaloneStorages]),
+            )
+
+        if not self._parameters.electric_vehicles.is_empty:
+            timestep_hours = self._parameters.timestep / timedelta(hours=1)
+            profit_terms.append(
+                -(
+                    (self.ev_power_in + self.ev_power_out)
+                    * timestep_hours
+                    * self._parameters.electric_vehicles.degradation_cost
+                ).sum([ModelDimension.Time, ModelDimension.EVs]),
             )
 
         if not profit_terms:
