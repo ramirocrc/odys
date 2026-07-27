@@ -6,6 +6,7 @@ invariant and raises OdysValidationError on failure.
 """
 
 from collections.abc import Mapping, Sequence
+from datetime import timedelta
 
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
@@ -22,6 +23,7 @@ def validate_energy_system_inputs(
     scenarios: tuple[StochasticScenario, ...],
     markets: tuple[EnergyMarket, ...],
     number_of_steps: int,
+    timestep: timedelta,
 ) -> None:
     """Run all cross-domain validation checks on the energy system.
 
@@ -30,6 +32,7 @@ def validate_energy_system_inputs(
         scenarios: Normalized sequence of stochastic scenarios.
         markets: Normalized sequence of energy markets.
         number_of_steps: Number of time steps in the optimization horizon.
+        timestep: Duration of a single optimization timestep.
 
     Raises:
         OdysValidationError: If any validation check fails.
@@ -51,7 +54,7 @@ def validate_energy_system_inputs(
                 portfolio.storages,
                 portfolio.flexible_loads,
             )
-            validate_enough_energy_to_meet_demand(scenario)
+            validate_enough_energy_to_meet_demand(scenario, portfolio, markets, timestep)
 
 
 def validate_fixed_loads_consistent_with_scenarios(
@@ -404,10 +407,103 @@ def validate_enough_power_to_meet_demand(
         )
 
 
-def validate_enough_energy_to_meet_demand(scenario: StochasticScenario) -> None:  # noqa: ARG001
-    """Validate that the system has enough energy to meet total demand.
+def validate_enough_energy_to_meet_demand(
+    scenario: StochasticScenario,
+    portfolio: AssetPortfolio,
+    markets: Sequence[EnergyMarket],
+    timestep: timedelta,
+) -> None:
+    """Validate that total energy available over the horizon can meet total energy demand.
 
-    Checks that the total energy available from generators and batteries
-    can meet the total energy demand over the time horizon.
+    Checks that the sum, across all timesteps, of generator available energy
+    (capacity profile if given, otherwise nominal power, times timestep
+    duration), storage energy capacity, and market trading energy can meet
+    the sum of fixed and minimum flexible load energy demand over the same
+    horizon.
+
+    This is a coarser, horizon-level counterpart to
+    ``validate_enough_power_to_meet_demand``: a system can pass every
+    per-timestep power check and still be infeasible over the full horizon,
+    for example when total available energy (limited fuel, a small battery
+    relative to a long horizon) is not enough even though instantaneous
+    power always is.
+
+    Two simplifications, matching how this check is specified: storage
+    contributes its full capacity once (not scaled by however many times it
+    could cycle over the horizon), and a generator without a capacity
+    profile is assumed able to run at nominal power for every timestep
+    (ignoring ramp rates and minimum up/down time). Both make this an
+    optimistic bound on available energy, so it can under-detect
+    infeasibility but should not raise false positives from those factors
+    alone.
+
+    If there is no fixed or flexible load at all, this is a no-op.
+
+    The minimum flexible load demand term (base minus max_decrease) assumes
+    max_decrease never exceeds the base profile at any timestep. That
+    invariant is enforced separately, unconditionally, before this function
+    runs (see ``validate_flexible_load_max_decrease_within_base_profile``),
+    so it is not re-checked here.
+
+    Args:
+        scenario: Scenario with load profiles to check against.
+        portfolio: The asset portfolio to validate against.
+        markets: Markets in the portfolio.
+        timestep: Duration of a single optimization timestep.
+
+    Raises:
+        OdysValidationError: If total available energy is insufficient for total
+            energy demand over the horizon.
+
     """
-    return
+    fixed_load_profiles = scenario.fixed_load_profiles
+    flexible_load_base_profiles = scenario.flexible_load_base_profiles
+
+    if not fixed_load_profiles and not flexible_load_base_profiles:
+        return
+
+    timestep_hours = timestep.total_seconds() / 3600
+
+    if fixed_load_profiles:
+        number_of_steps = len(next(iter(fixed_load_profiles.values())))
+    elif flexible_load_base_profiles:
+        number_of_steps = len(next(iter(flexible_load_base_profiles.values())))
+    else:  # pragma: no cover - unreachable, the check above already excludes this
+        return
+
+    total_fixed_energy = 0.0
+    if fixed_load_profiles:
+        total_fixed_energy = sum(sum(profile) for profile in fixed_load_profiles.values()) * timestep_hours
+
+    flexible_load_map = {load.name: load for load in portfolio.flexible_loads}
+    total_flexible_energy = 0.0
+    for load_name, profile in (flexible_load_base_profiles or {}).items():
+        flexible_load = flexible_load_map.get(load_name)
+        if flexible_load is None:
+            continue
+        total_flexible_energy += sum(value - flexible_load.max_decrease for value in profile) * timestep_hours
+
+    total_energy_demand = total_fixed_energy + total_flexible_energy
+
+    capacity_profiles = scenario.available_capacity_profiles or {}
+    total_generator_energy = 0.0
+    for generator in portfolio.generators:
+        available_profile = capacity_profiles.get(generator.name)
+        if available_profile is not None:
+            total_generator_energy += sum(available_profile) * timestep_hours
+        else:
+            total_generator_energy += generator.nominal_power * number_of_steps * timestep_hours
+
+    total_storage_energy = sum(storage.capacity for storage in portfolio.storages)
+    total_market_volume = sum(market.max_trading_volume_per_step for market in markets)
+    total_market_energy = total_market_volume * number_of_steps * timestep_hours
+
+    total_energy_supply = total_generator_energy + total_storage_energy + total_market_energy
+
+    if total_energy_demand > total_energy_supply:
+        msg = (
+            f"Infeasible problem in scenario '{scenario.name}': total energy demand "
+            f"({total_energy_demand}) over the horizon exceeds total available energy "
+            f"({total_energy_supply})."
+        )
+        raise OdysValidationError(msg)
