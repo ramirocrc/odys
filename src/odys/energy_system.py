@@ -87,6 +87,7 @@ class EnergySystem(BaseModel):
             scenarios=self.collection_of_scenarios,
             markets=self.collection_of_markets,
             number_of_steps=self.number_of_steps,
+            timestep=self.timestep,
         )
         return self
 
