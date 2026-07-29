@@ -22,7 +22,10 @@ class ObjectiveTerm(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    weight: float = Field(ge=0)
+    weight: float = Field(
+        ge=0,
+        description="Relative importance of this objective term in the overall objective function.",
+    )
 
 
 class ProfitTerm(ObjectiveTerm):
@@ -46,7 +49,11 @@ class CVaRTerm(ObjectiveTerm):
             Must be greater than 0 and less than 1.
     """
 
-    confidence_level: float = Field(gt=0, lt=1)
+    confidence_level: float = Field(
+        gt=0,
+        lt=1,
+        description="Confidence level used for the CVaR calculation. Must be greater than 0 and less than 1.",
+    )
 
 
 class Objective(BaseModel):
@@ -61,5 +68,10 @@ class Objective(BaseModel):
         cvar: Optional CVaR objective term used to penalize risk.
     """
 
-    profit: ProfitTerm
-    cvar: CVaRTerm | None = None
+    profit: ProfitTerm = Field(
+        description="Objective term that maximizes expected profit.",
+    )
+    cvar: CVaRTerm | None = Field(
+        default=None,
+        description="Optional CVaR objective term used to penalize risk.",
+    )
