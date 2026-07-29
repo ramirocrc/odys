@@ -35,7 +35,7 @@ def load1() -> FixedLoad:
 
 @pytest.fixture
 def demand_profile_sample() -> list[float]:
-    return [150, 200, 150]
+    return [100, 150, 100]
 
 
 @pytest.fixture
