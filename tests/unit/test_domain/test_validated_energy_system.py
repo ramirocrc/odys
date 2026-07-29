@@ -56,7 +56,7 @@ def testing_portfolio(
 
 @pytest.fixture
 def valid_demand_profile() -> list[float]:
-    return [80.0, 120.0, 90.0, 150.0]
+    return [80.0, 100.0, 90.0, 120.0]
 
 
 @pytest.fixture
