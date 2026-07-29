@@ -419,6 +419,45 @@ class TestValidateElectricVehicleTrips:
         with pytest.raises(OdysValidationError, match="beyond"):
             validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
 
+    def test_min_soc_at_departure_infeasible_at_t0(self) -> None:
+        trip = Trip(
+            name="early_trip",
+            start_time=0,
+            end_time=1,
+            energy_consumption=TRIP_ENERGY,
+            min_soc_at_departure=0.8,
+        )
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=0.5,
+            trips=(trip,),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        with pytest.raises(OdysValidationError, match=r"min_soc_at_departure.*soc_start"):
+            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_min_soc_at_departure_feasible_at_t0(self) -> None:
+        trip = Trip(
+            name="early_trip",
+            start_time=0,
+            end_time=1,
+            energy_consumption=TRIP_ENERGY,
+            min_soc_at_departure=0.3,
+        )
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=0.5,
+            trips=(trip,),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
 
 # --- validate_chargers_and_evs_consistency ---
 

@@ -5,6 +5,7 @@ variables, constraints, and objectives into a solvable MILP model.
 """
 
 from odys.domain.exceptions import OdysError
+from odys.optimization.constraints.charger_constraints import ChargerConstraints
 from odys.optimization.constraints.constraints_group import ConstraintGroup
 from odys.optimization.constraints.cvar_constraints import CVaRConstraints
 from odys.optimization.constraints.electric_vehicle_constraints import ElectricVehicleConstraints
@@ -147,6 +148,9 @@ class EnergyAlgebraicModelBuilder:
 
         if params.has_electric_vehicles:
             groups.append(ElectricVehicleConstraints(self._milp_model))
+
+        if params.has_chargers:
+            groups.append(ChargerConstraints(self._milp_model))
 
         if params.has_markets:
             groups.append(MarketConstraints(self._milp_model))

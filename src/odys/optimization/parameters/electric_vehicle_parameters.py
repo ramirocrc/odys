@@ -75,7 +75,7 @@ class ElectricVehicleParameters:
                 min_soc_data[i, trip.start_time] = trip.min_soc_at_departure
 
         time_dim = ModelDimension.Time.value
-        time_coords = list(range(number_of_timesteps))
+        time_coords = [str(time_step) for time_step in range(number_of_timesteps)]
         trip_coords = {ev_dim: list(ev_names), time_dim: time_coords}
         self._is_driving = xr.DataArray(
             is_driving_data,

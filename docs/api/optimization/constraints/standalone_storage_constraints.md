@@ -2,9 +2,9 @@
 icon: fontawesome/solid/battery-three-quarters
 ---
 
-# `odys.optimization.constraints.storage_constraints`
+# `odys.optimization.constraints.standalone_storage_constraints`
 
-Storage constraint construction.
+Standalone storage constraint construction.
 
 Charge and discharge power are bounded by the binary charging mode:
 
@@ -13,11 +13,11 @@ $$
 $$
 
 $$
-p^{ch}_{b,t,s} \le z_{b,t,s} P^{\max}_b
+p^{ch}_{b,t,s} \le z_{b,t,s} P^{\max,ch}_b
 $$
 
 $$
-p^{dis}_{b,t,s} + z_{b,t,s} P^{\max}_b \le P^{\max}_b
+p^{dis}_{b,t,s} + z_{b,t,s} P^{\max,dis}_b \le P^{\max,dis}_b
 $$
 
 The core SOC dynamics are:
@@ -50,6 +50,6 @@ $$
 p^{net}_{b,t,s} = p^{ch}_{b,t,s} - p^{dis}_{b,t,s}
 $$
 
-See also [Storage](../../domain/entities/storage.md) for the domain model and [standalone_storage_parameters](../parameters/standalone_storage_parameters.md) for the parameter extraction.
+See also [StandaloneStorage](../../domain/entities/standalone_storage.md) for the domain model and [standalone_storage_parameters](../parameters/standalone_storage_parameters.md) for the parameter extraction.
 
-::: odys.optimization.constraints.storage_constraints
+::: odys.optimization.constraints.standalone_storage_constraints
