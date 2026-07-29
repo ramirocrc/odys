@@ -13,7 +13,7 @@ from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
@@ -29,11 +29,12 @@ def testing_generator() -> Generator:
 
 
 @pytest.fixture
-def testing_battery() -> Storage:
-    return Storage(
+def testing_battery() -> StandaloneStorage:
+    return StandaloneStorage(
         name="test_battery",
-        capacity=60.0,
-        max_power=25.0,
+        capacity=50.0,
+        max_charge_power=25.0,
+        max_discharge_power=25.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.9,
         soc_start=0.5,
@@ -48,7 +49,7 @@ def testing_load() -> FixedLoad:
 @pytest.fixture
 def testing_portfolio(
     testing_generator: Generator,
-    testing_battery: Storage,
+    testing_battery: StandaloneStorage,
     testing_load: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[testing_generator, testing_battery, testing_load])
@@ -177,10 +178,11 @@ def portfolio_without_loads() -> AssetPortfolio:
 def portfolio_without_generators() -> AssetPortfolio:
     return AssetPortfolio(
         assets=[
-            Storage(
+            StandaloneStorage(
                 name="battery",
                 capacity=50.0,
-                max_power=25.0,
+                max_charge_power=25.0,
+                max_discharge_power=25.0,
                 efficiency_charging=0.9,
                 efficiency_discharging=0.9,
                 soc_start=0.5,

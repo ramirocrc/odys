@@ -46,7 +46,7 @@ gas.
 
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario, Storage
+from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario, StandaloneStorage
 from odys.results.optimization_results import OptimalDisptachResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
@@ -70,10 +70,11 @@ def run_battery_dispatch() -> OptimalDisptachResults:
         name="load",
     )
 
-    battery = Storage(
+    battery = StandaloneStorage(
         name="battery",
         capacity=300,
-        max_power=200,
+        max_charge_power=200,
+        max_discharge_power=200,
         soc_start=0,
         soc_end=0,
     )
@@ -104,4 +105,4 @@ if __name__ == "__main__":
     logger.info(result.generators.power)
 
     logger.info("battery net power")
-    logger.info(result.storages.net_power)
+    logger.info(result.standalone_storages.net_power)

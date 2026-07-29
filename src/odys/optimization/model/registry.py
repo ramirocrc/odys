@@ -8,22 +8,28 @@ from dataclasses import dataclass
 from enum import Enum
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.charger import Charger
+from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import (
+    CHARGER_VARIABLES,
+    EV_VARIABLES,
     FLEXIBLE_LOAD_VARIABLES,
     GENERATOR_VARIABLES,
     MARKET_VARIABLES,
-    STORAGE_VARIABLES,
+    STANDALONE_STORAGE_VARIABLES,
     ModelVariable,
 )
+from odys.optimization.parameters.charger_parameters import ChargerParameters
+from odys.optimization.parameters.electric_vehicle_parameters import ElectricVehicleParameters
 from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
-from odys.optimization.parameters.storage_parameters import StorageParameters
+from odys.optimization.parameters.standalone_storage_parameters import StandaloneStorageParameters
 
 
 @dataclass(frozen=True)
@@ -31,7 +37,14 @@ class AssetSpec:
     """Specification for a registered asset type."""
 
     entity_class: type[EnergyEntity]
-    parameter_class: type[GeneratorParameters | StorageParameters | MarketParameters | FlexibleLoadParameters]
+    parameter_class: type[
+        GeneratorParameters
+        | StandaloneStorageParameters
+        | MarketParameters
+        | FlexibleLoadParameters
+        | ChargerParameters
+        | ElectricVehicleParameters
+    ]
     dimension: ModelDimension
     variables: tuple[ModelVariable, ...]
 
@@ -46,11 +59,11 @@ class AssetRegistry(Enum):
         variables=tuple(GENERATOR_VARIABLES),
     )
 
-    STORAGE = AssetSpec(
-        entity_class=Storage,
-        parameter_class=StorageParameters,
-        dimension=ModelDimension.Storages,
-        variables=tuple(STORAGE_VARIABLES),
+    STANDALONE_STORAGE = AssetSpec(
+        entity_class=StandaloneStorage,
+        parameter_class=StandaloneStorageParameters,
+        dimension=ModelDimension.StandaloneStorages,
+        variables=tuple(STANDALONE_STORAGE_VARIABLES),
     )
 
     MARKET = AssetSpec(
@@ -65,6 +78,20 @@ class AssetRegistry(Enum):
         parameter_class=FlexibleLoadParameters,
         dimension=ModelDimension.FlexibleLoads,
         variables=tuple(FLEXIBLE_LOAD_VARIABLES),
+    )
+
+    CHARGER = AssetSpec(
+        entity_class=Charger,
+        parameter_class=ChargerParameters,
+        dimension=ModelDimension.Chargers,
+        variables=tuple(CHARGER_VARIABLES),
+    )
+
+    ELECTRIC_VEHICLE = AssetSpec(
+        entity_class=ElectricVehicle,
+        parameter_class=ElectricVehicleParameters,
+        dimension=ModelDimension.EVs,
+        variables=tuple(EV_VARIABLES),
     )
 
     @property
@@ -83,7 +110,16 @@ class AssetRegistry(Enum):
     @classmethod
     def all_parameter_classes(
         cls,
-    ) -> list[type[GeneratorParameters | StorageParameters | MarketParameters | FlexibleLoadParameters]]:
+    ) -> list[
+        type[
+            GeneratorParameters
+            | StandaloneStorageParameters
+            | MarketParameters
+            | FlexibleLoadParameters
+            | ChargerParameters
+            | ElectricVehicleParameters
+        ]
+    ]:
         """Get all parameter classes from registered asset types."""
         return [member.spec.parameter_class for member in cls]
 

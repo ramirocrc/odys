@@ -32,12 +32,16 @@ Use this section to find the public import surface first, then drill into intern
 - `odys.domain`
   - `odys.domain.entities`
     - `odys.domain.entities.base`
+    - `odys.domain.entities.charger`
+    - `odys.domain.entities.electric_vehicle`
     - `odys.domain.entities.fixed_load`
     - `odys.domain.entities.flexible_load`
     - `odys.domain.entities.generator`
     - `odys.domain.entities.market`
     - `odys.domain.entities.portfolio`
+    - `odys.domain.entities.standalone_storage`
     - `odys.domain.entities.storage`
+    - `odys.domain.entities.trip`
   - `odys.domain.exceptions`
   - `odys.domain.objective`
   - `odys.domain.scenarios`
@@ -45,13 +49,16 @@ Use this section to find the public import surface first, then drill into intern
 - `odys.energy_system`
 - `odys.optimization`
   - `odys.optimization.constraints`
+    - `odys.optimization.constraints.charger_constraints`
     - `odys.optimization.constraints.constraints_group`
     - `odys.optimization.constraints.cvar_constraints`
+    - `odys.optimization.constraints.electric_vehicle_constraints`
     - `odys.optimization.constraints.flexible_load_constraints`
     - `odys.optimization.constraints.generator_constraints`
     - `odys.optimization.constraints.market_constraints`
     - `odys.optimization.constraints.model_constraint`
     - `odys.optimization.constraints.scenario_constraints`
+    - `odys.optimization.constraints.standalone_storage_constraints`
     - `odys.optimization.constraints.storage_constraints`
   - `odys.optimization.model`
     - `odys.optimization.model.linopy_converter`
@@ -62,12 +69,14 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.optimization.model.sets`
     - `odys.optimization.model.variables`
   - `odys.optimization.parameters`
+    - `odys.optimization.parameters.charger_parameters`
+    - `odys.optimization.parameters.electric_vehicle_parameters`
     - `odys.optimization.parameters.flexible_load_parameters`
     - `odys.optimization.parameters.generator_parameters`
     - `odys.optimization.parameters.market_parameters`
     - `odys.optimization.parameters.parameters`
     - `odys.optimization.parameters.scenario_parameters`
-    - `odys.optimization.parameters.storage_parameters`
+    - `odys.optimization.parameters.standalone_storage_parameters`
 - `odys.results`
   - `odys.results.dispatch`
   - `odys.results.optimization_results`

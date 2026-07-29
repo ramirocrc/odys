@@ -1,17 +1,12 @@
 """Flexible load parameters for the mathematical optimization model."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, ClassVar
+from collections.abc import Sequence
+from typing import ClassVar
 
 import xarray as xr
 
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.optimization.model.sets import ModelDimension, ModelIndex
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from odys.domain.entities.flexible_load import FlexibleLoad
 
 
 class FlexibleLoadIndex(ModelIndex):

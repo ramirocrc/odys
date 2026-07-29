@@ -11,9 +11,13 @@ Domain entity models.
 ## Modules
 
 - `base`
-- `generator`
+- `charger`
+- `electric_vehicle`
 - `fixed_load`
 - `flexible_load`
+- `generator`
 - `market`
 - `portfolio`
+- `standalone_storage`
 - `storage`
+- `trip`
