@@ -147,13 +147,13 @@ This makes the optimizer weigh the value of cycling the battery against the wear
 
 ## Results
 
-After optimization, access storage results through `result.storages`:
+After optimization, access storage results through `result.standalone_storages`:
 
 ```python
 result = energy_system.optimize()
 
-result.storages.net_power  # charge/discharge per timestep
-result.storages.state_of_charge  # SOC at each timestep
+result.standalone_storages.net_power  # charge/discharge per timestep
+result.standalone_storages.state_of_charge  # SOC at each timestep
 ```
 
 The implementation defines `net_power` as:

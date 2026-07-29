@@ -13,7 +13,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import StochasticScenario
 
@@ -42,6 +42,8 @@ def validate_energy_system_inputs(
     validate_flexible_loads_consistent_with_scenarios(portfolio.flexible_loads, scenarios)
     validate_flexible_load_max_decrease_within_base_profile(portfolio.flexible_loads, scenarios)
     validate_markets_consistent_with_scenarios(markets, scenarios)
+    validate_electric_vehicle_trips(portfolio, number_of_steps)
+    validate_chargers_and_evs_consistency(portfolio)
 
     for scenario in scenarios:
         validate_available_capacity_profiles(scenario, portfolio, number_of_steps)
@@ -50,7 +52,7 @@ def validate_energy_system_inputs(
         validate_enough_power_to_meet_demand(
             scenario,
             portfolio.generators,
-            portfolio.storages,
+            portfolio.standalone_storages,
             markets,
             portfolio.flexible_loads,
         )
@@ -368,7 +370,7 @@ def _validate_flexible_load_power_demand(
 def _max_available_power_profile(
     scenario: StochasticScenario,
     generators: Sequence[Generator],
-    storages: Sequence[Storage],
+    storages: Sequence[StandaloneStorage],
     markets: Sequence[EnergyMarket],
     number_of_steps: int,
 ) -> list[float]:
@@ -376,12 +378,12 @@ def _max_available_power_profile(
 
     Sums, per timestep: each generator's available capacity (its scenario
     ``available_capacity_profiles`` entry if present, otherwise its static
-    ``nominal_power``), each storage's ``max_power``, and each market's
+    ``nominal_power``), each storage's ``max_discharge_power``, and each market's
     ``max_trading_volume_per_step``.
     """
     capacity_profiles = scenario.available_capacity_profiles or {}
 
-    baseline = sum(storage.max_power for storage in storages) + sum(
+    baseline = sum(storage.max_discharge_power for storage in storages) + sum(
         market.max_trading_volume_per_step for market in markets
     )
     profile = [baseline] * number_of_steps
@@ -397,7 +399,7 @@ def _max_available_power_profile(
 def validate_enough_power_to_meet_demand(
     scenario: StochasticScenario,
     generators: Sequence[Generator],
-    storages: Sequence[Storage],
+    storages: Sequence[StandaloneStorage],
     markets: Sequence[EnergyMarket],
     flexible_loads: Sequence[FlexibleLoad] | None = None,
 ) -> None:
@@ -543,7 +545,7 @@ def validate_enough_energy_to_meet_demand(
         else:
             total_generator_energy += generator.nominal_power * number_of_steps * timestep_hours
 
-    total_storage_energy = sum(storage.capacity for storage in portfolio.storages)
+    total_storage_energy = sum(storage.capacity for storage in portfolio.standalone_storages)
     total_market_volume = sum(market.max_trading_volume_per_step for market in markets)
     total_market_energy = total_market_volume * number_of_steps * timestep_hours
 
@@ -554,5 +556,52 @@ def validate_enough_energy_to_meet_demand(
             f"Infeasible problem in scenario '{scenario.name}': total energy demand "
             f"({total_energy_demand}) over the horizon exceeds total available energy "
             f"({total_energy_supply})."
+        )
+        raise OdysValidationError(msg)
+
+
+def validate_electric_vehicle_trips(
+    portfolio: AssetPortfolio,
+    number_of_steps: int,
+) -> None:
+    """Validate that all electric vehicle trips are valid.
+
+    Checks that trips for each vehicle do not overlap and that all trips
+    fall within the optimization horizon.
+
+    Args:
+        portfolio: The asset portfolio containing electric vehicles.
+        number_of_steps: Number of time steps in the optimization horizon.
+
+    Raises:
+        OdysValidationError: If any trip validation fails.
+
+    """
+    for ev in portfolio.electric_vehicles:
+        ev.validate_no_overlapping_trips()
+        ev.validate_trips_within_horizon(number_of_steps)
+        ev.validate_min_soc_at_departure_feasible()
+
+
+def validate_chargers_and_evs_consistency(portfolio: AssetPortfolio) -> None:
+    """Validate that chargers and electric vehicles are either both present or both absent.
+
+    Electric vehicles can only charge through a charger, and a charger without
+    electric vehicles serves no purpose.
+
+    Args:
+        portfolio: The asset portfolio containing chargers and electric vehicles.
+
+    Raises:
+        OdysValidationError: If the portfolio contains chargers without electric
+            vehicles, or electric vehicles without chargers.
+
+    """
+    number_of_chargers = len(portfolio.chargers)
+    number_of_evs = len(portfolio.electric_vehicles)
+    if (number_of_chargers > 0) != (number_of_evs > 0):
+        msg = (
+            "Portfolio must contain both chargers and electric vehicles, or neither: "
+            f"found {number_of_chargers} charger(s) and {number_of_evs} electric vehicle(s)"
         )
         raise OdysValidationError(msg)

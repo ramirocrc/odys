@@ -10,9 +10,11 @@ Model parameter builders.
 
 ## Modules
 
+- `charger_parameters`
+- `electric_vehicle_parameters`
 - `flexible_load_parameters`
 - `generator_parameters`
 - `market_parameters`
 - `parameters`
 - `scenario_parameters`
-- `storage_parameters`
+- `standalone_storage_parameters`

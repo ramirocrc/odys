@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
 
 
@@ -13,7 +13,8 @@ def battery_base_params() -> MappingProxyType[str, Any]:
     return MappingProxyType({
         "name": "test_battery",
         "capacity": 100.0,
-        "max_power": 50.0,
+        "max_charge_power": 50.0,
+        "max_discharge_power": 50.0,
         "efficiency_charging": 0.9,
         "efficiency_discharging": 0.85,
         "soc_start": 0.5,
@@ -24,7 +25,8 @@ def battery_base_params() -> MappingProxyType[str, Any]:
     ("param_name", "invalid_value", "expected_match"),
     [
         ("capacity", 0.0, "Input should be greater than 0"),
-        ("max_power", 0.0, "Input should be greater than 0"),
+        ("max_charge_power", 0.0, "Input should be greater than 0"),
+        ("max_discharge_power", -0.1, "Input should be greater than or equal to 0"),
         ("efficiency_charging", 0.0, "Input should be greater than 0"),
         ("efficiency_charging", 1.1, "Input should be less than or equal to 1"),
         ("efficiency_discharging", 0.0, "Input should be greater than 0"),
@@ -50,7 +52,7 @@ def test_battery_creation_with_invalid_parameters_raises_error(
     base_params = dict(battery_base_params)
     base_params[param_name] = invalid_value
     with pytest.raises(ValidationError, match=expected_match):
-        Storage(**base_params)
+        StandaloneStorage(**base_params)
 
 
 @pytest.mark.parametrize(
@@ -72,10 +74,10 @@ def test_soc_values_outside_bounds_raises_error(
     invalid_battery_params = base_params | invalid_parameters  # The latter takes priority when same key exists
 
     with pytest.raises(OdysValidationError, match=expected_match):
-        Storage(**invalid_battery_params)
+        StandaloneStorage(**invalid_battery_params)
 
 
 def test_degradation_cost_defaults_to_zero(battery_base_params: MappingProxyType[str, Any]) -> None:
-    storage = Storage(**dict(battery_base_params))
+    storage = StandaloneStorage(**dict(battery_base_params))
 
     assert storage.degradation_cost == 0.0

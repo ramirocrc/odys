@@ -59,7 +59,7 @@ The portfolio has convenience properties to get assets by type:
 
 ```python
 portfolio.generators  # tuple of all Generator assets
-portfolio.storages  # tuple of all Storage assets
+portfolio.standalone_storages  # tuple of all StandaloneStorage assets
 portfolio.fixed_loads  # tuple of all FixedLoad assets
 portfolio.flexible_loads  # tuple of all FlexibleLoad assets
 ```

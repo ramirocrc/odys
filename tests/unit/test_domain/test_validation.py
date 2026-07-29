@@ -4,16 +4,21 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.charger import Charger
+from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
+from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import StochasticScenario
 from odys.domain.validation import (
     validate_available_capacity_profiles,
+    validate_chargers_and_evs_consistency,
+    validate_electric_vehicle_trips,
     validate_enough_energy_to_meet_demand,
     validate_enough_power_to_meet_demand,
     validate_fixed_loads_consistent_with_scenarios,
@@ -26,7 +31,8 @@ from odys.domain.validation import (
 NOMINAL_POWER = 100.0
 VARIABLE_COST = 50.0
 STORAGE_CAPACITY = 50.0
-STORAGE_MAX_POWER = 25.0
+STORAGE_MAX_CHARGE_POWER = 25.0
+STORAGE_MAX_DISCHARGE_POWER = 25.0
 STORAGE_EFFICIENCY = 0.9
 SOC_START = 0.5
 MAX_TRADING_VOLUME = 100.0
@@ -45,11 +51,12 @@ def generator() -> Generator:
 
 
 @pytest.fixture
-def storage() -> Storage:
-    return Storage(
+def storage() -> StandaloneStorage:
+    return StandaloneStorage(
         name="bat1",
         capacity=STORAGE_CAPACITY,
-        max_power=STORAGE_MAX_POWER,
+        max_charge_power=STORAGE_MAX_CHARGE_POWER,
+        max_discharge_power=STORAGE_MAX_DISCHARGE_POWER,
         efficiency_charging=STORAGE_EFFICIENCY,
         efficiency_discharging=STORAGE_EFFICIENCY,
         soc_start=SOC_START,
@@ -72,7 +79,7 @@ def flexible_load() -> FlexibleLoad:
 
 
 @pytest.fixture
-def portfolio(generator: Generator, storage: Storage, load: FixedLoad) -> AssetPortfolio:
+def portfolio(generator: Generator, storage: StandaloneStorage, load: FixedLoad) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator, storage, load])
 
 
@@ -328,10 +335,10 @@ class TestValidateAvailableCapacityProfiles:
 
 
 class TestValidateEnoughPowerToMeetDemand:
-    def test_valid(self, generator: Generator, storage: Storage, scenario: StochasticScenario) -> None:
+    def test_valid(self, generator: Generator, storage: StandaloneStorage, scenario: StochasticScenario) -> None:
         validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
 
-    def test_no_load_profiles(self, generator: Generator, storage: Storage) -> None:
+    def test_no_load_profiles(self, generator: Generator, storage: StandaloneStorage) -> None:
         scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
         with pytest.raises(OdysValidationError, match="Load profile is empty"):
             validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
@@ -339,13 +346,13 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_market_only_no_loads_is_valid(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         market: EnergyMarket,
     ) -> None:
         scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
         validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
 
-    def test_demand_exceeds_capacity(self, generator: Generator, storage: Storage) -> None:
+    def test_demand_exceeds_capacity(self, generator: Generator, storage: StandaloneStorage) -> None:
         scenario = StochasticScenario(
             name="s1",
             probability=1.0,
@@ -357,7 +364,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_feasible_after_decrease(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         scenario = StochasticScenario(
@@ -376,7 +383,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_unrelated_flexible_load_name_is_skipped(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         scenario = StochasticScenario(
@@ -389,7 +396,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_infeasible_even_with_decrease(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         scenario = StochasticScenario(
@@ -409,7 +416,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_feasible_with_decrease(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         scenario = StochasticScenario(
@@ -428,7 +435,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_market_volume_counted_toward_available_power(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         market: EnergyMarket,
     ) -> None:
         scenario = StochasticScenario(
@@ -441,7 +448,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_infeasible_even_with_market(
         self,
         generator: Generator,
-        storage: Storage,
+        storage: StandaloneStorage,
         market: EnergyMarket,
     ) -> None:
         scenario = StochasticScenario(
@@ -452,7 +459,11 @@ class TestValidateEnoughPowerToMeetDemand:
         with pytest.raises(OdysValidationError, match="Infeasible problem"):
             validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
 
-    def test_uses_available_capacity_profile_per_timestep(self, generator: Generator, storage: Storage) -> None:
+    def test_uses_available_capacity_profile_per_timestep(
+        self,
+        generator: Generator,
+        storage: StandaloneStorage,
+    ) -> None:
         scenario = StochasticScenario(
             name="s1",
             probability=1.0,
@@ -479,7 +490,7 @@ class TestValidateEnoughEnergyToMeetDemand:
     def test_valid(self, portfolio: AssetPortfolio, scenario: StochasticScenario) -> None:
         validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
 
-    def test_infeasible_energy_but_feasible_power(self, storage: Storage, load: FixedLoad) -> None:
+    def test_infeasible_energy_but_feasible_power(self, storage: StandaloneStorage, load: FixedLoad) -> None:
         portfolio = AssetPortfolio([storage, load])
         scenario = StochasticScenario(
             name="s1",
@@ -536,3 +547,138 @@ class TestValidateEnoughEnergyToMeetDemand:
             flexible_load_base_profiles={"unrelated_load": [40.0, 40.0, 40.0, 40.0]},
         )
         validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+
+
+# --- validate_electric_vehicle_trips ---
+
+
+EV_CAPACITY = 50.0
+EV_MAX_CHARGE_POWER = 22.0
+EV_SOC_START = 0.8
+TRIP_ENERGY = 5.0
+EV_NUMBER_OF_STEPS = 24
+
+
+class TestValidateElectricVehicleTrips:
+    def test_valid(self) -> None:
+        trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=TRIP_ENERGY)
+        trip2 = Trip(name="evening", start_time=17, end_time=19, energy_consumption=TRIP_ENERGY)
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=EV_SOC_START,
+            trips=(trip1, trip2),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_no_evs_no_profiles(self) -> None:
+        portfolio = AssetPortfolio()
+        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_overlapping_trips(self) -> None:
+        trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=TRIP_ENERGY)
+        trip2 = Trip(name="overlapping", start_time=9, end_time=11, energy_consumption=TRIP_ENERGY)
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=EV_SOC_START,
+            trips=(trip1, trip2),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        with pytest.raises(OdysValidationError, match="overlap"):
+            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_trips_beyond_horizon(self) -> None:
+        trip1 = Trip(name="late_trip", start_time=20, end_time=30, energy_consumption=TRIP_ENERGY)
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=EV_SOC_START,
+            trips=(trip1,),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        with pytest.raises(OdysValidationError, match="beyond"):
+            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_min_soc_at_departure_infeasible_at_t0(self) -> None:
+        trip = Trip(
+            name="early_trip",
+            start_time=0,
+            end_time=1,
+            energy_consumption=TRIP_ENERGY,
+            min_soc_at_departure=0.8,
+        )
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=0.5,
+            trips=(trip,),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        with pytest.raises(OdysValidationError, match=r"min_soc_at_departure.*soc_start"):
+            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+    def test_min_soc_at_departure_feasible_at_t0(self) -> None:
+        trip = Trip(
+            name="early_trip",
+            start_time=0,
+            end_time=1,
+            energy_consumption=TRIP_ENERGY,
+            min_soc_at_departure=0.3,
+        )
+        ev = ElectricVehicle(
+            name="ev1",
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=0.5,
+            trips=(trip,),
+        )
+        portfolio = AssetPortfolio(assets=[ev])
+        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
+
+
+# --- validate_chargers_and_evs_consistency ---
+
+
+CHARGER_MAX_POWER = 50.0
+
+
+def _make_ev() -> ElectricVehicle:
+    return ElectricVehicle(
+        name="ev1",
+        capacity=EV_CAPACITY,
+        max_charge_power=EV_MAX_CHARGE_POWER,
+        max_discharge_power=0.0,
+        soc_start=EV_SOC_START,
+        trips=(),
+    )
+
+
+class TestValidateChargersAndEvsConsistency:
+    def test_both_present(self) -> None:
+        portfolio = AssetPortfolio(assets=[_make_ev(), Charger(name="charger1", max_power=CHARGER_MAX_POWER)])
+        validate_chargers_and_evs_consistency(portfolio)
+
+    def test_both_absent(self) -> None:
+        portfolio = AssetPortfolio()
+        validate_chargers_and_evs_consistency(portfolio)
+
+    def test_evs_without_chargers(self) -> None:
+        portfolio = AssetPortfolio(assets=[_make_ev()])
+        with pytest.raises(OdysValidationError, match="both chargers and electric vehicles"):
+            validate_chargers_and_evs_consistency(portfolio)
+
+    def test_chargers_without_evs(self) -> None:
+        portfolio = AssetPortfolio(assets=[Charger(name="charger1", max_power=CHARGER_MAX_POWER)])
+        with pytest.raises(OdysValidationError, match="both chargers and electric vehicles"):
+            validate_chargers_and_evs_consistency(portfolio)

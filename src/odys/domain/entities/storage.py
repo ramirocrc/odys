@@ -1,9 +1,10 @@
 """Energy storage asset implementation.
 
-This module provides the Storage class for modeling energy storage devices
-in energy system optimization problems.
+This module provides the Storage abstract base class for modeling energy storage
+devices in energy system optimization problems.
 """
 
+from abc import ABC, abstractmethod
 from typing import Self
 
 from pydantic import Field, model_validator
@@ -12,7 +13,7 @@ from odys.domain.entities.base import EnergyEntity
 from odys.domain.exceptions import OdysValidationError
 
 
-class Storage(EnergyEntity):
+class Storage(EnergyEntity, ABC):
     """Represents a storage system in the energy system.
 
     This class models storage assets with various operational constraints
@@ -25,10 +26,15 @@ class Storage(EnergyEntity):
         gt=0,
         description="Storage capacity in MWh.",
     )
-    max_power: float = Field(
+    max_charge_power: float = Field(
         strict=True,
         gt=0,
-        description="Maximum power in MW.",
+        description="Maximum charging power in MW.",
+    )
+    max_discharge_power: float = Field(
+        strict=True,
+        ge=0,
+        description="Maximum discharging power in MW. 0 = charge-only.",
     )
     efficiency_charging: float = Field(
         default=1,
@@ -107,3 +113,8 @@ class Storage(EnergyEntity):
             msg = f"soc_min ({self.soc_min}) must be < soc_max ({self.soc_max})."
             raise OdysValidationError(msg)
         return self
+
+    @abstractmethod
+    def asset_type(self) -> str:
+        """Return the type of storage asset."""
+        ...

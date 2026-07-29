@@ -60,34 +60,64 @@ class ModelVariable(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
         lower_bound_type=BoundType.UNBOUNDED,
     )
-    STORAGE_POWER_IN = VariableSpec(
-        name="storage_power_in",
+    STANDALONE_STORAGE_POWER_IN = VariableSpec(
+        name="standalone_storage_power_in",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    STORAGE_POWER_NET = VariableSpec(
-        name="storage_net_power",
+    STANDALONE_STORAGE_POWER_NET = VariableSpec(
+        name="standalone_storage_net_power",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
         lower_bound_type=BoundType.UNBOUNDED,
     )
-    STORAGE_POWER_OUT = VariableSpec(
-        name="storage_power_out",
+    STANDALONE_STORAGE_POWER_OUT = VariableSpec(
+        name="standalone_storage_power_out",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    STORAGE_SOC = VariableSpec(
-        name="storage_soc",
+    STANDALONE_STORAGE_SOC = VariableSpec(
+        name="standalone_storage_soc",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    STORAGE_CHARGE_MODE = VariableSpec(
-        name="storage_charge_mode",
+    STANDALONE_STORAGE_CHARGE_MODE = VariableSpec(
+        name="standalone_storage_charge_mode",
         is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Storages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
+        lower_bound_type=BoundType.UNBOUNDED,
+    )
+    EV_POWER_IN = VariableSpec(
+        name="ev_power_in",
+        is_binary=False,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
+        lower_bound_type=BoundType.NON_NEGATIVE,
+    )
+    EV_POWER_NET = VariableSpec(
+        name="ev_net_power",
+        is_binary=False,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
+        lower_bound_type=BoundType.UNBOUNDED,
+    )
+    EV_POWER_OUT = VariableSpec(
+        name="ev_power_out",
+        is_binary=False,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
+        lower_bound_type=BoundType.NON_NEGATIVE,
+    )
+    EV_SOC = VariableSpec(
+        name="ev_soc",
+        is_binary=False,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
+        lower_bound_type=BoundType.NON_NEGATIVE,
+    )
+    EV_CHARGE_MODE = VariableSpec(
+        name="ev_charge_mode",
+        is_binary=True,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
         lower_bound_type=BoundType.UNBOUNDED,
     )
     MARKET_SELL = VariableSpec(
@@ -114,6 +144,12 @@ class ModelVariable(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.FlexibleLoads],
         lower_bound_type=BoundType.UNBOUNDED,
     )
+    CHARGER_EV_ASSIGNMENT = VariableSpec(
+        name="charger_ev_assignment",
+        is_binary=True,
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Chargers, ModelDimension.EVs],
+        lower_bound_type=BoundType.UNBOUNDED,
+    )
     VALUE_AT_RISK = VariableSpec(
         name="value_at_risk",
         is_binary=False,
@@ -138,16 +174,6 @@ class ModelVariable(Enum):
         return self.value.dimensions
 
     @property
-    def asset_dimension(self) -> ModelDimension | None:
-        """Get the asset dimension (Generators, Storages, or FlexibleLoads) if present."""
-        if self.value.dimensions is None:
-            return None
-        for dim in self.value.dimensions:
-            if dim in (ModelDimension.Generators, ModelDimension.Storages, ModelDimension.FlexibleLoads):
-                return dim
-        return None
-
-    @property
     def lower_bound_type(self) -> BoundType:
         """Return the lower bound type for this variable."""
         return self.value.lower_bound_type
@@ -161,13 +187,23 @@ class ModelVariable(Enum):
 GENERATOR_VARIABLES = [
     var for var in ModelVariable if var.value.dimensions and ModelDimension.Generators in var.value.dimensions
 ]
-STORAGE_VARIABLES = [
-    var for var in ModelVariable if var.value.dimensions and ModelDimension.Storages in var.value.dimensions
+STANDALONE_STORAGE_VARIABLES = [
+    var for var in ModelVariable if var.value.dimensions and ModelDimension.StandaloneStorages in var.value.dimensions
 ]
 FLEXIBLE_LOAD_VARIABLES = [
     var for var in ModelVariable if var.value.dimensions and ModelDimension.FlexibleLoads in var.value.dimensions
 ]
 MARKET_VARIABLES = [
     var for var in ModelVariable if var.value.dimensions and ModelDimension.Markets in var.value.dimensions
+]
+CHARGER_VARIABLES = [
+    var for var in ModelVariable if var.value.dimensions and ModelDimension.Chargers in var.value.dimensions
+]
+EV_VARIABLES = [
+    var
+    for var in ModelVariable
+    if var.value.dimensions
+    and ModelDimension.EVs in var.value.dimensions
+    and var is not ModelVariable.CHARGER_EV_ASSIGNMENT
 ]
 CVAR_VARIABLES = [ModelVariable.VALUE_AT_RISK, ModelVariable.SHORTFALL_REVENUE]

@@ -10,10 +10,12 @@ from types import MappingProxyType
 from typing import TypeVar
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.charger import Charger
+from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.model.registry import AssetRegistry
 
@@ -28,7 +30,10 @@ class AssetPortfolio:
     to add, retrieve, and filter assets by type.
     """
 
-    def __init__(self, assets: Iterable[EnergyEntity] | None = None) -> None:
+    def __init__(
+        self,
+        assets: Iterable[EnergyEntity] | None = None,
+    ) -> None:
         """Initialize an asset portfolio.
 
         Args:
@@ -99,14 +104,14 @@ class AssetPortfolio:
         return self._get_assets_by_type(Generator)
 
     @property
-    def storages(self) -> tuple[Storage, ...]:
-        """Get all storages in the portfolio.
+    def standalone_storages(self) -> tuple[StandaloneStorage, ...]:
+        """Get all standalone storages in the portfolio.
 
         Returns:
-            A tuple containing all Storage assets.
+            A tuple containing all StandaloneStorage assets.
 
         """
-        return self._get_assets_by_type(Storage)
+        return self._get_assets_by_type(StandaloneStorage)
 
     @property
     def fixed_loads(self) -> tuple[FixedLoad, ...]:
@@ -137,6 +142,26 @@ class AssetPortfolio:
 
         """
         return tuple(asset for asset in self._assets.values() if isinstance(asset, (FixedLoad, FlexibleLoad)))
+
+    @property
+    def electric_vehicles(self) -> tuple[ElectricVehicle, ...]:
+        """Get all electric vehicles in the portfolio.
+
+        Returns:
+            A tuple containing all ElectricVehicle assets.
+
+        """
+        return self._get_assets_by_type(ElectricVehicle)
+
+    @property
+    def chargers(self) -> tuple[Charger, ...]:
+        """Get all chargers in the portfolio.
+
+        Returns:
+            A tuple containing all Charger assets.
+
+        """
+        return self._get_assets_by_type(Charger)
 
     def assets_by_type(self, asset_type: AssetRegistry) -> tuple[EnergyEntity, ...]:
         """Get all assets of a specific type from the portfolio.

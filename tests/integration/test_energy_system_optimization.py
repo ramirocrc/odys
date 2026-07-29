@@ -10,7 +10,7 @@ from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
 
@@ -73,12 +73,13 @@ def expensive_generator() -> Generator:
 
 
 @pytest.fixture
-def perfect_battery() -> Storage:
+def perfect_battery() -> StandaloneStorage:
     """Battery with perfect efficiency fixture."""
-    return Storage(
+    return StandaloneStorage(
         name="energy_storage",
         capacity=STANDARD_STORAGE_CAPACITY,
-        max_power=STANDARD_GENERATOR_POWER,
+        max_charge_power=STANDARD_GENERATOR_POWER,
+        max_discharge_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=PERFECT_EFFICIENCY,
         efficiency_discharging=PERFECT_EFFICIENCY,
         soc_start=0.0,
@@ -232,10 +233,11 @@ def _create_generator_and_battery_system() -> SystemTestCase:
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=MEDIUM_COST,
     )
-    battery = Storage(
+    battery = StandaloneStorage(
         name="energy_storage",
         capacity=STANDARD_STORAGE_CAPACITY,
-        max_power=STANDARD_GENERATOR_POWER,
+        max_charge_power=STANDARD_GENERATOR_POWER,
+        max_discharge_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=PERFECT_EFFICIENCY,
         efficiency_discharging=PERFECT_EFFICIENCY,
         soc_start=0.0,
@@ -254,7 +256,7 @@ def _create_generator_and_battery_system() -> SystemTestCase:
     expected_storage_results = _create_expected_dataframe(
         {battery.name: [0.5, 1.0, 0.5, 0.0, 0.5]},
         len(STORAGE_TEST_PROFILE),
-        "storage",
+        "standalone_storage",
     )
 
     return SystemTestCase(
@@ -276,10 +278,11 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=MEDIUM_COST,
     )
-    battery = Storage(
+    battery = StandaloneStorage(
         name="battery",
         capacity=STANDARD_STORAGE_CAPACITY,
-        max_power=STANDARD_GENERATOR_POWER,
+        max_charge_power=STANDARD_GENERATOR_POWER,
+        max_discharge_power=STANDARD_GENERATOR_POWER,
         efficiency_charging=HALF_EFFICIENCY,
         efficiency_discharging=HALF_EFFICIENCY,
         soc_start=0.0,
@@ -298,7 +301,7 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
     expected_storage_results = _create_expected_dataframe(
         {battery.name: [0.25, 0.5, 0.5]},
         len(SHORT_STORAGE_PROFILE),
-        "storage",
+        "standalone_storage",
     )
 
     return SystemTestCase(
@@ -478,7 +481,7 @@ def test_energy_system_optimization(test_id: str, system_factory: Callable[[], S
         assert arr.size > 0
 
     if test_system.expected_storage_results is not None:
-        stor_dispatch = next(iter(result.storages))
+        stor_dispatch = next(iter(result.standalone_storages))
         assert stor_dispatch.soc is not None
         arr = stor_dispatch.soc.to_numpy()
         assert arr.size > 0

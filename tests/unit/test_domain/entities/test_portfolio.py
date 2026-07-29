@@ -3,9 +3,11 @@
 import pytest
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.charger import Charger
+from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
 
 
@@ -30,12 +32,13 @@ def sample_generator_2() -> Generator:
 
 
 @pytest.fixture
-def sample_battery() -> Storage:
+def sample_battery() -> StandaloneStorage:
     """Create a sample battery for testing."""
-    return Storage(
+    return StandaloneStorage(
         name="test_battery",
         capacity=100.0,
-        max_power=50.0,
+        max_charge_power=50.0,
+        max_discharge_power=50.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.85,
         soc_start=0.5,
@@ -46,7 +49,7 @@ def sample_battery() -> Storage:
 def portfolio_with_assets(
     sample_generator_1: Generator,
     sample_generator_2: Generator,
-    sample_battery: Storage,
+    sample_battery: StandaloneStorage,
 ) -> AssetPortfolio:
     """Create a portfolio with sample assets for testing."""
     return AssetPortfolio(assets=[sample_generator_1, sample_generator_2, sample_battery])
@@ -62,7 +65,7 @@ def test_empty_portfolio(sample_generator_1: Generator) -> None:
     ("asset_name", "expected_asset_type"),
     [
         ("test_generator_1", Generator),
-        ("test_battery", Storage),
+        ("test_battery", StandaloneStorage),
     ],
 )
 def test_get_asset_returns_correct_asset(
@@ -85,17 +88,17 @@ def test_get_asset_raises_key_error_for_nonexistent_asset(portfolio_with_assets:
 def test_portfolio_properties_return_correct_assets(
     sample_generator_1: Generator,
     sample_generator_2: Generator,
-    sample_battery: Storage,
+    sample_battery: StandaloneStorage,
 ) -> None:
     portfolio = AssetPortfolio(assets=[sample_generator_1, sample_generator_2, sample_battery])
 
     generators = portfolio.generators
-    storages = portfolio.storages
+    standalone_storages = portfolio.standalone_storages
     assert sample_generator_1 is generators[0]
     assert sample_generator_2 is generators[1]
-    assert sample_battery is storages[0]
+    assert sample_battery is standalone_storages[0]
 
-    assert (generators + storages) == (sample_generator_1, sample_generator_2, sample_battery)
+    assert (generators + standalone_storages) == (sample_generator_1, sample_generator_2, sample_battery)
 
 
 def test_constructor_raises_error_for_duplicate_names_in_iterable() -> None:
@@ -110,3 +113,52 @@ def test_empty_portfolio_is_allowed() -> None:
     """Test that an empty portfolio can be created."""
     portfolio = AssetPortfolio()
     assert len(portfolio.assets) == 0
+
+
+def test_portfolio_electric_vehicles_property() -> None:
+    """Test that electric_vehicles property returns only ElectricVehicle instances."""
+    ev1 = ElectricVehicle(
+        name="ev1",
+        capacity=50.0,
+        max_charge_power=22.0,
+        max_discharge_power=0.0,
+        soc_start=0.5,
+        trips=(),
+    )
+    ev2 = ElectricVehicle(
+        name="ev2",
+        capacity=75.0,
+        max_charge_power=50.0,
+        max_discharge_power=11.0,
+        soc_start=0.8,
+        trips=(),
+    )
+    gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
+    portfolio = AssetPortfolio(assets=[ev1, ev2, gen])
+
+    evs = portfolio.electric_vehicles
+    assert len(evs) == len([ev1, ev2])
+    assert ev1 is evs[0]
+    assert ev2 is evs[1]
+
+
+def test_portfolio_chargers_property() -> None:
+    """Test that chargers property returns only Charger instances."""
+    charger1 = Charger(name="charger1", max_power=22.0)
+    charger2 = Charger(name="charger2", max_power=50.0)
+    gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
+    portfolio = AssetPortfolio(assets=[charger1, charger2, gen])
+
+    chargers = portfolio.chargers
+    assert len(chargers) == len([charger1, charger2])
+    assert charger1 is chargers[0]
+    assert charger2 is chargers[1]
+
+
+def test_portfolio_empty_evs_and_chargers() -> None:
+    """Test that electric_vehicles and chargers properties return empty tuples when no EVs/chargers."""
+    gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
+    portfolio = AssetPortfolio(assets=[gen])
+
+    assert portfolio.electric_vehicles == ()
+    assert portfolio.chargers == ()

@@ -67,5 +67,6 @@ docs/_build/
 
 # === Other ===
 ignored/
+.opencode/
 AGENTS.md
 DOCS_GUIDELINES.md

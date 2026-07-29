@@ -9,11 +9,13 @@ from datetime import timedelta
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.objective import Objective
+from odys.optimization.parameters.charger_parameters import ChargerParameters
+from odys.optimization.parameters.electric_vehicle_parameters import ElectricVehicleParameters
 from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
 from odys.optimization.parameters.generator_parameters import GeneratorParameters
 from odys.optimization.parameters.market_parameters import MarketParameters
 from odys.optimization.parameters.scenario_parameters import ScenarioParameters
-from odys.optimization.parameters.storage_parameters import StorageParameters
+from odys.optimization.parameters.standalone_storage_parameters import StandaloneStorageParameters
 
 
 class EnergySystemParameters(BaseModel):
@@ -23,10 +25,12 @@ class EnergySystemParameters(BaseModel):
 
     timestep: timedelta
     generators: GeneratorParameters
-    storages: StorageParameters
+    standalone_storages: StandaloneStorageParameters
     flexible_loads: FlexibleLoadParameters
     markets: MarketParameters
     scenarios: ScenarioParameters
+    chargers: ChargerParameters
+    electric_vehicles: ElectricVehicleParameters
     objective: Objective
 
     @property
@@ -35,9 +39,9 @@ class EnergySystemParameters(BaseModel):
         return not self.generators.is_empty
 
     @property
-    def has_storages(self) -> bool:
-        """Return True if there are storages."""
-        return not self.storages.is_empty
+    def has_standalone_storages(self) -> bool:
+        """Return True if there are standalone storages."""
+        return not self.standalone_storages.is_empty
 
     @property
     def has_flexible_loads(self) -> bool:
@@ -48,3 +52,13 @@ class EnergySystemParameters(BaseModel):
     def has_markets(self) -> bool:
         """Return True if there are markets."""
         return not self.markets.is_empty
+
+    @property
+    def has_chargers(self) -> bool:
+        """Return True if there are chargers."""
+        return not self.chargers.is_empty
+
+    @property
+    def has_electric_vehicles(self) -> bool:
+        """Return True if there are electric vehicles."""
+        return not self.electric_vehicles.is_empty

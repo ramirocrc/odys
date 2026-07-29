@@ -1,7 +1,7 @@
 import pytest
 import xarray as xr
 
-from odys.results.dispatch import FlexibleLoadDispatch, GeneratorDispatch, MarketDispatch, StorageDispatch
+from odys.results.dispatch import FlexibleLoadDispatch, GeneratorDispatch, MarketDispatch, StandaloneStorageDispatch
 
 EXPECTED_GENERATOR_COUNT = 2
 EXPECTED_STORAGE_COUNT = 2
@@ -11,78 +11,78 @@ EXPECTED_SERIES_LENGTH = EXPECTED_STORAGE_COUNT * EXPECTED_TIMESTEP_COUNT
 
 
 @pytest.fixture
-def storage_dispatch() -> StorageDispatch:
+def storage_dispatch() -> StandaloneStorageDispatch:
     storage_names = ["storage_1", "storage_2"]
     timesteps = [0, 1]
 
     net_power = xr.DataArray(
         [[10.0, 20.0], [30.0, 40.0]],
-        dims=["storage", "time"],
-        coords={"storage": storage_names, "time": timesteps},
+        dims=["standalone_storage", "time"],
+        coords={"standalone_storage": storage_names, "time": timesteps},
     )
 
     soc = xr.DataArray(
         [[50.0, 60.0], [70.0, 80.0]],
-        dims=["storage", "time"],
-        coords={"storage": storage_names, "time": timesteps},
+        dims=["standalone_storage", "time"],
+        coords={"standalone_storage": storage_names, "time": timesteps},
     )
 
     charge_mode = xr.DataArray(
         [[1, 0], [0, 1]],
-        dims=["storage", "time"],
-        coords={"storage": storage_names, "time": timesteps},
+        dims=["standalone_storage", "time"],
+        coords={"standalone_storage": storage_names, "time": timesteps},
     )
 
-    return StorageDispatch(
+    return StandaloneStorageDispatch(
         net_power=net_power,
         soc=soc,
         charge_mode=charge_mode,
     )
 
 
-def test_getitem(storage_dispatch: StorageDispatch) -> None:
+def test_getitem(storage_dispatch: StandaloneStorageDispatch) -> None:
     storage = storage_dispatch["storage_1"]
 
-    assert isinstance(storage, StorageDispatch)
+    assert isinstance(storage, StandaloneStorageDispatch)
     assert len(storage.net_power) == EXPECTED_TIMESTEP_COUNT
 
 
-def test_iter(storage_dispatch: StorageDispatch) -> None:
+def test_iter(storage_dispatch: StandaloneStorageDispatch) -> None:
     items = list(storage_dispatch)
 
     assert len(items) == EXPECTED_STORAGE_COUNT
-    assert all(isinstance(item, StorageDispatch) for item in items)
+    assert all(isinstance(item, StandaloneStorageDispatch) for item in items)
 
 
-def test_len(storage_dispatch: StorageDispatch) -> None:
+def test_len(storage_dispatch: StandaloneStorageDispatch) -> None:
     assert len(storage_dispatch) == EXPECTED_STORAGE_COUNT
 
 
-def test_contains(storage_dispatch: StorageDispatch) -> None:
+def test_contains(storage_dispatch: StandaloneStorageDispatch) -> None:
     assert "storage_1" in storage_dispatch
     assert "storage_2" in storage_dispatch
     assert "storage_3" not in storage_dispatch
 
 
-def test_net_power(storage_dispatch: StorageDispatch) -> None:
+def test_net_power(storage_dispatch: StandaloneStorageDispatch) -> None:
     net_power = storage_dispatch.net_power
 
     assert len(net_power) == EXPECTED_SERIES_LENGTH
 
 
-def test_soc(storage_dispatch: StorageDispatch) -> None:
+def test_soc(storage_dispatch: StandaloneStorageDispatch) -> None:
     soc = storage_dispatch.soc
 
     assert len(soc) == EXPECTED_SERIES_LENGTH
 
 
-def test_charge_mode(storage_dispatch: StorageDispatch) -> None:
+def test_charge_mode(storage_dispatch: StandaloneStorageDispatch) -> None:
     charge_mode = storage_dispatch.charge_mode
 
     assert len(charge_mode) == EXPECTED_SERIES_LENGTH
 
 
-def test_to_dataset(storage_dispatch: StorageDispatch) -> None:
+def test_to_dataset(storage_dispatch: StandaloneStorageDispatch) -> None:
     dataset = storage_dispatch.to_dataset()
 
     assert isinstance(dataset, xr.Dataset)
@@ -91,7 +91,7 @@ def test_to_dataset(storage_dispatch: StorageDispatch) -> None:
     assert "charge_mode" in dataset.data_vars
 
 
-def test_to_dataframe(storage_dispatch: StorageDispatch) -> None:
+def test_to_dataframe(storage_dispatch: StandaloneStorageDispatch) -> None:
     dataframe = storage_dispatch.to_dataframe()
 
     assert not dataframe.empty
@@ -100,10 +100,10 @@ def test_to_dataframe(storage_dispatch: StorageDispatch) -> None:
     assert "charge_mode" in dataframe.columns
 
 
-def test_repr(storage_dispatch: StorageDispatch) -> None:
+def test_repr(storage_dispatch: StandaloneStorageDispatch) -> None:
     representation = repr(storage_dispatch)
 
-    assert "StorageDispatch" in representation
+    assert "StandaloneStorageDispatch" in representation
 
 
 @pytest.fixture
