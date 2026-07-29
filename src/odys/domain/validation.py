@@ -394,6 +394,7 @@ def validate_electric_vehicle_trips(
     for ev in portfolio.electric_vehicles:
         ev.validate_no_overlapping_trips()
         ev.validate_trips_within_horizon(number_of_steps)
+        ev.validate_min_soc_at_departure_feasible()
 
 
 def validate_chargers_and_evs_consistency(portfolio: AssetPortfolio) -> None:

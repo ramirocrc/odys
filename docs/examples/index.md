@@ -16,6 +16,7 @@ Each example is self-contained -- you can copy-paste it and run it directly.
 | [Flexible Load Market](flexible_load_market.md) | Shifting industrial consumption to low-price hours |
 | [Market Arbitrage](market_arbitrage.md) | Choosing between self-generation and market purchases |
 | [CVaR Market Risk](cvar_market_risk.md) | Risk-aware market allocation under uncertainty |
+| [EV Fleet Optimization](ev_fleet_optimization.md) | V2G arbitrage, trip constraints, and charger competition |
 
 ## Running the examples
 
@@ -27,4 +28,5 @@ python examples/battery_dispatch.py
 python examples/flexible_load_market.py
 python examples/market_arbitrage.py
 python examples/cvar_market_risk.py
+python examples/ev_fleet_optimization.py
 ```

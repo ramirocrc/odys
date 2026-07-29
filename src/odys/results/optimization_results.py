@@ -8,6 +8,7 @@ from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import ModelVariable
 from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.results.dispatch import (
+    ChargerDispatch,
     ElectricVehicleDispatch,
     FlexibleLoadDispatch,
     GeneratorDispatch,
@@ -24,6 +25,7 @@ class OptimalDisptachResults:
     """
 
     __slots__ = (
+        "_has_chargers",
         "_has_electric_vehicles",
         "_has_flexible_loads",
         "_has_generators",
@@ -56,6 +58,7 @@ class OptimalDisptachResults:
         self._has_generators = ModelDimension.Generators in solution.dims
         self._has_standalone_storages = ModelDimension.StandaloneStorages in solution.dims
         self._has_electric_vehicles = ModelDimension.EVs in solution.dims
+        self._has_chargers = ModelDimension.Chargers in solution.dims
         self._has_markets = ModelDimension.Markets in solution.dims
         self._has_flexible_loads = ModelDimension.FlexibleLoads in solution.dims
         self._parameters = parameters
@@ -121,6 +124,19 @@ class OptimalDisptachResults:
             net_power=self._solution[ModelVariable.EV_POWER_NET.var_name],
             soc=self._solution[ModelVariable.EV_SOC.var_name],
             charge_mode=self._solution[ModelVariable.EV_CHARGE_MODE.var_name],
+        )
+
+    @property
+    def chargers(self) -> ChargerDispatch:
+        """Get charger dispatch results."""
+        self._validate_terminated_successfully()
+        if not self._has_chargers:
+            msg = "This model does not contain charger results"
+            raise OdysNoResultsError(msg)
+
+        return ChargerDispatch(
+            assignment=self._solution[ModelVariable.CHARGER_EV_ASSIGNMENT.var_name],
+            power_in=self._solution[ModelVariable.EV_POWER_IN.var_name],
         )
 
     @property

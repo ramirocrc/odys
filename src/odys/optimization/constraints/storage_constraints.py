@@ -48,6 +48,7 @@ def build_soc_dynamics_constraint(  # noqa: PLR0913
     capacity: xr.DataArray,
     timestep_hours: float,
     name: str,
+    trip_soc_drop: xr.DataArray | float = 0,
 ) -> ModelConstraint:
     """SOC time-stepping dynamics with self-discharge and charge/discharge efficiency."""
     dt = timestep_hours
@@ -56,6 +57,7 @@ def build_soc_dynamics_constraint(  # noqa: PLR0913
         soc.shift(time=1) * (1 - self_discharge_rate * dt)
         + efficiency_charging * power_in * dt / capacity
         - 1 / efficiency_discharging * power_out * dt / capacity
+        - trip_soc_drop
     )
     return ModelConstraint(
         constraint=constraint_expr.where(time_coords > time_coords[0]) == 0,
@@ -73,6 +75,7 @@ def build_soc_start_constraint(  # noqa: PLR0913
     capacity: xr.DataArray,
     timestep_hours: float,
     name: str,
+    trip_soc_drop: xr.DataArray | float = 0,
 ) -> ModelConstraint:
     """Initial SOC constraint at t=0."""
     dt = timestep_hours
@@ -85,6 +88,7 @@ def build_soc_start_constraint(  # noqa: PLR0913
         - soc_start
         - efficiency_charging * charge_t0 * dt / capacity
         + 1 / efficiency_discharging * discharge_t0 * dt / capacity
+        - trip_soc_drop
     )
     return ModelConstraint(
         constraint=constraint_expr == 0,

@@ -93,16 +93,16 @@ def test_ev_parameters_is_driving(ev_parameters: ElectricVehicleParameters) -> N
     assert is_driving.shape == (2, 24)
 
     # ev1 is driving during trip1 (8-10) and trip2 (17-19)
-    assert is_driving.sel(ev="ev1", time=8).values == 1
-    assert is_driving.sel(ev="ev1", time=9).values == 1
-    assert is_driving.sel(ev="ev1", time=10).values == 0
-    assert is_driving.sel(ev="ev1", time=17).values == 1
-    assert is_driving.sel(ev="ev1", time=18).values == 1
-    assert is_driving.sel(ev="ev1", time=5).values == 0
+    assert is_driving.sel(ev="ev1", time="8").values == 1
+    assert is_driving.sel(ev="ev1", time="9").values == 1
+    assert is_driving.sel(ev="ev1", time="10").values == 0
+    assert is_driving.sel(ev="ev1", time="17").values == 1
+    assert is_driving.sel(ev="ev1", time="18").values == 1
+    assert is_driving.sel(ev="ev1", time="5").values == 0
 
     # ev2 has no trips, so never driving
-    assert is_driving.sel(ev="ev2", time=8).values == 0
-    assert is_driving.sel(ev="ev2", time=17).values == 0
+    assert is_driving.sel(ev="ev2", time="8").values == 0
+    assert is_driving.sel(ev="ev2", time="17").values == 0
 
 
 def test_ev_parameters_trip_energy(ev_parameters: ElectricVehicleParameters) -> None:
@@ -112,16 +112,16 @@ def test_ev_parameters_trip_energy(ev_parameters: ElectricVehicleParameters) -> 
     assert trip_energy.shape == (2, 24)
 
     # ev1 trip1: 10 MWh over 2 hours = 5 MWh/hour at t=8,9
-    assert trip_energy.sel(ev="ev1", time=8).values == TRIP1_ENERGY_PER_HOUR
-    assert trip_energy.sel(ev="ev1", time=9).values == TRIP1_ENERGY_PER_HOUR
-    assert trip_energy.sel(ev="ev1", time=10).values == 0.0
+    assert trip_energy.sel(ev="ev1", time="8").values == TRIP1_ENERGY_PER_HOUR
+    assert trip_energy.sel(ev="ev1", time="9").values == TRIP1_ENERGY_PER_HOUR
+    assert trip_energy.sel(ev="ev1", time="10").values == 0.0
 
     # ev1 trip2: 15 MWh over 2 hours = 7.5 MWh/hour at t=17,18
-    assert trip_energy.sel(ev="ev1", time=17).values == TRIP2_ENERGY_PER_HOUR
-    assert trip_energy.sel(ev="ev1", time=18).values == TRIP2_ENERGY_PER_HOUR
+    assert trip_energy.sel(ev="ev1", time="17").values == TRIP2_ENERGY_PER_HOUR
+    assert trip_energy.sel(ev="ev1", time="18").values == TRIP2_ENERGY_PER_HOUR
 
     # ev2 has no trips
-    assert trip_energy.sel(ev="ev2", time=8).values == 0.0
+    assert trip_energy.sel(ev="ev2", time="8").values == 0.0
 
 
 def test_ev_parameters_min_soc_at_departure(ev_parameters: ElectricVehicleParameters) -> None:
@@ -131,15 +131,27 @@ def test_ev_parameters_min_soc_at_departure(ev_parameters: ElectricVehicleParame
     assert min_soc.shape == (2, 24)
 
     # ev1 trip1: min_soc_at_departure=0.3 at t=8
-    assert min_soc.sel(ev="ev1", time=8).values == TRIP1_MIN_SOC_AT_DEPARTURE
+    assert min_soc.sel(ev="ev1", time="8").values == TRIP1_MIN_SOC_AT_DEPARTURE
     # ev1 trip2: min_soc_at_departure=0.4 at t=17
-    assert min_soc.sel(ev="ev1", time=17).values == TRIP2_MIN_SOC_AT_DEPARTURE
+    assert min_soc.sel(ev="ev1", time="17").values == TRIP2_MIN_SOC_AT_DEPARTURE
     # Other times should be 0
-    assert min_soc.sel(ev="ev1", time=5).values == 0.0
-    assert min_soc.sel(ev="ev1", time=10).values == 0.0
+    assert min_soc.sel(ev="ev1", time="5").values == 0.0
+    assert min_soc.sel(ev="ev1", time="10").values == 0.0
 
     # ev2 has no trips
-    assert min_soc.sel(ev="ev2", time=8).values == 0.0
+    assert min_soc.sel(ev="ev2", time="8").values == 0.0
+
+
+def test_ev_parameters_trip_arrays_use_model_time_coords(ev_parameters: ElectricVehicleParameters) -> None:
+    """Trip arrays must use string time coords so they align with the model variables.
+
+    With mismatching coordinate types (e.g. int vs str), xarray alignment finds no
+    common labels and linopy silently masks every trip constraint entry.
+    """
+    expected_time_coords = [str(time_step) for time_step in range(24)]
+    trip_arrays = (ev_parameters.is_driving, ev_parameters.trip_energy, ev_parameters.min_soc_at_departure)
+    for trip_array in trip_arrays:
+        assert list(trip_array.coords[ModelDimension.Time.value].values) == expected_time_coords
 
 
 def test_ev_parameters_empty_trips() -> None:
@@ -160,6 +172,6 @@ def test_ev_parameters_empty_trips() -> None:
     assert params.min_soc_at_departure.shape == (1, 24)
 
     # All zeros since no trips
-    assert params.is_driving.sel(ev="ev_no_trips", time=8).values == 0
-    assert params.trip_energy.sel(ev="ev_no_trips", time=8).values == 0.0
-    assert params.min_soc_at_departure.sel(ev="ev_no_trips", time=8).values == 0.0
+    assert params.is_driving.sel(ev="ev_no_trips", time="8").values == 0
+    assert params.trip_energy.sel(ev="ev_no_trips", time="8").values == 0.0
+    assert params.min_soc_at_departure.sel(ev="ev_no_trips", time="8").values == 0.0

@@ -3,6 +3,8 @@
 import pytest
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.charger import Charger
+from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.standalone_storage import StandaloneStorage
@@ -111,3 +113,52 @@ def test_empty_portfolio_is_allowed() -> None:
     """Test that an empty portfolio can be created."""
     portfolio = AssetPortfolio()
     assert len(portfolio.assets) == 0
+
+
+def test_portfolio_electric_vehicles_property() -> None:
+    """Test that electric_vehicles property returns only ElectricVehicle instances."""
+    ev1 = ElectricVehicle(
+        name="ev1",
+        capacity=50.0,
+        max_charge_power=22.0,
+        max_discharge_power=0.0,
+        soc_start=0.5,
+        trips=(),
+    )
+    ev2 = ElectricVehicle(
+        name="ev2",
+        capacity=75.0,
+        max_charge_power=50.0,
+        max_discharge_power=11.0,
+        soc_start=0.8,
+        trips=(),
+    )
+    gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
+    portfolio = AssetPortfolio(assets=[ev1, ev2, gen])
+
+    evs = portfolio.electric_vehicles
+    assert len(evs) == len([ev1, ev2])
+    assert ev1 is evs[0]
+    assert ev2 is evs[1]
+
+
+def test_portfolio_chargers_property() -> None:
+    """Test that chargers property returns only Charger instances."""
+    charger1 = Charger(name="charger1", max_power=22.0)
+    charger2 = Charger(name="charger2", max_power=50.0)
+    gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
+    portfolio = AssetPortfolio(assets=[charger1, charger2, gen])
+
+    chargers = portfolio.chargers
+    assert len(chargers) == len([charger1, charger2])
+    assert charger1 is chargers[0]
+    assert charger2 is chargers[1]
+
+
+def test_portfolio_empty_evs_and_chargers() -> None:
+    """Test that electric_vehicles and chargers properties return empty tuples when no EVs/chargers."""
+    gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
+    portfolio = AssetPortfolio(assets=[gen])
+
+    assert portfolio.electric_vehicles == ()
+    assert portfolio.chargers == ()

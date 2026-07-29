@@ -50,6 +50,7 @@ class ElectricVehicleConstraints(ConstraintGroup):
 
     @constraint
     def _get_ev_soc_dynamics_constraint(self) -> ModelConstraint:
+        trip_soc_drop = self.params.trip_energy / self.params.capacity
         return build_soc_dynamics_constraint(
             soc=self.model.ev_soc,
             power_in=self.model.ev_power_in,
@@ -60,10 +61,12 @@ class ElectricVehicleConstraints(ConstraintGroup):
             capacity=self.params.capacity,
             timestep_hours=self._timestep_hours,
             name="ev_soc_dynamics_constraint",
+            trip_soc_drop=trip_soc_drop,
         )
 
     @constraint
     def _get_ev_soc_start_constraint(self) -> ModelConstraint:
+        trip_soc_drop_t0 = (self.params.trip_energy / self.params.capacity).isel(time=0)
         return build_soc_start_constraint(
             soc=self.model.ev_soc,
             power_in=self.model.ev_power_in,
@@ -74,6 +77,7 @@ class ElectricVehicleConstraints(ConstraintGroup):
             capacity=self.params.capacity,
             timestep_hours=self._timestep_hours,
             name="ev_soc_start_constraint",
+            trip_soc_drop=trip_soc_drop_t0,
         )
 
     @constraint
@@ -106,6 +110,28 @@ class ElectricVehicleConstraints(ConstraintGroup):
         return build_capacity_constraint(
             soc=self.model.ev_soc,
             name="ev_capacity_constraint",
+        )
+
+    @constraint
+    def _get_ev_driving_constraint(self) -> ModelConstraint:
+        """EVs cannot charge or discharge while driving."""
+        power_in = self.model.ev_power_in
+        power_out = self.model.ev_power_out
+        max_power = self.params.max_charge_power + self.params.max_discharge_power
+
+        return ModelConstraint(
+            constraint=power_in + power_out <= max_power * (1 - self.params.is_driving),
+            name="ev_driving_constraint",
+        )
+
+    @constraint
+    def _get_ev_min_soc_departure_constraint(self) -> ModelConstraint:
+        """EVs must reach the required SoC by the end of the step before departure."""
+        min_soc_before_departure = self.params.min_soc_at_departure.shift({ModelDimension.Time.value: -1}, fill_value=0)
+
+        return ModelConstraint(
+            constraint=self.model.ev_soc >= min_soc_before_departure,
+            name="ev_min_soc_departure_constraint",
         )
 
     @constraint

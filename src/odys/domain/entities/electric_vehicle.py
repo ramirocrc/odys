@@ -57,3 +57,20 @@ class ElectricVehicle(Storage):
                     f"horizon={number_of_steps})"
                 )
                 raise OdysValidationError(msg)
+
+    def validate_min_soc_at_departure_feasible(self) -> None:
+        """Validate that min_soc_at_departure is feasible for trips starting at t=0.
+
+        A trip departing at t=0 has no prior timestep to charge, so the required
+        min_soc_at_departure must not exceed the initial soc_start.
+
+        Raises:
+            OdysValidationError: If any trip at t=0 requires more SoC than soc_start.
+        """
+        for trip in self.trips:
+            if trip.start_time == 0 and trip.min_soc_at_departure > self.soc_start:
+                msg = (
+                    f"Trip '{trip.name}' for vehicle '{self.name}' departs at t=0 with "
+                    f"min_soc_at_departure={trip.min_soc_at_departure} > soc_start={self.soc_start}"
+                )
+                raise OdysValidationError(msg)

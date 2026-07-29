@@ -251,6 +251,75 @@ class ElectricVehicleDispatch:
         return f"ElectricVehicleDispatch(names={self._ev_names!r})"
 
 
+class ChargerDispatch:
+    """Dispatch results for chargers in the portfolio."""
+
+    __slots__ = (
+        "_assignment",
+        "_charger_names",
+        "_ev_names",
+        "_power_in",
+    )
+
+    def __init__(
+        self,
+        assignment: xr.DataArray,
+        power_in: xr.DataArray,
+    ) -> None:
+        """Initialize charger dispatch results."""
+        self._assignment = assignment
+        self._power_in = power_in
+        self._charger_names = assignment.coords[ModelDimension.Chargers]
+        self._ev_names = assignment.coords[ModelDimension.EVs]
+
+    def __getitem__(self, key: str) -> ChargerDispatch:
+        """Return new instance for a specific charger."""
+        return ChargerDispatch(
+            assignment=self._assignment.sel(charger=key),
+            power_in=self._power_in.sel(ev=self._ev_names),
+        )
+
+    def __iter__(self) -> Iterator[ChargerDispatch]:
+        """Iterate over dispatch instances."""
+        for name in self._charger_names:
+            yield self[name]
+
+    def __len__(self) -> int:
+        """Number of chargers."""
+        return len(self._charger_names)
+
+    def __contains__(self, key: str) -> bool:
+        """Check if charger exists by name."""
+        return key in self._charger_names
+
+    @property
+    def assignment(self) -> pd.Series:
+        """Binary assignment (1=connected)."""
+        return self._assignment.to_series()
+
+    @property
+    def power(self) -> pd.Series:
+        """Power delivered by each charger (MWh)."""
+        return (self._assignment * self._power_in).sum(ModelDimension.EVs.value).to_series()
+
+    def to_dataset(self) -> xr.Dataset:
+        """Return dispatch results as an xarray Dataset."""
+        return xr.Dataset(
+            data_vars={
+                "assignment": self._assignment,
+                "power": (self._assignment * self._power_in).sum(ModelDimension.EVs.value),
+            },
+        )
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Return dispatch results as a pandas DataFrame."""
+        return self.to_dataset().to_dataframe()
+
+    def __repr__(self) -> str:
+        """String representation."""
+        return f"ChargerDispatch(names={self._charger_names!r})"
+
+
 class MarketDispatch:
     """Dispatch results for markets in the portfolio."""
 
