@@ -327,12 +327,21 @@ class TestValidateAvailableCapacityProfiles:
 
 class TestValidateEnoughPowerToMeetDemand:
     def test_valid(self, generator: Generator, storage: Storage, scenario: StochasticScenario) -> None:
-        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,))
+        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
 
     def test_no_load_profiles(self, generator: Generator, storage: Storage) -> None:
         scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
         with pytest.raises(OdysValidationError, match="Load profile is empty"):
-            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,))
+            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
+
+    def test_market_only_no_loads_is_valid(
+        self,
+        generator: Generator,
+        storage: Storage,
+        market: EnergyMarket,
+    ) -> None:
+        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
+        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
 
     def test_demand_exceeds_capacity(self, generator: Generator, storage: Storage) -> None:
         scenario = StochasticScenario(
@@ -341,7 +350,7 @@ class TestValidateEnoughPowerToMeetDemand:
             fixed_load_profiles={"load1": [80.0, 200.0, 90.0, 100.0]},
         )
         with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,))
+            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
 
     def test_flexible_load_feasible_after_decrease(
         self,
@@ -349,14 +358,31 @@ class TestValidateEnoughPowerToMeetDemand:
         storage: Storage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        # Base demand (150) > capacity (125), but base - max_decrease (150 - 30 = 120) < capacity
-        # This should pass
         scenario = StochasticScenario(
             name="s1",
             probability=1.0,
             flexible_load_base_profiles={"flex_load1": [80.0, 150.0, 90.0, 100.0]},
         )
-        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (flexible_load,))
+        validate_enough_power_to_meet_demand(
+            scenario,
+            (generator,),
+            (storage,),
+            (),
+            (flexible_load,),
+        )
+
+    def test_unrelated_flexible_load_name_is_skipped(
+        self,
+        generator: Generator,
+        storage: Storage,
+        flexible_load: FlexibleLoad,
+    ) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            flexible_load_base_profiles={"unrelated_load": [80.0, 150.0, 90.0, 100.0]},
+        )
+        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (), (flexible_load,))
 
     def test_flexible_load_infeasible_even_with_decrease(
         self,
@@ -364,14 +390,19 @@ class TestValidateEnoughPowerToMeetDemand:
         storage: Storage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        # Base demand (200) - max_decrease (30) = 170 > capacity (150)
         scenario = StochasticScenario(
             name="s1",
             probability=1.0,
             flexible_load_base_profiles={"flex_load1": [80.0, 200.0, 90.0, 100.0]},
         )
         with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (flexible_load,))
+            validate_enough_power_to_meet_demand(
+                scenario,
+                (generator,),
+                (storage,),
+                (),
+                (flexible_load,),
+            )
 
     def test_flexible_load_feasible_with_decrease(
         self,
@@ -379,14 +410,55 @@ class TestValidateEnoughPowerToMeetDemand:
         storage: Storage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        # Base demand (170) > capacity (150), but base - max_decrease (170 - 30 = 140) < capacity
-        # This should pass
         scenario = StochasticScenario(
             name="s1",
             probability=1.0,
-            flexible_load_base_profiles={"flex_load1": [80.0, 170.0, 90.0, 100.0]},
+            flexible_load_base_profiles={"flex_load1": [80.0, 155.0, 90.0, 100.0]},
         )
-        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (flexible_load,))
+        validate_enough_power_to_meet_demand(
+            scenario,
+            (generator,),
+            (storage,),
+            (),
+            (flexible_load,),
+        )
+
+    def test_market_volume_counted_toward_available_power(
+        self,
+        generator: Generator,
+        storage: Storage,
+        market: EnergyMarket,
+    ) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            fixed_load_profiles={"load1": [80.0, 200.0, 90.0, 100.0]},
+        )
+        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
+
+    def test_infeasible_even_with_market(
+        self,
+        generator: Generator,
+        storage: Storage,
+        market: EnergyMarket,
+    ) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            fixed_load_profiles={"load1": [80.0, 300.0, 90.0, 100.0]},
+        )
+        with pytest.raises(OdysValidationError, match="Infeasible problem"):
+            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
+
+    def test_uses_available_capacity_profile_per_timestep(self, generator: Generator, storage: Storage) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            available_capacity_profiles={"gen1": [100.0, 50.0, 100.0, 100.0]},
+            fixed_load_profiles={"load1": [70.0, 80.0, 70.0, 70.0]},
+        )
+        with pytest.raises(OdysValidationError, match="time index 1"):
+            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
 
 
 # --- validate_enough_energy_to_meet_demand ---
