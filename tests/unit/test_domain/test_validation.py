@@ -1,5 +1,7 @@
 """Tests for energy system input validation functions."""
 
+from datetime import timedelta
+
 import pytest
 
 from odys.domain.entities.fixed_load import FixedLoad
@@ -465,5 +467,72 @@ class TestValidateEnoughPowerToMeetDemand:
 
 
 class TestValidateEnoughEnergyToMeetDemand:
-    def test_noop(self, scenario: StochasticScenario) -> None:
-        validate_enough_energy_to_meet_demand(scenario)
+    def test_noop_no_loads(self, portfolio: AssetPortfolio) -> None:
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            fixed_load_profiles=None,
+            flexible_load_base_profiles=None,
+        )
+        validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+
+    def test_valid(self, portfolio: AssetPortfolio, scenario: StochasticScenario) -> None:
+        validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+
+    def test_infeasible_energy_but_feasible_power(self, storage: Storage, load: FixedLoad) -> None:
+        portfolio = AssetPortfolio([storage, load])
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            fixed_load_profiles={"load1": [20.0, 20.0, 20.0, 20.0]},
+        )
+        validate_enough_power_to_meet_demand(scenario, (), (storage,), ())
+
+        with pytest.raises(OdysValidationError, match="Infeasible problem"):
+            validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+
+    def test_uses_available_capacity_profile_not_nominal_power(
+        self,
+        generator: Generator,
+        load: FixedLoad,
+    ) -> None:
+        portfolio = AssetPortfolio([generator, load])
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            available_capacity_profiles={"gen1": [20.0, 20.0, 20.0, 20.0]},
+            fixed_load_profiles={"load1": [25.0, 25.0, 25.0, 25.0]},
+        )
+        with pytest.raises(OdysValidationError, match="Infeasible problem"):
+            validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+
+    def test_market_energy_included(self, load: FixedLoad, market: EnergyMarket) -> None:
+        portfolio = AssetPortfolio([load])
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            fixed_load_profiles={"load1": [25.0, 25.0, 25.0, 25.0]},
+        )
+        with pytest.raises(OdysValidationError, match="Infeasible problem"):
+            validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+
+        validate_enough_energy_to_meet_demand(scenario, portfolio, (market,), timedelta(hours=1))
+
+    def test_flexible_load_min_possible_demand_used(self, flexible_load: FlexibleLoad) -> None:
+        portfolio = AssetPortfolio([flexible_load])
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            flexible_load_base_profiles={"flex_load1": [40.0, 40.0, 40.0, 40.0]},
+        )
+        with pytest.raises(OdysValidationError, match="Infeasible problem"):
+            validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+
+    def test_unrelated_flexible_load_name_is_skipped(self, flexible_load: FlexibleLoad) -> None:
+        portfolio = AssetPortfolio([flexible_load])
+        scenario = StochasticScenario(
+            name="s1",
+            probability=1.0,
+            flexible_load_base_profiles={"unrelated_load": [40.0, 40.0, 40.0, 40.0]},
+        )
+        validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))

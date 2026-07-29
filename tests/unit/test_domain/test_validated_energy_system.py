@@ -32,8 +32,8 @@ def testing_generator() -> Generator:
 def testing_battery() -> Storage:
     return Storage(
         name="test_battery",
-        capacity=50.0,
-        max_power=50.0,
+        capacity=60.0,
+        max_power=25.0,
         efficiency_charging=0.9,
         efficiency_discharging=0.9,
         soc_start=0.5,
@@ -56,7 +56,7 @@ def testing_portfolio(
 
 @pytest.fixture
 def valid_demand_profile() -> list[float]:
-    return [80.0, 120.0, 90.0, 150.0]
+    return [80.0, 100.0, 90.0, 120.0]
 
 
 @pytest.fixture
