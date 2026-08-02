@@ -1,12 +1,13 @@
 """Charger parameters for the mathematical optimization model."""
 
 from collections.abc import Sequence
-from typing import ClassVar
+from typing import ClassVar, Self
 
 import xarray as xr
 
 from odys.domain.entities.charger import Charger
 from odys.optimization.model.sets import ModelDimension, ModelIndex
+from odys.optimization.parameters.build_context import ParamBuildContext
 
 
 class ChargerIndex(ModelIndex):
@@ -37,6 +38,11 @@ class ChargerParameters:
             {name: (dim, values) for name, values in data.items()},
             coords=self._index.coordinates,
         )
+
+    @classmethod
+    def build(cls, ctx: ParamBuildContext) -> Self:
+        """Build charger parameters from a parameter build context."""
+        return cls(ctx.chargers)
 
     @property
     def is_empty(self) -> bool:

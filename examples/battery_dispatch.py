@@ -47,14 +47,14 @@ gas.
 from datetime import timedelta
 
 from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario, StandaloneStorage
-from odys.results.optimization_results import OptimalDisptachResults
+from odys.results.optimization_results import OptimalDispatchResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
 
 
-def run_battery_dispatch() -> OptimalDisptachResults:
+def run_battery_dispatch() -> OptimalDispatchResults:
     """Run the battery dispatch example and return the optimization results."""
     generator_1 = Generator(
         name="ccgt",
