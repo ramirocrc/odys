@@ -17,6 +17,7 @@ class ChargerConstraints(ConstraintGroup):
         """Initialize with the MILP model and charger parameters."""
         self.model = milp_model
         self.charger_params = milp_model.parameters.chargers
+        self.ev_params = milp_model.parameters.electric_vehicles
 
     @constraint
     def _get_charger_one_ev_per_charger_constraint(self) -> ModelConstraint:
@@ -34,6 +35,17 @@ class ChargerConstraints(ConstraintGroup):
         return ModelConstraint(
             constraint=assignment.sum(ModelDimension.Chargers.value) <= 1,
             name="charger_one_charger_per_ev_constraint",
+        )
+
+    @constraint
+    def _get_charger_no_assignment_while_driving_constraint(self) -> ModelConstraint:
+        """EVs cannot be assigned to a charger while driving."""
+        assignment = self.model.charger_ev_assignment
+        is_driving = self.ev_params.is_driving
+
+        return ModelConstraint(
+            constraint=assignment <= 1 - is_driving,
+            name="charger_no_assignment_while_driving_constraint",
         )
 
     @constraint
