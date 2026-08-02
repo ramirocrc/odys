@@ -1,8 +1,14 @@
 """Flexible load constraints for the optimization model."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
 
 
 class FlexibleLoadConstraints(ConstraintGroup):
@@ -21,7 +27,7 @@ class FlexibleLoadConstraints(ConstraintGroup):
         -max_decrease (i.e., cannot decrease more than max_decrease).
         """
         return ModelConstraint(
-            constraint=self.model.load_adjustment >= -self.params.max_decrease,
+            constraint=self.model.vars.load_adjustment >= -self.params.max_decrease,
             name="flexible_load_adjustment_lower_bound_constraint",
         )
 
@@ -33,6 +39,6 @@ class FlexibleLoadConstraints(ConstraintGroup):
         max_increase (i.e., cannot increase more than max_increase).
         """
         return ModelConstraint(
-            constraint=self.model.load_adjustment <= self.params.max_increase,
+            constraint=self.model.vars.load_adjustment <= self.params.max_increase,
             name="flexible_load_adjustment_upper_bound_constraint",
         )

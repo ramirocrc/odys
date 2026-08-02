@@ -1,8 +1,14 @@
 """CVaR (Conditional Value at Risk) constraints for stochastic optimization."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
 
 
 class CVaRConstraints(ConstraintGroup):
@@ -14,7 +20,9 @@ class CVaRConstraints(ConstraintGroup):
 
     @constraint
     def _get_shortfall_constraint(self) -> ModelConstraint:
-        constraint_expr = self.model.cvar_shortfall >= self.model.cvar_value_at_risk - self.model.per_scenario_profit()
+        constraint_expr = (
+            self.model.vars.shortfall_revenue >= self.model.vars.value_at_risk - self.model.per_scenario_profit()
+        )
         return ModelConstraint(
             constraint=constraint_expr,
             name="cvar_shortfall_constraint",

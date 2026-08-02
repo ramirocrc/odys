@@ -114,6 +114,17 @@ class TestChargerConstraints:
         expected_dims = {ModelDimension.Scenarios.value, ModelDimension.Time.value, ModelDimension.EVs.value}
         assert expected_dims.issubset(set(actual_constraint.dims))
 
+    def test_constraint_no_assignment_while_driving(self) -> None:
+        actual_constraint = self.linopy_model.constraints["charger_no_assignment_while_driving_constraint"]
+        assert isinstance(actual_constraint, linopy.Constraint)
+        expected_dims = {
+            ModelDimension.Scenarios.value,
+            ModelDimension.Time.value,
+            ModelDimension.Chargers.value,
+            ModelDimension.EVs.value,
+        }
+        assert expected_dims.issubset(set(actual_constraint.dims))
+
     def test_constraint_charger_power_limit(self) -> None:
         actual_constraint = self.linopy_model.constraints["charger_power_limit_constraint"]
         assert isinstance(actual_constraint, linopy.Constraint)
@@ -123,4 +134,8 @@ class TestChargerConstraints:
     def test_charger_constraints_present(self) -> None:
         assert isinstance(self.linopy_model.constraints["charger_one_ev_per_charger_constraint"], linopy.Constraint)
         assert isinstance(self.linopy_model.constraints["charger_one_charger_per_ev_constraint"], linopy.Constraint)
+        assert isinstance(
+            self.linopy_model.constraints["charger_no_assignment_while_driving_constraint"],
+            linopy.Constraint,
+        )
         assert isinstance(self.linopy_model.constraints["charger_power_limit_constraint"], linopy.Constraint)
