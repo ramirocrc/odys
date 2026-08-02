@@ -1,9 +1,15 @@
 """Market-related constraints for the optimization model."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.domain.entities.market import TradeDirection
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
 
 
 class MarketConstraints(ConstraintGroup):
@@ -17,28 +23,28 @@ class MarketConstraints(ConstraintGroup):
     @constraint
     def _get_market_max_sell_volume_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.model.market_sell_volume <= self.params.max_volume,
+            constraint=self.model.vars.market_sell_volume <= self.params.max_volume,
             name="market_max_sell_volume_constraint",
         )
 
     @constraint
     def _get_market_max_buy_volume_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.model.market_buy_volume <= self.params.max_volume,
+            constraint=self.model.vars.market_buy_volume <= self.params.max_volume,
             name="market_max_buy_volume_constraint",
         )
 
     @constraint
     def _get_market_mutual_exclusivity_sell_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.model.market_sell_volume <= self.model.market_trade_mode * self.params.max_volume,
+            constraint=self.model.vars.market_sell_volume <= self.model.vars.market_trade_mode * self.params.max_volume,
             name="market_mutual_exclusivity_sell_constraint",
         )
 
     @constraint
     def _get_market_mutual_exclusivity_buy_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.model.market_buy_volume + self.model.market_trade_mode * self.params.max_volume
+            constraint=self.model.vars.market_buy_volume + self.model.vars.market_trade_mode * self.params.max_volume
             <= self.params.max_volume,
             name="market_mutual_exclusivity_buy_constraint",
         )
@@ -49,7 +55,7 @@ class MarketConstraints(ConstraintGroup):
         constraints = []
 
         buy_only_mask = self.params.trade_direction == TradeDirection.BUY_ONLY
-        sell_constraint = self.model.market_sell_volume.where(buy_only_mask, drop=True) == 0
+        sell_constraint = self.model.vars.market_sell_volume.where(buy_only_mask, drop=True) == 0
         constraints.append(
             ModelConstraint(
                 constraint=sell_constraint,
@@ -58,7 +64,7 @@ class MarketConstraints(ConstraintGroup):
         )
 
         sell_only_mask = self.params.trade_direction == TradeDirection.SELL_ONLY
-        buy_constraint = self.model.market_buy_volume.where(sell_only_mask, drop=True) == 0
+        buy_constraint = self.model.vars.market_buy_volume.where(sell_only_mask, drop=True) == 0
         constraints.append(
             ModelConstraint(
                 constraint=buy_constraint,

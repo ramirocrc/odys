@@ -22,6 +22,8 @@ check:
     uv run --locked basedpyright
     @echo "🚀 Checking for obsolete dependencies: Running deptry"
     uv run --locked deptry src
+    @echo "🚀 Architecture layer contracts"
+    uv run python scripts/architecture_metrics.py --check
 
 test:
     @echo "🚀 Testing code: Running pytest"
@@ -62,3 +64,7 @@ docs-build: generate-plots
 examples:
     @echo "🚀 Running all examples"
     for f in examples/*.py; do echo "▶ Running $f"; uv run --locked python "$f"; done
+
+architecture-metrics:
+    @echo "🚀 Architecture coupling metrics (src/odys)"
+    uv run python scripts/architecture_metrics.py

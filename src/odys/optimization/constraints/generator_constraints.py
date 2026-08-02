@@ -1,8 +1,14 @@
 """Generator-related constraints for the optimization model."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
 
 
 class GeneratorConstraints(ConstraintGroup):
@@ -21,7 +27,8 @@ class GeneratorConstraints(ConstraintGroup):
         exceed its nominal power capacity.
         """
         return ModelConstraint(
-            constraint=self.model.generator_power - self.model.generator_status * self.params.nominal_power <= 0,
+            constraint=self.model.vars.generator_power - self.model.vars.generator_status * self.params.nominal_power
+            <= 0,
             name="generator_max_power_constraint",
         )
 
@@ -33,7 +40,7 @@ class GeneratorConstraints(ConstraintGroup):
         """
         epsilon = 1e-5 * self.params.nominal_power
         return ModelConstraint(
-            constraint=self.model.generator_power >= self.model.generator_status * epsilon,
+            constraint=self.model.vars.generator_power >= self.model.vars.generator_status * epsilon,
             name="generator_status_constraint",
         )
 
@@ -41,9 +48,9 @@ class GeneratorConstraints(ConstraintGroup):
     def _get_generator_startup_lower_bound_constraint(self) -> ModelConstraint:
         """Startup indicator active when turning generator on."""
         return ModelConstraint(
-            constraint=self.model.generator_startup
-            >= self.model.generator_status
-            - self.model.generator_status.shift(
+            constraint=self.model.vars.generator_startup
+            >= self.model.vars.generator_status
+            - self.model.vars.generator_status.shift(
                 time=1,
             ),
             name="generator_startup_lower_bound_constraint",
@@ -53,7 +60,7 @@ class GeneratorConstraints(ConstraintGroup):
     def _get_generator_startup_upper_bound_1_constraint(self) -> ModelConstraint:
         """Startup indicator bounded by current status."""
         return ModelConstraint(
-            constraint=self.model.generator_startup <= self.model.generator_status,
+            constraint=self.model.vars.generator_startup <= self.model.vars.generator_status,
             name="generator_startup_upper_bound_1_constraint",
         )
 
@@ -61,7 +68,7 @@ class GeneratorConstraints(ConstraintGroup):
     def _get_generator_startup_upper_bound_2_constraint(self) -> ModelConstraint:
         """Startup indicator bounded by previous status."""
         return ModelConstraint(
-            constraint=self.model.generator_startup + self.model.generator_status.shift(time=1) <= 1.0,
+            constraint=self.model.vars.generator_startup + self.model.vars.generator_status.shift(time=1) <= 1.0,
             name="generator_startup_upper_bound_2_constraint",
         )
 
@@ -69,8 +76,8 @@ class GeneratorConstraints(ConstraintGroup):
     def _get_generator_shutdown_lower_bound_constraint(self) -> ModelConstraint:
         """Shutdown indicator active when turning generator off."""
         return ModelConstraint(
-            constraint=self.model.generator_shutdown
-            >= self.model.generator_status.shift(time=1) - self.model.generator_status,
+            constraint=self.model.vars.generator_shutdown
+            >= self.model.vars.generator_status.shift(time=1) - self.model.vars.generator_status,
             name="generator_shutdown_lower_bound_constraint",
         )
 
@@ -78,7 +85,7 @@ class GeneratorConstraints(ConstraintGroup):
     def _get_generator_shutdown_upper_bound_1_constraint(self) -> ModelConstraint:
         """Shutdown indicator bounded by previous status."""
         return ModelConstraint(
-            constraint=self.model.generator_shutdown <= self.model.generator_status.shift(time=1),
+            constraint=self.model.vars.generator_shutdown <= self.model.vars.generator_status.shift(time=1),
             name="generator_shutdown_upper_bound_1_constraint",
         )
 
@@ -86,7 +93,7 @@ class GeneratorConstraints(ConstraintGroup):
     def _get_generator_shutdown_upper_bound_2_constraint(self) -> ModelConstraint:
         """Shutdown indicator bounded by current status."""
         return ModelConstraint(
-            constraint=self.model.generator_shutdown + self.model.generator_status <= 1.0,
+            constraint=self.model.vars.generator_shutdown + self.model.vars.generator_status <= 1.0,
             name="generator_shutdown_upper_bound_2_constraint",
         )
 
@@ -95,8 +102,8 @@ class GeneratorConstraints(ConstraintGroup):
         constraints = []
         for generator in self.params.index.values:
             min_up_time = int(self.params.min_up_time.sel(generator=generator))
-            generator_status = self.model.generator_status.sel(generator=generator)
-            generator_shutdown = self.model.generator_shutdown.sel(generator=generator)
+            generator_status = self.model.vars.generator_status.sel(generator=generator)
+            generator_shutdown = self.model.vars.generator_shutdown.sel(generator=generator)
             constraint_generator = generator_status.rolling(
                 time=min_up_time,
             ).sum() >= min_up_time * generator_shutdown.shift(time=-1)
@@ -113,8 +120,8 @@ class GeneratorConstraints(ConstraintGroup):
         constraints = []
         for generator in self.params.index.values:
             min_down_time = int(self.params.min_down_time.sel(generator=generator))
-            generator_status = self.model.generator_status.sel(generator=generator)
-            generator_startup = self.model.generator_startup.sel(generator=generator)
+            generator_status = self.model.vars.generator_status.sel(generator=generator)
+            generator_startup = self.model.vars.generator_startup.sel(generator=generator)
             constraint_generator = (1 - generator_status).rolling(
                 time=min_down_time,
             ).sum() >= min_down_time * generator_startup.shift(time=-1)
@@ -129,14 +136,14 @@ class GeneratorConstraints(ConstraintGroup):
     @constraint
     def _get_min_power_constraint(self) -> ModelConstraint:
         return ModelConstraint(
-            constraint=self.model.generator_power >= self.params.min_power * self.model.generator_status,
+            constraint=self.model.vars.generator_power >= self.params.min_power * self.model.vars.generator_status,
             name="generator_min_power_constraint",
         )
 
     @constraint
     def _get_max_ramp_up_constraint(self) -> ModelConstraint:
         max_ramp_up = self.params.max_ramp_up.fillna(self.params.nominal_power)
-        constraint_expr = self.model.generator_power - self.model.generator_power.shift(time=1) <= max_ramp_up
+        constraint_expr = self.model.vars.generator_power - self.model.vars.generator_power.shift(time=1) <= max_ramp_up
         return ModelConstraint(
             constraint=constraint_expr.isel(time=slice(1, None)),
             name="generator_max_ramp_up_constraint",
@@ -145,7 +152,9 @@ class GeneratorConstraints(ConstraintGroup):
     @constraint
     def _get_max_ramp_down_constraint(self) -> ModelConstraint:
         max_ramp_down = self.params.max_ramp_down.fillna(self.params.nominal_power)
-        constraint_expr = self.model.generator_power.shift(time=1) - self.model.generator_power <= max_ramp_down
+        constraint_expr = (
+            self.model.vars.generator_power.shift(time=1) - self.model.vars.generator_power <= max_ramp_down
+        )
         return ModelConstraint(
             constraint=constraint_expr.isel(time=slice(1, None)),
             name="generator_max_ramp_down_constraint",

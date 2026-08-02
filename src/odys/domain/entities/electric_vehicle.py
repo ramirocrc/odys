@@ -22,10 +22,6 @@ class ElectricVehicle(Storage):
 
     trips: tuple[Trip, ...]
 
-    def asset_type(self) -> str:
-        """Return the type of storage asset."""
-        return "electric_vehicle"
-
     def validate_no_overlapping_trips(self) -> None:
         """Validate that this vehicle's trips do not overlap.
 

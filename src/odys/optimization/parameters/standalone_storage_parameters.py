@@ -1,12 +1,13 @@
 """Standalone storage parameters for the mathematical optimization model."""
 
 from collections.abc import Sequence
-from typing import ClassVar
+from typing import ClassVar, Self
 
 import xarray as xr
 
 from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.optimization.model.sets import ModelDimension, ModelIndex
+from odys.optimization.parameters.build_context import ParamBuildContext
 
 
 class StandaloneStorageIndex(ModelIndex):
@@ -46,6 +47,11 @@ class StandaloneStorageParameters:
             {name: (dim, values) for name, values in data.items()},
             coords=self._index.coordinates,
         )
+
+    @classmethod
+    def build(cls, ctx: ParamBuildContext) -> Self:
+        """Build standalone storage parameters from a parameter build context."""
+        return cls(ctx.standalone_storages)
 
     @property
     def is_empty(self) -> bool:

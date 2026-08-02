@@ -1,11 +1,17 @@
 """Scenario-level constraints for the optimization model."""
 
-from odys.domain.exceptions import OdysValidationError
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+from odys.optimization.model.contributions.collect import iter_power_balance_contributions
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import MARKET_VARIABLES
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
 
 
 class ScenarioConstraints(ConstraintGroup):
@@ -18,34 +24,18 @@ class ScenarioConstraints(ConstraintGroup):
 
     @constraint
     def _get_power_balance_constraint(self) -> ModelConstraint:
-        """Linopy power balance constraint ensuring supply equals demand."""
+        """Linopy power balance constraint ensuring supply equals demand.
+
+        Registry asset contributors supply injection/withdrawal terms.
+        FixedLoad is a kernel residual (not a registry contributor) until G15.
+        """
         lhs = 0
 
-        if not self._params.generators.is_empty:
-            lhs += self.model.generator_power.sum(ModelDimension.Generators)
-
-        if not self._params.standalone_storages.is_empty:
-            lhs += self.model.standalone_storage_power_out.sum(ModelDimension.StandaloneStorages)
-            lhs += -self.model.standalone_storage_power_in.sum(ModelDimension.StandaloneStorages)
-
-        if not self._params.electric_vehicles.is_empty:
-            lhs += self.model.ev_power_out.sum(ModelDimension.EVs)
-            lhs += -self.model.ev_power_in.sum(ModelDimension.EVs)
-
-        if not self._params.markets.is_empty:
-            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)
-            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)
+        for term in iter_power_balance_contributions(self.model):
+            lhs += term
 
         if self._params.scenarios.fixed_load_profiles is not None:
             lhs += -self._params.scenarios.fixed_load_profiles
-
-        if not self._params.flexible_loads.is_empty:
-            base_profiles = self._params.scenarios.flexible_load_base_profiles
-            if base_profiles is None:
-                msg = "Flexible loads exist but base profiles are missing"
-                raise OdysValidationError(msg)
-            lhs += -base_profiles.sum(ModelDimension.FlexibleLoads)
-            lhs += -self.model.load_adjustment.sum(ModelDimension.FlexibleLoads)
 
         return ModelConstraint(
             name="power_balance_constraint",
@@ -56,7 +46,7 @@ class ScenarioConstraints(ConstraintGroup):
     def _get_available_capacity_profiles_constraint(self) -> list[ModelConstraint]:
         if self._params.generators.is_empty or self._params.scenarios.available_capacity_profiles is None:
             return []
-        expression = self.model.generator_power <= self._params.scenarios.available_capacity_profiles
+        expression = self.model.vars.generator_power <= self._params.scenarios.available_capacity_profiles
         return [
             ModelConstraint(
                 name="available_capacity_constraint",

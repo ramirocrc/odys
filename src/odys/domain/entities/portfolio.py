@@ -17,7 +17,6 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
-from odys.optimization.model.registry import AssetRegistry
 
 T = TypeVar("T", bound=EnergyEntity)
 
@@ -162,15 +161,3 @@ class AssetPortfolio:
 
         """
         return self._get_assets_by_type(Charger)
-
-    def assets_by_type(self, asset_type: AssetRegistry) -> tuple[EnergyEntity, ...]:
-        """Get all assets of a specific type from the portfolio.
-
-        Args:
-            asset_type: The asset registry member specifying the asset type.
-
-        Returns:
-            A tuple containing all assets of the specified type.
-
-        """
-        return self._get_assets_by_type(asset_type.spec.entity_class)

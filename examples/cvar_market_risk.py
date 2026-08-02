@@ -129,14 +129,14 @@ from odys import (
     StochasticScenario,
     TradeDirection,
 )
-from odys.results.optimization_results import OptimalDisptachResults
+from odys.results.optimization_results import OptimalDispatchResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
 
 
-def run_cvar_market_risk() -> tuple[OptimalDisptachResults, OptimalDisptachResults]:
+def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
     """Run the CVaR market risk example and return both optimization results."""
     ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=20.0)
 

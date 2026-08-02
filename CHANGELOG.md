@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `OptimalDispatchResults` exported from the top-level `odys` package (`from odys import OptimalDispatchResults`)
+- Architecture layer contract check (`just architecture-metrics` / `scripts/architecture_metrics.py --check` in `just check`)
+- Internal architecture review pack under `docs/architecture/` (not in site nav)
 - EV fleet optimization: `ElectricVehicle`, `Charger`, and `Trip` entities for modeling electric vehicle charging with trip constraints
 - `StandaloneStorage` as the user-facing storage class for stationary battery assets
 - EV trip validation: checks for overlapping trips, trips within horizon, and feasible min SOC at departure
@@ -20,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Internal (G12):** Decision variables exposed via typed `EnergyMILPModel.vars` (`ModelVariables`); hand-written per-var properties removed. `VariableSpec.accessor` covers name mismatches.
+- **Internal (G11a):** Parameter assembly is registry-driven (`ParamBuildContext` + `*Parameters.build` + `build_energy_system_parameters`). First-party assets only; closed `EnergySystemParameters` bag.
+- **Internal (Phase 3 / G8+G9):** Results layer uses `SolutionSchema` (built in the solver); no `odys.optimization` imports under `results/`. Dispatch views share `_DispatchBase` with thin public wrappers. Layer check forbids `results → optimization`.
+- **Internal (Phase 2 / G7):** Power-balance and per-scenario profit terms moved to contribution ports on `AssetSpec` (`optimization/model/contributions/`) for Generator, StandaloneStorage, Market, FlexibleLoad, and ElectricVehicle. Kernel loops **registry only**; FixedLoad remains a balance residual; Charger has no system contributions. No user/plugin asset injection (`extra_specs` / `extra_blocks` removed).
+- **Internal:** `AssetRegistry` / `AssetSpec` now own `parameters_attr` and `constraint_group`; model builder iterates the registry for variables and asset constraints (no `name.lower()+"s"` or hand-wired constraint switchboard). Kernel groups `ScenarioConstraints` and `CVaRConstraints` stay explicit.
+- **Internal:** Removed unused `EnergySystemParameters.has_*` helpers (empty checks go through registry + `.is_empty`)
+- **Breaking:** Renamed `OptimalDisptachResults` to `OptimalDispatchResults` (typo fix; no compatibility alias)
+- Removed unused `AssetPortfolio.assets_by_type` (restores domain layer purity — domain no longer imports optimization)
 - **Breaking:** `Storage` is now an abstract base class; use `StandaloneStorage` for stationary battery assets
 - **Breaking:** `Storage.max_power` split into `max_charge_power` and `max_discharge_power` to support asymmetric charge/discharge limits
 - **Breaking:** `AssetPortfolio.storages` renamed to `AssetPortfolio.standalone_storages`

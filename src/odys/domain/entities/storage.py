@@ -4,7 +4,7 @@ This module provides the Storage abstract base class for modeling energy storage
 devices in energy system optimization problems.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Self
 
 from pydantic import Field, model_validator
@@ -113,8 +113,3 @@ class Storage(EnergyEntity, ABC):
             msg = f"soc_min ({self.soc_min}) must be < soc_max ({self.soc_max})."
             raise OdysValidationError(msg)
         return self
-
-    @abstractmethod
-    def asset_type(self) -> str:
-        """Return the type of storage asset."""
-        ...

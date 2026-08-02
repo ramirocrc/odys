@@ -55,14 +55,14 @@ timing can be adjusted without affecting total output.
 from datetime import timedelta
 
 from odys import AssetPortfolio, EnergyMarket, EnergySystem, FlexibleLoad, Scenario, TradeDirection
-from odys.results.optimization_results import OptimalDisptachResults
+from odys.results.optimization_results import OptimalDispatchResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
 logger = get_logger(__name__)
 
 
-def run_flexible_load_market() -> OptimalDisptachResults:
+def run_flexible_load_market() -> OptimalDispatchResults:
     """Run the flexible load market example and return the optimization results."""
     market = EnergyMarket(
         name="market",

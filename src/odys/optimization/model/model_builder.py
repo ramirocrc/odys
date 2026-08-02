@@ -4,21 +4,14 @@ This module provides the EnergyAlgebraicModelBuilder that assembles
 variables, constraints, and objectives into a solvable MILP model.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.domain.exceptions import OdysError
-from odys.optimization.constraints.charger_constraints import ChargerConstraints
-from odys.optimization.constraints.constraints_group import ConstraintGroup
 from odys.optimization.constraints.cvar_constraints import CVaRConstraints
-from odys.optimization.constraints.electric_vehicle_constraints import ElectricVehicleConstraints
-from odys.optimization.constraints.flexible_load_constraints import FlexibleLoadConstraints
-from odys.optimization.constraints.generator_constraints import (
-    GeneratorConstraints,
-)
-from odys.optimization.constraints.market_constraints import MarketConstraints
 from odys.optimization.constraints.scenario_constraints import (
     ScenarioConstraints,
-)
-from odys.optimization.constraints.standalone_storage_constraints import (
-    StandaloneStorageConstraints,
 )
 from odys.optimization.model.linopy_converter import (
     LinopyVariableParameters,
@@ -30,8 +23,16 @@ from odys.optimization.model.registry import AssetRegistry
 from odys.optimization.model.variables import (
     CVAR_VARIABLES,
     ModelVariable,
+    VariableSpec,
 )
-from odys.optimization.parameters.parameters import EnergySystemParameters
+
+if TYPE_CHECKING:
+    from odys.optimization.constraints.constraints_group import ConstraintGroup
+    from odys.optimization.parameters.parameters import EnergySystemParameters
+
+
+def _as_variable_spec(variable: ModelVariable | VariableSpec) -> VariableSpec:
+    return variable.value if isinstance(variable, ModelVariable) else variable
 
 
 class EnergyAlgebraicModelBuilder:
@@ -45,10 +46,7 @@ class EnergyAlgebraicModelBuilder:
     multiple builds of the same instance.
     """
 
-    def __init__(
-        self,
-        energy_system_parameters: EnergySystemParameters,
-    ) -> None:
+    def __init__(self, energy_system_parameters: EnergySystemParameters) -> None:
         """Initialize the model builder with validated energy system.
 
         Args:
@@ -80,11 +78,10 @@ class EnergyAlgebraicModelBuilder:
 
     def _add_model_variables(self) -> None:
         params = self._milp_model.parameters
-        variables_to_add: list[ModelVariable] = []
+        variables_to_add: list[ModelVariable | VariableSpec] = []
 
         for asset in AssetRegistry:
-            param = getattr(params, asset.name.lower() + "s")
-            if not param.is_empty:
+            if asset.spec.is_present(params):
                 variables_to_add.extend(asset.spec.variables)
 
         if params.objective.cvar is not None:
@@ -94,28 +91,29 @@ class EnergyAlgebraicModelBuilder:
             linopy_variable = self._get_linopy_variable_params(variable)
             self.add_variable_to_model(linopy_variable)
 
-    def _get_linopy_variable_params(self, variable: ModelVariable) -> LinopyVariableParameters:
+    def _get_linopy_variable_params(self, variable: ModelVariable | VariableSpec) -> LinopyVariableParameters:
+        spec = _as_variable_spec(variable)
         coordinates = {}
         dimensions = []
         indices = []
 
-        if variable.dimensions is not None:
-            for dimension in variable.dimensions:
+        if spec.dimensions is not None:
+            for dimension in spec.dimensions:
                 index = self._milp_model.indices.get_index(dimension)
                 coordinates |= index.coordinates
                 dimensions.append(index.dimension)
                 indices.append(index)
 
         return LinopyVariableParameters(
-            name=variable.var_name,
+            name=spec.name,
             coords=coordinates,
             dims=dimensions,
             lower=get_variable_lower_bound(
                 indeces=indices,
-                lower_bound_type=variable.lower_bound_type,
-                is_binary=variable.is_binary,
+                lower_bound_type=spec.lower_bound_type,
+                is_binary=spec.is_binary,
             ),
-            binary=variable.is_binary,
+            binary=spec.is_binary,
         )
 
     def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
@@ -137,32 +135,13 @@ class EnergyAlgebraicModelBuilder:
             group.add_to_model(self._milp_model.linopy_model)
 
     def _get_constraint_groups(self) -> list[ConstraintGroup]:
-        groups: list[ConstraintGroup] = []
         params = self._milp_model.parameters
-
-        if params.has_generators:
-            groups.append(GeneratorConstraints(self._milp_model))
-
-        if params.has_standalone_storages:
-            groups.append(StandaloneStorageConstraints(self._milp_model))
-
-        if params.has_electric_vehicles:
-            groups.append(ElectricVehicleConstraints(self._milp_model))
-
-        if params.has_chargers:
-            groups.append(ChargerConstraints(self._milp_model))
-
-        if params.has_markets:
-            groups.append(MarketConstraints(self._milp_model))
-
-        if params.has_flexible_loads:
-            groups.append(FlexibleLoadConstraints(self._milp_model))
-
+        groups: list[ConstraintGroup] = [
+            asset.spec.constraint_group(self._milp_model) for asset in AssetRegistry if asset.spec.is_present(params)
+        ]
         groups.append(ScenarioConstraints(self._milp_model))
-
         if params.objective.cvar is not None:
             groups.append(CVaRConstraints(self._milp_model))
-
         return groups
 
     def _add_model_objective(self) -> None:
@@ -180,5 +159,4 @@ def build_model(energy_system_parameters: EnergySystemParameters) -> EnergyMILPM
         EnergyMILPModel ready for solving.
 
     """
-    builder = EnergyAlgebraicModelBuilder(energy_system_parameters)
-    return builder.build()
+    return EnergyAlgebraicModelBuilder(energy_system_parameters).build()

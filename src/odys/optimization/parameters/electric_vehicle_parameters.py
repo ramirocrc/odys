@@ -1,13 +1,14 @@
 """Electric vehicle parameters for the mathematical optimization model."""
 
 from collections.abc import Sequence
-from typing import ClassVar
+from typing import ClassVar, Self
 
 import numpy as np
 import xarray as xr
 
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.optimization.model.sets import ModelDimension, ModelIndex
+from odys.optimization.parameters.build_context import ParamBuildContext
 
 
 class ElectricVehicleIndex(ModelIndex):
@@ -92,6 +93,11 @@ class ElectricVehicleParameters:
             dims=[ev_dim, time_dim],
             coords=trip_coords,
         )
+
+    @classmethod
+    def build(cls, ctx: ParamBuildContext) -> Self:
+        """Build electric vehicle parameters from a parameter build context."""
+        return cls(ctx.number_of_steps, ctx.electric_vehicles)
 
     @property
     def is_empty(self) -> bool:

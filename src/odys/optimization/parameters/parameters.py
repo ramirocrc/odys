@@ -32,33 +32,3 @@ class EnergySystemParameters(BaseModel):
     chargers: ChargerParameters
     electric_vehicles: ElectricVehicleParameters
     objective: Objective
-
-    @property
-    def has_generators(self) -> bool:
-        """Return True if there are generators."""
-        return not self.generators.is_empty
-
-    @property
-    def has_standalone_storages(self) -> bool:
-        """Return True if there are standalone storages."""
-        return not self.standalone_storages.is_empty
-
-    @property
-    def has_flexible_loads(self) -> bool:
-        """Return True if there are flexible loads."""
-        return not self.flexible_loads.is_empty
-
-    @property
-    def has_markets(self) -> bool:
-        """Return True if there are markets."""
-        return not self.markets.is_empty
-
-    @property
-    def has_chargers(self) -> bool:
-        """Return True if there are chargers."""
-        return not self.chargers.is_empty
-
-    @property
-    def has_electric_vehicles(self) -> bool:
-        """Return True if there are electric vehicles."""
-        return not self.electric_vehicles.is_empty

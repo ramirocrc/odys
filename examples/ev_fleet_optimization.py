@@ -83,7 +83,7 @@ from odys import (
     TradeDirection,
     Trip,
 )
-from odys.results.optimization_results import OptimalDisptachResults
+from odys.results.optimization_results import OptimalDispatchResults
 from odys.utils.logging import get_logger, setup_rich_logging
 
 setup_rich_logging()
@@ -213,7 +213,7 @@ MARKET_PRICES: list[float] = [
 ]
 
 
-def run_ev_fleet_optimization() -> OptimalDisptachResults:
+def run_ev_fleet_optimization() -> OptimalDispatchResults:
     """Run the EV fleet optimization example and return the optimization results."""
     market = EnergyMarket(
         name="grid_market",

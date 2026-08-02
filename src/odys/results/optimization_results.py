@@ -1,12 +1,12 @@
 """Frozen snapshot of solved model data for result extraction."""
 
-import xarray as xr
-from linopy.constants import SolverStatus, TerminationCondition
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from linopy.constants import SolverStatus
 
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
-from odys.optimization.model.sets import ModelDimension
-from odys.optimization.model.variables import ModelVariable
-from odys.optimization.parameters.parameters import EnergySystemParameters
 from odys.results.dispatch import (
     ChargerDispatch,
     ElectricVehicleDispatch,
@@ -15,13 +15,40 @@ from odys.results.dispatch import (
     MarketDispatch,
     StandaloneStorageDispatch,
 )
+from odys.results.schema import (
+    DIM_CHARGER,
+    DIM_EV,
+    DIM_FLEXIBLE_LOAD,
+    DIM_GENERATOR,
+    DIM_MARKET,
+    DIM_STANDALONE_STORAGE,
+    VAR_CHARGER_EV_ASSIGNMENT,
+    VAR_EV_CHARGE_MODE,
+    VAR_EV_NET_POWER,
+    VAR_EV_POWER_IN,
+    VAR_EV_SOC,
+    VAR_GENERATOR_POWER,
+    VAR_GENERATOR_SHUTDOWN,
+    VAR_GENERATOR_STARTUP,
+    VAR_GENERATOR_STATUS,
+    VAR_LOAD_ADJUSTMENT,
+    VAR_MARKET_BUY,
+    VAR_MARKET_SELL,
+    VAR_STANDALONE_STORAGE_CHARGE_MODE,
+    VAR_STANDALONE_STORAGE_NET_POWER,
+    VAR_STANDALONE_STORAGE_SOC,
+    SolutionSchema,
+)
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 
-class OptimalDisptachResults:
-    """Frozen snapshot of data extracted from a solved EnergyMILPModel.
+class OptimalDispatchResults:
+    """Frozen snapshot of data extracted from a solved optimization model.
 
-    Captures only what OptimizationResults needs, allowing the full
-    linopy model to be garbage-collected after solving.
+    Holds a :class:`SolutionSchema` only — not the full linopy model or
+    ``EnergySystemParameters`` — so algebraic internals can be GC'd after solve.
     """
 
     __slots__ = (
@@ -31,56 +58,38 @@ class OptimalDisptachResults:
         "_has_generators",
         "_has_markets",
         "_has_standalone_storages",
-        "_objective_value",
-        "_parameters",
-        "_solution",
-        "_solver_status",
-        "_termination_condition",
-        "_variable_names",
+        "_schema",
     )
 
-    def __init__(
-        self,
-        solver_status: SolverStatus,
-        termination_condition: TerminationCondition,
-        solution: xr.Dataset,
-        objective_value: float | None,
-        parameters: EnergySystemParameters,
-    ) -> None:
-        """Initialize OptimalDisptachResults."""
-        self._solver_status = solver_status
-        self._termination_condition = termination_condition
-        if ModelDimension.Scenarios in solution.coords and len(solution.coords[ModelDimension.Scenarios]) == 1:
-            solution = solution.squeeze(ModelDimension.Scenarios, drop=True)
-        self._solution = solution
-        self._objective_value = objective_value
-        self._variable_names = set(solution.variables.keys())
-        self._has_generators = ModelDimension.Generators in solution.dims
-        self._has_standalone_storages = ModelDimension.StandaloneStorages in solution.dims
-        self._has_electric_vehicles = ModelDimension.EVs in solution.dims
-        self._has_chargers = ModelDimension.Chargers in solution.dims
-        self._has_markets = ModelDimension.Markets in solution.dims
-        self._has_flexible_loads = ModelDimension.FlexibleLoads in solution.dims
-        self._parameters = parameters
+    def __init__(self, schema: SolutionSchema) -> None:
+        """Initialize from a solver-built solution schema."""
+        self._schema = schema
+        solution = schema.solution
+        self._has_generators = DIM_GENERATOR in solution.dims
+        self._has_standalone_storages = DIM_STANDALONE_STORAGE in solution.dims
+        self._has_electric_vehicles = DIM_EV in solution.dims
+        self._has_chargers = DIM_CHARGER in solution.dims
+        self._has_markets = DIM_MARKET in solution.dims
+        self._has_flexible_loads = DIM_FLEXIBLE_LOAD in solution.dims
 
     @property
     def solver_status(self) -> str:
         """Get the solver status."""
-        return self._solver_status.value
+        return self._schema.solver_status.value
 
     @property
     def termination_condition(self) -> str:
         """Get the termination condition."""
-        return self._termination_condition.value
+        return self._schema.termination_condition.value
 
     def to_dataset(self) -> xr.Dataset:
         """Get the raw solution dataset."""
         self._validate_terminated_successfully()
-        return self._solution
+        return self._schema.solution
 
     def _validate_terminated_successfully(self) -> None:
-        if self._solver_status != SolverStatus.ok:
-            msg = f"No solution available. Optimization Termination Condition: {self._termination_condition}."
+        if self._schema.solver_status != SolverStatus.ok:
+            msg = f"No solution available. Optimization Termination Condition: {self._schema.termination_condition}."
             raise OdysSolverError(msg)
 
     @property
@@ -90,12 +99,12 @@ class OptimalDisptachResults:
         if not self._has_generators:
             msg = "This model does not contain generator results"
             raise OdysNoResultsError(msg)
-
+        solution = self._schema.solution
         return GeneratorDispatch(
-            power=self._solution[ModelVariable.GENERATOR_POWER.var_name],
-            status=self._solution[ModelVariable.GENERATOR_STATUS.var_name],
-            startup=self._solution[ModelVariable.GENERATOR_STARTUP.var_name],
-            shutdown=self._solution[ModelVariable.GENERATOR_SHUTDOWN.var_name],
+            power=solution[VAR_GENERATOR_POWER],
+            status=solution[VAR_GENERATOR_STATUS],
+            startup=solution[VAR_GENERATOR_STARTUP],
+            shutdown=solution[VAR_GENERATOR_SHUTDOWN],
         )
 
     @property
@@ -105,11 +114,11 @@ class OptimalDisptachResults:
         if not self._has_standalone_storages:
             msg = "This model does not contain standalone storage results"
             raise OdysNoResultsError(msg)
-
+        solution = self._schema.solution
         return StandaloneStorageDispatch(
-            net_power=self._solution[ModelVariable.STANDALONE_STORAGE_POWER_NET.var_name],
-            soc=self._solution[ModelVariable.STANDALONE_STORAGE_SOC.var_name],
-            charge_mode=self._solution[ModelVariable.STANDALONE_STORAGE_CHARGE_MODE.var_name],
+            net_power=solution[VAR_STANDALONE_STORAGE_NET_POWER],
+            soc=solution[VAR_STANDALONE_STORAGE_SOC],
+            charge_mode=solution[VAR_STANDALONE_STORAGE_CHARGE_MODE],
         )
 
     @property
@@ -119,11 +128,11 @@ class OptimalDisptachResults:
         if not self._has_electric_vehicles:
             msg = "This model does not contain electric vehicle results"
             raise OdysNoResultsError(msg)
-
+        solution = self._schema.solution
         return ElectricVehicleDispatch(
-            net_power=self._solution[ModelVariable.EV_POWER_NET.var_name],
-            soc=self._solution[ModelVariable.EV_SOC.var_name],
-            charge_mode=self._solution[ModelVariable.EV_CHARGE_MODE.var_name],
+            net_power=solution[VAR_EV_NET_POWER],
+            soc=solution[VAR_EV_SOC],
+            charge_mode=solution[VAR_EV_CHARGE_MODE],
         )
 
     @property
@@ -133,10 +142,10 @@ class OptimalDisptachResults:
         if not self._has_chargers:
             msg = "This model does not contain charger results"
             raise OdysNoResultsError(msg)
-
+        solution = self._schema.solution
         return ChargerDispatch(
-            assignment=self._solution[ModelVariable.CHARGER_EV_ASSIGNMENT.var_name],
-            power_in=self._solution[ModelVariable.EV_POWER_IN.var_name],
+            assignment=solution[VAR_CHARGER_EV_ASSIGNMENT],
+            power_in=solution[VAR_EV_POWER_IN],
         )
 
     @property
@@ -146,10 +155,10 @@ class OptimalDisptachResults:
         if not self._has_markets:
             msg = "This model does not contain market results"
             raise OdysNoResultsError(msg)
-
+        solution = self._schema.solution
         return MarketDispatch(
-            sell_volume=self._solution[ModelVariable.MARKET_SELL.var_name],
-            buy_volume=self._solution[ModelVariable.MARKET_BUY.var_name],
+            sell_volume=solution[VAR_MARKET_SELL],
+            buy_volume=solution[VAR_MARKET_BUY],
         )
 
     @property
@@ -159,17 +168,12 @@ class OptimalDisptachResults:
         if not self._has_flexible_loads:
             msg = "This model does not contain flexible load results"
             raise OdysNoResultsError(msg)
-
-        base_profiles = self._parameters.scenarios.flexible_load_base_profiles
+        base_profiles = self._schema.flexible_load_base_profiles
         if base_profiles is None:
             msg = "Flexible loads exist but base profiles are missing"
             raise OdysNoResultsError(msg)
-
-        if ModelDimension.Scenarios in base_profiles.dims and len(base_profiles.coords[ModelDimension.Scenarios]) == 1:
-            base_profiles = base_profiles.squeeze(ModelDimension.Scenarios, drop=True)
-
         return FlexibleLoadDispatch(
-            load_adjustment=self._solution[ModelVariable.LOAD_ADJUSTMENT.var_name],
+            load_adjustment=self._schema.solution[VAR_LOAD_ADJUSTMENT],
             base_profiles=base_profiles,
         )
 
@@ -177,4 +181,4 @@ class OptimalDisptachResults:
     def objective_value(self) -> float | None:
         """Objective value from optimization."""
         self._validate_terminated_successfully()
-        return self._objective_value
+        return self._schema.objective_value

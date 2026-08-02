@@ -57,6 +57,7 @@ dev = [
   "deptry>=0.25.1",
   "nox>=2026.7.11",
   "prek>=0.4.10",
+  "pydeps>=3.0.6",
   "pyrefly>=1.1.1",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
@@ -130,6 +131,10 @@ ignore = [
   "INP001",  # No __init__.py in docs/
   "E402",  # sys.path manipulation before imports
   "C408",  # plotly API uses dict() extensively
+  "T201",  # print() for CLI output is intentional
+]
+"scripts/**" = [
+  "INP001",  # Not an installable package
   "T201",  # print() for CLI output is intentional
 ]
 "src/odys/results/dispatch.py" = [

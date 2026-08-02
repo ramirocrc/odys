@@ -19,6 +19,7 @@ from odys.domain.entities.trip import Trip
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
 from odys.domain.scenarios import Scenario, StochasticScenario
 from odys.energy_system import EnergySystem
+from odys.results.optimization_results import OptimalDispatchResults
 from odys.solvers.solver_config import SolverConfig, SolverName
 
 __version__ = version("odys")
@@ -34,6 +35,7 @@ __all__ = [
     "FlexibleLoad",
     "Generator",
     "Objective",
+    "OptimalDispatchResults",
     "ProfitTerm",
     "Scenario",
     "SolverConfig",
