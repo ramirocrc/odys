@@ -3,7 +3,7 @@
 **Date:** 2026-08-02
 **Inputs:** [as-is-scorecard.md](as-is-scorecard.md), [target-architecture.md](target-architecture.md)
 **Nature:** recommendations — not a committed delivery plan until explicitly scheduled
-**Status:** Phases 0–3 + **G11a + G12** done. **No runtime user/plugin assets** (G13/G11b rejected). Next optional: G10 / Phase 4.
+**Status:** Phases 0–3 + **G11a + G12 + G10** done. **No runtime user/plugin assets** (G13/G11b rejected). Next optional: Phase 4 (G14/G15).
 
 ## Product stance
 
@@ -26,7 +26,7 @@ Impact / effort: S ≈ hours–day, M ≈ days–week, L ≈ multi-week.
 | G7 | Asset contribution ports for power balance + profit | High | L | **Done (Phase 2)** | Registry assets only; FixedLoad residual; Charger no-op |
 | G8 | Results depend on solution schema only | Med | M | **Done (Phase 3)** | `SolutionSchema`; forbid `results → optimization` |
 | G9 | Deduplicate `*Dispatch` (generic + thin wrappers) | Med | M | **Done (Phase 3)** | `_DispatchBase` + thin public wrappers |
-| G10 | Split `validation.py` into composable modules | Med | M | **Later** | Understandability; already pure |
+| G10 | Split `validation.py` into composable modules | Med | M | **Done** | `domain/validation/` package; same public API |
 | G11 | Param factories (first-party assembly) | Med | M | **Done (G11a)** | Context + `.build`; closed ESP bag |
 | G12 | MILP property god-object → typed `ModelVariables` view | Med | M | **Done** | `model.vars.*`; field name = linopy name |
 | G13 | Runtime plugin inject (`extra_specs`) | — | — | **Rejected** | First-party only; complexity not wanted |
@@ -117,4 +117,5 @@ forbidden:
 1. ~~Phases 0–3 + G11a~~ — **done.**
 2. ~~Runtime plugins~~ — **rejected** (product decision).
 3. ~~**G12**~~ — **done** (`model.vars`).
-4. **Defer** G10/G14/G15 until a concrete need.
+4. ~~**G10**~~ — **done** (`domain/validation/` package).
+5. **Defer** G14/G15 until a concrete need.
