@@ -1,12 +1,69 @@
 """Consistency checks between portfolio entities and per-scenario data keyed by entity name."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import NamedTuple
 
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import StochasticScenario
+
+
+class _DataKind(NamedTuple):
+    """Wording used in error messages for one kind of scenario data."""
+
+    entity_label: str
+    data_label: str
+    extra_noun: str
+    container_label: str
+
+
+_FIXED_LOAD_PROFILES = _DataKind("fixed loads", "fixed load profiles", "loads", "Portfolio")
+_FLEXIBLE_LOAD_BASE_PROFILES = _DataKind("flexible loads", "flexible load base profiles", "loads", "Portfolio")
+_MARKET_PRICES = _DataKind("markets", "market prices", "markets", "EnergySystem")
+
+
+def _validate_scenario_data_consistent_with_entities(
+    entity_names: list[str],
+    scenario: StochasticScenario,
+    scenario_data: Mapping[str, object] | None,
+    kind: _DataKind,
+) -> None:
+    """Validate that scenario data keys exactly match the given entity names.
+
+    If there are entities, the scenario must have data for each of them and
+    nothing else. If there are no entities, the scenario data must be None.
+    """
+    if entity_names:
+        if scenario_data is None:
+            msg = (
+                f"Portfolio contains {kind.entity_label} {entity_names}, "
+                f"but scenario '{scenario.name}' has no {kind.data_label}."
+            )
+            raise OdysValidationError(msg)
+
+        expected_names = set(entity_names)
+        actual_names = set(scenario_data.keys())
+
+        missing = expected_names - actual_names
+        if missing:
+            msg = f"Scenario '{scenario.name}' is missing {kind.data_label} for: {sorted(missing)}"
+            raise OdysValidationError(msg)
+
+        extra = actual_names - expected_names
+        if extra:
+            msg = (
+                f"Scenario '{scenario.name}' has {kind.data_label} for {kind.extra_noun} not in portfolio: "
+                f"{sorted(extra)}"
+            )
+            raise OdysValidationError(msg)
+    elif scenario_data is not None:
+        msg = (
+            f"{kind.container_label} contains no {kind.entity_label}, but scenario '{scenario.name}' "
+            f"has {kind.data_label}: {list(scenario_data.keys())}"
+        )
+        raise OdysValidationError(msg)
 
 
 def validate_fixed_loads_consistent_with_scenarios(
@@ -26,38 +83,14 @@ def validate_fixed_loads_consistent_with_scenarios(
         OdysValidationError: If load profiles are inconsistent with portfolio loads.
 
     """
-    has_fixed_loads = bool(fixed_loads)
-
+    load_names = [load.name for load in fixed_loads]
     for scenario in scenarios:
-        if has_fixed_loads:
-            if scenario.fixed_load_profiles is None:
-                msg = (
-                    f"Portfolio contains fixed loads {[load.name for load in fixed_loads]}, "
-                    f"but scenario '{scenario.name}' has no fixed load profiles."
-                )
-                raise OdysValidationError(msg)
-
-            portfolio_load_names = {load.name for load in fixed_loads}
-            scenario_load_names = set(scenario.fixed_load_profiles.keys())
-
-            missing_loads = portfolio_load_names - scenario_load_names
-            if missing_loads:
-                msg = f"Scenario '{scenario.name}' is missing fixed load profiles for: {sorted(missing_loads)}"
-                raise OdysValidationError(msg)
-
-            extra_loads = scenario_load_names - portfolio_load_names
-            if extra_loads:
-                msg = (
-                    f"Scenario '{scenario.name}' has fixed load profiles for loads not in portfolio: "
-                    f"{sorted(extra_loads)}"
-                )
-                raise OdysValidationError(msg)
-        elif scenario.fixed_load_profiles is not None:
-            msg = (
-                f"Portfolio contains no fixed loads, but scenario '{scenario.name}' "
-                f"has fixed load profiles: {list(scenario.fixed_load_profiles.keys())}"
-            )
-            raise OdysValidationError(msg)
+        _validate_scenario_data_consistent_with_entities(
+            load_names,
+            scenario,
+            scenario.fixed_load_profiles,
+            _FIXED_LOAD_PROFILES,
+        )
 
 
 def validate_flexible_loads_consistent_with_scenarios(
@@ -77,38 +110,14 @@ def validate_flexible_loads_consistent_with_scenarios(
         OdysValidationError: If base profiles are inconsistent with portfolio loads.
 
     """
-    has_flexible_loads = bool(flexible_loads)
-
+    load_names = [load.name for load in flexible_loads]
     for scenario in scenarios:
-        if has_flexible_loads:
-            if scenario.flexible_load_base_profiles is None:
-                msg = (
-                    f"Portfolio contains flexible loads {[load.name for load in flexible_loads]}, "
-                    f"but scenario '{scenario.name}' has no flexible load base profiles."
-                )
-                raise OdysValidationError(msg)
-
-            portfolio_load_names = {load.name for load in flexible_loads}
-            scenario_load_names = set(scenario.flexible_load_base_profiles.keys())
-
-            missing_loads = portfolio_load_names - scenario_load_names
-            if missing_loads:
-                msg = f"Scenario '{scenario.name}' is missing flexible load base profiles for: {sorted(missing_loads)}"
-                raise OdysValidationError(msg)
-
-            extra_loads = scenario_load_names - portfolio_load_names
-            if extra_loads:
-                msg = (
-                    f"Scenario '{scenario.name}' has flexible load base profiles for loads not in portfolio: "
-                    f"{sorted(extra_loads)}"
-                )
-                raise OdysValidationError(msg)
-        elif scenario.flexible_load_base_profiles is not None:
-            msg = (
-                f"Portfolio contains no flexible loads, but scenario '{scenario.name}' "
-                f"has flexible load base profiles: {list(scenario.flexible_load_base_profiles.keys())}"
-            )
-            raise OdysValidationError(msg)
+        _validate_scenario_data_consistent_with_entities(
+            load_names,
+            scenario,
+            scenario.flexible_load_base_profiles,
+            _FLEXIBLE_LOAD_BASE_PROFILES,
+        )
 
 
 def validate_markets_consistent_with_scenarios(
@@ -128,35 +137,11 @@ def validate_markets_consistent_with_scenarios(
         OdysValidationError: If market prices are inconsistent with markets.
 
     """
-    has_markets = bool(markets)
-
+    market_names = [market.name for market in markets]
     for scenario in scenarios:
-        if has_markets:
-            if scenario.market_prices is None:
-                msg = (
-                    f"Portfolio contains markets {[market.name for market in markets]}, "
-                    f"but scenario '{scenario.name}' has no market prices."
-                )
-                raise OdysValidationError(msg)
-
-            portfolio_market_names = {market.name for market in markets}
-            scenario_market_names = set(scenario.market_prices.keys())
-
-            missing_markets = portfolio_market_names - scenario_market_names
-            if missing_markets:
-                msg = f"Scenario '{scenario.name}' is missing market prices for: {sorted(missing_markets)}"
-                raise OdysValidationError(msg)
-
-            extra_markets = scenario_market_names - portfolio_market_names
-            if extra_markets:
-                msg = (
-                    f"Scenario '{scenario.name}' has market prices for markets not in portfolio: "
-                    f"{sorted(extra_markets)}"
-                )
-                raise OdysValidationError(msg)
-        elif scenario.market_prices is not None:
-            msg = (
-                f"EnergySystem contains no markets, but scenario '{scenario.name}' "
-                f"has market prices: {list(scenario.market_prices.keys())}"
-            )
-            raise OdysValidationError(msg)
+        _validate_scenario_data_consistent_with_entities(
+            market_names,
+            scenario,
+            scenario.market_prices,
+            _MARKET_PRICES,
+        )
