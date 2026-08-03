@@ -75,7 +75,7 @@ scenario = Scenario(
 )
 ```
 
-Notice the subtle point here: the gas turbine has a nominal capacity of 100 MW, but solar is limited by its profile. In other words, installed capacity is not the same thing as what is actually usable in a given timestep. And when available solar exceeds demand, the optimizer can only dispatch what the load requires — the rest is curtailed.
+Notice the subtle point here: the gas turbine has a nominal capacity of 100 MW, but solar is limited by its profile. In other words, installed capacity is not the same thing as what is actually usable in a given timestep. And when available solar exceeds demand, the optimizer can only dispatch what the load requires; the rest is curtailed.
 
 ### 3. Solve the system
 
@@ -104,7 +104,7 @@ If you print `result.generators.power`, the pattern should be easy to read:
 - gas fills the remaining demand
 - total supply always matches the fixed load
 
-The dashed green line shows the available solar capacity. Notice that during the middle hours (timesteps 9–15), the solar capacity exceeds the load. The optimizer can only dispatch what the load needs, so some solar generation goes unused — this is curtailment.
+The dashed green line shows the available solar capacity. Notice that during the middle hours (timesteps 9-15), the solar capacity exceeds the load. The optimizer can only dispatch what the load needs, so some solar generation goes unused. This is curtailment.
 
 ## Discussion
 

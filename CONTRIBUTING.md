@@ -1,6 +1,6 @@
 # Contributing to Odys
 
-Thanks for your interest in contributing to Odys! Whether you're fixing a bug, adding a feature, or improving docs — your help is welcome.
+Thanks for your interest in contributing to Odys! Whether you're fixing a bug, adding a feature, or improving docs, your help is welcome.
 
 ## Code of Conduct
 
@@ -117,17 +117,17 @@ Before opening a PR, verify that your changes:
 
 Follow these conventions to keep the codebase consistent:
 
-- **Type hints everywhere** — use `X | None` union syntax, not `Optional[X]`
-- **Pydantic frozen models** — use `ConfigDict(frozen=True, extra="forbid")` for all data classes
-- **Custom exceptions** — never raise generic `ValueError` or `TypeError`:
-  - `OdysError` — base exception
-  - `OdysValidationError` — user input validation failures
-  - `OdysSolverError` — solver failures or unexpected status
-  - `OdysNoResultsError` — accessing results that don't exist
+- **Type hints everywhere**: use `X | None` union syntax, not `Optional[X]`
+- **Pydantic frozen models**: use `ConfigDict(frozen=True, extra="forbid")` for all data classes
+- **Custom exceptions**: never raise generic `ValueError` or `TypeError`:
+  - `OdysError`: base exception
+  - `OdysValidationError`: user input validation failures
+  - `OdysSolverError`: solver failures or unexpected status
+  - `OdysNoResultsError`: accessing results that don't exist
 - **Line length**: 120 characters
 - **Docstrings**: Google-style
-- **No comments** — split into functions if you need comments to explain sections
-- **Test data** — use module-level constants (e.g., `STANDARD_GENERATOR_POWER = 100.0`)
+- **No comments**: split into functions if you need comments to explain sections
+- **Test data**: use module-level constants (e.g., `STANDARD_GENERATOR_POWER = 100.0`)
 
 ## Project structure
 
@@ -142,10 +142,10 @@ docs/                  # Documentation source
 
 ## Key libraries
 
-- **linopy** — xarray-based linear/mixed-integer optimization modeling
-- **highspy** — HiGHS MILP solver (via linopy)
-- **xarray** — N-dimensional arrays (scenarios, time, assets dimensions)
-- **pydantic** — data validation and immutable models
+- **linopy**: xarray-based linear/mixed-integer optimization modeling
+- **highspy**: HiGHS MILP solver (via linopy)
+- **xarray**: N-dimensional arrays (scenarios, time, assets dimensions)
+- **pydantic**: data validation and immutable models
 
 ## Next steps
 
