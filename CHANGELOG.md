@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-04
+
 ### Added
 
 - EV fleet optimization: `ElectricVehicle`, `Charger`, and `Trip` entities for modeling electric vehicle charging with trip constraints
 - `StandaloneStorage` as the user-facing storage class for stationary battery assets
-- EV trip validation: checks for overlapping trips, trips within horizon, and feasible min SOC at departure
-- Charger-EV consistency validation: ensures chargers and electric vehicles are both present or both absent
 - Flexible loads: adjustable demand that optimizer can increase/decrease within bounds
 - `FlexibleLoadDispatch` results class with `load_adjustment` and `actual_load` properties
 - `results.flexible_loads` API for accessing flexible load dispatch results
