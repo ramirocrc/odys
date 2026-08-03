@@ -199,7 +199,7 @@ class EnergyMILPModel:
     def per_scenario_profit(self) -> linopy.LinearExpression:
         """Profit per scenario, summed over time and assets but not over scenarios.
 
-        Does not apply scenario probabilities — this is the raw per-scenario profit.
+        Does not apply scenario probabilities; this is the raw per-scenario profit.
         Used in both the CVaR shortfall constraint and the CVaR objective term.
         """
         profit_terms: list[linopy.LinearExpression] = []

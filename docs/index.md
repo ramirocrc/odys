@@ -42,7 +42,7 @@ icon: lucide/home
 
 -   :material-lightning-bolt: **Simple API**
 
-    Define your assets, describe the uncertainty through scenarios, and call `.optimize()`. No boilerplate, no configuration files.
+    Define your assets, describe the system conditions through scenarios, and call `.optimize()`. No boilerplate, no configuration files.
 
 -   :material-math-log: **Transparent math**
 
@@ -128,11 +128,11 @@ See [EnergySystem](user_guide/energy_system.md) to understand the full workflow,
 
 Odys depends on a small set of core libraries:
 
-- [Pydantic](https://docs.pydantic.dev/) — Data validation and settings management
-- [linopy](https://linopy.readthedocs.io/) — Linear optimization modeling
-- [HiGHS](https://ergo-code.github.io/HiGHS/) — High-performance optimization solver
-- [pandas](https://pandas.pydata.org/) — Data analysis and manipulation
-- [xarray](https://docs.xarray.dev/) — Multi-dimensional arrays
+- [Pydantic](https://docs.pydantic.dev/): Data validation and settings management
+- [linopy](https://linopy.readthedocs.io/): Linear optimization modeling
+- [HiGHS](https://ergo-code.github.io/HiGHS/): High-performance optimization solver
+- [pandas](https://pandas.pydata.org/): Data analysis and manipulation
+- [xarray](https://docs.xarray.dev/): Multi-dimensional arrays
 
 All dependencies are installed automatically when you install odys.
 

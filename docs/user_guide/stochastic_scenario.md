@@ -49,8 +49,8 @@ high_wind = StochasticScenario(
 
 Odys enforces two rules when you pass a list of stochastic scenarios to the `EnergySystem`:
 
-1. **Probabilities must sum to 1.0** -- if they don't, you'll get a `ValueError`
-2. **Names must be unique** -- duplicated names also raise a `ValueError`
+1. **Probabilities must sum to 1.0** -- if they don't, you'll get an `OdysValidationError`
+2. **Names must be unique** -- duplicated names also raise an `OdysValidationError`
 
 ```python
 # This will fail: probabilities sum to 0.8

@@ -4,21 +4,22 @@ icon: lucide/briefcase
 
 # AssetPortfolio
 
-An `AssetPortfolio` is the container that holds all your energy assets. Let's add generators, storages, and loads to it, then pass it to the `EnergySystem`.
+An `AssetPortfolio` is the container that holds all your energy assets. Let's add generators, storages, loads, EVs, and chargers to it, then pass it to the `EnergySystem`.
 
-We use a separate portfolio object because it keeps asset management clean. You can build the portfolio incrementally, validate names, and query by type -- all before creating the `EnergySystem`.
+We use a separate portfolio object because it keeps asset management clean. You can build the portfolio incrementally, validate names, and query by type, all before creating the `EnergySystem`.
 
 ## Basic usage
 
 ```python
-from odys import AssetPortfolio, FixedLoad, Generator, Storage
+from odys import AssetPortfolio, FixedLoad, Generator, StandaloneStorage
 
 portfolio = AssetPortfolio([
     Generator(name="gen", nominal_power=100.0, variable_cost=50.0),
-    Storage(
+    StandaloneStorage(
         name="bess",
         capacity=50.0,
-        max_power=25.0,
+        max_charge_power=25.0,
+        max_discharge_power=25.0,
         efficiency_charging=0.95,
         efficiency_discharging=0.95,
         soc_start=0.5,
@@ -60,8 +61,11 @@ The portfolio has convenience properties to get assets by type:
 ```python
 portfolio.generators  # tuple of all Generator assets
 portfolio.standalone_storages  # tuple of all StandaloneStorage assets
+portfolio.electric_vehicles  # tuple of all ElectricVehicle assets
+portfolio.chargers  # tuple of all Charger assets
 portfolio.fixed_loads  # tuple of all FixedLoad assets
 portfolio.flexible_loads  # tuple of all FlexibleLoad assets
+portfolio.loads  # tuple of all FixedLoad and FlexibleLoad assets
 ```
 
 These return tuples, so they're safe to iterate over without worrying about accidental modification.
