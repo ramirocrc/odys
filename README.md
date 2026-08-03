@@ -8,7 +8,21 @@
 
 Optimize energy portfolios under uncertainty.
 
-**[Documentation](https://ramirocrc.github.io/odys/)** | **[Examples](https://ramirocrc.github.io/odys/examples/)**
+---
+
+**[Documentation](https://ramirocrc.github.io/odys/)**
+
+**[Examples](https://ramirocrc.github.io/odys/examples/)**
+
+---
+
+Odys is a modern Python framework for optimizing multi-asset energy systems.
+
+The key features are:
+- **Optimization under uncertainty**: Stochastic optimization is the default, not an afterthought. Multi-asset, multi-market from day one with built-in CVaR risk management.
+- **Multi-solver support**: Swap between HiGHS (default), Gurobi, CPLEX, or SCIP with a single configuration change.
+- **Simple API**: Define your assets, describe the uncertainty through scenarios, and call `.optimize()`. No boilerplate, no configuration files.
+- **Transparent math**: Every constraint and objective term is documented with equations. You know exactly what the solver sees.
 
 ## Installation
 
