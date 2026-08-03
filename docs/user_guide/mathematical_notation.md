@@ -16,7 +16,9 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $s$ | Scenario |
 | $s_0$ | First scenario |
 | $g$ | Generator |
-| $b$ | Storage asset |
+| $b$ | Standalone storage asset |
+| $e$ | Electric vehicle |
+| $c$ | Charger |
 | $l$ | Load |
 | $m$ | Market |
 
@@ -51,6 +53,7 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $A_{g,t,s}$ | Available-capacity profile |
 | $c_g$ | Generator variable cost |
 | $C^{start}_g$ | Generator startup cost |
+| $C^{shutdown}_g$ | Generator shutdown cost |
 
 ## Storage symbols
 
@@ -59,18 +62,35 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $p^{ch}_{b,t,s}$ | Charging power |
 | $p^{dis}_{b,t,s}$ | Discharging power |
 | $p^{net}_{b,t,s}$ | Net storage power |
-| $SOC_{b,t,s}$ | State of charge |
+| $SOC_{b,t,s}$ | State of charge (fraction of capacity) |
 | $SOC^{start}_b$ | Initial state of charge |
 | $SOC^{end}_b$ | Final state of charge |
 | $SOC^{min}_b$ | Minimum state of charge |
 | $SOC^{max}_b$ | Maximum state of charge |
 | $E_b$ | Storage energy capacity |
+| $P^{ch,\max}_b$ | Maximum charging power |
+| $P^{dis,\max}_b$ | Maximum discharging power |
 | $\eta^{ch}_b$ | Charging efficiency |
 | $\eta^{dis}_b$ | Discharging efficiency |
 | $\eta^{rt}_b$ | Round-trip efficiency |
+| $\delta_b$ | Self-discharge rate per hour |
 | $z_{b,t,s}$ | Binary charging mode |
 | $\Delta t$ | Timestep length in hours |
-| $C^{deg}_b$ | Storage degradation cost |
+| $c^{deg}_b$ | Storage degradation cost |
+
+## Electric vehicle and charger symbols
+
+| Symbol | Meaning |
+| ------ | ------- |
+| $p^{ch}_{e,t,s}$ | EV charging power |
+| $p^{dis}_{e,t,s}$ | EV discharging power |
+| $p^{net}_{e,t,s}$ | EV net power |
+| $SOC_{e,t,s}$ | EV state of charge |
+| $a_{c,e,t,s}$ | Binary charger-to-EV assignment |
+| $P^{\max}_c$ | Charger maximum power |
+| $\Delta SOC^{trip}_{e,t}$ | Trip energy drop as a fraction of capacity |
+
+Electric vehicles reuse the storage SOC dynamics and add trip consumption, driving unavailability, departure SoC requirements, and charger assignment limits.
 
 ## Market symbols
 
@@ -93,7 +113,7 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $\Delta d^{\max-}_l$ | Maximum decrease below base profile |
 | $v_l$ | Value of consumption (economic value per MWh) |
 
-The power-balance equation uses generation, storage discharge, and market buys on the supply side, and load (fixed + flexible base + adjustment), storage charge, and market sells on the demand side.
+The power-balance equation uses generation, storage/EV discharge, and market buys on the supply side, and load (fixed + flexible base + adjustment), storage/EV charge, and market sells on the demand side.
 
 Flexible load adjustment is bounded: $-\Delta d^{\max-}_l \leq \Delta d_{l,t,s} \leq \Delta d^{\max+}_l$.
 
@@ -102,8 +122,8 @@ The objective includes a profit term $\Delta d_{l,t,s} \cdot v_l$ for flexible l
 ## Sign conventions
 
 - $p^{net}_{b,t,s} = p^{ch}_{b,t,s} - p^{dis}_{b,t,s}$
-- Positive storage `net_power` means charging.
-- Negative storage `net_power` means discharging.
+- Positive storage/EV `net_power` means charging.
+- Negative storage/EV `net_power` means discharging.
 - Market sell volume contributes positively to profit.
 - Market buy volume contributes negatively to profit.
 

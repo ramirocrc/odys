@@ -120,7 +120,7 @@ Before solving, Odys verifies the requested solver is installed. If it's not ava
 
 ```python
 from odys import SolverConfig, SolverName
-from odys.exceptions import OdysSolverError
+from odys.domain.exceptions import OdysSolverError
 
 try:
     result = energy_system.optimize(

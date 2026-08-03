@@ -187,4 +187,4 @@ Each of these is a `pandas.DataFrame`.
 
 ## Next steps
 
-Next, see how [Load](load.md) defines the demand your system must serve.
+Next, see how [Load](load.md) defines the demand your system must serve, or jump to [StandaloneStorage](storage.md) to add batteries.
