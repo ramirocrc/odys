@@ -2,9 +2,11 @@
 icon: fontawesome/solid/battery-three-quarters
 ---
 
-# Storage
+# StandaloneStorage
 
-A `Storage` models an energy storage system in your portfolio. The optimizer decides when to charge and discharge it to minimize costs (or maximize revenue).
+A `StandaloneStorage` models a stationary energy storage system in your portfolio. The optimizer decides when to charge and discharge it to minimize costs (or maximize revenue).
+
+`Storage` is the abstract base class shared by stationary batteries and electric vehicles. You instantiate `StandaloneStorage` for fixed batteries. For mobile batteries with trip schedules, see [ElectricVehicle](electric_vehicle.md).
 
 See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
 
@@ -13,12 +15,13 @@ See [Mathematical notation](mathematical_notation.md) for the full list of symbo
 Let's add a battery to the portfolio.
 
 ```python
-from odys import Storage
+from odys import StandaloneStorage
 
-storage = Storage(
+storage = StandaloneStorage(
     name="bess",
     capacity=100.0,  # MWh of storage
-    max_power=50.0,  # MW charge/discharge limit
+    max_charge_power=50.0,  # MW charge limit
+    max_discharge_power=50.0,  # MW discharge limit
     efficiency_charging=0.95,
     efficiency_discharging=0.95,
     soc_start=0.5,  # starts at 50%
@@ -31,15 +34,16 @@ storage = Storage(
 | ------------------------ | ------- | -------- | ------- | -------------------------------------------------------------------------------- |
 | `name`                   | `str`   | Yes      | -       | Unique identifier for the storage                                                |
 | `capacity`               | `float` | Yes      | -       | Total energy capacity (MWh)                                                      |
-| `max_power`              | `float` | Yes      | -       | Maximum charge/discharge power (MW)                                              |
-| `efficiency_charging`    | `float` | Yes      | -       | Charging efficiency, between 0 and 1                                             |
-| `efficiency_discharging` | `float` | Yes      | -       | Discharging efficiency, between 0 and 1                                          |
+| `max_charge_power`       | `float` | Yes      | -       | Maximum charging power (MW)                                                      |
+| `max_discharge_power`    | `float` | Yes      | -       | Maximum discharging power (MW). Use `0` for charge-only assets                   |
+| `efficiency_charging`    | `float` | No       | `1.0`   | Charging efficiency, between 0 and 1                                             |
+| `efficiency_discharging` | `float` | No       | `1.0`   | Discharging efficiency, between 0 and 1                                          |
 | `soc_start`              | `float` | Yes      | -       | Initial state of charge, as a fraction of capacity (0-1)                         |
 | `soc_end`                | `float` | No       | `None`  | Required final state of charge (0-1). If `None`, the optimizer is free to choose |
 | `soc_min`                | `float` | No       | `0.0`   | Minimum allowed state of charge (0-1)                                            |
 | `soc_max`                | `float` | No       | `1.0`   | Maximum allowed state of charge (0-1)                                            |
 | `degradation_cost`       | `float` | No       | `0.0`   | Cost per MWh cycled (charged or discharged), included in the objective          |
-| `self_discharge_rate`    | `float` | No       | `None`  | Accepted by the model object, but not included in the current storage dynamics   |
+| `self_discharge_rate`    | `float` | No       | `0.0`   | Fractional self-discharge per hour applied in the SOC dynamics                   |
 
 ## State of charge (SOC)
 
@@ -50,10 +54,11 @@ The SOC fields control how the storage's energy level behaves:
 - `soc_min` and `soc_max` set the operating range. For example, if you don't want to go below 20% or above 90%:
 
 ```python
-storage = Storage(
+storage = StandaloneStorage(
     name="bess",
     capacity=100.0,
-    max_power=50.0,
+    max_charge_power=50.0,
+    max_discharge_power=50.0,
     efficiency_charging=0.90,
     efficiency_discharging=0.85,
     soc_start=0.5,
@@ -74,12 +79,12 @@ $$
 $$
 
 $$
-SOC_{b,t} = SOC_{b,t-1}
+SOC_{b,t} = SOC_{b,t-1} (1 - \delta_b \Delta t)
 + \eta^{ch}_b \frac{\Delta t}{E_b} p^{ch}_{b,t}
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,t}
 $$
 
-for $t > 0$. At the first timestep, the implementation applies:
+for $t > 0$, where $\delta_b$ is the self-discharge rate. At the first timestep, the implementation applies:
 
 $$
 SOC_{b,0} = SOC^{start}_b
@@ -102,11 +107,11 @@ $$
 Charge and discharge power are constrained by the charging mode:
 
 $$
-p^{ch}_{b,t} \le z_{b,t} P^{\max}_b
+p^{ch}_{b,t} \le z_{b,t} P^{ch,\max}_b
 $$
 
 $$
-p^{dis}_{b,t} + z_{b,t} P^{\max}_b \le P^{\max}_b
+p^{dis}_{b,t} + z_{b,t} P^{dis,\max}_b \le P^{dis,\max}_b
 $$
 
 Notice the binary variable $z_{b,t}$. We use it to prevent the storage from charging and discharging simultaneously, which would be physically impossible and would create artificial efficiency losses in the model.
@@ -125,17 +130,18 @@ $$
 
 ## Degradation cost
 
-`Storage` accepts a `degradation_cost` field modeling battery wear, in currency per MWh cycled. It's applied to total energy throughput; both charging and discharging count toward cycling, and included in the objective as:
+`StandaloneStorage` accepts a `degradation_cost` field modeling battery wear, in currency per MWh cycled. It's applied to total energy throughput; both charging and discharging count toward cycling, and included in the objective as:
 
 $$
 C^{degradation}_{b,t} = c^{deg}_b \, \Delta t \, (p^{ch}_{b,t} + p^{dis}_{b,t})
 $$
 
 ```python
-storage = Storage(
+storage = StandaloneStorage(
     name="bess",
     capacity=100.0,
-    max_power=50.0,
+    max_charge_power=50.0,
+    max_discharge_power=50.0,
     efficiency_charging=0.95,
     efficiency_discharging=0.95,
     soc_start=0.5,
@@ -153,7 +159,8 @@ After optimization, access storage results through `result.standalone_storages`:
 result = energy_system.optimize()
 
 result.standalone_storages.net_power  # charge/discharge per timestep
-result.standalone_storages.state_of_charge  # SOC at each timestep
+result.standalone_storages.soc  # SOC at each timestep (fraction of capacity)
+result.standalone_storages.charge_mode  # binary charging mode
 ```
 
 The implementation defines `net_power` as:
@@ -166,4 +173,4 @@ Positive `net_power` means charging, negative means discharging.
 
 ## Next steps
 
-Want to buy or sell energy from external markets? See [Market](market.md) to add trading to your portfolio.
+Need mobile storage with trip schedules? See [ElectricVehicle](electric_vehicle.md). Want to buy or sell energy from external markets? See [Market](market.md).

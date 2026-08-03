@@ -30,7 +30,7 @@ class EnergyMarket(EnergyEntity):
     constraint and contribute to the objective through trading revenue or cost.
 
     When ``stage_fixed`` is ``True``, trading decisions are locked before
-    uncertainty is resolved — the same volumes apply across all stochastic
+    uncertainty is resolved; the same volumes apply across all stochastic
     scenarios. This models day-ahead or forward markets where commitments
     are made without knowing the realized future. Markets with
     ``stage_fixed`` ``False`` can react to each scenario independently.

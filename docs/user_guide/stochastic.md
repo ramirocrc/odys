@@ -150,8 +150,9 @@ result = energy_system.optimize()
 # Generator power now has a scenario axis
 print(result.generators.power)
 
-# The combined DataFrame includes the scenario level
-print(result.to_dataframe)
+# Or as a DataFrame / Dataset
+print(result.generators.to_dataframe())
+print(result.to_dataset())
 ```
 
 For deterministic (single scenario) runs, the scenario level is dropped automatically so you don't have to deal with it.

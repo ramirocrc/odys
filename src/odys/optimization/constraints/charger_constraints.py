@@ -52,7 +52,7 @@ class ChargerConstraints(ConstraintGroup):
     def _get_charger_power_limit_constraint(self) -> ModelConstraint:
         """EV charging and discharging power limited by the assigned charger's max_power.
 
-        With no charger assigned the right-hand side is 0 — an EV must be
+        With no charger assigned the right-hand side is 0; an EV must be
         assigned to a charger to charge or discharge (V2G included).
         """
         assignment = self.model.charger_ev_assignment

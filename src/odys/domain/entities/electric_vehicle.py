@@ -10,7 +10,7 @@ from odys.domain.exceptions import OdysValidationError
 
 
 class ElectricVehicle(Storage):
-    """Electric vehicle — a storage asset with trip constraints.
+    """Electric vehicle: a storage asset with trip constraints.
 
     Inherits all battery physics from Storage. Adds trip schedule
     that makes the vehicle unavailable for charging during driving

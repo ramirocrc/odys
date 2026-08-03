@@ -664,9 +664,10 @@ def generate_ev_fleet_setup() -> None:
     _add_price_row(fig, row=1, annotate=True)
 
     lanes = {"ev_1": 2, "ev_2": 1, "ev_3": 0}
+    first_trip = True
     for ev in EVS:
         lane = lanes[ev.name]
-        for i, trip in enumerate(ev.trips):
+        for trip in ev.trips:
             fig.add_trace(
                 go.Scatter(
                     x=[trip.start_time, trip.end_time],
@@ -675,13 +676,14 @@ def generate_ev_fleet_setup() -> None:
                     line=dict(color=TRIP_COLOR, width=16),
                     name="Trip (vehicle away)",
                     legendgroup="trip",
-                    showlegend=i == 0,
+                    showlegend=first_trip,
                     text=f"{trip.name} (t{trip.start_time}-t{trip.end_time})",
                     hoverinfo="text",
                 ),
                 row=2,
                 col=1,
             )
+            first_trip = False
             fig.add_annotation(
                 x=(trip.start_time + trip.end_time) / 2,
                 y=lane + 0.38,
@@ -712,45 +714,26 @@ def generate_ev_fleet_setup() -> None:
     _save_figure(fig, "ev_fleet_setup")
 
 
-def generate_ev_fleet_dispatch_price() -> None:
-    """Time-of-use price signal."""
-    fig = go.Figure()
-    fig.add_trace(_price_step_trace(show_legend=False))
-
-    annotations = [
-        (3.0, 5.0, "5 $/MWh overnight"),
-        (9.0, 80.0, "80 $/MWh morning peak"),
-        (12.5, 10.0, "10 $/MWh midday"),
-        (19.0, 100.0, "100 $/MWh evening peak"),
-    ]
-    for x, y, text in annotations:
-        fig.add_annotation(
-            x=x,
-            y=y,
-            yshift=12,
-            text=text,
-            showarrow=False,
-            font=dict(size=10, color=PRICE_STEP_COLOR),
-        )
-
-    fig.update_xaxes(range=[0, 24], dtick=3, title="Hour of day")
-    fig.update_yaxes(title="Price ($/MWh)", rangemode="tozero")
-    fig.update_layout(
-        title=dict(text="Time-of-use price", x=0.5),
-        hovermode="x unified",
-        margin=dict(l=40, r=40, t=60, b=40),
+def generate_ev_fleet_dispatch_combined(result: OptimalDisptachResults) -> None:
+    """Combined dispatch figure: price, vehicle states, SoC, and charger occupancy with aligned x-axes."""
+    fig = make_subplots(
+        rows=4,
+        cols=1,
+        shared_xaxes=True,
+        row_heights=[0.22, 0.26, 0.26, 0.26],
+        vertical_spacing=0.08,
+        subplot_titles=(
+            "Time-of-use price",
+            "Vehicle states",
+            "State of charge",
+            "Charger occupancy",
+        ),
     )
 
-    _save_figure(fig, "ev_fleet_dispatch_price")
-
-
-def generate_ev_fleet_dispatch_states(result: OptimalDisptachResults) -> None:
-    """Vehicle states: trip, charging, discharging."""
-    fig = go.Figure()
+    _add_price_row(fig, row=1, annotate=True)
 
     lanes = {"ev_1": 2, "ev_2": 1, "ev_3": 0}
     state_intervals = _extract_ev_state_intervals(result)
-
     state_colors = {"trip": TRIP_COLOR, "charging": CHARGING_COLOR, "discharging": DISCHARGING_COLOR}
     state_names = {"trip": "Trip (vehicle away)", "charging": "Charging", "discharging": "Discharging (V2G)"}
 
@@ -765,10 +748,13 @@ def generate_ev_fleet_dispatch_states(result: OptimalDisptachResults) -> None:
                 line=dict(color=color, width=16),
                 name=state_names[state],
                 legendgroup=state,
+                legend="legend",
                 showlegend=False,
                 text=f"{_ev_display_name(ev_name)}: {state_names[state].lower()} (t{start}-t{end})",
                 hoverinfo="text",
             ),
+            row=2,
+            col=1,
         )
 
     for state in ["trip", "charging", "discharging"]:
@@ -780,29 +766,12 @@ def generate_ev_fleet_dispatch_states(result: OptimalDisptachResults) -> None:
                 line=dict(color=state_colors[state], width=16),
                 name=state_names[state],
                 legendgroup=state,
+                legend="legend",
                 showlegend=True,
             ),
+            row=2,
+            col=1,
         )
-
-    fig.update_xaxes(range=[0, 24], dtick=3, title="Hour of day")
-    fig.update_yaxes(
-        tickvals=[2, 1, 0],
-        ticktext=["EV 1", "EV 2", "EV 3"],
-        range=[-0.6, 2.8],
-    )
-    fig.update_layout(
-        title=dict(text="Vehicle states", x=0.5),
-        hovermode="x unified",
-        legend=dict(x=0.5, y=-0.2, xanchor="center", yanchor="top", orientation="h"),
-        margin=dict(l=90, r=40, t=60, b=80),
-    )
-
-    _save_figure(fig, "ev_fleet_dispatch_states")
-
-
-def generate_ev_fleet_dispatch_soc(result: OptimalDisptachResults) -> None:
-    """State of charge for each EV."""
-    fig = go.Figure()
 
     ev_dataset = result.electric_vehicles.to_dataset()
     for ev in EVS:
@@ -812,28 +781,15 @@ def generate_ev_fleet_dispatch_soc(result: OptimalDisptachResults) -> None:
                 x=HOUR_EDGES,
                 y=soc_values,
                 mode="lines",
-                name=ev.name,
+                name=_ev_display_name(ev.name),
                 legendgroup=ev.name,
+                legend="legend2",
                 line=dict(color=EV_COLORS[ev.name], width=2),
                 hovertemplate="%{y:.2f}<extra>" + _ev_display_name(ev.name) + " SoC</extra>",
             ),
+            row=3,
+            col=1,
         )
-
-    fig.update_xaxes(range=[0, 24], dtick=3, title="Hour of day")
-    fig.update_yaxes(title="SoC", range=[0, 1.05], dtick=0.25)
-    fig.update_layout(
-        title=dict(text="State of charge", x=0.5),
-        hovermode="x unified",
-        legend=dict(x=0.5, y=-0.2, xanchor="center", yanchor="top", orientation="h"),
-        margin=dict(l=40, r=40, t=60, b=80),
-    )
-
-    _save_figure(fig, "ev_fleet_dispatch_soc")
-
-
-def generate_ev_fleet_dispatch_charger(result: OptimalDisptachResults) -> None:
-    """Charger occupancy (powered hours only)."""
-    fig = go.Figure()
 
     charger_lanes = {"charger_dc": 1, "charger_ac": 0}
     shown_evs: set[str] = set()
@@ -845,29 +801,71 @@ def generate_ev_fleet_dispatch_charger(result: OptimalDisptachResults) -> None:
                 y=[lane, lane],
                 mode="lines",
                 line=dict(color=EV_COLORS[ev_name], width=16),
-                name=ev_name,
-                legendgroup=ev_name,
+                name=_ev_display_name(ev_name),
+                legendgroup=f"charger_{ev_name}",
+                legend="legend3",
                 showlegend=ev_name not in shown_evs,
                 text=f"{_ev_display_name(ev_name)} on {charger_name} (t{start}-t{end})",
                 hoverinfo="text",
             ),
+            row=4,
+            col=1,
         )
         shown_evs.add(ev_name)
 
-    fig.update_xaxes(range=[0, 24], dtick=3, title="Hour of day")
+    for row in range(1, 5):
+        fig.update_xaxes(range=[0, 24], dtick=3, row=row, col=1)
+
+    fig.update_yaxes(title="Price ($/MWh)", rangemode="tozero", row=1, col=1)
+    fig.update_yaxes(
+        tickvals=[2, 1, 0],
+        ticktext=["EV 1", "EV 2", "EV 3"],
+        range=[-0.6, 2.8],
+        row=2,
+        col=1,
+    )
+    fig.update_yaxes(title="SoC", range=[0, 1.05], dtick=0.25, row=3, col=1)
     fig.update_yaxes(
         tickvals=[1, 0],
         ticktext=[_charger_display_name(charger) for charger in CHARGERS],
         range=[-0.6, 1.6],
-    )
-    fig.update_layout(
-        title=dict(text="Charger occupancy", x=0.5),
-        hovermode="x unified",
-        legend=dict(x=0.5, y=-0.2, xanchor="center", yanchor="top", orientation="h"),
-        margin=dict(l=90, r=40, t=60, b=80),
+        row=4,
+        col=1,
     )
 
-    _save_figure(fig, "ev_fleet_dispatch_charger")
+    fig.update_xaxes(title="Hour of day", row=4, col=1)
+
+    fig.update_layout(
+        title=dict(text="Optimal Dispatch", x=0.5),
+        hovermode="x unified",
+        legend=dict(
+            x=0.5,
+            y=0.56,
+            xanchor="center",
+            yanchor="top",
+            orientation="h",
+            title="",
+        ),
+        legend2=dict(
+            x=0.5,
+            y=0.26,
+            xanchor="center",
+            yanchor="top",
+            orientation="h",
+            title="",
+        ),
+        legend3=dict(
+            x=0.5,
+            y=-0.06,
+            xanchor="center",
+            yanchor="top",
+            orientation="h",
+            title="",
+        ),
+        margin=dict(l=90, r=40, t=60, b=100),
+    )
+
+    _save_figure(fig, "ev_fleet_dispatch_combined")
 
 
 def _constraint_check_rows(result: OptimalDisptachResults) -> list[tuple[str, str, str, bool]]:
@@ -1042,13 +1040,10 @@ def generate_ev_fleet_economics(result: OptimalDisptachResults) -> None:
 
 
 def generate_ev_fleet_optimization() -> None:
-    """Solve the EV fleet example once and generate all four figures."""
+    """Solve the EV fleet example once and generate all figures."""
     result = run_ev_fleet_optimization()
     generate_ev_fleet_setup()
-    generate_ev_fleet_dispatch_price()
-    generate_ev_fleet_dispatch_states(result)
-    generate_ev_fleet_dispatch_soc(result)
-    generate_ev_fleet_dispatch_charger(result)
+    generate_ev_fleet_dispatch_combined(result)
     generate_ev_fleet_verification(result)
     generate_ev_fleet_economics(result)
 

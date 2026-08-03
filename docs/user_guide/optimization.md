@@ -30,18 +30,34 @@ Where:
 The profit term is:
 
 $$
-\Pi_s = \sum_{t,m} \lambda_{m,t,s}\left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right)
-- \sum_{t,g}\left(c_g p_{g,t,s} + C^{start}_g y^{start}_{g,t,s}\right)
-+ \sum_{t,l} \Delta d_{l,t,s} \cdot v_l
+\begin{aligned}
+\Pi_s =
+& \sum_{t,m} \lambda_{m,t,s}\left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right) \\
+& - \sum_{t,g}\left(c_g p_{g,t,s} + C^{start}_g y^{start}_{g,t,s} + C^{shutdown}_g y^{shutdown}_{g,t,s}\right) \\
+& + \sum_{t,l} \Delta d_{l,t,s} \cdot v_l \\
+& - \sum_{t,b} c^{deg}_b \, \Delta t \, (p^{ch}_{b,t,s} + p^{dis}_{b,t,s}) \\
+& - \sum_{t,e} c^{deg}_e \, \Delta t \, (p^{ch}_{e,t,s} + p^{dis}_{e,t,s})
+\end{aligned}
 $$
 
-The current implementation includes market revenue/cost when market prices are provided, generator variable cost, generator startup cost, and flexible load value of consumption.
+The current implementation includes market revenue/cost when market prices are provided, generator variable/startup/shutdown cost, flexible load value of consumption, and storage/EV degradation cost.
 
 The risk term penalizes low-profit scenarios through CVaR. By default, that term is ignored, so the model behaves as risk-neutral. Use CVaR when you want to protect against bad outcomes, not just maximize expected profit.
 
 $$
 w_{\text{profit}} = 1, \qquad w_{\text{risk}} = 0
 $$
+
+Configure weights with `Objective`, `ProfitTerm`, and `CVaRTerm`:
+
+```python
+from odys import CVaRTerm, Objective, ProfitTerm
+
+objective = Objective(
+    profit=ProfitTerm(weight=1.0),
+    cvar=CVaRTerm(weight=0.5, confidence_level=0.95),
+)
+```
 
 If you enable CVaR, the shortfall variables satisfy:
 
@@ -58,11 +74,20 @@ The optimizer respects these constraints:
 At every timestep, supply must equal demand:
 
 $$
-\sum_g p_{g,t,s} + \sum_b p^{dis}_{b,t,s} + \sum_m v^{buy}_{m,t,s}
-= \sum_l d_{l,t,s} + \sum_b p^{ch}_{b,t,s} + \sum_m v^{sell}_{m,t,s}
+\begin{aligned}
+& \sum_g p_{g,t,s}
++ \sum_b p^{dis}_{b,t,s}
++ \sum_e p^{dis}_{e,t,s}
++ \sum_m v^{buy}_{m,t,s} \\
+& =
+\sum_l d_{l,t,s}
++ \sum_b p^{ch}_{b,t,s}
++ \sum_e p^{ch}_{e,t,s}
++ \sum_m v^{sell}_{m,t,s}
+\end{aligned}
 $$
 
-This is the fundamental constraint: total supply must match total demand. Notice how it balances generation, storage discharge, and market buys on the supply side against load, storage charge, and market sells on the demand side.
+This is the fundamental constraint: total supply must match total demand. Generation, storage/EV discharge, and market buys sit on the supply side. Load, storage/EV charge, and market sells sit on the demand side.
 
 ### Generator constraints
 
@@ -122,24 +147,24 @@ $$
 p_{g,t,s} \le A_{g,t,s}
 $$
 
-### Storage constraints
+### Storage and EV constraints
 
-For each storage asset:
+Standalone storage and electric vehicles share the same battery physics. For each storage-like asset $b$:
 
 $$
 0 \le p^{ch}_{b,t,s}, \qquad 0 \le p^{dis}_{b,t,s}, \qquad 0 \le SOC_{b,t,s}, \qquad z_{b,t,s} \in \{0,1\}
 $$
 
 $$
-p^{ch}_{b,t,s} \le z_{b,t,s} P^{\max}_b
+p^{ch}_{b,t,s} \le z_{b,t,s} P^{ch,\max}_b
 $$
 
 $$
-p^{dis}_{b,t,s} + z_{b,t,s} P^{\max}_b \le P^{\max}_b
+p^{dis}_{b,t,s} + z_{b,t,s} P^{dis,\max}_b \le P^{dis,\max}_b
 $$
 
 $$
-SOC_{b,t,s} = SOC_{b,t-1,s}
+SOC_{b,t,s} = SOC_{b,t-1,s} (1 - \delta_b \Delta t)
 + \eta^{ch}_b \frac{\Delta t}{E_b} p^{ch}_{b,t,s}
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,t,s}
 $$
@@ -165,6 +190,8 @@ The reported net power variable is defined as:
 $$
 p^{net}_{b,t,s} = p^{ch}_{b,t,s} - p^{dis}_{b,t,s}
 $$
+
+Electric vehicles add trip and charger constraints. See [ElectricVehicle](electric_vehicle.md) and [Charger](charger.md).
 
 ### Market constraints
 
@@ -206,7 +233,7 @@ The adjustment variable $\Delta d_{l,t,s}$ is bounded by the maximum decrease an
 
 ## Reading results
 
-The `optimize()` call returns an `OptimizationResults` object:
+The `optimize()` call returns an `OptimalDisptachResults` object:
 
 ```python
 result = energy_system.optimize()
@@ -217,6 +244,7 @@ result = energy_system.optimize()
 ```python
 result.solver_status  # "ok" if the solver found a solution
 result.termination_condition  # "optimal" if it's the best possible solution
+result.objective_value  # objective value of the solved model
 ```
 
 ### Asset-specific results
@@ -230,9 +258,19 @@ result.generators.status  # on/off (1/0)
 result.generators.startup  # startup events
 result.generators.shutdown  # shutdown events
 
-# Storages
+# Standalone storages
 result.standalone_storages.net_power  # positive = charging, negative = discharging
-result.standalone_storages.state_of_charge  # SOC at each timestep
+result.standalone_storages.soc  # state of charge (fraction of capacity)
+result.standalone_storages.charge_mode  # binary charging mode
+
+# Electric vehicles
+result.electric_vehicles.net_power  # positive = charging, negative = discharging
+result.electric_vehicles.soc  # state of charge (fraction of capacity)
+result.electric_vehicles.charge_mode  # binary charging mode
+
+# Chargers
+result.chargers.assignment  # binary EV-to-charger assignment
+result.chargers.power  # power delivered through each charger
 
 # Markets
 result.markets.sell_volume  # MW sold per market per timestep
@@ -243,21 +281,22 @@ result.flexible_loads.load_adjustment  # MW adjustment per flexible load per tim
 result.flexible_loads.actual_load      # MW consumed (base + adjustment)
 ```
 
-All of these are `pandas.DataFrame` objects, so you can use the full pandas API to slice, filter, and plot.
-
-### Combined DataFrame
-
-For a single view of everything:
+All of these properties are `pandas.Series` objects. Each dispatch container also exposes `.to_dataframe()` and `.to_dataset()`:
 
 ```python
-df = result.to_dataframe()
+result.generators.to_dataframe()
+result.standalone_storages.to_dataset()
 ```
 
-This gives you a multi-indexed DataFrame with all variables, units, and timesteps. For deterministic scenarios, the scenario index level is dropped automatically.
+For the full raw solution as an xarray Dataset:
+
+```python
+result.to_dataset()
+```
 
 !!! tip
 
-    If you're working in a notebook, `result.to_dataframe` is usually the quickest way to see what the optimizer did. You can export it with `.to_csv()` or plot it directly.
+    If you're working in a notebook, `result.generators.to_dataframe()` is usually the quickest way to see what the optimizer did. You can export it with `.to_csv()` or plot it directly.
 
 ## Next steps
 
