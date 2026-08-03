@@ -99,7 +99,7 @@ charger_dc = Charger(name="charger_dc", max_power=0.050)  # 50 kW
 charger_ac = Charger(name="charger_ac", max_power=0.022)  # 22 kW
 ```
 
-Unlike [Storage](../user_guide/storage.md), EVs must be assigned to chargers, and each charger serves at most one EV at a time. With 2 chargers and 3 EVs, there is charger competition.
+Unlike [StandaloneStorage](../user_guide/storage.md), EVs must be assigned to chargers, and each charger serves at most one EV at a time. With 2 chargers and 3 EVs, there is charger competition.
 
 ev_2 (60 kWh, charge-only, 3 trips) and ev_3 (40 kWh, charge-only, 2 trips) follow the same pattern. See the [full source](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py).
 

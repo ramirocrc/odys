@@ -45,12 +45,12 @@ $$
 | ----------------------------- | ---------------- | -------- | -------- | ----------------------------------------------------------- |
 | `name`                        | `str`            | Yes      | -        | Unique identifier for the market                            |
 | `max_trading_volume_per_step` | `float`          | Yes      | -        | Maximum volume that can be traded per timestep (MW)         |
-| `trade_direction`             | `TradeDirection` | No       | `"both"` | Allowed trade directions: `"buy"`, `"sell"`, or `"both"`    |
+| `trade_direction`             | `TradeDirection` | No       | `BUY_AND_SELL` | Allowed directions: `BUY_ONLY`, `SELL_ONLY`, or `BUY_AND_SELL` |
 | `stage_fixed`                 | `bool`           | No       | `False`  | If `True`, trading decisions are fixed across all scenarios |
 
 ## Trade direction
 
-You can restrict which way the market trades. Use `BUY_ONLY` for procurement markets, `SELL_ONLY` for feed-in tariffs, or leave it as `"both"` for markets that allow two-way trading.
+You can restrict which way the market trades. Use `BUY_ONLY` for procurement markets, `SELL_ONLY` for feed-in tariffs, or leave the default `BUY_AND_SELL` for markets that allow two-way trading.
 
 ```python
 from odys import EnergyMarket, TradeDirection

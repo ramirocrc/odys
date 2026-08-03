@@ -18,15 +18,19 @@ flowchart TD
     subgraph Assets [ ]
         direction LR
         GEN["Generator(s)"]
-        STO["Storage(s)"]
+        STO["StandaloneStorage(s)"]
+        EV["ElectricVehicle(s)"]
+        CHG["Charger(s)"]
         LD["Load(s)"]
     end
     MKT["<b>EnergyMarket(s)</b>"]
     SC["<b>Scenario(s)</b>"]
+    OBJ["<b>Objective</b>"]
 
     ES --> AP
     ES --> MKT
     ES --> SC
+    ES --> OBJ
     AP --> Assets
 ```
 
@@ -65,6 +69,7 @@ result = energy_system.optimize()
 | `timestep`        | `timedelta`                                      | Yes      | -       | Duration of each time period                             |
 | `number_of_steps` | `int`                                            | Yes      | -       | How many timesteps to optimize over                      |
 | `markets`         | `EnergyMarket` or `list[EnergyMarket]` or `None` | No       | `None`  | Energy markets for buying/selling                        |
+| `objective`       | `Objective` or `None`                            | No       | `None`  | Objective configuration. Defaults to maximize expected profit |
 
 ## Scenarios
 
@@ -127,6 +132,27 @@ Notice that market prices are specified in the scenario, not on the market objec
 
 See [Market](market.md) for details.
 
+## Configuring the objective
+
+By default, Odys maximizes expected profit. To balance profit against risk, pass an `Objective` with a CVaR term:
+
+```python
+from odys import CVaRTerm, Objective, ProfitTerm
+
+energy_system = EnergySystem(
+    portfolio=portfolio,
+    scenarios=scenarios,
+    timestep=timedelta(hours=1),
+    number_of_steps=4,
+    objective=Objective(
+        profit=ProfitTerm(weight=1.0),
+        cvar=CVaRTerm(weight=0.5, confidence_level=0.95),
+    ),
+)
+```
+
+See [Optimization](optimization.md) for the full objective formulation, and the [CVaR Market Risk example](../examples/cvar_market_risk.md) for a worked scenario.
+
 ## Running the optimization
 
 Call `.optimize()` to build and solve the mathematical model:
@@ -135,7 +161,7 @@ Call `.optimize()` to build and solve the mathematical model:
 result = energy_system.optimize()
 ```
 
-This returns an `OptimizationResults` object. See [Optimization](optimization.md) for how to read and interpret the results.
+This returns an `OptimalDisptachResults` object. See [Optimization](optimization.md) for how to read and interpret the results.
 
 ## What happens under the hood
 
@@ -143,8 +169,8 @@ When you call `.optimize()`, odys:
 
 1. Validates the full system configuration (asset names match scenario profiles, probabilities sum to 1, etc.)
 2. Builds a mixed-integer linear program (MILP) using linopy
-3. Solves it with the HiGHS solver
-4. Wraps the solution in an `OptimizationResults` object
+3. Solves it with the HiGHS solver (or the solver you configure)
+4. Wraps the solution in an `OptimalDisptachResults` object
 
 You don't need to interact with any of these internals -- but if you're curious, the [API Reference](../api/energy_system.md) has the full details.
 
