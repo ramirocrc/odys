@@ -1,63 +1,38 @@
 """EV fleet optimization with V2G and market arbitrage.
 
-This example demonstrates optimizing an electric vehicle fleet with vehicle-to-grid
-(V2G) capability and market arbitrage. The optimizer decides when to charge from
-the grid (low prices) and when to discharge back to the grid (high prices), while
-ensuring all delivery trips are completed on time.
+A commercial depot operates 3 delivery EVs with 2 chargers and access to a
+wholesale market with time-of-use pricing. The optimizer decides when to charge,
+when to discharge to the grid via vehicle-to-grid (V2G), and how to share
+chargers, while guaranteeing every trip departs on time.
 
 ## Assets
 
-- **ev_1**: Large EV (100 kWh battery, 22 kW charging, 11 kW V2G). Starts at 80%
-  SoC, must end at 30% SoC. Has 3 delivery trips throughout the day. V2G-capable,
-  so it can discharge to the grid during expensive peak hours.
-- **ev_2**: Mid-size EV (60 kWh battery, 22 kW charging). Starts at 50% SoC, must
-  end at 60% SoC. Has 3 delivery trips. Charge-only (no V2G).
-- **ev_3**: Small EV (40 kWh battery, 7 kW charging). Starts at 50% SoC, must end
-  at 50% SoC. Has 2 delivery trips. Charge-only (no V2G).
-- **charger_dc**: 50 kW DC fast charger. Can serve one EV at a time. Used by ev_1
-  for V2G operations.
-- **charger_ac**: 22 kW AC charger. Can serve one EV at a time. Shared by ev_2 and
-  ev_3 (charger competition).
-- **grid_market**: Buy-and-sell electricity market with time-of-use pricing.
-  Max 100 kW trading volume per timestep.
+- **ev_1**: 100 kWh battery, 22 kW charging, 11 kW V2G discharge. Starts at 80%
+  SoC, must end at 30% SoC. 3 delivery trips throughout the day.
+- **ev_2**: 60 kWh battery, 22 kW charging (no V2G). Starts at 50% SoC, must
+  end at 60% SoC. 3 delivery trips.
+- **ev_3**: 40 kWh battery, 7 kW charging (no V2G). Starts at 50% SoC, must end
+  at 50% SoC. 2 delivery trips.
+- **charger_dc**: 50 kW DC fast charger. Serves one EV at a time.
+- **charger_ac**: 22 kW AC charger. Serves one EV at a time. Shared by ev_2 and
+  ev_3, creating charger competition.
+- **grid_market**: Buy-and-sell market with time-of-use pricing (5-100 $/MWh)
+  and 100 kW max trading volume.
 
 ## Scenario
 
-A commercial depot with 3 delivery EVs and 2 chargers. The operator wants to
-minimize electricity costs (or maximize revenue from V2G) over a 24-hour horizon
-while ensuring all trips are completed on time.
+Prices swing from 5 $/MWh overnight to 100 $/MWh during the evening peak. The
+fleet must complete staggered trips throughout the day while the optimizer
+exploits these price differences: buying cheap overnight energy and selling it
+back during expensive peaks through ev_1's V2G capability.
 
-## Time-of-Use Pricing
+## Expected Results
 
-The market has clear price signals that drive charging and V2G behavior:
-
-- Overnight (t0-t5): 5/MWh — very cheap, charge here
-- Morning ramp (t6-t7): 20/MWh — moderate, V2G discharge here if parked
-- Morning peak (t8-t9): 80/MWh — expensive, V2G discharge here
-- Midday (t10-t14): 10/MWh — cheap, recharge here
-- Evening ramp (t15-t16): 25/MWh — moderate, V2G discharge here if parked
-- Evening peak (t17-t20): 100/MWh — very expensive, V2G discharge here
-- Late evening (t21-t23): 5/MWh — cheap again
-
-## Expected Optimizer Behavior
-
-1. **ev_1 (V2G)**: Charges overnight (t0-t5), discharges to the grid via V2G
-   during the morning ramp (t6-t7), morning peak (t8-t9), evening ramp
-   (t15-t16), and evening peak (t17-t20) when parked at the depot, recharges
-   during cheap midday hours, completes 3 trips. Starts at 80% SoC, ends at 30%.
-
-2. **ev_2 (charge-only)**: Charges before morning trip, avoids peak charging,
-   charges during midday between trips. Must share charger_ac with ev_3.
-
-3. **ev_3 (charge-only)**: Charges at cheapest hours around its trips. Must share
-   charger_ac with ev_2 (charger competition).
-
-4. **Charger competition**: With 2 chargers and 3 EVs, ev_2 and ev_3 must take
-   turns on charger_ac. The optimizer prioritizes based on trip deadlines and
-   price signals.
-
-5. **Market arbitrage**: The depot buys electricity at 5-10/MWh and sells at
-   20-100/MWh via ev_1's V2G capability, potentially generating revenue.
+ev_1 acts as a flexible generator during expensive hours, discharging via V2G
+whenever it is parked and prices are high. ev_2 and ev_3 charge only during the
+cheapest hours. With 2 chargers and 3 EVs, the optimizer dynamically assigns
+vehicles to chargers based on trip deadlines and price signals, which means
+charger assignments shift throughout the day to resolve contention.
 
 ## Understanding the Output
 
@@ -67,8 +42,8 @@ The script prints:
 - Market buy and sell volumes
 - Objective value (profit, positive = revenue)
 
-This example demonstrates V2G arbitrage, charger competition, and complex trip
-scheduling in a realistic EV fleet optimization scenario.
+Next: see the CVaR Market Risk example to add risk-aware optimization, or the
+Stochastic Optimization guide to model uncertain trip schedules.
 """
 
 from datetime import timedelta

@@ -8,7 +8,7 @@ Loads represent energy demand that the system must satisfy. Odys supports two ty
 
 ## Fixed loads
 
-A fixed load represents inelastic demand that must be met exactly. The optimizer cannot adjust it — it must dispatch generators, batteries, and markets to match.
+A fixed load represents inelastic demand that must be met exactly. The optimizer cannot adjust it; it must dispatch generators, batteries, and markets to match.
 
 ```python
 from odys import FixedLoad
@@ -67,7 +67,7 @@ flexible_load = FlexibleLoad(
 
 ### Flexible load base profiles
 
-Like fixed loads, flexible loads require a time series in the scenario. This is the **base profile** — the demand the optimizer starts from before making adjustments:
+Like fixed loads, flexible loads require a time series in the scenario. This is the **base profile**: the demand the optimizer starts from before making adjustments:
 
 ```python
 scenario = Scenario(
