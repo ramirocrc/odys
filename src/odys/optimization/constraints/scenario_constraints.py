@@ -22,19 +22,19 @@ class ScenarioConstraints(ConstraintGroup):
         lhs = 0
 
         if not self._params.generators.is_empty:
-            lhs += self.model.generator_power.sum(ModelDimension.Generators)
+            lhs += self.model.vars.generator_power.sum(ModelDimension.Generators)
 
         if not self._params.standalone_storages.is_empty:
-            lhs += self.model.standalone_storage_power_out.sum(ModelDimension.StandaloneStorages)
-            lhs += -self.model.standalone_storage_power_in.sum(ModelDimension.StandaloneStorages)
+            lhs += self.model.vars.standalone_storage_power_out.sum(ModelDimension.StandaloneStorages)
+            lhs += -self.model.vars.standalone_storage_power_in.sum(ModelDimension.StandaloneStorages)
 
         if not self._params.electric_vehicles.is_empty:
-            lhs += self.model.ev_power_out.sum(ModelDimension.EVs)
-            lhs += -self.model.ev_power_in.sum(ModelDimension.EVs)
+            lhs += self.model.vars.ev_power_out.sum(ModelDimension.EVs)
+            lhs += -self.model.vars.ev_power_in.sum(ModelDimension.EVs)
 
         if not self._params.markets.is_empty:
-            lhs += self.model.market_buy_volume.sum(ModelDimension.Markets)
-            lhs += -self.model.market_sell_volume.sum(ModelDimension.Markets)
+            lhs += self.model.vars.market_buy_volume.sum(ModelDimension.Markets)
+            lhs += -self.model.vars.market_sell_volume.sum(ModelDimension.Markets)
 
         if self._params.scenarios.fixed_load_profiles is not None:
             lhs += -self._params.scenarios.fixed_load_profiles
@@ -45,7 +45,7 @@ class ScenarioConstraints(ConstraintGroup):
                 msg = "Flexible loads exist but base profiles are missing"
                 raise OdysValidationError(msg)
             lhs += -base_profiles.sum(ModelDimension.FlexibleLoads)
-            lhs += -self.model.load_adjustment.sum(ModelDimension.FlexibleLoads)
+            lhs += -self.model.vars.load_adjustment.sum(ModelDimension.FlexibleLoads)
 
         return ModelConstraint(
             name="power_balance_constraint",
@@ -56,7 +56,7 @@ class ScenarioConstraints(ConstraintGroup):
     def _get_available_capacity_profiles_constraint(self) -> list[ModelConstraint]:
         if self._params.generators.is_empty or self._params.scenarios.available_capacity_profiles is None:
             return []
-        expression = self.model.generator_power <= self._params.scenarios.available_capacity_profiles
+        expression = self.model.vars.generator_power <= self._params.scenarios.available_capacity_profiles
         return [
             ModelConstraint(
                 name="available_capacity_constraint",

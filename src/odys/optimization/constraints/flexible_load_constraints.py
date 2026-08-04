@@ -21,7 +21,7 @@ class FlexibleLoadConstraints(ConstraintGroup):
         -max_decrease (i.e., cannot decrease more than max_decrease).
         """
         return ModelConstraint(
-            constraint=self.model.load_adjustment >= -self.params.max_decrease,
+            constraint=self.model.vars.load_adjustment >= -self.params.max_decrease,
             name="flexible_load_adjustment_lower_bound_constraint",
         )
 
@@ -33,6 +33,6 @@ class FlexibleLoadConstraints(ConstraintGroup):
         max_increase (i.e., cannot increase more than max_increase).
         """
         return ModelConstraint(
-            constraint=self.model.load_adjustment <= self.params.max_increase,
+            constraint=self.model.vars.load_adjustment <= self.params.max_increase,
             name="flexible_load_adjustment_upper_bound_constraint",
         )

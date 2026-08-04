@@ -31,7 +31,7 @@ from odys.optimization.model.variables import (
     CVAR_VARIABLES,
     ModelVariable,
 )
-from odys.optimization.parameters.parameters import EnergySystemParameters
+from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
 
 
 class EnergyAlgebraicModelBuilder:

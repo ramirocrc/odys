@@ -5,7 +5,7 @@ import pytest
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.trip import Trip
 from odys.optimization.model.sets import ModelDimension
-from odys.optimization.parameters.electric_vehicle_parameters import ElectricVehicleParameters
+from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
 
 NUM_EVS = 2
 TRIP1_ENERGY_PER_HOUR = 5.0
