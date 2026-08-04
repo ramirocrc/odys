@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from typing import Any, ClassVar
 
-from linopy import Model
+import linopy
 
 from odys.optimization.constraints.model_constraint import ModelConstraint
 
@@ -46,7 +46,7 @@ class ConstraintGroup:
                 results.append(result)
         return results
 
-    def add_to_model(self, linopy_model: Model) -> None:
+    def add_to_model(self, linopy_model: linopy.Model) -> None:
         """Collect all constraints and add them to the linopy model."""
         for c in self.collect_constraints():
             linopy_model.add_constraints(c.constraint, name=c.name)

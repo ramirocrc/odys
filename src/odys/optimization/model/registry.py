@@ -15,14 +15,14 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.optimization.model.sets import ModelDimension
-from odys.optimization.model.variables import (
+from odys.optimization.model.variable_definitions import (
     CHARGER_VARIABLES,
     EV_VARIABLES,
     FLEXIBLE_LOAD_VARIABLES,
     GENERATOR_VARIABLES,
     MARKET_VARIABLES,
     STANDALONE_STORAGE_VARIABLES,
-    ModelVariable,
+    VariableDefinitionRegistry,
 )
 from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerParameters
 from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
@@ -46,7 +46,7 @@ class AssetSpec:
         | ElectricVehicleParameters
     ]
     dimension: ModelDimension
-    variables: tuple[ModelVariable, ...]
+    variables: tuple[VariableDefinitionRegistry, ...]
 
 
 class AssetRegistry(Enum):

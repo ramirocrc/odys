@@ -5,7 +5,7 @@ from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.optimization.model.sets import ModelDimension
-from odys.optimization.model.variables import ModelVariable
+from odys.optimization.model.variable_definitions import VariableDefinitionRegistry
 from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
 from odys.results.dispatch import (
     ChargerDispatch,
@@ -92,10 +92,10 @@ class OptimalDisptachResults:
             raise OdysNoResultsError(msg)
 
         return GeneratorDispatch(
-            power=self._solution[ModelVariable.GENERATOR_POWER.var_name],
-            status=self._solution[ModelVariable.GENERATOR_STATUS.var_name],
-            startup=self._solution[ModelVariable.GENERATOR_STARTUP.var_name],
-            shutdown=self._solution[ModelVariable.GENERATOR_SHUTDOWN.var_name],
+            power=self._solution[VariableDefinitionRegistry.GENERATOR_POWER.var_name],
+            status=self._solution[VariableDefinitionRegistry.GENERATOR_STATUS.var_name],
+            startup=self._solution[VariableDefinitionRegistry.GENERATOR_STARTUP.var_name],
+            shutdown=self._solution[VariableDefinitionRegistry.GENERATOR_SHUTDOWN.var_name],
         )
 
     @property
@@ -107,9 +107,9 @@ class OptimalDisptachResults:
             raise OdysNoResultsError(msg)
 
         return StandaloneStorageDispatch(
-            net_power=self._solution[ModelVariable.STANDALONE_STORAGE_POWER_NET.var_name],
-            soc=self._solution[ModelVariable.STANDALONE_STORAGE_SOC.var_name],
-            charge_mode=self._solution[ModelVariable.STANDALONE_STORAGE_CHARGE_MODE.var_name],
+            net_power=self._solution[VariableDefinitionRegistry.STANDALONE_STORAGE_POWER_NET.var_name],
+            soc=self._solution[VariableDefinitionRegistry.STANDALONE_STORAGE_SOC.var_name],
+            charge_mode=self._solution[VariableDefinitionRegistry.STANDALONE_STORAGE_CHARGE_MODE.var_name],
         )
 
     @property
@@ -121,9 +121,9 @@ class OptimalDisptachResults:
             raise OdysNoResultsError(msg)
 
         return ElectricVehicleDispatch(
-            net_power=self._solution[ModelVariable.EV_POWER_NET.var_name],
-            soc=self._solution[ModelVariable.EV_SOC.var_name],
-            charge_mode=self._solution[ModelVariable.EV_CHARGE_MODE.var_name],
+            net_power=self._solution[VariableDefinitionRegistry.EV_POWER_NET.var_name],
+            soc=self._solution[VariableDefinitionRegistry.EV_SOC.var_name],
+            charge_mode=self._solution[VariableDefinitionRegistry.EV_CHARGE_MODE.var_name],
         )
 
     @property
@@ -135,8 +135,8 @@ class OptimalDisptachResults:
             raise OdysNoResultsError(msg)
 
         return ChargerDispatch(
-            assignment=self._solution[ModelVariable.CHARGER_EV_ASSIGNMENT.var_name],
-            power_in=self._solution[ModelVariable.EV_POWER_IN.var_name],
+            assignment=self._solution[VariableDefinitionRegistry.CHARGER_EV_ASSIGNMENT.var_name],
+            power_in=self._solution[VariableDefinitionRegistry.EV_POWER_IN.var_name],
         )
 
     @property
@@ -148,8 +148,8 @@ class OptimalDisptachResults:
             raise OdysNoResultsError(msg)
 
         return MarketDispatch(
-            sell_volume=self._solution[ModelVariable.MARKET_SELL.var_name],
-            buy_volume=self._solution[ModelVariable.MARKET_BUY.var_name],
+            sell_volume=self._solution[VariableDefinitionRegistry.MARKET_SELL.var_name],
+            buy_volume=self._solution[VariableDefinitionRegistry.MARKET_BUY.var_name],
         )
 
     @property
@@ -169,7 +169,7 @@ class OptimalDisptachResults:
             base_profiles = base_profiles.squeeze(ModelDimension.Scenarios, drop=True)
 
         return FlexibleLoadDispatch(
-            load_adjustment=self._solution[ModelVariable.LOAD_ADJUSTMENT.var_name],
+            load_adjustment=self._solution[VariableDefinitionRegistry.LOAD_ADJUSTMENT.var_name],
             base_profiles=base_profiles,
         )
 
