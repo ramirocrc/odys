@@ -98,35 +98,3 @@ class AssetRegistry(Enum):
     def spec(self) -> AssetSpec:
         """Get the asset specification for this registry member."""
         return self.value
-
-    @classmethod
-    def all_variables(cls) -> list[ModelVariable]:
-        """Get all variables from all registered asset types."""
-        variables: list[ModelVariable] = []
-        for member in cls:
-            variables.extend(member.spec.variables)
-        return variables
-
-    @classmethod
-    def all_parameter_classes(
-        cls,
-    ) -> list[
-        type[
-            GeneratorParameters
-            | StandaloneStorageParameters
-            | MarketParameters
-            | FlexibleLoadParameters
-            | ChargerParameters
-            | ElectricVehicleParameters
-        ]
-    ]:
-        """Get all parameter classes from registered asset types."""
-        return [member.spec.parameter_class for member in cls]
-
-    @classmethod
-    def get_by_dimension(cls, dimension: ModelDimension) -> "AssetRegistry | None":
-        """Get an asset registry member by its model dimension."""
-        for member in cls:
-            if member.spec.dimension == dimension:
-                return member
-        return None
