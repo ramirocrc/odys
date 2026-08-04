@@ -12,7 +12,7 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.trip import Trip
 from odys.energy_system import EnergySystem
 from odys.optimization.model.sets import ModelDimension
-from odys.optimization.parameters.parameters import EnergySystemParameters
+from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
 
 
 @pytest.fixture

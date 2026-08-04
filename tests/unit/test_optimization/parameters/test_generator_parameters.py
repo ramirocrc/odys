@@ -1,7 +1,7 @@
 import pytest
 
 from odys.domain.entities.generator import Generator
-from odys.optimization.parameters.generator_parameters import GeneratorParameters
+from odys.optimization.parameters.entity_parameters.generator_parameters import GeneratorParameters
 
 STANDARD_NOMINAL_POWER = 100.0
 STANDARD_VARIABLE_COST = 20.0

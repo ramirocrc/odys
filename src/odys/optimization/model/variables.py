@@ -151,13 +151,13 @@ class ModelVariable(Enum):
         lower_bound_type=BoundType.UNBOUNDED,
     )
     VALUE_AT_RISK = VariableSpec(
-        name="value_at_risk",
+        name="cvar_value_at_risk",
         is_binary=False,
         dimensions=None,
         lower_bound_type=BoundType.UNBOUNDED,
     )
     SHORTFALL_REVENUE = VariableSpec(
-        name="shortfall_revenue",
+        name="cvar_shortfall",
         is_binary=False,
         dimensions=[ModelDimension.Scenarios],
         lower_bound_type=BoundType.NON_NEGATIVE,

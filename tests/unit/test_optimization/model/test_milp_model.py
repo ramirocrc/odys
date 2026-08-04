@@ -119,11 +119,11 @@ class TestPerScenarioProfitDegradationCost:
 
         timestep_hours = TIMESTEP / timedelta(hours=1)
         expected_profit = -(
-            model.generator_power * model.parameters.generators.variable_cost
-            + model.generator_startup * model.parameters.generators.startup_cost
-            + model.generator_shutdown * model.parameters.generators.shutdown_cost
+            model.vars.generator_power * model.parameters.generators.variable_cost
+            + model.vars.generator_startup * model.parameters.generators.startup_cost
+            + model.vars.generator_shutdown * model.parameters.generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators]) - (
-            (model.standalone_storage_power_in + model.standalone_storage_power_out)
+            (model.vars.standalone_storage_power_in + model.vars.standalone_storage_power_out)
             * timestep_hours
             * model.parameters.standalone_storages.degradation_cost
         ).sum([ModelDimension.Time, ModelDimension.StandaloneStorages])
@@ -136,9 +136,9 @@ class TestPerScenarioProfitDegradationCost:
         actual_profit = model.per_scenario_profit()
 
         expected_profit = -(
-            model.generator_power * model.parameters.generators.variable_cost
-            + model.generator_startup * model.parameters.generators.startup_cost
-            + model.generator_shutdown * model.parameters.generators.shutdown_cost
+            model.vars.generator_power * model.parameters.generators.variable_cost
+            + model.vars.generator_startup * model.parameters.generators.startup_cost
+            + model.vars.generator_shutdown * model.parameters.generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators])
 
         assert_linequal(actual_profit, expected_profit)
@@ -161,9 +161,9 @@ class TestPerScenarioProfitShutdownCost:
         actual_profit = model.per_scenario_profit()
 
         expected_profit = -(
-            model.generator_power * model.parameters.generators.variable_cost
-            + model.generator_startup * model.parameters.generators.startup_cost
-            + model.generator_shutdown * model.parameters.generators.shutdown_cost
+            model.vars.generator_power * model.parameters.generators.variable_cost
+            + model.vars.generator_startup * model.parameters.generators.startup_cost
+            + model.vars.generator_shutdown * model.parameters.generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators])
 
         assert_linequal(actual_profit, expected_profit)

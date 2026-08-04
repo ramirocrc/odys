@@ -6,7 +6,7 @@ from linopy.constants import SolverStatus, TerminationCondition
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variables import ModelVariable
-from odys.optimization.parameters.parameters import EnergySystemParameters
+from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
 from odys.results.dispatch import (
     ChargerDispatch,
     ElectricVehicleDispatch,

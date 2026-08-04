@@ -69,13 +69,13 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.optimization.model.sets`
     - `odys.optimization.model.variables`
   - `odys.optimization.parameters`
-    - `odys.optimization.parameters.charger_parameters`
-    - `odys.optimization.parameters.electric_vehicle_parameters`
-    - `odys.optimization.parameters.flexible_load_parameters`
+    - `odys.optimization.parameters.entity_parameters..charger_parameters`
+    - `odys.optimization.parameters.entity_parameters..electric_vehicle_parameters`
+    - `odys.optimization.parameters.entity_parameters..flexible_load_parameters`
     - `odys.optimization.parameters.generator_parameters`
-    - `odys.optimization.parameters.market_parameters`
-    - `odys.optimization.parameters.parameters`
-    - `odys.optimization.parameters.scenario_parameters`
+    - `odys.optimization.parameters.entity_parameters..market_parameters`
+    - `odys.optimization.parameters.energy_system_parameters`
+    - `odys.optimization.parameters.entity_parameters..scenario_parameters`
     - `odys.optimization.parameters.standalone_storage_parameters`
 - `odys.results`
   - `odys.results.dispatch`

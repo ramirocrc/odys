@@ -12,7 +12,7 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
-from odys.optimization.parameters.parameters import EnergySystemParameters
+from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
 
 logger = logging.getLogger(__name__)
 

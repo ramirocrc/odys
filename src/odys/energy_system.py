@@ -21,14 +21,14 @@ from odys.domain.scenarios import (
 )
 from odys.domain.validation import validate_energy_system_inputs
 from odys.optimization.model.model_builder import build_model
-from odys.optimization.parameters.charger_parameters import ChargerParameters
-from odys.optimization.parameters.electric_vehicle_parameters import ElectricVehicleParameters
-from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
-from odys.optimization.parameters.generator_parameters import GeneratorParameters
-from odys.optimization.parameters.market_parameters import MarketParameters
-from odys.optimization.parameters.parameters import EnergySystemParameters
-from odys.optimization.parameters.scenario_parameters import ScenarioParameters
-from odys.optimization.parameters.standalone_storage_parameters import StandaloneStorageParameters
+from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
+from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerParameters
+from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
+from odys.optimization.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
+from odys.optimization.parameters.entity_parameters.generator_parameters import GeneratorParameters
+from odys.optimization.parameters.entity_parameters.market_parameters import MarketParameters
+from odys.optimization.parameters.entity_parameters.scenario_parameters import ScenarioParameters
+from odys.optimization.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
 from odys.results.optimization_results import OptimalDisptachResults
 from odys.solvers.solver import optimize_algebraic_model
 from odys.solvers.solver_config import SolverConfig
