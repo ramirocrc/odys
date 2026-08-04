@@ -15,7 +15,7 @@ from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.scenarios import Scenario, StochasticScenario
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
-from odys.optimization.model.variables import MARKET_VARIABLES
+from odys.optimization.model.variable_definitions import MARKET_VARIABLES
 
 logger = logging.getLogger(__name__)
 

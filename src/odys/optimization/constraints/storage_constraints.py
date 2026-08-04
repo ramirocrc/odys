@@ -5,16 +5,16 @@ battery physics (StandaloneStorage, ElectricVehicle). Each function
 accepts variable and parameter references and returns a ModelConstraint.
 """
 
+import linopy
 import xarray as xr
-from linopy import Variable
 
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.model.sets import ModelDimension
 
 
 def build_max_charge_constraint(
-    power_in: Variable,
-    charge_mode: Variable,
+    power_in: linopy.Variable,
+    charge_mode: linopy.Variable,
     max_charge_power: xr.DataArray,
     name: str,
 ) -> ModelConstraint:
@@ -26,8 +26,8 @@ def build_max_charge_constraint(
 
 
 def build_max_discharge_constraint(
-    power_out: Variable,
-    charge_mode: Variable,
+    power_out: linopy.Variable,
+    charge_mode: linopy.Variable,
     max_discharge_power: xr.DataArray,
     name: str,
 ) -> ModelConstraint:
@@ -39,9 +39,9 @@ def build_max_discharge_constraint(
 
 
 def build_soc_dynamics_constraint(  # noqa: PLR0913
-    soc: Variable,
-    power_in: Variable,
-    power_out: Variable,
+    soc: linopy.Variable,
+    power_in: linopy.Variable,
+    power_out: linopy.Variable,
     self_discharge_rate: xr.DataArray,
     efficiency_charging: xr.DataArray,
     efficiency_discharging: xr.DataArray,
@@ -66,9 +66,9 @@ def build_soc_dynamics_constraint(  # noqa: PLR0913
 
 
 def build_soc_start_constraint(  # noqa: PLR0913
-    soc: Variable,
-    power_in: Variable,
-    power_out: Variable,
+    soc: linopy.Variable,
+    power_in: linopy.Variable,
+    power_out: linopy.Variable,
     soc_start: xr.DataArray,
     efficiency_charging: xr.DataArray,
     efficiency_discharging: xr.DataArray,
@@ -97,7 +97,7 @@ def build_soc_start_constraint(  # noqa: PLR0913
 
 
 def build_soc_end_constraint(
-    soc: Variable,
+    soc: linopy.Variable,
     soc_end: xr.DataArray,
     asset_dimension: str,
     name: str,
@@ -119,7 +119,7 @@ def build_soc_end_constraint(
 
 
 def build_soc_min_constraint(
-    soc: Variable,
+    soc: linopy.Variable,
     soc_min: xr.DataArray,
     name: str,
 ) -> ModelConstraint:
@@ -131,7 +131,7 @@ def build_soc_min_constraint(
 
 
 def build_soc_max_constraint(
-    soc: Variable,
+    soc: linopy.Variable,
     soc_max: xr.DataArray,
     name: str,
 ) -> ModelConstraint:
@@ -143,7 +143,7 @@ def build_soc_max_constraint(
 
 
 def build_capacity_constraint(
-    soc: Variable,
+    soc: linopy.Variable,
     name: str,
 ) -> ModelConstraint:
     """SOC capacity upper bound (SOC <= 1)."""
@@ -154,9 +154,9 @@ def build_capacity_constraint(
 
 
 def build_net_power_constraint(
-    power_net: Variable,
-    power_in: Variable,
-    power_out: Variable,
+    power_net: linopy.Variable,
+    power_in: linopy.Variable,
+    power_out: linopy.Variable,
     name: str,
 ) -> ModelConstraint:
     """Net power definition: power_net == power_in - power_out."""

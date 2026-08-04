@@ -9,7 +9,6 @@ from functools import cached_property
 from typing import cast
 
 import linopy
-from linopy import Model, Variable
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.exceptions import OdysValidationError
@@ -53,59 +52,36 @@ class EnergyModelIndices(BaseModel):
         return mapping[dimension]
 
 
-class ModelVariables:
+class VariableStore:
     """Typed view of linopy decision variables (explicit fields for autocomplete).
 
     Constructed from a linopy model after variables have been added. Field names
-    are the linopy variable names from ``VariableSpec.name``.
+    are the linopy variable names from ``VariableDefinition.name``.
     """
 
-    __slots__ = [
-        "charger_ev_assignment",
-        "cvar_shortfall",
-        "cvar_value_at_risk",
-        "ev_charge_mode",
-        "ev_net_power",
-        "ev_power_in",
-        "ev_power_out",
-        "ev_soc",
-        "generator_power",
-        "generator_shutdown",
-        "generator_startup",
-        "generator_status",
-        "load_adjustment",
-        "market_buy_volume",
-        "market_sell_volume",
-        "market_trade_mode",
-        "standalone_storage_charge_mode",
-        "standalone_storage_net_power",
-        "standalone_storage_power_in",
-        "standalone_storage_power_out",
-        "standalone_storage_soc",
-    ]
-    generator_power: Variable
-    generator_status: Variable
-    generator_startup: Variable
-    generator_shutdown: Variable
-    standalone_storage_power_in: Variable
-    standalone_storage_net_power: Variable
-    standalone_storage_power_out: Variable
-    standalone_storage_soc: Variable
-    standalone_storage_charge_mode: Variable
-    ev_power_in: Variable
-    ev_net_power: Variable
-    ev_power_out: Variable
-    ev_soc: Variable
-    ev_charge_mode: Variable
-    market_sell_volume: Variable
-    market_buy_volume: Variable
-    market_trade_mode: Variable
-    load_adjustment: Variable
-    charger_ev_assignment: Variable
-    cvar_value_at_risk: Variable
-    cvar_shortfall: Variable
+    generator_power: linopy.Variable
+    generator_status: linopy.Variable
+    generator_startup: linopy.Variable
+    generator_shutdown: linopy.Variable
+    standalone_storage_power_in: linopy.Variable
+    standalone_storage_net_power: linopy.Variable
+    standalone_storage_power_out: linopy.Variable
+    standalone_storage_soc: linopy.Variable
+    standalone_storage_charge_mode: linopy.Variable
+    ev_power_in: linopy.Variable
+    ev_net_power: linopy.Variable
+    ev_power_out: linopy.Variable
+    ev_soc: linopy.Variable
+    ev_charge_mode: linopy.Variable
+    market_sell_volume: linopy.Variable
+    market_buy_volume: linopy.Variable
+    market_trade_mode: linopy.Variable
+    load_adjustment: linopy.Variable
+    charger_ev_assignment: linopy.Variable
+    cvar_value_at_risk: linopy.Variable
+    cvar_shortfall: linopy.Variable
 
-    def __init__(self, linopy_model: Model) -> None:
+    def __init__(self, linopy_model: linopy.Model) -> None:
         """Bind typed fields for variables present on the linopy model.
 
         Empty asset types omit their variables; accessing those fields raises
@@ -127,7 +103,7 @@ class EnergyMILPModel:
 
         """
         self._parameters = parameters
-        self._linopy_model = Model(force_dim_names=True)
+        self._linopy_model = linopy.Model(force_dim_names=True)
 
     @cached_property
     def indices(self) -> EnergyModelIndices:
@@ -144,12 +120,12 @@ class EnergyMILPModel:
         )
 
     @cached_property
-    def vars(self) -> ModelVariables:
+    def vars(self) -> VariableStore:
         """Return the typed decision-variable view (after variables are on the linopy model)."""
-        return ModelVariables(self._linopy_model)
+        return VariableStore(self._linopy_model)
 
     @property
-    def linopy_model(self) -> Model:
+    def linopy_model(self) -> linopy.Model:
         """Return the underlying linopy model."""
         return self._linopy_model
 

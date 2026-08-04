@@ -67,7 +67,7 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.optimization.model.objectives`
     - `odys.optimization.model.registry`
     - `odys.optimization.model.sets`
-    - `odys.optimization.model.variables`
+    - `odys.optimization.model.variable_definitions`
   - `odys.optimization.parameters`
     - `odys.optimization.parameters.entity_parameters..charger_parameters`
     - `odys.optimization.parameters.entity_parameters..electric_vehicle_parameters`

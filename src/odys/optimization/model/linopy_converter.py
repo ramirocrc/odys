@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict
 from odys.optimization.model.sets import (
     ModelIndex,
 )
-from odys.optimization.model.variables import BoundType
+from odys.optimization.model.variable_definitions import BoundType
 
 
 class LinopyVariableParameters(BaseModel):

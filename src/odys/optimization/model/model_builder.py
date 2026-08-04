@@ -27,9 +27,9 @@ from odys.optimization.model.linopy_converter import (
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.objectives import build_objective
 from odys.optimization.model.registry import AssetRegistry
-from odys.optimization.model.variables import (
+from odys.optimization.model.variable_definitions import (
     CVAR_VARIABLES,
-    ModelVariable,
+    VariableDefinitionRegistry,
 )
 from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
 
@@ -80,7 +80,7 @@ class EnergyAlgebraicModelBuilder:
 
     def _add_model_variables(self) -> None:
         params = self._milp_model.parameters
-        variables_to_add: list[ModelVariable] = []
+        variables_to_add: list[VariableDefinitionRegistry] = []
 
         for asset in AssetRegistry:
             param = getattr(params, asset.name.lower() + "s")
@@ -94,7 +94,7 @@ class EnergyAlgebraicModelBuilder:
             linopy_variable = self._get_linopy_variable_params(variable)
             self.add_variable_to_model(linopy_variable)
 
-    def _get_linopy_variable_params(self, variable: ModelVariable) -> LinopyVariableParameters:
+    def _get_linopy_variable_params(self, variable: VariableDefinitionRegistry) -> LinopyVariableParameters:
         coordinates = {}
         dimensions = []
         indices = []
