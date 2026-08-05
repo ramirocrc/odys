@@ -20,10 +20,7 @@ from odys.optimization.constraints.scenario_constraints import (
 from odys.optimization.constraints.standalone_storage_constraints import (
     StandaloneStorageConstraints,
 )
-from odys.optimization.model.linopy_converter import (
-    LinopyVariableParameters,
-    get_variable_lower_bound,
-)
+from odys.optimization.model.linopy_converter import get_linopy_variable_parameters
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.objectives import build_objective
 from odys.optimization.model.variable_definitions import (
@@ -108,47 +105,10 @@ class EnergyAlgebraicModelBuilder:
         if params.objective.cvar is not None:
             variables_to_add.extend(CVAR_VARIABLES)
 
+        coordinates_store = self._milp_model.parameters.coordinates_store
         for variable in variables_to_add:
-            linopy_variable = self._get_linopy_variable_params(variable)
-            self.add_variable_to_model(linopy_variable)
-
-    def _get_linopy_variable_params(self, variable: VariableDefinitionRegistry) -> LinopyVariableParameters:
-        dimension_coordiantes_map = {}
-        dimensions = []
-        model_coordinates_list = []
-
-        if variable.dimensions is not None:
-            for dimension in variable.dimensions:
-                coordiantes = self._milp_model.parameters.coordinates_store.get_coordinates(dimension)
-                dimension_coordiantes_map |= coordiantes.dimension_coordiantes_map
-                dimensions.append(coordiantes.dimension)
-                model_coordinates_list.append(coordiantes)
-
-        return LinopyVariableParameters(
-            name=variable.var_name,
-            coords=dimension_coordiantes_map,
-            dims=dimensions,
-            lower=get_variable_lower_bound(
-                indices=model_coordinates_list,
-                lower_bound_type=variable.lower_bound_type,
-                is_binary=variable.is_binary,
-            ),
-            binary=variable.is_binary,
-        )
-
-    def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
-        """Add a variable to the underlying linopy model.
-
-        Args:
-            variable: Variable parameters to add to the linopy model.
-        """
-        self._milp_model.linopy_model.add_variables(
-            name=variable.name,
-            coords=variable.coords,
-            dims=variable.dims,
-            lower=variable.lower,
-            binary=variable.binary,
-        )
+            linopy_var_params = get_linopy_variable_parameters(variable, coordinates_store)
+            self._milp_model.add_variable(linopy_var_params)
 
     def _add_model_constraints(self) -> None:
         for group in self._get_constraint_groups():

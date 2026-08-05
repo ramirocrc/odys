@@ -12,6 +12,7 @@ import linopy
 
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.model.dimensions import ModelDimension
+from odys.optimization.model.linopy_converter import LinopyVariableParameters
 from odys.parameters.energy_system_parameters import EnergySystemParameters
 
 
@@ -82,6 +83,19 @@ class EnergyMILPModel:
     def parameters(self) -> EnergySystemParameters:
         """Return the energy system parameters."""
         return self._parameters
+
+    def add_variable(self, var_params: LinopyVariableParameters) -> None:
+        """Add a variable to the underlying linopy model.
+
+        Args:
+            var_params: Parameters of the variable to add.
+        """
+        self.linopy_model.add_variables(
+            name=var_params.name,
+            coords=var_params.coords,
+            lower=var_params.lower,
+            binary=var_params.binary,
+        )
 
     def per_scenario_profit(self) -> linopy.LinearExpression:
         """Profit per scenario, summed over time and assets but not over scenarios.

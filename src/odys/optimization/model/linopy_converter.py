@@ -1,12 +1,12 @@
 """Utilities for converting model variables into linopy-compatible parameters."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 
-from odys.optimization.model.coordinates import ModelCoordinates
-from odys.optimization.model.variable_definitions import BoundType
+from odys.optimization.model.coordinates import CoordinatesStore
+from odys.optimization.model.variable_definitions import BoundType, VariableDefinitionRegistry
 
 
 class LinopyVariableParameters(BaseModel):
@@ -15,37 +15,38 @@ class LinopyVariableParameters(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
-        arbitrary_types_allowed=True,
     )
 
     name: str
     coords: Mapping[str, list[str]]
-    dims: Sequence[str]
-    lower: np.ndarray | float
+    lower: float
     binary: bool
 
 
-def get_variable_lower_bound(
-    indices: list[ModelCoordinates],
-    lower_bound_type: BoundType,
-    *,
-    is_binary: bool,
-) -> np.ndarray | float:
-    """Calculate lower bounds for a variable.
+def get_linopy_variable_parameters(
+    definition: VariableDefinitionRegistry,
+    coordinates_store: CoordinatesStore,
+) -> LinopyVariableParameters:
+    """Build linopy variable parameters from a variable definition.
 
     Args:
-        indices: List of dimension coordinates for the variable
-        lower_bound_type: Type of lower bound
-        is_binary: Whether the variable is binary
+        definition: Definition of the variable (name, dimensions, bounds).
+        coordinates_store: Coordinates for every dimension in the model.
 
     Returns:
-        Lower bound value or array
+        Parameters ready to be passed to linopy's ``add_variables``.
     """
-    if is_binary:
-        return -np.inf  # Required by linopy.add_variable when variable is binary
+    coordinates = [coordinates_store.get_coordinates(dimension) for dimension in definition.dimensions or []]
+    coords: dict[str, list[str]] = {}
+    for coordinate in coordinates:
+        coords |= coordinate.dimension_coordinates_map
 
-    shape = tuple(len(dim_set.values) for dim_set in indices)
+    # linopy ignores the lower bound for binary variables
+    lower = -np.inf if definition.is_binary or definition.lower_bound_type is BoundType.UNBOUNDED else 0.0
 
-    if lower_bound_type == BoundType.UNBOUNDED:
-        return np.full(shape, -np.inf, dtype=float)
-    return np.full(shape, 0, dtype=float)
+    return LinopyVariableParameters(
+        name=definition.var_name,
+        coords=coords,
+        lower=lower,
+        binary=definition.is_binary,
+    )
