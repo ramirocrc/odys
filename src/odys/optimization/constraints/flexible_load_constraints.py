@@ -9,7 +9,7 @@ from odys.optimization.constraints.model_constraint import ModelConstraint
 
 if TYPE_CHECKING:
     from odys.optimization.model.milp_model import EnergyMILPModel
-    from odys.optimization.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
+    from odys.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
 
 
 class FlexibleLoadConstraints(ConstraintGroup):

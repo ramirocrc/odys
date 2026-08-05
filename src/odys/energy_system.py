@@ -20,16 +20,17 @@ from odys.domain.scenarios import (
     validate_sequence_of_stochastic_scenarios,
 )
 from odys.domain.validation import validate_energy_system_inputs
-from odys.optimization.model.indices import build_indices
+from odys.optimization.model.coordinates import CoordinatesStore, ModelCoordinates
+from odys.optimization.model.dimensions import ModelDimension
 from odys.optimization.model.model_builder import build_model
-from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
-from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerParameters
-from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
-from odys.optimization.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
-from odys.optimization.parameters.entity_parameters.generator_parameters import GeneratorParameters
-from odys.optimization.parameters.entity_parameters.market_parameters import MarketParameters
-from odys.optimization.parameters.entity_parameters.scenario_parameters import ScenarioParameters
-from odys.optimization.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
+from odys.parameters.energy_system_parameters import EnergySystemParameters
+from odys.parameters.entity_parameters.charger_parameters import ChargerParameters
+from odys.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
+from odys.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
+from odys.parameters.entity_parameters.generator_parameters import GeneratorParameters
+from odys.parameters.entity_parameters.market_parameters import MarketParameters
+from odys.parameters.entity_parameters.scenario_parameters import ScenarioParameters
+from odys.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
 from odys.results.optimization_results import OptimalDisptachResults
 from odys.solvers.solver import optimize_algebraic_model
 from odys.solvers.solver_config import SolverConfig
@@ -132,23 +133,45 @@ class EnergySystem(BaseModel):
         chargers = self.portfolio.chargers
         evs = self.portfolio.electric_vehicles
 
-        indices = build_indices(
-            number_of_steps=self.number_of_steps,
-            scenarios=self.collection_of_scenarios,
-            generators=gens,
-            standalone_storages=storages,
-            flexible_loads=flex,
-            markets=markets,
-            chargers=chargers,
-            electric_vehicles=evs,
+        coordinates_store = CoordinatesStore(
+            scenarios=ModelCoordinates(
+                dimension=ModelDimension.Scenarios,
+                values=tuple(scenario.name for scenario in self.collection_of_scenarios),
+            ),
+            time=ModelCoordinates(
+                dimension=ModelDimension.Time,
+                values=tuple(str(t) for t in range(self.number_of_steps)),
+            ),
+            generators=ModelCoordinates(dimension=ModelDimension.Generators, values=tuple(g.name for g in gens))
+            if gens
+            else None,
+            standalone_storages=(
+                ModelCoordinates(dimension=ModelDimension.StandaloneStorages, values=tuple(s.name for s in storages))
+                if storages
+                else None
+            ),
+            flexible_loads=(
+                ModelCoordinates(dimension=ModelDimension.FlexibleLoads, values=tuple(f.name for f in flex))
+                if flex
+                else None
+            ),
+            markets=ModelCoordinates(dimension=ModelDimension.Markets, values=tuple(m.name for m in markets))
+            if markets
+            else None,
+            chargers=ModelCoordinates(dimension=ModelDimension.Chargers, values=tuple(c.name for c in chargers))
+            if chargers
+            else None,
+            electric_vehicles=(
+                ModelCoordinates(dimension=ModelDimension.EVs, values=tuple(e.name for e in evs)) if evs else None
+            ),
         )
         objective = self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0))
 
         return EnergySystemParameters(
             timestep=self.timestep,
             objective=objective,
-            coordinates=indices,
-            scenarios=ScenarioParameters(self.collection_of_scenarios, indices),
+            coordinates_store=coordinates_store,
+            scenarios=ScenarioParameters(self.collection_of_scenarios, coordinates_store),
             generators=GeneratorParameters(gens) if gens else None,
             standalone_storages=StandaloneStorageParameters(storages) if storages else None,
             flexible_loads=FlexibleLoadParameters(flex) if flex else None,

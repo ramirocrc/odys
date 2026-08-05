@@ -22,7 +22,7 @@ from odys.optimization.model.dimensions import ModelDimension
 
 if TYPE_CHECKING:
     from odys.optimization.model.milp_model import EnergyMILPModel
-    from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
+    from odys.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
 
 
 class ElectricVehicleConstraints(ConstraintGroup):

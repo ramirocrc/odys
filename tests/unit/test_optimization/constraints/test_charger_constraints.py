@@ -11,7 +11,7 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.energy_system import EnergySystem
 from odys.optimization.model.dimensions import ModelDimension
-from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
+from odys.parameters.energy_system_parameters import EnergySystemParameters
 
 
 @pytest.fixture

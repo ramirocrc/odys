@@ -5,7 +5,7 @@ import pytest
 from odys.domain.entities.charger import Charger
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.model.dimensions import ModelDimension
-from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerParameters
+from odys.parameters.entity_parameters.charger_parameters import ChargerParameters
 
 CHARGER1_MAX_POWER = 50.0
 CHARGER1_EFFICIENCY = 0.95

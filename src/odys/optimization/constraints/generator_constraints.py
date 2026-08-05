@@ -8,9 +8,9 @@ from odys.optimization.constraints.constraints_group import ConstraintGroup, con
 from odys.optimization.constraints.model_constraint import ModelConstraint
 
 if TYPE_CHECKING:
-    from odys.optimization.model.indices import GeneratorCoordinates
+    from odys.optimization.model.coordinates import ModelCoordinates
     from odys.optimization.model.milp_model import EnergyMILPModel
-    from odys.optimization.parameters.entity_parameters.generator_parameters import GeneratorParameters
+    from odys.parameters.entity_parameters.generator_parameters import GeneratorParameters
 
 
 class GeneratorConstraints(ConstraintGroup):
@@ -24,11 +24,11 @@ class GeneratorConstraints(ConstraintGroup):
             msg = "GeneratorConstraints requires generators to be present."
             raise ValueError(msg)
         self.params: GeneratorParameters = generators
-        generators_coordinates = milp_model.coordinates.generators
+        generators_coordinates = milp_model.parameters.coordinates_store.generators
         if generators_coordinates is None:
             msg = "GeneratorConstraints requires generator coordinates."
             raise ValueError(msg)
-        self._generators_coordinates: GeneratorCoordinates = generators_coordinates
+        self._generators_coordinates: ModelCoordinates = generators_coordinates
 
     @constraint
     def _get_generator_max_power_constraint(self) -> ModelConstraint:
