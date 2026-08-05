@@ -22,7 +22,7 @@ from odys.optimization.model.dimensions import ModelDimension
 if TYPE_CHECKING:
     from odys.optimization.constraints.model_constraint import ModelConstraint
     from odys.optimization.model.milp_model import EnergyMILPModel
-    from odys.optimization.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
+    from odys.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
 
 
 class StandaloneStorageConstraints(ConstraintGroup):

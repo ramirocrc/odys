@@ -10,7 +10,7 @@ from odys.optimization.constraints.model_constraint import ModelConstraint
 
 if TYPE_CHECKING:
     from odys.optimization.model.milp_model import EnergyMILPModel
-    from odys.optimization.parameters.entity_parameters.market_parameters import MarketParameters
+    from odys.parameters.entity_parameters.market_parameters import MarketParameters
 
 
 class MarketConstraints(ConstraintGroup):

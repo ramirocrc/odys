@@ -36,7 +36,7 @@ from odys.optimization.model.variable_definitions import (
     STANDALONE_STORAGE_VARIABLES,
     VariableDefinitionRegistry,
 )
-from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
+from odys.parameters.energy_system_parameters import EnergySystemParameters
 
 
 class EnergyAlgebraicModelBuilder:
@@ -113,23 +113,23 @@ class EnergyAlgebraicModelBuilder:
             self.add_variable_to_model(linopy_variable)
 
     def _get_linopy_variable_params(self, variable: VariableDefinitionRegistry) -> LinopyVariableParameters:
-        coordinates = {}
+        dimension_coordiantes_map = {}
         dimensions = []
-        indices = []
+        model_coordinates_list = []
 
         if variable.dimensions is not None:
             for dimension in variable.dimensions:
-                index = self._milp_model.coordinates.get_coordinates(dimension)
-                coordinates |= index.coordinates
-                dimensions.append(index.dimension)
-                indices.append(index)
+                coordiantes = self._milp_model.parameters.coordinates_store.get_coordinates(dimension)
+                dimension_coordiantes_map |= coordiantes.dimension_coordiantes_map
+                dimensions.append(coordiantes.dimension)
+                model_coordinates_list.append(coordiantes)
 
         return LinopyVariableParameters(
             name=variable.var_name,
-            coords=coordinates,
+            coords=dimension_coordiantes_map,
             dims=dimensions,
             lower=get_variable_lower_bound(
-                indeces=indices,
+                indices=model_coordinates_list,
                 lower_bound_type=variable.lower_bound_type,
                 is_binary=variable.is_binary,
             ),

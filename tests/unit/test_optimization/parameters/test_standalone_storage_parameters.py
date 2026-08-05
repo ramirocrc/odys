@@ -1,7 +1,7 @@
 import pytest
 
 from odys.domain.entities.standalone_storage import StandaloneStorage
-from odys.optimization.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
+from odys.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
 
 STANDARD_CAPACITY = 100.0
 STANDARD_MAX_CHARGE_POWER = 50.0

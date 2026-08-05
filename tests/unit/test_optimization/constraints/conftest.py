@@ -7,7 +7,7 @@ from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
-from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
+from odys.parameters.energy_system_parameters import EnergySystemParameters
 
 
 @pytest.fixture

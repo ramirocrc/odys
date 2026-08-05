@@ -12,8 +12,7 @@ import linopy
 
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.model.dimensions import ModelDimension
-from odys.optimization.model.indices import EnergyModelCoordinates
-from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
+from odys.parameters.energy_system_parameters import EnergySystemParameters
 
 
 class VariableStore:
@@ -68,11 +67,6 @@ class EnergyMILPModel:
         """
         self._parameters = parameters
         self._linopy_model = linopy.Model(force_dim_names=True)
-
-    @property
-    def coordinates(self) -> EnergyModelCoordinates:
-        """Return all dimension coordinates for the model."""
-        return self._parameters.coordinates
 
     @cached_property
     def vars(self) -> VariableStore:

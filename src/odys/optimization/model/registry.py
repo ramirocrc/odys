@@ -24,12 +24,12 @@ from odys.optimization.model.variable_definitions import (
     STANDALONE_STORAGE_VARIABLES,
     VariableDefinitionRegistry,
 )
-from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerParameters
-from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
-from odys.optimization.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
-from odys.optimization.parameters.entity_parameters.generator_parameters import GeneratorParameters
-from odys.optimization.parameters.entity_parameters.market_parameters import MarketParameters
-from odys.optimization.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
+from odys.parameters.entity_parameters.charger_parameters import ChargerParameters
+from odys.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
+from odys.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
+from odys.parameters.entity_parameters.generator_parameters import GeneratorParameters
+from odys.parameters.entity_parameters.market_parameters import MarketParameters
+from odys.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
 
 
 @dataclass(frozen=True)
