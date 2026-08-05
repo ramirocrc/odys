@@ -12,8 +12,8 @@ from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysError
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
+from odys.optimization.model.dimensions import ModelDimension
 from odys.optimization.model.model_builder import EnergyAlgebraicModelBuilder
-from odys.optimization.model.sets import ModelDimension
 
 logger = logging.getLogger(__name__)
 

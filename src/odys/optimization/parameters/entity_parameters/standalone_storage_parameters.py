@@ -1,61 +1,48 @@
 """Standalone storage parameters for the mathematical optimization model."""
 
 from collections.abc import Sequence
-from typing import ClassVar
 
 import xarray as xr
 
 from odys.domain.entities.standalone_storage import StandaloneStorage
-from odys.optimization.model.sets import ModelDimension, ModelIndex
-
-
-class StandaloneStorageIndex(ModelIndex):
-    """Index for standalone storage components in the optimization model."""
-
-    dimension: ClassVar[ModelDimension] = ModelDimension.StandaloneStorages
+from odys.domain.exceptions import OdysValidationError
+from odys.optimization.model.dimensions import ModelDimension
 
 
 class StandaloneStorageParameters:
     """Parameters for standalone storage assets in the energy system model."""
 
-    def __init__(self, storages: Sequence[StandaloneStorage] | None = None) -> None:
+    def __init__(self, storages: Sequence[StandaloneStorage]) -> None:
         """Initialize standalone storage parameters.
 
         Args:
-            storages: Sequence of standalone storage objects.
+            storages: Non-empty sequence of standalone storage objects.
+
+        Raises:
+            OdysValidationError: If storages is empty.
         """
-        self._storages = list(storages) if storages else []
-        self._index = StandaloneStorageIndex(
-            values=tuple(storage.name for storage in self._storages),
-        )
+        if not storages:
+            msg = "StandaloneStorageParameters requires at least one storage."
+            raise OdysValidationError(msg)
+        names = [storage.name for storage in storages]
+        dim = ModelDimension.StandaloneStorages
         data = {
-            "capacity": [storage.capacity for storage in self._storages],
-            "max_charge_power": [storage.max_charge_power for storage in self._storages],
-            "max_discharge_power": [storage.max_discharge_power for storage in self._storages],
-            "efficiency_charging": [storage.efficiency_charging for storage in self._storages],
-            "efficiency_discharging": [storage.efficiency_discharging for storage in self._storages],
-            "self_discharge_rate": [storage.self_discharge_rate for storage in self._storages],
-            "soc_start": [storage.soc_start for storage in self._storages],
-            "soc_end": [storage.soc_end for storage in self._storages],
-            "soc_min": [storage.soc_min for storage in self._storages],
-            "soc_max": [storage.soc_max for storage in self._storages],
-            "degradation_cost": [storage.degradation_cost for storage in self._storages],
+            "capacity": [storage.capacity for storage in storages],
+            "max_charge_power": [storage.max_charge_power for storage in storages],
+            "max_discharge_power": [storage.max_discharge_power for storage in storages],
+            "efficiency_charging": [storage.efficiency_charging for storage in storages],
+            "efficiency_discharging": [storage.efficiency_discharging for storage in storages],
+            "self_discharge_rate": [storage.self_discharge_rate for storage in storages],
+            "soc_start": [storage.soc_start for storage in storages],
+            "soc_end": [storage.soc_end for storage in storages],
+            "soc_min": [storage.soc_min for storage in storages],
+            "soc_max": [storage.soc_max for storage in storages],
+            "degradation_cost": [storage.degradation_cost for storage in storages],
         }
-        dim = self._index.dimension
         self._dataset = xr.Dataset(
             {name: (dim, values) for name, values in data.items()},
-            coords=self._index.coordinates,
+            coords={dim: names},
         )
-
-    @property
-    def is_empty(self) -> bool:
-        """Return True if there are no standalone storages."""
-        return len(self._storages) == 0
-
-    @property
-    def index(self) -> StandaloneStorageIndex:
-        """Return the standalone storage index."""
-        return self._index
 
     @property
     def capacity(self) -> xr.DataArray:

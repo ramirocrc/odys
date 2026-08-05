@@ -1,8 +1,16 @@
 """Generator-related constraints for the optimization model."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+
+if TYPE_CHECKING:
+    from odys.optimization.model.indices import GeneratorCoordinates
+    from odys.optimization.model.milp_model import EnergyMILPModel
+    from odys.optimization.parameters.entity_parameters.generator_parameters import GeneratorParameters
 
 
 class GeneratorConstraints(ConstraintGroup):
@@ -11,7 +19,16 @@ class GeneratorConstraints(ConstraintGroup):
     def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and generator parameters."""
         self.model = milp_model
-        self.params = milp_model.parameters.generators
+        generators = milp_model.parameters.generators
+        if generators is None:
+            msg = "GeneratorConstraints requires generators to be present."
+            raise ValueError(msg)
+        self.params: GeneratorParameters = generators
+        generators_coordinates = milp_model.coordinates.generators
+        if generators_coordinates is None:
+            msg = "GeneratorConstraints requires generator coordinates."
+            raise ValueError(msg)
+        self._generators_coordinates: GeneratorCoordinates = generators_coordinates
 
     @constraint
     def _get_generator_max_power_constraint(self) -> ModelConstraint:
@@ -94,7 +111,7 @@ class GeneratorConstraints(ConstraintGroup):
     @constraint
     def _get_min_uptime_constraint(self) -> list[ModelConstraint]:
         constraints = []
-        for generator in self.params.index.values:
+        for generator in self._generators_coordinates.values:
             min_up_time = int(self.params.min_up_time.sel(generator=generator))
             generator_status = self.model.vars.generator_status.sel(generator=generator)
             generator_shutdown = self.model.vars.generator_shutdown.sel(generator=generator)
@@ -112,7 +129,7 @@ class GeneratorConstraints(ConstraintGroup):
     @constraint
     def _get_min_downtime_constraint(self) -> list[ModelConstraint]:
         constraints = []
-        for generator in self.params.index.values:
+        for generator in self._generators_coordinates.values:
             min_down_time = int(self.params.min_down_time.sel(generator=generator))
             generator_status = self.model.vars.generator_status.sel(generator=generator)
             generator_startup = self.model.vars.generator_startup.sel(generator=generator)

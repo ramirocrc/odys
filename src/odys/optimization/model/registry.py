@@ -14,7 +14,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.standalone_storage import StandaloneStorage
-from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.dimensions import ModelDimension
 from odys.optimization.model.variable_definitions import (
     CHARGER_VARIABLES,
     EV_VARIABLES,

@@ -1,9 +1,11 @@
 """Standalone storage-related constraints for the optimization model."""
 
+from __future__ import annotations
+
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
-from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.constraints.storage_constraints import (
     build_capacity_constraint,
     build_max_charge_constraint,
@@ -15,8 +17,12 @@ from odys.optimization.constraints.storage_constraints import (
     build_soc_min_constraint,
     build_soc_start_constraint,
 )
-from odys.optimization.model.milp_model import EnergyMILPModel
-from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.dimensions import ModelDimension
+
+if TYPE_CHECKING:
+    from odys.optimization.constraints.model_constraint import ModelConstraint
+    from odys.optimization.model.milp_model import EnergyMILPModel
+    from odys.optimization.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
 
 
 class StandaloneStorageConstraints(ConstraintGroup):
@@ -25,7 +31,11 @@ class StandaloneStorageConstraints(ConstraintGroup):
     def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and standalone storage parameters."""
         self.model = milp_model
-        self.params = milp_model.parameters.standalone_storages
+        storages = milp_model.parameters.standalone_storages
+        if storages is None:
+            msg = "StandaloneStorageConstraints requires standalone storages to be present."
+            raise ValueError(msg)
+        self.params: StandaloneStorageParameters = storages
         self._timestep_hours = milp_model.parameters.timestep / timedelta(hours=1)
 
     @constraint

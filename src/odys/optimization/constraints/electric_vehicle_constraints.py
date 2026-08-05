@@ -1,6 +1,9 @@
 """Electric vehicle-related constraints for the optimization model."""
 
+from __future__ import annotations
+
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
@@ -15,8 +18,11 @@ from odys.optimization.constraints.storage_constraints import (
     build_soc_min_constraint,
     build_soc_start_constraint,
 )
-from odys.optimization.model.milp_model import EnergyMILPModel
-from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.dimensions import ModelDimension
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
+    from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
 
 
 class ElectricVehicleConstraints(ConstraintGroup):
@@ -25,7 +31,11 @@ class ElectricVehicleConstraints(ConstraintGroup):
     def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and electric vehicle parameters."""
         self.model = milp_model
-        self.params = milp_model.parameters.electric_vehicles
+        evs = milp_model.parameters.electric_vehicles
+        if evs is None:
+            msg = "ElectricVehicleConstraints requires electric vehicles to be present."
+            raise ValueError(msg)
+        self.params: ElectricVehicleParameters = evs
         self._timestep_hours = milp_model.parameters.timestep / timedelta(hours=1)
 
     @constraint

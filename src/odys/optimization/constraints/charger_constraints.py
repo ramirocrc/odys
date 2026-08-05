@@ -1,9 +1,17 @@
 """Charger-related constraints for the optimization model."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
-from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.dimensions import ModelDimension
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
+    from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerParameters
+    from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
 
 
 class ChargerConstraints(ConstraintGroup):
@@ -16,8 +24,16 @@ class ChargerConstraints(ConstraintGroup):
     def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and charger parameters."""
         self.model = milp_model
-        self.charger_params = milp_model.parameters.chargers
-        self.ev_params = milp_model.parameters.electric_vehicles
+        chargers = milp_model.parameters.chargers
+        if chargers is None:
+            msg = "ChargerConstraints requires chargers to be present."
+            raise ValueError(msg)
+        self.charger_params: ChargerParameters = chargers
+        evs = milp_model.parameters.electric_vehicles
+        if evs is None:
+            msg = "ChargerConstraints requires electric vehicles to be present."
+            raise ValueError(msg)
+        self.ev_params: ElectricVehicleParameters = evs
 
     @constraint
     def _get_charger_one_ev_per_charger_constraint(self) -> ModelConstraint:

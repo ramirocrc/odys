@@ -9,7 +9,7 @@ import linopy
 import xarray as xr
 
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.dimensions import ModelDimension
 
 
 def build_max_charge_constraint(
