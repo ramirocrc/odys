@@ -5,9 +5,7 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 
-from odys.optimization.model.sets import (
-    ModelIndex,
-)
+from odys.optimization.model.indices import ModelCoordinates
 from odys.optimization.model.variable_definitions import BoundType
 
 
@@ -28,7 +26,7 @@ class LinopyVariableParameters(BaseModel):
 
 
 def get_variable_lower_bound(
-    indeces: list[ModelIndex],
+    indeces: list[ModelCoordinates],
     lower_bound_type: BoundType,
     *,
     is_binary: bool,
@@ -36,7 +34,7 @@ def get_variable_lower_bound(
     """Calculate lower bounds for a variable.
 
     Args:
-        indeces: List of dimension sets for the variable
+        indeces: List of dimension coordinates for the variable
         lower_bound_type: Type of lower bound
         is_binary: Whether the variable is binary
 

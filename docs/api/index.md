@@ -61,22 +61,24 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.optimization.constraints.standalone_storage_constraints`
     - `odys.optimization.constraints.storage_constraints`
   - `odys.optimization.model`
+    - `odys.optimization.model.dimensions`
+    - `odys.optimization.model.indices`
     - `odys.optimization.model.linopy_converter`
     - `odys.optimization.model.milp_model`
     - `odys.optimization.model.model_builder`
     - `odys.optimization.model.objectives`
     - `odys.optimization.model.registry`
-    - `odys.optimization.model.sets`
     - `odys.optimization.model.variable_definitions`
   - `odys.optimization.parameters`
-    - `odys.optimization.parameters.entity_parameters..charger_parameters`
-    - `odys.optimization.parameters.entity_parameters..electric_vehicle_parameters`
-    - `odys.optimization.parameters.entity_parameters..flexible_load_parameters`
-    - `odys.optimization.parameters.generator_parameters`
-    - `odys.optimization.parameters.entity_parameters..market_parameters`
     - `odys.optimization.parameters.energy_system_parameters`
-    - `odys.optimization.parameters.entity_parameters..scenario_parameters`
-    - `odys.optimization.parameters.standalone_storage_parameters`
+    - `odys.optimization.parameters.entity_parameters`
+      - `odys.optimization.parameters.entity_parameters.charger_parameters`
+      - `odys.optimization.parameters.entity_parameters.electric_vehicle_parameters`
+      - `odys.optimization.parameters.entity_parameters.flexible_load_parameters`
+      - `odys.optimization.parameters.entity_parameters.generator_parameters`
+      - `odys.optimization.parameters.entity_parameters.market_parameters`
+      - `odys.optimization.parameters.entity_parameters.scenario_parameters`
+      - `odys.optimization.parameters.entity_parameters.standalone_storage_parameters`
 - `odys.results`
   - `odys.results.dispatch`
   - `odys.results.optimization_results`

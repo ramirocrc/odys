@@ -1,51 +1,40 @@
 """Market parameters for the mathematical optimization model."""
 
 from collections.abc import Sequence
-from typing import ClassVar
 
 import xarray as xr
 
 from odys.domain.entities.market import EnergyMarket
-from odys.optimization.model.sets import ModelDimension, ModelIndex
-
-
-class MarketIndex(ModelIndex):
-    """Index for market components in the optimization model."""
-
-    dimension: ClassVar[ModelDimension] = ModelDimension.Markets
+from odys.domain.exceptions import OdysValidationError
+from odys.optimization.model.dimensions import ModelDimension
 
 
 class MarketParameters:
     """Parameters for energy market components in the energy system model."""
 
-    def __init__(self, markets: Sequence[EnergyMarket] | None = None) -> None:
+    def __init__(self, markets: Sequence[EnergyMarket]) -> None:
         """Initialize market parameters.
 
         Args:
-            markets: Sequence of energy market objects.
+            markets: Non-empty sequence of energy market objects.
+
+        Raises:
+            OdysValidationError: If markets is empty.
         """
-        self._markets = list(markets) if markets else []
-        self._index = MarketIndex(values=tuple(market.name for market in self._markets))
+        if not markets:
+            msg = "MarketParameters requires at least one market."
+            raise OdysValidationError(msg)
+        names = [market.name for market in markets]
+        dim = ModelDimension.Markets
         data = {
-            "max_volume": [market.max_trading_volume_per_step for market in self._markets],
-            "stage_fixed": [market.stage_fixed for market in self._markets],
-            "trade_direction": [market.trade_direction for market in self._markets],
+            "max_volume": [market.max_trading_volume_per_step for market in markets],
+            "stage_fixed": [market.stage_fixed for market in markets],
+            "trade_direction": [market.trade_direction for market in markets],
         }
-        dim = self._index.dimension
         self._dataset = xr.Dataset(
             {name: (dim, values) for name, values in data.items()},
-            coords=self._index.coordinates,
+            coords={dim: names},
         )
-
-    @property
-    def is_empty(self) -> bool:
-        """Return True if there are no markets."""
-        return len(self._markets) == 0
-
-    @property
-    def index(self) -> MarketIndex:
-        """Return the market index."""
-        return self._index
 
     @property
     def max_volume(self) -> xr.DataArray:

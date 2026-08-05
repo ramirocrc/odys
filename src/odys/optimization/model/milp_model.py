@@ -9,47 +9,11 @@ from functools import cached_property
 from typing import cast
 
 import linopy
-from pydantic import BaseModel, ConfigDict
 
 from odys.domain.exceptions import OdysValidationError
-from odys.optimization.model.sets import ModelDimension, ModelIndex
+from odys.optimization.model.dimensions import ModelDimension
+from odys.optimization.model.indices import EnergyModelCoordinates
 from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
-from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerIndex
-from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleIndex
-from odys.optimization.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadIndex
-from odys.optimization.parameters.entity_parameters.generator_parameters import GeneratorIndex
-from odys.optimization.parameters.entity_parameters.market_parameters import MarketIndex
-from odys.optimization.parameters.entity_parameters.scenario_parameters import ScenarioIndex, TimeIndex
-from odys.optimization.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageIndex
-
-
-class EnergyModelIndices(BaseModel):
-    """Collection of all dimension indices used in the optimization model."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    scenarios: ScenarioIndex
-    time: TimeIndex
-    generators: GeneratorIndex
-    standalone_storages: StandaloneStorageIndex
-    flexible_loads: FlexibleLoadIndex
-    markets: MarketIndex
-    chargers: ChargerIndex
-    electric_vehicles: ElectricVehicleIndex
-
-    def get_index(self, dimension: ModelDimension) -> ModelIndex:
-        """Return the index for a given dimension."""
-        mapping = {
-            ModelDimension.Scenarios: self.scenarios,
-            ModelDimension.Time: self.time,
-            ModelDimension.Generators: self.generators,
-            ModelDimension.StandaloneStorages: self.standalone_storages,
-            ModelDimension.FlexibleLoads: self.flexible_loads,
-            ModelDimension.Markets: self.markets,
-            ModelDimension.Chargers: self.chargers,
-            ModelDimension.EVs: self.electric_vehicles,
-        }
-        return mapping[dimension]
 
 
 class VariableStore:
@@ -105,19 +69,10 @@ class EnergyMILPModel:
         self._parameters = parameters
         self._linopy_model = linopy.Model(force_dim_names=True)
 
-    @cached_property
-    def indices(self) -> EnergyModelIndices:
-        """Return all dimension indices for the model."""
-        return EnergyModelIndices(
-            scenarios=self._parameters.scenarios.scenario_index,
-            time=self._parameters.scenarios.time_index,
-            generators=self._parameters.generators.index,
-            standalone_storages=self._parameters.standalone_storages.index,
-            flexible_loads=self._parameters.flexible_loads.index,
-            markets=self._parameters.markets.index,
-            chargers=self._parameters.chargers.index,
-            electric_vehicles=self._parameters.electric_vehicles.index,
-        )
+    @property
+    def coordinates(self) -> EnergyModelCoordinates:
+        """Return all dimension coordinates for the model."""
+        return self._parameters.coordinates
 
     @cached_property
     def vars(self) -> VariableStore:
@@ -150,7 +105,7 @@ class EnergyMILPModel:
                 ).sum([ModelDimension.Time, ModelDimension.Markets]),
             )
 
-        if not self._parameters.generators.is_empty:
+        if self._parameters.generators is not None:
             profit_terms.append(
                 -(
                     self.vars.generator_power * self._parameters.generators.variable_cost
@@ -159,14 +114,14 @@ class EnergyMILPModel:
                 ).sum([ModelDimension.Time, ModelDimension.Generators]),
             )
 
-        if not self._parameters.flexible_loads.is_empty:
+        if self._parameters.flexible_loads is not None:
             profit_terms.append(
                 (self.vars.load_adjustment * self._parameters.flexible_loads.value_of_consumption).sum(
                     [ModelDimension.Time, ModelDimension.FlexibleLoads],
                 ),
             )
 
-        if not self._parameters.standalone_storages.is_empty:
+        if self._parameters.standalone_storages is not None:
             timestep_hours = self._parameters.timestep / timedelta(hours=1)
             profit_terms.append(
                 -(
@@ -176,7 +131,7 @@ class EnergyMILPModel:
                 ).sum([ModelDimension.Time, ModelDimension.StandaloneStorages]),
             )
 
-        if not self._parameters.electric_vehicles.is_empty:
+        if self._parameters.electric_vehicles is not None:
             timestep_hours = self._parameters.timestep / timedelta(hours=1)
             profit_terms.append(
                 -(

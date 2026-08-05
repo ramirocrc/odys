@@ -1,52 +1,39 @@
 """Charger parameters for the mathematical optimization model."""
 
 from collections.abc import Sequence
-from typing import ClassVar
 
 import xarray as xr
 
 from odys.domain.entities.charger import Charger
-from odys.optimization.model.sets import ModelDimension, ModelIndex
-
-
-class ChargerIndex(ModelIndex):
-    """Index for charger components in the optimization model."""
-
-    dimension: ClassVar[ModelDimension] = ModelDimension.Chargers
+from odys.domain.exceptions import OdysValidationError
+from odys.optimization.model.dimensions import ModelDimension
 
 
 class ChargerParameters:
     """Parameters for charger assets in the energy system model."""
 
-    def __init__(self, chargers: Sequence[Charger] | None = None) -> None:
+    def __init__(self, chargers: Sequence[Charger]) -> None:
         """Initialize charger parameters.
 
         Args:
-            chargers: Sequence of charger objects.
+            chargers: Non-empty sequence of charger objects.
+
+        Raises:
+            OdysValidationError: If chargers is empty.
         """
-        self._chargers = list(chargers) if chargers else []
-        self._index = ChargerIndex(
-            values=tuple(charger.name for charger in self._chargers),
-        )
+        if not chargers:
+            msg = "ChargerParameters requires at least one charger."
+            raise OdysValidationError(msg)
+        names = [charger.name for charger in chargers]
+        dim = ModelDimension.Chargers
         data = {
-            "max_power": [charger.max_power for charger in self._chargers],
-            "efficiency": [charger.efficiency for charger in self._chargers],
+            "max_power": [charger.max_power for charger in chargers],
+            "efficiency": [charger.efficiency for charger in chargers],
         }
-        dim = self._index.dimension
         self._dataset = xr.Dataset(
             {name: (dim, values) for name, values in data.items()},
-            coords=self._index.coordinates,
+            coords={dim: names},
         )
-
-    @property
-    def is_empty(self) -> bool:
-        """Return True if there are no chargers."""
-        return len(self._chargers) == 0
-
-    @property
-    def index(self) -> ChargerIndex:
-        """Return the charger index."""
-        return self._index
 
     @property
     def max_power(self) -> xr.DataArray:

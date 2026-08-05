@@ -3,7 +3,8 @@
 import pytest
 
 from odys.domain.entities.charger import Charger
-from odys.optimization.model.sets import ModelDimension
+from odys.domain.exceptions import OdysValidationError
+from odys.optimization.model.dimensions import ModelDimension
 from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerParameters
 
 CHARGER1_MAX_POWER = 50.0
@@ -30,16 +31,14 @@ def charger_parameters(charger1: Charger, charger2: Charger) -> ChargerParameter
 
 def test_charger_parameters_creation(charger_parameters: ChargerParameters) -> None:
     """Test that ChargerParameters can be created with chargers."""
-    assert not charger_parameters.is_empty
-    assert charger_parameters.index.dimension == ModelDimension.Chargers
-    assert len(charger_parameters.index.values) == NUM_CHARGERS
+    assert charger_parameters.max_power is not None
+    assert charger_parameters.efficiency is not None
 
 
-def test_charger_parameters_empty() -> None:
-    """Test that empty ChargerParameters can be created."""
-    params = ChargerParameters()
-    assert params.is_empty
-    assert len(params.index.values) == 0
+def test_charger_parameters_empty_raises_error() -> None:
+    """Test that empty ChargerParameters raises validation error."""
+    with pytest.raises(OdysValidationError, match="requires at least one charger"):
+        ChargerParameters([])
 
 
 def test_charger_parameters_max_power(charger_parameters: ChargerParameters) -> None:
@@ -56,10 +55,3 @@ def test_charger_parameters_efficiency(charger_parameters: ChargerParameters) ->
     assert efficiency.dims == (ModelDimension.Chargers.value,)
     assert efficiency.sel(charger="charger1").values == CHARGER1_EFFICIENCY
     assert efficiency.sel(charger="charger2").values == CHARGER2_EFFICIENCY
-
-
-def test_charger_parameters_index(charger_parameters: ChargerParameters) -> None:
-    """Test that index property returns correct index."""
-    index = charger_parameters.index
-    assert index.dimension == ModelDimension.Chargers
-    assert index.values == ("charger1", "charger2")

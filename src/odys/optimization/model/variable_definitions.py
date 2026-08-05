@@ -8,7 +8,7 @@ from enum import Enum, unique
 
 from pydantic import BaseModel, ConfigDict
 
-from odys.optimization.model.sets import ModelDimension
+from odys.optimization.model.dimensions import ModelDimension
 
 
 class BoundType(Enum):

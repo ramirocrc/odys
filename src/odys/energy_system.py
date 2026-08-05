@@ -20,6 +20,7 @@ from odys.domain.scenarios import (
     validate_sequence_of_stochastic_scenarios,
 )
 from odys.domain.validation import validate_energy_system_inputs
+from odys.optimization.model.indices import build_indices
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
 from odys.optimization.parameters.entity_parameters.charger_parameters import ChargerParameters
@@ -124,31 +125,36 @@ class EnergySystem(BaseModel):
 
     def build_parameters(self) -> EnergySystemParameters:
         """Build parameters from this energy system for the optimization model."""
-        generator_params = GeneratorParameters(self.portfolio.generators)
-        standalone_storage_params = StandaloneStorageParameters(self.portfolio.standalone_storages)
-        flexible_load_params = FlexibleLoadParameters(self.portfolio.flexible_loads)
-        market_params = MarketParameters(self.collection_of_markets)
-        charger_params = ChargerParameters(self.portfolio.chargers)
-        ev_params = ElectricVehicleParameters(self.number_of_steps, self.portfolio.electric_vehicles)
-        scenario_params = ScenarioParameters(
-            number_of_timesteps=self.number_of_steps,
+        gens = self.portfolio.generators
+        storages = self.portfolio.standalone_storages
+        flex = self.portfolio.flexible_loads
+        markets = self.collection_of_markets
+        chargers = self.portfolio.chargers
+        evs = self.portfolio.electric_vehicles
+
+        indices = build_indices(
+            number_of_steps=self.number_of_steps,
             scenarios=self.collection_of_scenarios,
-            generators_index=generator_params.index,
-            standalone_storages_index=standalone_storage_params.index,
-            flexible_loads_index=flexible_load_params.index,
-            markets_index=market_params.index,
+            generators=gens,
+            standalone_storages=storages,
+            flexible_loads=flex,
+            markets=markets,
+            chargers=chargers,
+            electric_vehicles=evs,
         )
+        objective = self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0))
 
         return EnergySystemParameters(
             timestep=self.timestep,
-            generators=generator_params,
-            standalone_storages=standalone_storage_params,
-            flexible_loads=flexible_load_params,
-            markets=market_params,
-            scenarios=scenario_params,
-            chargers=charger_params,
-            electric_vehicles=ev_params,
-            objective=self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0)),
+            objective=objective,
+            coordinates=indices,
+            scenarios=ScenarioParameters(self.collection_of_scenarios, indices),
+            generators=GeneratorParameters(gens) if gens else None,
+            standalone_storages=StandaloneStorageParameters(storages) if storages else None,
+            flexible_loads=FlexibleLoadParameters(flex) if flex else None,
+            markets=MarketParameters(markets) if markets else None,
+            chargers=ChargerParameters(chargers) if chargers else None,
+            electric_vehicles=ElectricVehicleParameters(self.number_of_steps, evs) if evs else None,
         )
 
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDisptachResults:

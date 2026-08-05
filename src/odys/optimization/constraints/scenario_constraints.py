@@ -3,8 +3,8 @@
 from odys.domain.exceptions import OdysValidationError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
+from odys.optimization.model.dimensions import ModelDimension
 from odys.optimization.model.milp_model import EnergyMILPModel
-from odys.optimization.model.sets import ModelDimension
 from odys.optimization.model.variable_definitions import MARKET_VARIABLES
 
 
@@ -21,25 +21,25 @@ class ScenarioConstraints(ConstraintGroup):
         """Linopy power balance constraint ensuring supply equals demand."""
         lhs = 0
 
-        if not self._params.generators.is_empty:
+        if self._params.generators is not None:
             lhs += self.model.vars.generator_power.sum(ModelDimension.Generators)
 
-        if not self._params.standalone_storages.is_empty:
+        if self._params.standalone_storages is not None:
             lhs += self.model.vars.standalone_storage_power_out.sum(ModelDimension.StandaloneStorages)
             lhs += -self.model.vars.standalone_storage_power_in.sum(ModelDimension.StandaloneStorages)
 
-        if not self._params.electric_vehicles.is_empty:
+        if self._params.electric_vehicles is not None:
             lhs += self.model.vars.ev_power_out.sum(ModelDimension.EVs)
             lhs += -self.model.vars.ev_power_in.sum(ModelDimension.EVs)
 
-        if not self._params.markets.is_empty:
+        if self._params.markets is not None:
             lhs += self.model.vars.market_buy_volume.sum(ModelDimension.Markets)
             lhs += -self.model.vars.market_sell_volume.sum(ModelDimension.Markets)
 
         if self._params.scenarios.fixed_load_profiles is not None:
             lhs += -self._params.scenarios.fixed_load_profiles
 
-        if not self._params.flexible_loads.is_empty:
+        if self._params.flexible_loads is not None:
             base_profiles = self._params.scenarios.flexible_load_base_profiles
             if base_profiles is None:
                 msg = "Flexible loads exist but base profiles are missing"
@@ -54,7 +54,7 @@ class ScenarioConstraints(ConstraintGroup):
 
     @constraint
     def _get_available_capacity_profiles_constraint(self) -> list[ModelConstraint]:
-        if self._params.generators.is_empty or self._params.scenarios.available_capacity_profiles is None:
+        if self._params.generators is None or self._params.scenarios.available_capacity_profiles is None:
             return []
         expression = self.model.vars.generator_power <= self._params.scenarios.available_capacity_profiles
         return [
@@ -72,7 +72,7 @@ class ScenarioConstraints(ConstraintGroup):
         all scenarios, reflecting that decisions are made before uncertainty is revealed.
         Only applies to markets where stage_fixed is True.
         """
-        if self._params.markets.is_empty:
+        if self._params.markets is None:
             return []
 
         constraints = []

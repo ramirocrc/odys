@@ -9,9 +9,9 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
+from odys.optimization.model.dimensions import ModelDimension
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.model_builder import build_model
-from odys.optimization.model.sets import ModelDimension
 
 STANDARD_NOMINAL_POWER = 100.0
 STANDARD_VARIABLE_COST = 20.0
@@ -117,15 +117,19 @@ class TestPerScenarioProfitDegradationCost:
 
         actual_profit = model.per_scenario_profit()
 
+        generators = model.parameters.generators
+        assert generators is not None
+        storages = model.parameters.standalone_storages
+        assert storages is not None
         timestep_hours = TIMESTEP / timedelta(hours=1)
         expected_profit = -(
-            model.vars.generator_power * model.parameters.generators.variable_cost
-            + model.vars.generator_startup * model.parameters.generators.startup_cost
-            + model.vars.generator_shutdown * model.parameters.generators.shutdown_cost
+            model.vars.generator_power * generators.variable_cost
+            + model.vars.generator_startup * generators.startup_cost
+            + model.vars.generator_shutdown * generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators]) - (
             (model.vars.standalone_storage_power_in + model.vars.standalone_storage_power_out)
             * timestep_hours
-            * model.parameters.standalone_storages.degradation_cost
+            * storages.degradation_cost
         ).sum([ModelDimension.Time, ModelDimension.StandaloneStorages])
 
         assert_linequal(actual_profit, expected_profit)
@@ -135,10 +139,12 @@ class TestPerScenarioProfitDegradationCost:
 
         actual_profit = model.per_scenario_profit()
 
+        generators = model.parameters.generators
+        assert generators is not None
         expected_profit = -(
-            model.vars.generator_power * model.parameters.generators.variable_cost
-            + model.vars.generator_startup * model.parameters.generators.startup_cost
-            + model.vars.generator_shutdown * model.parameters.generators.shutdown_cost
+            model.vars.generator_power * generators.variable_cost
+            + model.vars.generator_startup * generators.startup_cost
+            + model.vars.generator_shutdown * generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators])
 
         assert_linequal(actual_profit, expected_profit)
@@ -160,10 +166,12 @@ class TestPerScenarioProfitShutdownCost:
 
         actual_profit = model.per_scenario_profit()
 
+        generators = model.parameters.generators
+        assert generators is not None
         expected_profit = -(
-            model.vars.generator_power * model.parameters.generators.variable_cost
-            + model.vars.generator_startup * model.parameters.generators.startup_cost
-            + model.vars.generator_shutdown * model.parameters.generators.shutdown_cost
+            model.vars.generator_power * generators.variable_cost
+            + model.vars.generator_startup * generators.startup_cost
+            + model.vars.generator_shutdown * generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators])
 
         assert_linequal(actual_profit, expected_profit)

@@ -26,9 +26,14 @@ from odys.optimization.model.linopy_converter import (
 )
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.objectives import build_objective
-from odys.optimization.model.registry import AssetRegistry
 from odys.optimization.model.variable_definitions import (
+    CHARGER_VARIABLES,
     CVAR_VARIABLES,
+    EV_VARIABLES,
+    FLEXIBLE_LOAD_VARIABLES,
+    GENERATOR_VARIABLES,
+    MARKET_VARIABLES,
+    STANDALONE_STORAGE_VARIABLES,
     VariableDefinitionRegistry,
 )
 from odys.optimization.parameters.energy_system_parameters import EnergySystemParameters
@@ -82,10 +87,23 @@ class EnergyAlgebraicModelBuilder:
         params = self._milp_model.parameters
         variables_to_add: list[VariableDefinitionRegistry] = []
 
-        for asset in AssetRegistry:
-            param = getattr(params, asset.name.lower() + "s")
-            if not param.is_empty:
-                variables_to_add.extend(asset.spec.variables)
+        if params.generators is not None:
+            variables_to_add.extend(GENERATOR_VARIABLES)
+
+        if params.standalone_storages is not None:
+            variables_to_add.extend(STANDALONE_STORAGE_VARIABLES)
+
+        if params.markets is not None:
+            variables_to_add.extend(MARKET_VARIABLES)
+
+        if params.flexible_loads is not None:
+            variables_to_add.extend(FLEXIBLE_LOAD_VARIABLES)
+
+        if params.electric_vehicles is not None:
+            variables_to_add.extend(EV_VARIABLES)
+
+        if params.chargers is not None and params.electric_vehicles is not None:
+            variables_to_add.extend(CHARGER_VARIABLES)
 
         if params.objective.cvar is not None:
             variables_to_add.extend(CVAR_VARIABLES)
@@ -101,7 +119,7 @@ class EnergyAlgebraicModelBuilder:
 
         if variable.dimensions is not None:
             for dimension in variable.dimensions:
-                index = self._milp_model.indices.get_index(dimension)
+                index = self._milp_model.coordinates.get_coordinates(dimension)
                 coordinates |= index.coordinates
                 dimensions.append(index.dimension)
                 indices.append(index)
@@ -140,22 +158,22 @@ class EnergyAlgebraicModelBuilder:
         groups: list[ConstraintGroup] = []
         params = self._milp_model.parameters
 
-        if params.has_generators:
+        if params.generators is not None:
             groups.append(GeneratorConstraints(self._milp_model))
 
-        if params.has_standalone_storages:
+        if params.standalone_storages is not None:
             groups.append(StandaloneStorageConstraints(self._milp_model))
 
-        if params.has_electric_vehicles:
+        if params.electric_vehicles is not None:
             groups.append(ElectricVehicleConstraints(self._milp_model))
 
-        if params.has_chargers:
+        if params.chargers is not None and params.electric_vehicles is not None:
             groups.append(ChargerConstraints(self._milp_model))
 
-        if params.has_markets:
+        if params.markets is not None:
             groups.append(MarketConstraints(self._milp_model))
 
-        if params.has_flexible_loads:
+        if params.flexible_loads is not None:
             groups.append(FlexibleLoadConstraints(self._milp_model))
 
         groups.append(ScenarioConstraints(self._milp_model))

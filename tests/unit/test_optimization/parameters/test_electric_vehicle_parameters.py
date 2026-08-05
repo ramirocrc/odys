@@ -4,7 +4,8 @@ import pytest
 
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.trip import Trip
-from odys.optimization.model.sets import ModelDimension
+from odys.domain.exceptions import OdysValidationError
+from odys.optimization.model.dimensions import ModelDimension
 from odys.optimization.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
 
 NUM_EVS = 2
@@ -67,23 +68,14 @@ def ev_parameters(ev1: ElectricVehicle, ev2: ElectricVehicle) -> ElectricVehicle
 
 def test_ev_parameters_creation(ev_parameters: ElectricVehicleParameters) -> None:
     """Test that ElectricVehicleParameters can be created with EVs."""
-    assert not ev_parameters.is_empty
-    assert ev_parameters.index.dimension == ModelDimension.EVs
-    assert len(ev_parameters.index.values) == NUM_EVS
+    assert ev_parameters.capacity is not None
+    assert ev_parameters.is_driving is not None
 
 
-def test_ev_parameters_empty() -> None:
-    """Test that empty ElectricVehicleParameters can be created."""
-    params = ElectricVehicleParameters(24)
-    assert params.is_empty
-    assert len(params.index.values) == 0
-
-
-def test_ev_parameters_index(ev_parameters: ElectricVehicleParameters) -> None:
-    """Test that index property returns correct index."""
-    index = ev_parameters.index
-    assert index.dimension == ModelDimension.EVs
-    assert index.values == ("ev1", "ev2")
+def test_ev_parameters_empty_raises_error() -> None:
+    """Test that empty ElectricVehicleParameters raises validation error."""
+    with pytest.raises(OdysValidationError, match="requires at least one electric vehicle"):
+        ElectricVehicleParameters(24, [])
 
 
 def test_ev_parameters_is_driving(ev_parameters: ElectricVehicleParameters) -> None:
@@ -155,7 +147,7 @@ def test_ev_parameters_trip_arrays_use_model_time_coords(ev_parameters: Electric
 
 
 def test_ev_parameters_empty_trips() -> None:
-    """Test that ElectricVehicleParameters with no trips builds empty arrays."""
+    """Test that ElectricVehicleParameters with no trips build empty arrays."""
     ev = ElectricVehicle(
         name="ev_no_trips",
         capacity=50.0,
@@ -166,7 +158,6 @@ def test_ev_parameters_empty_trips() -> None:
     )
     params = ElectricVehicleParameters(24, [ev])
 
-    assert not params.is_empty
     assert params.is_driving.shape == (1, 24)
     assert params.trip_energy.shape == (1, 24)
     assert params.min_soc_at_departure.shape == (1, 24)

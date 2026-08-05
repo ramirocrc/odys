@@ -1,9 +1,16 @@
 """Market-related constraints for the optimization model."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.domain.entities.market import TradeDirection
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
+    from odys.optimization.parameters.entity_parameters.market_parameters import MarketParameters
 
 
 class MarketConstraints(ConstraintGroup):
@@ -12,7 +19,11 @@ class MarketConstraints(ConstraintGroup):
     def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and market parameters."""
         self.model = milp_model
-        self.params = milp_model.parameters.markets
+        markets = milp_model.parameters.markets
+        if markets is None:
+            msg = "MarketConstraints requires markets to be present."
+            raise ValueError(msg)
+        self.params: MarketParameters = markets
 
     @constraint
     def _get_market_max_sell_volume_constraint(self) -> ModelConstraint:

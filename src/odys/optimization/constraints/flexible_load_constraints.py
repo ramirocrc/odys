@@ -1,8 +1,15 @@
 """Flexible load constraints for the optimization model."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+
+if TYPE_CHECKING:
+    from odys.optimization.model.milp_model import EnergyMILPModel
+    from odys.optimization.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
 
 
 class FlexibleLoadConstraints(ConstraintGroup):
@@ -11,7 +18,11 @@ class FlexibleLoadConstraints(ConstraintGroup):
     def __init__(self, milp_model: EnergyMILPModel) -> None:
         """Initialize with the MILP model and flexible load parameters."""
         self.model = milp_model
-        self.params = milp_model.parameters.flexible_loads
+        flex = milp_model.parameters.flexible_loads
+        if flex is None:
+            msg = "FlexibleLoadConstraints requires flexible loads to be present."
+            raise ValueError(msg)
+        self.params: FlexibleLoadParameters = flex
 
     @constraint
     def _get_adjustment_lower_bound_constraint(self) -> ModelConstraint:
