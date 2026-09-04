@@ -31,6 +31,7 @@ classifiers = [
 ]
 
 dependencies = [
+  "complexipy>=7.0.1",
   "highspy>=1.14.0",
   "linopy>=0.7.0",
   "numpy>=2.4.1",
