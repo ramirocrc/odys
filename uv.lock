@@ -1102,7 +1102,6 @@ name = "odys"
 version = "0.2.1"
 source = { editable = "." }
 dependencies = [
-    { name = "complexipy" },
     { name = "highspy" },
     { name = "linopy" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -1126,6 +1125,7 @@ scip = [
 [package.dev-dependencies]
 dev = [
     { name = "basedpyright" },
+    { name = "complexipy" },
     { name = "deptry" },
     { name = "nox" },
     { name = "prek" },
@@ -1148,7 +1148,6 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "complexipy", specifier = ">=7.0.1" },
     { name = "cplex", marker = "extra == 'cplex'", specifier = ">=22.1.2.1" },
     { name = "gurobipy", marker = "extra == 'gurobi'", specifier = ">=13.0.1" },
     { name = "highspy", specifier = ">=1.14.0" },
@@ -1164,6 +1163,7 @@ provides-extras = ["cplex", "gurobi", "scip"]
 [package.metadata.requires-dev]
 dev = [
     { name = "basedpyright", specifier = ">=1.39.9" },
+    { name = "complexipy", specifier = ">=7.0.1" },
     { name = "deptry", specifier = ">=0.25.1" },
     { name = "nox", specifier = ">=2026.7.11" },
     { name = "prek", specifier = ">=0.4.10" },
