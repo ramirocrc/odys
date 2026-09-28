@@ -12,8 +12,8 @@ from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysError
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
+from odys.optimization.model.dimensions import ModelDimension
 from odys.optimization.model.model_builder import EnergyAlgebraicModelBuilder
-from odys.optimization.model.sets import ModelDimension
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
 
     assert "charger_ev_assignment" in energy_milp_model.linopy_model.variables.labels
 
-    assignment = energy_milp_model.charger_ev_assignment
+    assignment = energy_milp_model.vars.charger_ev_assignment
     assert assignment.attrs["binary"]
     assert set(assignment.dims) == {
         ModelDimension.Scenarios.value,

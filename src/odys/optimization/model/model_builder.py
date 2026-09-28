@@ -20,18 +20,20 @@ from odys.optimization.constraints.scenario_constraints import (
 from odys.optimization.constraints.standalone_storage_constraints import (
     StandaloneStorageConstraints,
 )
-from odys.optimization.model.linopy_converter import (
-    LinopyVariableParameters,
-    get_variable_lower_bound,
-)
+from odys.optimization.model.linopy_converter import get_linopy_variable_parameters
 from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.objectives import build_objective
-from odys.optimization.model.registry import AssetRegistry
-from odys.optimization.model.variables import (
+from odys.optimization.model.variable_definitions import (
+    CHARGER_VARIABLES,
     CVAR_VARIABLES,
-    ModelVariable,
+    EV_VARIABLES,
+    FLEXIBLE_LOAD_VARIABLES,
+    GENERATOR_VARIABLES,
+    MARKET_VARIABLES,
+    STANDALONE_STORAGE_VARIABLES,
+    VariableDefinitionRegistry,
 )
-from odys.optimization.parameters.parameters import EnergySystemParameters
+from odys.parameters.energy_system_parameters import EnergySystemParameters
 
 
 class EnergyAlgebraicModelBuilder:
@@ -80,57 +82,33 @@ class EnergyAlgebraicModelBuilder:
 
     def _add_model_variables(self) -> None:
         params = self._milp_model.parameters
-        variables_to_add: list[ModelVariable] = []
+        variables_to_add: list[VariableDefinitionRegistry] = []
 
-        for asset in AssetRegistry:
-            param = getattr(params, asset.name.lower() + "s")
-            if not param.is_empty:
-                variables_to_add.extend(asset.spec.variables)
+        if params.generators is not None:
+            variables_to_add.extend(GENERATOR_VARIABLES)
+
+        if params.standalone_storages is not None:
+            variables_to_add.extend(STANDALONE_STORAGE_VARIABLES)
+
+        if params.markets is not None:
+            variables_to_add.extend(MARKET_VARIABLES)
+
+        if params.flexible_loads is not None:
+            variables_to_add.extend(FLEXIBLE_LOAD_VARIABLES)
+
+        if params.electric_vehicles is not None:
+            variables_to_add.extend(EV_VARIABLES)
+
+        if params.chargers is not None and params.electric_vehicles is not None:
+            variables_to_add.extend(CHARGER_VARIABLES)
 
         if params.objective.cvar is not None:
             variables_to_add.extend(CVAR_VARIABLES)
 
+        coordinates_store = self._milp_model.parameters.coordinates_store
         for variable in variables_to_add:
-            linopy_variable = self._get_linopy_variable_params(variable)
-            self.add_variable_to_model(linopy_variable)
-
-    def _get_linopy_variable_params(self, variable: ModelVariable) -> LinopyVariableParameters:
-        coordinates = {}
-        dimensions = []
-        indices = []
-
-        if variable.dimensions is not None:
-            for dimension in variable.dimensions:
-                index = self._milp_model.indices.get_index(dimension)
-                coordinates |= index.coordinates
-                dimensions.append(index.dimension)
-                indices.append(index)
-
-        return LinopyVariableParameters(
-            name=variable.var_name,
-            coords=coordinates,
-            dims=dimensions,
-            lower=get_variable_lower_bound(
-                indeces=indices,
-                lower_bound_type=variable.lower_bound_type,
-                is_binary=variable.is_binary,
-            ),
-            binary=variable.is_binary,
-        )
-
-    def add_variable_to_model(self, variable: LinopyVariableParameters) -> None:
-        """Add a variable to the underlying linopy model.
-
-        Args:
-            variable: Variable parameters to add to the linopy model.
-        """
-        self._milp_model.linopy_model.add_variables(
-            name=variable.name,
-            coords=variable.coords,
-            dims=variable.dims,
-            lower=variable.lower,
-            binary=variable.binary,
-        )
+            linopy_var_params = get_linopy_variable_parameters(variable, coordinates_store)
+            self._milp_model.add_variable(linopy_var_params)
 
     def _add_model_constraints(self) -> None:
         for group in self._get_constraint_groups():
@@ -140,22 +118,22 @@ class EnergyAlgebraicModelBuilder:
         groups: list[ConstraintGroup] = []
         params = self._milp_model.parameters
 
-        if params.has_generators:
+        if params.generators is not None:
             groups.append(GeneratorConstraints(self._milp_model))
 
-        if params.has_standalone_storages:
+        if params.standalone_storages is not None:
             groups.append(StandaloneStorageConstraints(self._milp_model))
 
-        if params.has_electric_vehicles:
+        if params.electric_vehicles is not None:
             groups.append(ElectricVehicleConstraints(self._milp_model))
 
-        if params.has_chargers:
+        if params.chargers is not None and params.electric_vehicles is not None:
             groups.append(ChargerConstraints(self._milp_model))
 
-        if params.has_markets:
+        if params.markets is not None:
             groups.append(MarketConstraints(self._milp_model))
 
-        if params.has_flexible_loads:
+        if params.flexible_loads is not None:
             groups.append(FlexibleLoadConstraints(self._milp_model))
 
         groups.append(ScenarioConstraints(self._milp_model))

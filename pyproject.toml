@@ -54,6 +54,7 @@ scip = ["pyscipopt>=6.1.0"]
 [dependency-groups]
 dev = [
   "basedpyright>=1.39.9",
+  "complexipy>=7.0.1",
   "deptry>=0.25.1",
   "nox>=2026.7.11",
   "prek>=0.4.10",

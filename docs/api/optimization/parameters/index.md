@@ -2,19 +2,19 @@
 icon: lucide/sliders
 ---
 
-# `odys.optimization.parameters`
+# `odys.parameters`
 
 Model parameter builders.
 
-::: odys.optimization.parameters
+::: odys.parameters
 
 ## Modules
 
-- `charger_parameters`
-- `electric_vehicle_parameters`
-- `flexible_load_parameters`
-- `generator_parameters`
-- `market_parameters`
-- `parameters`
-- `scenario_parameters`
-- `standalone_storage_parameters`
+- `energy_system_parameters`
+- `entity_parameters.charger_parameters`
+- `entity_parameters.electric_vehicle_parameters`
+- `entity_parameters.flexible_load_parameters`
+- `entity_parameters.generator_parameters`
+- `entity_parameters.market_parameters`
+- `entity_parameters.scenario_parameters`
+- `entity_parameters.standalone_storage_parameters`
