@@ -32,15 +32,17 @@ The profit term is:
 $$
 \begin{aligned}
 \Pi_s =
-& \sum_{t,m} \lambda_{m,t,s}\left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right) \\
-& - \sum_{t,g}\left(c_g p_{g,t,s} + C^{start}_g y^{start}_{g,t,s} + C^{shutdown}_g y^{shutdown}_{g,t,s}\right) \\
-& + \sum_{t,l} \Delta d_{l,t,s} \cdot v_l \\
+& \sum_{t,m} \lambda_{m,t,s} \, \Delta t \left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right) \\
+& - \sum_{t,g}\left(c_g \, \Delta t \, p_{g,t,s} + C^{start}_g y^{start}_{g,t,s} + C^{shutdown}_g y^{shutdown}_{g,t,s}\right) \\
+& + \sum_{t,l} \Delta d_{l,t,s} \, \Delta t \cdot v_l \\
 & - \sum_{t,b} c^{deg}_b \, \Delta t \, (p^{ch}_{b,t,s} + p^{dis}_{b,t,s}) \\
 & - \sum_{t,e} c^{deg}_e \, \Delta t \, (p^{ch}_{e,t,s} + p^{dis}_{e,t,s})
 \end{aligned}
 $$
 
 The current implementation includes market revenue/cost when market prices are provided, generator variable/startup/shutdown cost, flexible load value of consumption, and storage/EV degradation cost.
+
+Prices and costs are per MWh, while volumes and powers are in MW, so every energy term is multiplied by the timestep length $\Delta t$ in hours. Startup and shutdown costs are charged per event, so they are not scaled.
 
 The risk term penalizes low-profit scenarios through CVaR. By default, that term is ignored, so the model behaves as risk-neutral. Use CVaR when you want to protect against bad outcomes, not just maximize expected profit.
 

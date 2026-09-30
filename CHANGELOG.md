@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking (results):** generator variable cost, market revenue/cost, and flexible-load value of consumption are now multiplied by the timestep length in hours, consistent with storage and EV degradation cost. Objective values (and CVaR values) change for any timestep other than one hour.
+
+### Fixed
+
+- Objective terms priced per MWh now scale with the timestep length (see Changed).
+- Scenario probabilities are now checked with a floating-point tolerance, so equiprobable scenarios such as 49 × `1/49` are accepted.
+- Stochastic scenarios passed as a tuple (or any non-list sequence) are now validated; before, the probability-sum and unique-name checks were skipped.
+- `SolverConfig.solver_options` is now passed to the solver and overrides translated common options, as documented. Before, it was ignored.
+- Unit descriptions: `EnergyMarket.max_trading_volume_per_step` is a power in MW, and generator startup/shutdown costs are per event.
+
+### Known issues
+
+- `Charger.efficiency` is accepted but not yet used by any constraint.
+
 ## [0.2.1] - 2026-08-04
 
 ### Added

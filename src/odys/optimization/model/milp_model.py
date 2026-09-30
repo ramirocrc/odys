@@ -104,11 +104,13 @@ class EnergyMILPModel:
         Used in both the CVaR shortfall constraint and the CVaR objective term.
         """
         profit_terms: list[linopy.LinearExpression] = []
+        timestep_hours = self._parameters.timestep / timedelta(hours=1)
 
         if self._parameters.scenarios.market_prices is not None:
             profit_terms.append(
                 (
                     (self.vars.market_sell_volume - self.vars.market_buy_volume)  # pyrefly: ignore
+                    * timestep_hours
                     * self._parameters.scenarios.market_prices
                 ).sum([ModelDimension.Time, ModelDimension.Markets]),
             )
@@ -116,7 +118,7 @@ class EnergyMILPModel:
         if self._parameters.generators is not None:
             profit_terms.append(
                 -(
-                    self.vars.generator_power * self._parameters.generators.variable_cost
+                    self.vars.generator_power * timestep_hours * self._parameters.generators.variable_cost
                     + self.vars.generator_startup * self._parameters.generators.startup_cost
                     + self.vars.generator_shutdown * self._parameters.generators.shutdown_cost
                 ).sum([ModelDimension.Time, ModelDimension.Generators]),
@@ -124,13 +126,12 @@ class EnergyMILPModel:
 
         if self._parameters.flexible_loads is not None:
             profit_terms.append(
-                (self.vars.load_adjustment * self._parameters.flexible_loads.value_of_consumption).sum(
-                    [ModelDimension.Time, ModelDimension.FlexibleLoads],
-                ),
+                (
+                    self.vars.load_adjustment * timestep_hours * self._parameters.flexible_loads.value_of_consumption
+                ).sum([ModelDimension.Time, ModelDimension.FlexibleLoads]),
             )
 
         if self._parameters.standalone_storages is not None:
-            timestep_hours = self._parameters.timestep / timedelta(hours=1)
             profit_terms.append(
                 -(
                     (self.vars.standalone_storage_power_in + self.vars.standalone_storage_power_out)
@@ -140,7 +141,6 @@ class EnergyMILPModel:
             )
 
         if self._parameters.electric_vehicles is not None:
-            timestep_hours = self._parameters.timestep / timedelta(hours=1)
             profit_terms.append(
                 -(
                     (self.vars.ev_power_in + self.vars.ev_power_out)

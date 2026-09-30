@@ -38,8 +38,9 @@ class EnergyMarket(EnergyEntity):
     Attributes:
         name: Unique name of the energy market. Must match the corresponding
             key in the scenario's ``market_prices`` mapping.
-        max_trading_volume_per_step: Maximum energy (in MW) that can be traded
-            in a single optimization timestep.
+        max_trading_volume_per_step: Maximum power (in MW) that can be traded
+            in a single optimization timestep. The traded energy is this power
+            times the timestep length.
         trade_direction: Allowed trading direction for the market.
         stage_fixed: If ``True``, trading volumes are fixed across all stochastic
             scenarios (non-anticipativity constraint).

@@ -13,6 +13,7 @@ from odys.domain.scenarios import (
 LOAD_PROFILE = [80.0, 120.0, 90.0]
 MARKET_PRICES = [10.0, 20.0, 30.0]
 CAPACITY_PROFILE = [100.0, 100.0, 100.0]
+NUMBER_OF_EQUIPROBABLE_SCENARIOS = 49  # sum([1 / 49] * 49) != 1.0 in floating point
 
 
 class TestScenario:
@@ -81,6 +82,13 @@ class TestValidateSequenceOfStochasticScenarios:
             StochasticScenario(name="s1", probability=0.5),
             StochasticScenario(name="s2", probability=0.3),
             StochasticScenario(name="s3", probability=0.2),
+        )
+        validate_sequence_of_stochastic_scenarios(scenarios)
+
+    def test_equiprobable_scenarios_with_float_rounding_are_accepted(self) -> None:
+        scenarios = tuple(
+            StochasticScenario(name=f"s{i}", probability=1 / NUMBER_OF_EQUIPROBABLE_SCENARIOS)
+            for i in range(NUMBER_OF_EQUIPROBABLE_SCENARIOS)
         )
         validate_sequence_of_stochastic_scenarios(scenarios)
 

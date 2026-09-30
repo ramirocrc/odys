@@ -67,12 +67,12 @@ class Generator(EnergyEntity):
         default=0.0,
         strict=True,
         ge=0,
-        description="Startup cost of the generator, in currency per MWh.",
+        description="Startup cost of the generator, in currency per startup.",
     )
 
     shutdown_cost: float = Field(
         default=0.0,
         strict=True,
         ge=0,
-        description="Shutdown cost of the generator, in currency per MWh",
+        description="Shutdown cost of the generator, in currency per shutdown.",
     )

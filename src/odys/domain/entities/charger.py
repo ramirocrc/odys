@@ -21,6 +21,7 @@ class Charger(EnergyEntity):
         gt=0,
         description="Maximum charging power in MW.",
     )
+    # TODO: efficiency is not used by any constraint yet; model charger losses between grid and battery.
     efficiency: float = Field(
         default=1.0,
         strict=True,

@@ -92,8 +92,10 @@ The adjustment is bounded:
 The optimizer decides whether to increase or decrease load based on economics. The profit contribution is:
 
 ```
-profit += load_adjustment * value_of_consumption
+profit += load_adjustment * timestep_hours * value_of_consumption
 ```
+
+`value_of_consumption` is per MWh, so the adjustment (in MW) is multiplied by the timestep length in hours.
 
 The procurement cost of adjusting load is captured implicitly through the power balance constraint: when the optimizer increases load, it must procure more energy from generators or markets (whose costs are already in the objective). When it decreases load, it frees up supply for other uses (e.g., selling to markets).
 

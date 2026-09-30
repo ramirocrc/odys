@@ -7,6 +7,7 @@ When multiple scenarios are provided with associated probabilities
 well in expectation across all possible futures.
 """
 
+import math
 from collections.abc import Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -77,10 +78,10 @@ def validate_sequence_of_stochastic_scenarios(
         scenarios: Sequence of scenarios.
 
     Raises:
-        OdysValidationError: If sum of probabilities is different than 1.
+        OdysValidationError: If sum of probabilities is not within floating-point tolerance of 1.
     """
     sum_of_probabilities = sum(scenario.probability for scenario in scenarios)
-    if sum_of_probabilities != 1.0:
+    if not math.isclose(sum_of_probabilities, 1.0):
         msg = f"Scenarios should add up to 1, but got sum = {sum_of_probabilities} instead."
         raise OdysValidationError(msg)
 
