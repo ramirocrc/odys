@@ -374,4 +374,4 @@ class TestStorageSocEndOptional:
             demand_profile_sample,
         )
 
-        assert "standalone_storage_soc_end_constraint" not in linopy_model.constraints.labels
+        assert "standalone_storage_soc_end_constraint" not in set(linopy_model.constraints)

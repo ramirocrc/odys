@@ -75,7 +75,7 @@ def test_model_build_components(
     linopy_model = energy_milp_model.linopy_model
 
     # Variables
-    variable_names = linopy_model.variables.labels
+    variable_names = set(linopy_model.variables)
     assert "generator_power" in variable_names
     assert "standalone_storage_power_in" in variable_names
     assert "standalone_storage_power_out" in variable_names
@@ -84,7 +84,7 @@ def test_model_build_components(
     assert "charger_ev_assignment" not in variable_names
 
     # Constraints
-    constraint_names = linopy_model.constraints.labels
+    constraint_names = set(linopy_model.constraints)
     assert "power_balance_constraint" in constraint_names
     assert "generator_max_power_constraint" in constraint_names
     assert "standalone_storage_max_charge_constraint" in constraint_names
@@ -131,7 +131,7 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
     model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=energy_system.build_parameters())
     energy_milp_model = model_builder.build()
 
-    assert "charger_ev_assignment" in energy_milp_model.linopy_model.variables.labels
+    assert "charger_ev_assignment" in set(energy_milp_model.linopy_model.variables)
 
     assignment = energy_milp_model.vars.charger_ev_assignment
     assert assignment.attrs["binary"]

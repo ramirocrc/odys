@@ -8,12 +8,12 @@ MAX_TRADING_VOLUME_LARGE = 200.0
 
 
 @pytest.fixture
-def market_base_params() -> dict:
+def market_base_params() -> dict[str, object]:
     return {"name": "test_market", "max_trading_volume_per_step": MAX_TRADING_VOLUME}
 
 
-def test_market_creation_with_defaults(market_base_params: dict) -> None:
-    market = EnergyMarket(**market_base_params)
+def test_market_creation_with_defaults(market_base_params: dict[str, object]) -> None:
+    market = EnergyMarket.model_validate(market_base_params)
     assert market.name == "test_market"
     assert market.max_trading_volume_per_step == MAX_TRADING_VOLUME
     assert market.trade_direction == TradeDirection.BUY_AND_SELL
@@ -31,12 +31,12 @@ def test_market_creation_with_invalid_parameter_raises_error(
     param_name: str,
     invalid_value: float,
     expected_match: str,
-    market_base_params: dict,
+    market_base_params: dict[str, object],
 ) -> None:
     params = dict(market_base_params)
     params[param_name] = invalid_value
     with pytest.raises(ValidationError, match=expected_match):
-        EnergyMarket(**params)
+        EnergyMarket.model_validate(params)
 
 
 def test_market_creation_with_all_options() -> None:
@@ -61,21 +61,21 @@ def test_market_creation_with_all_options() -> None:
 )
 def test_market_creation_with_all_trade_directions(
     trade_direction: TradeDirection,
-    market_base_params: dict,
+    market_base_params: dict[str, object],
 ) -> None:
     params = dict(market_base_params)
     params["trade_direction"] = trade_direction
-    market = EnergyMarket(**params)
+    market = EnergyMarket.model_validate(params)
     assert market.trade_direction == trade_direction
 
 
-def test_market_stage_fixed_defaults_to_false(market_base_params: dict) -> None:
-    market = EnergyMarket(**market_base_params)
+def test_market_stage_fixed_defaults_to_false(market_base_params: dict[str, object]) -> None:
+    market = EnergyMarket.model_validate(market_base_params)
     assert market.stage_fixed is False
 
 
-def test_market_stage_fixed_can_be_set_true(market_base_params: dict) -> None:
+def test_market_stage_fixed_can_be_set_true(market_base_params: dict[str, object]) -> None:
     params = dict(market_base_params)
     params["stage_fixed"] = True
-    market = EnergyMarket(**params)
+    market = EnergyMarket.model_validate(params)
     assert market.stage_fixed is True

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 
@@ -22,12 +23,12 @@ class GeneratorConstraints(ConstraintGroup):
         generators = milp_model.parameters.generators
         if generators is None:
             msg = "GeneratorConstraints requires generators to be present."
-            raise ValueError(msg)
+            raise OdysError(msg)
         self.params: GeneratorParameters = generators
         generators_coordinates = milp_model.parameters.coordinates_store.generators
         if generators_coordinates is None:
             msg = "GeneratorConstraints requires generator coordinates."
-            raise ValueError(msg)
+            raise OdysError(msg)
         self._generators_coordinates: ModelCoordinates = generators_coordinates
 
     @constraint

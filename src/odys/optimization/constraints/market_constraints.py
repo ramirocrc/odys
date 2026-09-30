@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from odys.domain.entities.market import TradeDirection
+from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 
@@ -22,7 +23,7 @@ class MarketConstraints(ConstraintGroup):
         markets = milp_model.parameters.markets
         if markets is None:
             msg = "MarketConstraints requires markets to be present."
-            raise ValueError(msg)
+            raise OdysError(msg)
         self.params: MarketParameters = markets
 
     @constraint

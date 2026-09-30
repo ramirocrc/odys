@@ -15,7 +15,10 @@ def _profit_expr(model: EnergyMILPModel) -> linopy.LinearExpression:
 def _cvar_expr(model: EnergyMILPModel, cvar: CVaRTerm) -> linopy.LinearExpression:
     probs = model.parameters.scenarios.scenario_probabilities
     expected_shortfall = (probs * model.vars.cvar_shortfall).sum(ModelDimension.Scenarios)
-    return model.vars.cvar_value_at_risk - (1 / (1 - cvar.confidence_level)) * expected_shortfall
+    cvar_expr: linopy.LinearExpression = (
+        model.vars.cvar_value_at_risk - (1 / (1 - cvar.confidence_level)) * expected_shortfall
+    )
+    return cvar_expr
 
 
 def build_objective(milp_model: EnergyMILPModel, objective: Objective) -> linopy.LinearExpression:
