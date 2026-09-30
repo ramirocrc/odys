@@ -89,17 +89,15 @@ class SCIPOptionTranslator:
 def translate_solver_config(solver_config: SolverConfig) -> dict[str, Any]:
     """Translate common option names to solver-specific option names.
 
-    For known solvers (HiGHS, Gurobi, CPLEX, SCIP, Xpress), applies the
-    appropriate translation.
+    For known solvers (HiGHS, Gurobi, CPLEX, SCIP), applies the
+    appropriate translation. Raw ``solver_options`` are applied last and
+    override translated options with the same name.
 
     Args:
         solver_config: Solver config
 
     Returns:
         Solver-specific options dict ready for linopy's ``Model.solve(**kwargs)``.
-
-    Raises:
-        OdysValidationError: If solver_name is not recognized.
     """
     translator = {
         SolverName.HIGHS: HiGHSOptionTranslator(),
@@ -107,4 +105,4 @@ def translate_solver_config(solver_config: SolverConfig) -> dict[str, Any]:
         SolverName.CPLEX: CPLEXOptionTranslator(),
         SolverName.SCIP: SCIPOptionTranslator(),
     }[solver_config.solver_name]
-    return translator.translate(solver_config)
+    return translator.translate(solver_config) | (solver_config.solver_options or {})
