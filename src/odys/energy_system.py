@@ -79,8 +79,10 @@ class EnergySystem(BaseModel):
 
     @field_validator("scenarios", mode="after")
     @staticmethod
-    def _validate_scenarios(value: Scenario | list[StochasticScenario]) -> Scenario | list[StochasticScenario]:
-        if isinstance(value, list):
+    def _validate_scenarios(
+        value: Scenario | Sequence[StochasticScenario],
+    ) -> Scenario | Sequence[StochasticScenario]:
+        if not isinstance(value, Scenario):
             validate_sequence_of_stochastic_scenarios(value)
         return value
 

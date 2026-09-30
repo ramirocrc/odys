@@ -15,8 +15,11 @@ from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.standalone_storage import StandaloneStorage
 from odys.domain.exceptions import OdysValidationError
-from odys.domain.scenarios import Scenario
+from odys.domain.scenarios import Scenario, StochasticScenario
 from odys.energy_system import EnergySystem
+
+OVERWEIGHTED_SCENARIO_PROBABILITY = 0.7
+HALF_PROBABILITY = 0.5
 
 
 @pytest.fixture
@@ -378,4 +381,50 @@ def test_empty_load_profiles_validation(portfolio_without_loads: AssetPortfolio)
                 available_capacity_profiles={},
                 fixed_load_profiles=None,
             ),
+        )
+
+
+@pytest.mark.parametrize("sequence_type", [list, tuple], ids=["list", "tuple"])
+def test_stochastic_scenarios_not_summing_to_one_raise_for_any_sequence_type(
+    testing_portfolio: AssetPortfolio,
+    valid_demand_profile: list[float],
+    sequence_type: type[list[StochasticScenario]] | type[tuple[StochasticScenario, ...]],
+) -> None:
+    scenarios = sequence_type(
+        StochasticScenario(
+            name=f"s{i}",
+            probability=OVERWEIGHTED_SCENARIO_PROBABILITY,
+            fixed_load_profiles={"test_load": valid_demand_profile},
+        )
+        for i in range(2)
+    )
+    with pytest.raises(OdysValidationError, match="Scenarios should add up to 1"):
+        EnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=len(valid_demand_profile),
+            timestep=timedelta(hours=1),
+            scenarios=scenarios,
+        )
+
+
+@pytest.mark.parametrize("sequence_type", [list, tuple], ids=["list", "tuple"])
+def test_stochastic_scenarios_with_duplicate_names_raise_for_any_sequence_type(
+    testing_portfolio: AssetPortfolio,
+    valid_demand_profile: list[float],
+    sequence_type: type[list[StochasticScenario]] | type[tuple[StochasticScenario, ...]],
+) -> None:
+    scenarios = sequence_type(
+        StochasticScenario(
+            name="duplicate",
+            probability=HALF_PROBABILITY,
+            fixed_load_profiles={"test_load": valid_demand_profile},
+        )
+        for _ in range(2)
+    )
+    with pytest.raises(OdysValidationError, match="must have a unique name"):
+        EnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=len(valid_demand_profile),
+            timestep=timedelta(hours=1),
+            scenarios=scenarios,
         )
