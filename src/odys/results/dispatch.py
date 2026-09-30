@@ -300,7 +300,8 @@ class ChargerDispatch:
     @property
     def power(self) -> pd.Series:
         """Power delivered by each charger (MWh)."""
-        return (self._assignment * self._power_in).sum(ModelDimension.EVs.value).to_series()
+        delivered: xr.DataArray = (self._assignment * self._power_in).sum(ModelDimension.EVs.value)
+        return delivered.to_series()
 
     def to_dataset(self) -> xr.Dataset:
         """Return dispatch results as an xarray Dataset."""
@@ -372,7 +373,8 @@ class MarketDispatch:
     @property
     def net_volume(self) -> xr.DataArray:
         """Net volume (sell - buy)."""
-        return self._sell_volume - self._buy_volume
+        net_volume: xr.DataArray = self._sell_volume - self._buy_volume
+        return net_volume
 
     def to_dataset(self) -> xr.Dataset:
         """Return dispatch results as an xarray Dataset."""
@@ -440,7 +442,8 @@ class FlexibleLoadDispatch:
     @property
     def actual_load(self) -> pd.Series:
         """Actual consumption = base profile + adjustment (MW)."""
-        return (self._base_profiles + self._load_adjustment).to_series()
+        actual_load: xr.DataArray = self._base_profiles + self._load_adjustment
+        return actual_load.to_series()
 
     def to_dataset(self) -> xr.Dataset:
         """Return dispatch results as an xarray Dataset."""

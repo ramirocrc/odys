@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.model.dimensions import ModelDimension
@@ -27,12 +28,12 @@ class ChargerConstraints(ConstraintGroup):
         chargers = milp_model.parameters.chargers
         if chargers is None:
             msg = "ChargerConstraints requires chargers to be present."
-            raise ValueError(msg)
+            raise OdysError(msg)
         self.charger_params: ChargerParameters = chargers
         evs = milp_model.parameters.electric_vehicles
         if evs is None:
             msg = "ChargerConstraints requires electric vehicles to be present."
-            raise ValueError(msg)
+            raise OdysError(msg)
         self.ev_params: ElectricVehicleParameters = evs
 
     @constraint

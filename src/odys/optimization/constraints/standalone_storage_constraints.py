@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
+from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.storage_constraints import (
     build_capacity_constraint,
@@ -34,7 +35,7 @@ class StandaloneStorageConstraints(ConstraintGroup):
         storages = milp_model.parameters.standalone_storages
         if storages is None:
             msg = "StandaloneStorageConstraints requires standalone storages to be present."
-            raise ValueError(msg)
+            raise OdysError(msg)
         self.params: StandaloneStorageParameters = storages
         self._timestep_hours = milp_model.parameters.timestep / timedelta(hours=1)
 

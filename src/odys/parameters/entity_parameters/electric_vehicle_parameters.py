@@ -36,7 +36,6 @@ class ElectricVehicleParameters:
             raise OdysValidationError(msg)
         ev_names = [ev.name for ev in electric_vehicles]
         ev_dim = ModelDimension.EVs
-        time_dim = ModelDimension.Time
         time_coords = [str(t) for t in range(number_of_timesteps)]
 
         battery_data = {
@@ -57,51 +56,22 @@ class ElectricVehicleParameters:
             coords={ev_dim: ev_names},
         )
 
-        n_evs = len(ev_names)
-        is_driving_data = np.zeros((n_evs, number_of_timesteps))
-        trip_energy_data = np.zeros((n_evs, number_of_timesteps))
-        min_soc_data = np.zeros((n_evs, number_of_timesteps))
-
-        for i, ev in enumerate(electric_vehicles):
-            for trip in ev.trips:
-                duration = trip.end_time - trip.start_time
-                energy_per_step = trip.energy_consumption / duration
-                for t in range(trip.start_time, trip.end_time):
-                    is_driving_data[i, t] = 1
-                    trip_energy_data[i, t] = energy_per_step
-                min_soc_data[i, trip.start_time] = trip.min_soc_at_departure
-
-        trip_coords = {ev_dim: ev_names, time_dim: time_coords}
-        self._is_driving = xr.DataArray(
-            is_driving_data,
-            dims=[ev_dim, time_dim],
-            coords=trip_coords,
-        )
-        self._trip_energy = xr.DataArray(
-            trip_energy_data,
-            dims=[ev_dim, time_dim],
-            coords=trip_coords,
-        )
-        self._min_soc_at_departure = xr.DataArray(
-            min_soc_data,
-            dims=[ev_dim, time_dim],
-            coords=trip_coords,
-        )
+        self._trips = _build_trip_dataset(electric_vehicles, time_coords)
 
     @property
     def is_driving(self) -> xr.DataArray:
         """Return binary array indicating if each EV is driving at each time."""
-        return self._is_driving
+        return self._trips["is_driving"]
 
     @property
     def trip_energy(self) -> xr.DataArray:
         """Return energy consumed by each EV at each time during trips."""
-        return self._trip_energy
+        return self._trips["trip_energy"]
 
     @property
     def min_soc_at_departure(self) -> xr.DataArray:
         """Return min SoC required at departure for each EV at each time."""
-        return self._min_soc_at_departure
+        return self._trips["min_soc_at_departure"]
 
     @property
     def capacity(self) -> xr.DataArray:
@@ -157,3 +127,27 @@ class ElectricVehicleParameters:
     def degradation_cost(self) -> xr.DataArray:
         """Return EV degradation cost data."""
         return self._dataset["degradation_cost"]
+
+
+def _build_trip_dataset(electric_vehicles: Sequence[ElectricVehicle], time_coords: list[str]) -> xr.Dataset:
+    shape = (len(electric_vehicles), len(time_coords))
+    is_driving = np.zeros(shape)
+    trip_energy = np.zeros(shape)
+    min_soc_at_departure = np.zeros(shape)
+
+    for i, ev in enumerate(electric_vehicles):
+        for trip in ev.trips:
+            trip_steps = slice(trip.start_time, trip.end_time)
+            is_driving[i, trip_steps] = 1
+            trip_energy[i, trip_steps] = trip.energy_consumption / (trip.end_time - trip.start_time)
+            min_soc_at_departure[i, trip.start_time] = trip.min_soc_at_departure
+
+    dims = (ModelDimension.EVs, ModelDimension.Time)
+    return xr.Dataset(
+        {
+            "is_driving": (dims, is_driving),
+            "trip_energy": (dims, trip_energy),
+            "min_soc_at_departure": (dims, min_soc_at_departure),
+        },
+        coords={ModelDimension.EVs: [ev.name for ev in electric_vehicles], ModelDimension.Time: time_coords},
+    )

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 
@@ -21,7 +22,7 @@ class FlexibleLoadConstraints(ConstraintGroup):
         flex = milp_model.parameters.flexible_loads
         if flex is None:
             msg = "FlexibleLoadConstraints requires flexible loads to be present."
-            raise ValueError(msg)
+            raise OdysError(msg)
         self.params: FlexibleLoadParameters = flex
 
     @constraint

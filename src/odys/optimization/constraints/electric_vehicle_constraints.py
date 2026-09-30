@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
+from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.constraints.storage_constraints import (
@@ -34,7 +35,7 @@ class ElectricVehicleConstraints(ConstraintGroup):
         evs = milp_model.parameters.electric_vehicles
         if evs is None:
             msg = "ElectricVehicleConstraints requires electric vehicles to be present."
-            raise ValueError(msg)
+            raise OdysError(msg)
         self.params: ElectricVehicleParameters = evs
         self._timestep_hours = milp_model.parameters.timestep / timedelta(hours=1)
 

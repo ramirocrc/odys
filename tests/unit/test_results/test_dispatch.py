@@ -40,25 +40,25 @@ def storage_dispatch() -> StandaloneStorageDispatch:
     )
 
 
-def test_getitem(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_getitem(storage_dispatch: StandaloneStorageDispatch) -> None:
     storage = storage_dispatch["storage_1"]
 
     assert isinstance(storage, StandaloneStorageDispatch)
     assert len(storage.net_power) == EXPECTED_TIMESTEP_COUNT
 
 
-def test_iter(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_iter(storage_dispatch: StandaloneStorageDispatch) -> None:
     items = list(storage_dispatch)
 
     assert len(items) == EXPECTED_STORAGE_COUNT
     assert all(isinstance(item, StandaloneStorageDispatch) for item in items)
 
 
-def test_len(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_len(storage_dispatch: StandaloneStorageDispatch) -> None:
     assert len(storage_dispatch) == EXPECTED_STORAGE_COUNT
 
 
-def test_contains(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_contains(storage_dispatch: StandaloneStorageDispatch) -> None:
     assert "storage_1" in storage_dispatch
     assert "storage_2" in storage_dispatch
     assert "storage_3" not in storage_dispatch
@@ -82,7 +82,7 @@ def test_charge_mode(storage_dispatch: StandaloneStorageDispatch) -> None:
     assert len(charge_mode) == EXPECTED_SERIES_LENGTH
 
 
-def test_to_dataset(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_to_dataset(storage_dispatch: StandaloneStorageDispatch) -> None:
     dataset = storage_dispatch.to_dataset()
 
     assert isinstance(dataset, xr.Dataset)
@@ -91,7 +91,7 @@ def test_to_dataset(storage_dispatch: StandaloneStorageDispatch) -> None:
     assert "charge_mode" in dataset.data_vars
 
 
-def test_to_dataframe(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_to_dataframe(storage_dispatch: StandaloneStorageDispatch) -> None:
     dataframe = storage_dispatch.to_dataframe()
 
     assert not dataframe.empty
@@ -254,31 +254,31 @@ def test_shutdown_property(generator_dispatch: GeneratorDispatch) -> None:
     assert list(result.values) == [0, 0, 0, 1]
 
 
-def test_getitem(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_getitem(generator_dispatch: GeneratorDispatch) -> None:
     result = generator_dispatch["generator_1"]
 
     assert isinstance(result, GeneratorDispatch)
     assert list(result.power.values) == [10.0, 20.0]
 
 
-def test_iter(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_iter(generator_dispatch: GeneratorDispatch) -> None:
     items = list(generator_dispatch)
 
     assert len(items) == EXPECTED_GENERATOR_COUNT
     assert all(isinstance(item, GeneratorDispatch) for item in items)
 
 
-def test_len(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_len(generator_dispatch: GeneratorDispatch) -> None:
     assert len(generator_dispatch) == EXPECTED_GENERATOR_COUNT
 
 
-def test_contains(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_contains(generator_dispatch: GeneratorDispatch) -> None:
     assert "generator_1" in generator_dispatch
     assert "generator_2" in generator_dispatch
     assert "generator_3" not in generator_dispatch
 
 
-def test_to_dataset(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_to_dataset(generator_dispatch: GeneratorDispatch) -> None:
     dataset = generator_dispatch.to_dataset()
 
     assert isinstance(dataset, xr.Dataset)
@@ -288,7 +288,7 @@ def test_to_dataset(generator_dispatch: GeneratorDispatch) -> None:
     assert "shutdown" in dataset.data_vars
 
 
-def test_to_dataframe(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_to_dataframe(generator_dispatch: GeneratorDispatch) -> None:
     dataframe = generator_dispatch.to_dataframe()
 
     assert not dataframe.empty

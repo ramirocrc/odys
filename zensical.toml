@@ -40,6 +40,10 @@ nav = [
     { "CVaR Market Risk" = "examples/cvar_market_risk.md" },
     { "EV Fleet" = "examples/ev_fleet_optimization.md" },
   ] },
+  { "Architecture Review" = [
+    { "Phase 1: Inventory" = "architecture/inventory.md" },
+    { "Phase 2: Findings" = "architecture/findings.md" },
+  ] },
   { "API Reference" = [
     { "Overview" = "api/index.md" },
     { "odys" = "api/odys.md" },
