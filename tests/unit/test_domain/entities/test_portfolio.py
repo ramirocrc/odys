@@ -5,6 +5,7 @@ from collections.abc import Callable
 import pytest
 
 from odys.domain.entities.base import Asset
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
@@ -41,12 +42,14 @@ def sample_battery() -> StationaryStorage:
     """Create a sample battery for testing."""
     return StationaryStorage(
         name="test_battery",
-        capacity=100.0,
-        max_charge_power=50.0,
-        max_discharge_power=50.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.85,
-        soc_start=0.5,
+        battery=Battery(
+            capacity=100.0,
+            max_charge_power=50.0,
+            max_discharge_power=50.0,
+            efficiency_charging=0.9,
+            efficiency_discharging=0.85,
+            soc_start=0.5,
+        ),
     )
 
 
@@ -123,18 +126,12 @@ def test_empty_portfolio_is_allowed() -> None:
 def test_assets_of_electric_vehicle_returns_only_electric_vehicles() -> None:
     ev1 = ElectricVehicle(
         name="ev1",
-        capacity=50.0,
-        max_charge_power=22.0,
-        max_discharge_power=0.0,
-        soc_start=0.5,
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.5),
         trips=(),
     )
     ev2 = ElectricVehicle(
         name="ev2",
-        capacity=75.0,
-        max_charge_power=50.0,
-        max_discharge_power=11.0,
-        soc_start=0.8,
+        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=11.0, soc_start=0.8),
         trips=(),
     )
     gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)

@@ -1,5 +1,6 @@
 import pytest
 
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.parameters.entity_parameters.stationary_storage_parameters import StationaryStorageParameters
 
@@ -14,11 +15,13 @@ EXPLICIT_DEGRADATION_COST = 5.0
 def storage_with_degradation_cost() -> StationaryStorage:
     return StationaryStorage(
         name="storage_with_degradation_cost",
-        capacity=STANDARD_CAPACITY,
-        max_charge_power=STANDARD_MAX_CHARGE_POWER,
-        max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
-        soc_start=STANDARD_SOC_START,
-        degradation_cost=EXPLICIT_DEGRADATION_COST,
+        battery=Battery(
+            capacity=STANDARD_CAPACITY,
+            max_charge_power=STANDARD_MAX_CHARGE_POWER,
+            max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
+            soc_start=STANDARD_SOC_START,
+            degradation_cost=EXPLICIT_DEGRADATION_COST,
+        ),
     )
 
 
@@ -26,10 +29,12 @@ def storage_with_degradation_cost() -> StationaryStorage:
 def storage_without_degradation_cost() -> StationaryStorage:
     return StationaryStorage(
         name="storage_without_degradation_cost",
-        capacity=STANDARD_CAPACITY,
-        max_charge_power=STANDARD_MAX_CHARGE_POWER,
-        max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
-        soc_start=STANDARD_SOC_START,
+        battery=Battery(
+            capacity=STANDARD_CAPACITY,
+            max_charge_power=STANDARD_MAX_CHARGE_POWER,
+            max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
+            soc_start=STANDARD_SOC_START,
+        ),
     )
 
 

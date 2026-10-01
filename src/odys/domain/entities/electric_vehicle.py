@@ -4,27 +4,24 @@ This module provides the ElectricVehicle class for modeling electric vehicles
 in energy system optimization problems.
 """
 
-from odys.domain.entities.storage import Storage
+from odys.domain.entities.base import Asset
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 
 
-class ElectricVehicle(Storage):
-    """Electric vehicle: a storage asset with trip constraints.
+class ElectricVehicle(Asset):
+    """An electric vehicle.
 
-    Inherits all battery physics from Storage. Adds trip schedule
-    that makes the vehicle unavailable for charging during driving
-    and consumes energy.
+    The vehicle has a battery and a trip schedule. Trips make the vehicle
+    unavailable for charging while driving and consume energy from the battery.
 
-    V2G capability is implicit: if max_discharge_power > 0, the EV
+    V2G capability is implicit: if `battery.max_discharge_power > 0`, the EV
     can discharge through a V2G-capable charger.
     """
 
+    battery: Battery
     trips: tuple[Trip, ...]
-
-    def asset_type(self) -> str:
-        """Return the type of storage asset."""
-        return "electric_vehicle"
 
     def validate_no_overlapping_trips(self) -> None:
         """Validate that this vehicle's trips do not overlap.
@@ -68,9 +65,9 @@ class ElectricVehicle(Storage):
             OdysValidationError: If any trip at t=0 requires more SoC than soc_start.
         """
         for trip in self.trips:
-            if trip.start_time == 0 and trip.min_soc_at_departure > self.soc_start:
+            if trip.start_time == 0 and trip.min_soc_at_departure > self.battery.soc_start:
                 msg = (
                     f"Trip '{trip.name}' for vehicle '{self.name}' departs at t=0 with "
-                    f"min_soc_at_departure={trip.min_soc_at_departure} > soc_start={self.soc_start}"
+                    f"min_soc_at_departure={trip.min_soc_at_departure} > soc_start={self.battery.soc_start}"
                 )
                 raise OdysValidationError(msg)

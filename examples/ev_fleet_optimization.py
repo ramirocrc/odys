@@ -52,6 +52,7 @@ from datetime import timedelta
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
+    Battery,
     Charger,
     ElectricVehicle,
     EnergyMarket,
@@ -65,11 +66,7 @@ logger = logging.getLogger(__name__)
 
 ev_1 = ElectricVehicle(
     name="ev_1",
-    capacity=0.100,
-    max_charge_power=0.022,
-    max_discharge_power=0.011,
-    soc_start=0.8,
-    soc_end=0.3,
+    battery=Battery(capacity=0.100, max_charge_power=0.022, max_discharge_power=0.011, soc_start=0.8, soc_end=0.3),
     trips=(
         Trip(
             name="morning_delivery",
@@ -97,11 +94,7 @@ ev_1 = ElectricVehicle(
 
 ev_2 = ElectricVehicle(
     name="ev_2",
-    capacity=0.060,
-    max_charge_power=0.022,
-    max_discharge_power=0.0,
-    soc_start=0.5,
-    soc_end=0.6,
+    battery=Battery(capacity=0.060, max_charge_power=0.022, max_discharge_power=0.0, soc_start=0.5, soc_end=0.6),
     trips=(
         Trip(
             name="morning_route",
@@ -129,11 +122,7 @@ ev_2 = ElectricVehicle(
 
 ev_3 = ElectricVehicle(
     name="ev_3",
-    capacity=0.040,
-    max_charge_power=0.007,
-    max_discharge_power=0.0,
-    soc_start=0.5,
-    soc_end=0.5,
+    battery=Battery(capacity=0.040, max_charge_power=0.007, max_discharge_power=0.0, soc_start=0.5, soc_end=0.5),
     trips=(
         Trip(
             name="delivery_1",

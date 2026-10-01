@@ -1,83 +1,43 @@
-from types import MappingProxyType
-from typing import Any
-
 import pytest
 from pydantic import ValidationError
 
+from odys.domain.entities.base import Asset
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.stationary_storage import StationaryStorage
-from odys.domain.exceptions import OdysValidationError
+
+STORAGE_CAPACITY = 100.0
+STORAGE_POWER = 50.0
+SOC_START = 0.5
 
 
 @pytest.fixture
-def battery_base_params() -> MappingProxyType[str, Any]:
-    return MappingProxyType({
-        "name": "test_battery",
-        "capacity": 100.0,
-        "max_charge_power": 50.0,
-        "max_discharge_power": 50.0,
-        "efficiency_charging": 0.9,
-        "efficiency_discharging": 0.85,
-        "soc_start": 0.5,
-    })
+def battery() -> Battery:
+    return Battery(
+        capacity=STORAGE_CAPACITY,
+        max_charge_power=STORAGE_POWER,
+        max_discharge_power=STORAGE_POWER,
+        soc_start=SOC_START,
+    )
 
 
-@pytest.mark.parametrize(
-    ("param_name", "invalid_value", "expected_match"),
-    [
-        ("capacity", 0.0, "Input should be greater than 0"),
-        ("max_charge_power", 0.0, "Input should be greater than 0"),
-        ("max_discharge_power", -0.1, "Input should be greater than or equal to 0"),
-        ("efficiency_charging", 0.0, "Input should be greater than 0"),
-        ("efficiency_charging", 1.1, "Input should be less than or equal to 1"),
-        ("efficiency_discharging", 0.0, "Input should be greater than 0"),
-        ("efficiency_discharging", 1.1, "Input should be less than or equal to 1"),
-        ("soc_start", -0.1, "Input should be greater than or equal to 0"),
-        ("soc_start", 1.1, "Input should be less than or equal to 1"),
-        ("soc_end", -0.1, "Input should be greater than or equal to 0"),
-        ("soc_end", 1.1, "Input should be less than or equal to 1"),
-        ("soc_min", -0.1, "Input should be greater than or equal to 0"),
-        ("soc_min", 1.1, "Input should be less than or equal to 1"),
-        ("soc_max", 1.1, "Input should be less than or equal to 1"),
-        ("degradation_cost", -0.1, "Input should be greater than or equal to 0"),
-        ("self_discharge_rate", -0.1, "Input should be greater than or equal to 0"),
-        ("self_discharge_rate", 1.1, "Input should be less than or equal to 1"),
-    ],
-)
-def test_battery_creation_with_invalid_parameters_raises_error(
-    param_name: str,
-    invalid_value: float,
-    expected_match: str,
-    battery_base_params: MappingProxyType[str, Any],
-) -> None:
-    base_params = dict(battery_base_params)
-    base_params[param_name] = invalid_value
-    with pytest.raises(ValidationError, match=expected_match):
-        StationaryStorage(**base_params)
+def test_stationary_storage_is_an_asset_that_has_a_battery(battery: Battery) -> None:
+    storage = StationaryStorage(name="bess", battery=battery)
+
+    assert isinstance(storage, Asset)
+    assert storage.battery is battery
 
 
-@pytest.mark.parametrize(
-    ("invalid_parameters", "expected_match"),
-    [
-        ({"soc_start": 0.2, "soc_min": 0.3}, "soc_start \\(0\\.2\\) must be ≥ soc_min \\(0\\.3\\)"),
-        ({"soc_start": 0.8, "soc_max": 0.7}, "soc_start \\(0\\.8\\) must be ≤ soc_max \\(0\\.7\\)"),
-        ({"soc_end": 0.15, "soc_min": 0.25}, "soc_end \\(0\\.15\\) must be ≥ soc_min \\(0\\.25\\)"),
-        ({"soc_end": 0.85, "soc_max": 0.75}, "soc_end \\(0\\.85\\) must be ≤ soc_max \\(0\\.75\\)"),
-        ({"soc_min": 0.5, "soc_max": 0.5}, "soc_min \\(0\\.5\\) must be < soc_max \\(0\\.5\\)"),
-    ],
-)
-def test_soc_values_outside_bounds_raises_error(
-    invalid_parameters: dict[str, Any],
-    expected_match: str,
-    battery_base_params: MappingProxyType[str, Any],
-) -> None:
-    base_params = dict(battery_base_params)
-    invalid_battery_params = base_params | invalid_parameters  # The latter takes priority when same key exists
-
-    with pytest.raises(OdysValidationError, match=expected_match):
-        StationaryStorage(**invalid_battery_params)
+def test_stationary_storage_rejects_battery_fields_at_top_level() -> None:
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        StationaryStorage.model_validate({
+            "name": "bess",
+            "capacity": STORAGE_CAPACITY,
+            "max_charge_power": STORAGE_POWER,
+            "max_discharge_power": STORAGE_POWER,
+            "soc_start": SOC_START,
+        })
 
 
-def test_degradation_cost_defaults_to_zero(battery_base_params: MappingProxyType[str, Any]) -> None:
-    storage = StationaryStorage(**dict(battery_base_params))
-
-    assert storage.degradation_cost == 0.0
+def test_stationary_storage_requires_a_battery() -> None:
+    with pytest.raises(ValidationError, match="battery"):
+        StationaryStorage.model_validate({"name": "bess"})

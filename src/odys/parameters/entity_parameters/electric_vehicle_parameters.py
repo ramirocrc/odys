@@ -39,17 +39,17 @@ class ElectricVehicleParameters:
         time_coords = [str(t) for t in range(number_of_timesteps)]
 
         battery_data = {
-            "capacity": [ev.capacity for ev in electric_vehicles],
-            "max_charge_power": [ev.max_charge_power for ev in electric_vehicles],
-            "max_discharge_power": [ev.max_discharge_power for ev in electric_vehicles],
-            "efficiency_charging": [ev.efficiency_charging for ev in electric_vehicles],
-            "efficiency_discharging": [ev.efficiency_discharging for ev in electric_vehicles],
-            "self_discharge_rate": [ev.self_discharge_rate for ev in electric_vehicles],
-            "soc_start": [ev.soc_start for ev in electric_vehicles],
-            "soc_end": [ev.soc_end for ev in electric_vehicles],
-            "soc_min": [ev.soc_min for ev in electric_vehicles],
-            "soc_max": [ev.soc_max for ev in electric_vehicles],
-            "degradation_cost": [ev.degradation_cost for ev in electric_vehicles],
+            "capacity": [ev.battery.capacity for ev in electric_vehicles],
+            "max_charge_power": [ev.battery.max_charge_power for ev in electric_vehicles],
+            "max_discharge_power": [ev.battery.max_discharge_power for ev in electric_vehicles],
+            "efficiency_charging": [ev.battery.efficiency_charging for ev in electric_vehicles],
+            "efficiency_discharging": [ev.battery.efficiency_discharging for ev in electric_vehicles],
+            "self_discharge_rate": [ev.battery.self_discharge_rate for ev in electric_vehicles],
+            "soc_start": [ev.battery.soc_start for ev in electric_vehicles],
+            "soc_end": [ev.battery.soc_end for ev in electric_vehicles],
+            "soc_min": [ev.battery.soc_min for ev in electric_vehicles],
+            "soc_max": [ev.battery.soc_max for ev in electric_vehicles],
+            "degradation_cost": [ev.battery.degradation_cost for ev in electric_vehicles],
         }
         self._dataset = xr.Dataset(
             {name: (ev_dim, values) for name, values in battery_data.items()},

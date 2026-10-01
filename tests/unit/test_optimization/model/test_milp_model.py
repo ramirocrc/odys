@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from linopy.testing import assert_linequal
 
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -66,12 +67,14 @@ def generator_without_shutdown_cost() -> Generator:
 def storage_with_degradation_cost() -> StationaryStorage:
     return StationaryStorage(
         name="storage_with_degradation_cost",
-        capacity=STANDARD_CAPACITY,
-        max_charge_power=STANDARD_MAX_CHARGE_POWER,
-        max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
-        soc_start=STANDARD_SOC_START,
-        soc_end=STANDARD_SOC_START,
-        degradation_cost=STANDARD_DEGRADATION_COST,
+        battery=Battery(
+            capacity=STANDARD_CAPACITY,
+            max_charge_power=STANDARD_MAX_CHARGE_POWER,
+            max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
+            soc_start=STANDARD_SOC_START,
+            soc_end=STANDARD_SOC_START,
+            degradation_cost=STANDARD_DEGRADATION_COST,
+        ),
     )
 
 
@@ -79,11 +82,13 @@ def storage_with_degradation_cost() -> StationaryStorage:
 def storage_without_degradation_cost() -> StationaryStorage:
     return StationaryStorage(
         name="storage_without_degradation_cost",
-        capacity=STANDARD_CAPACITY,
-        max_charge_power=STANDARD_MAX_CHARGE_POWER,
-        max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
-        soc_start=STANDARD_SOC_START,
-        soc_end=STANDARD_SOC_START,
+        battery=Battery(
+            capacity=STANDARD_CAPACITY,
+            max_charge_power=STANDARD_MAX_CHARGE_POWER,
+            max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
+            soc_start=STANDARD_SOC_START,
+            soc_end=STANDARD_SOC_START,
+        ),
     )
 
 
