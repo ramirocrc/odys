@@ -17,6 +17,7 @@ import pytest
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
+    Battery,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
@@ -138,17 +139,19 @@ def _unit_commitment_system() -> EnergySystem:
 def _storage_and_market_system() -> EnergySystem:
     battery = StationaryStorage(
         name="battery",
-        capacity=40.0,
-        max_charge_power=20.0,
-        max_discharge_power=15.0,
-        efficiency_charging=0.95,
-        efficiency_discharging=0.9,
-        soc_start=0.5,
-        soc_end=0.5,
-        soc_min=0.1,
-        soc_max=0.9,
-        degradation_cost=2.0,
-        self_discharge_rate=0.01,
+        battery=Battery(
+            capacity=40.0,
+            max_charge_power=20.0,
+            max_discharge_power=15.0,
+            efficiency_charging=0.95,
+            efficiency_discharging=0.9,
+            soc_start=0.5,
+            soc_end=0.5,
+            soc_min=0.1,
+            soc_max=0.9,
+            degradation_cost=2.0,
+            self_discharge_rate=0.01,
+        ),
     )
     flexible = FlexibleLoad(name="process", max_increase=10.0, max_decrease=15.0, value_of_consumption=50.0)
     market = EnergyMarket(

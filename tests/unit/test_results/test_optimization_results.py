@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -24,13 +25,15 @@ def energy_system_sample() -> EnergySystem:
     )
     battery_1 = StationaryStorage(
         name="battery_1",
-        max_charge_power=200.0,
-        max_discharge_power=200.0,
-        capacity=100.0,
-        efficiency_charging=1,
-        efficiency_discharging=1,
-        soc_start=1.0,
-        soc_end=0.5,
+        battery=Battery(
+            max_charge_power=200.0,
+            max_discharge_power=200.0,
+            capacity=100.0,
+            efficiency_charging=1,
+            efficiency_discharging=1,
+            soc_start=1.0,
+            soc_end=0.5,
+        ),
     )
     load_1 = FixedLoad(name="load_1")
     portfolio = AssetPortfolio([generator_1, generator_2, battery_1, load_1])

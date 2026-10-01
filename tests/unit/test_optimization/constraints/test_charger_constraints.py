@@ -3,7 +3,7 @@ from datetime import timedelta
 import linopy
 import pytest
 
-from odys import Scenario
+from odys import Battery, Scenario
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
@@ -18,10 +18,7 @@ from odys.parameters.energy_system_parameters import EnergySystemParameters
 def ev1() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev1",
-        capacity=50.0,
-        max_charge_power=22.0,
-        max_discharge_power=11.0,
-        soc_start=0.5,
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=11.0, soc_start=0.5),
         trips=(),
     )
 
@@ -30,10 +27,7 @@ def ev1() -> ElectricVehicle:
 def ev2() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev2",
-        capacity=75.0,
-        max_charge_power=50.0,
-        max_discharge_power=0.0,
-        soc_start=0.8,
+        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=0.0, soc_start=0.8),
         trips=(),
     )
 

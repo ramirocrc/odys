@@ -49,23 +49,26 @@ Each EV is an [ElectricVehicle](../api/domain/entities/electric_vehicle.md) with
 from datetime import timedelta
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
+    Battery,
     Charger,
     ElectricVehicle,
     EnergyMarket,
     EnergySystem,
     Scenario,
-    AllowedTradeDirection,
     Trip,
 )
 
 ev_1 = ElectricVehicle(
     name="ev_1",
-    capacity=0.100,  # 100 kWh
-    max_charge_power=0.022,  # 22 kW
-    max_discharge_power=0.011,  # 11 kW V2G
-    soc_start=0.8,
-    soc_end=0.3,
+    battery=Battery(
+        capacity=0.100,  # 100 kWh
+        max_charge_power=0.022,  # 22 kW
+        max_discharge_power=0.011,  # 11 kW V2G
+        soc_start=0.8,
+        soc_end=0.3,
+    ),
     trips=(
         Trip(
             name="morning_delivery",

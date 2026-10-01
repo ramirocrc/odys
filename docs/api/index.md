@@ -31,6 +31,7 @@ Use this section to find the public import surface first, then drill into intern
 - `odys.domain`
   - `odys.domain.entities`
     - `odys.domain.entities.base`
+    - `odys.domain.entities.battery`
     - `odys.domain.entities.charger`
     - `odys.domain.entities.electric_vehicle`
     - `odys.domain.entities.fixed_load`
@@ -39,7 +40,6 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.domain.entities.market`
     - `odys.domain.entities.portfolio`
     - `odys.domain.entities.stationary_storage`
-    - `odys.domain.entities.storage`
     - `odys.domain.entities.trip`
   - `odys.domain.exceptions`
   - `odys.domain.objective`

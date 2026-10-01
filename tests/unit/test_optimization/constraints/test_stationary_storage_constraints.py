@@ -6,7 +6,7 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
-from odys import Scenario
+from odys import Battery, Scenario
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -21,15 +21,17 @@ logger = logging.getLogger(__name__)
 def storage1() -> StationaryStorage:
     return StationaryStorage(
         name="batt1",
-        max_charge_power=200.0,
-        max_discharge_power=200.0,
-        capacity=100.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.8,
-        soc_start=0.25,
-        soc_end=0.5,
-        soc_min=0.1,
-        soc_max=0.9,
+        battery=Battery(
+            max_charge_power=200.0,
+            max_discharge_power=200.0,
+            capacity=100.0,
+            efficiency_charging=0.9,
+            efficiency_discharging=0.8,
+            soc_start=0.25,
+            soc_end=0.5,
+            soc_min=0.1,
+            soc_max=0.9,
+        ),
     )
 
 
@@ -72,7 +74,7 @@ class TestStationaryStorageConstraints:
         storage_charge = self.linopy_model.variables["stationary_storage_power_in"]
         storage_charge_mode = self.linopy_model.variables["stationary_storage_charge_mode"]
 
-        expected_expr = storage_charge <= storage_charge_mode * self.storage1.max_charge_power
+        expected_expr = storage_charge <= storage_charge_mode * self.storage1.battery.max_charge_power
 
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
@@ -83,8 +85,8 @@ class TestStationaryStorageConstraints:
         storage_charge_mode = self.linopy_model.variables["stationary_storage_charge_mode"]
 
         expected_expr = (
-            storage_discharge + storage_charge_mode * self.storage1.max_discharge_power
-            <= self.storage1.max_discharge_power
+            storage_discharge + storage_charge_mode * self.storage1.battery.max_discharge_power
+            <= self.storage1.battery.max_discharge_power
         )
 
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
@@ -97,10 +99,10 @@ class TestStationaryStorageConstraints:
         storage_charge = self.linopy_model.variables["stationary_storage_power_in"]
         storage_discharge = self.linopy_model.variables["stationary_storage_power_out"]
 
-        eff_ch = self.storage1.efficiency_charging
-        eff_disch = self.storage1.efficiency_discharging
+        eff_ch = self.storage1.battery.efficiency_charging
+        eff_disch = self.storage1.battery.efficiency_discharging
         dt = 1.0  # timestep in hours
-        self_discharge_rate = self.storage1.self_discharge_rate or 0.0
+        self_discharge_rate = self.storage1.battery.self_discharge_rate or 0.0
 
         for t in self.time_index[1:]:  # Skip t=0
             actual_t = actual_constraint.sel(time=str(t), stationary_storage="batt1")
@@ -109,7 +111,7 @@ class TestStationaryStorageConstraints:
             soc_t_minus_1 = storage_soc.sel(time=str(t - 1), stationary_storage="batt1")
             storage_charge_t = storage_charge.sel(time=str(t), stationary_storage="batt1")
             storage_discharge_t = storage_discharge.sel(time=str(t), stationary_storage="batt1")
-            capacity = self.storage1.capacity
+            capacity = self.storage1.battery.capacity
             expected_expr = (
                 soc_t
                 == soc_t_minus_1 * (1 - self_discharge_rate * dt)
@@ -132,7 +134,7 @@ class TestStationaryStorageConstraints:
 
         storage_soc = self.linopy_model.variables["stationary_storage_soc"]
         soc_end = storage_soc.sel(time=str(self.time_index[-1]))
-        expected_expr = soc_end == self.storage1.soc_end
+        expected_expr = soc_end == self.storage1.battery.soc_end
 
         assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
 
@@ -143,8 +145,8 @@ class TestStationaryStorageConstraints:
         storage_charge = self.linopy_model.variables["stationary_storage_power_in"]
         storage_discharge = self.linopy_model.variables["stationary_storage_power_out"]
 
-        eff_ch = self.storage1.efficiency_charging
-        eff_disch = self.storage1.efficiency_discharging
+        eff_ch = self.storage1.battery.efficiency_charging
+        eff_disch = self.storage1.battery.efficiency_discharging
 
         t0 = self.time_index[0]
         soc_t0 = storage_soc.sel(time=str(t0))
@@ -152,14 +154,14 @@ class TestStationaryStorageConstraints:
         storage_discharge_t = storage_discharge.sel(time=str(t0))
 
         storage_soc_start_array = xr.DataArray(
-            [[self.storage1.soc_start]],  # [scenarios, storages]
+            [[self.storage1.battery.soc_start]],  # [scenarios, storages]
             coords={
                 "scenario": ["deterministic_scenario"],
                 "stationary_storage": [self.storage1.name],
             },
             dims=["scenario", "stationary_storage"],
         )
-        capacity = self.storage1.capacity
+        capacity = self.storage1.battery.capacity
         dt = 1.0  # timestep in hours
         expected_expr = (
             soc_t0
@@ -176,7 +178,7 @@ class TestStationaryStorageConstraints:
 
         storage_soc = self.linopy_model.variables["stationary_storage_soc"]
         storage_soc_min_array = xr.DataArray(
-            [self.storage1.soc_min],
+            [self.storage1.battery.soc_min],
             coords={"stationary_storage": [self.storage1.name]},
             dims=["stationary_storage"],
         )
@@ -189,7 +191,7 @@ class TestStationaryStorageConstraints:
 
         storage_soc = self.linopy_model.variables["stationary_storage_soc"]
         storage_soc_max_array = xr.DataArray(
-            [self.storage1.soc_max],
+            [self.storage1.battery.soc_max],
             coords={"stationary_storage": [self.storage1.name]},
             dims=["stationary_storage"],
         )
@@ -238,12 +240,12 @@ class TestStationaryStorageConstraintsSubHourlyTimestep:
         storage_charge = linopy_model_15min.variables["stationary_storage_power_in"]
         storage_discharge = linopy_model_15min.variables["stationary_storage_power_out"]
 
-        eff_ch = storage1.efficiency_charging
-        eff_disch = storage1.efficiency_discharging
+        eff_ch = storage1.battery.efficiency_charging
+        eff_disch = storage1.battery.efficiency_discharging
         dt = 0.25  # 15 minutes in hours
-        self_discharge_rate = storage1.self_discharge_rate or 0.0
+        self_discharge_rate = storage1.battery.self_discharge_rate or 0.0
 
-        capacity = storage1.capacity
+        capacity = storage1.battery.capacity
 
         for t in time_index[1:]:
             actual_t = actual_constraint.sel(time=str(t), stationary_storage="batt1")
@@ -274,10 +276,10 @@ class TestStationaryStorageConstraintsSubHourlyTimestep:
         storage_charge = linopy_model_15min.variables["stationary_storage_power_in"]
         storage_discharge = linopy_model_15min.variables["stationary_storage_power_out"]
 
-        eff_ch = storage1.efficiency_charging
-        eff_disch = storage1.efficiency_discharging
+        eff_ch = storage1.battery.efficiency_charging
+        eff_disch = storage1.battery.efficiency_discharging
         dt = 0.25  # 15 minutes in hours
-        capacity = storage1.capacity
+        capacity = storage1.battery.capacity
 
         t0 = time_index[0]
         soc_t0 = storage_soc.sel(time=str(t0))
@@ -285,7 +287,7 @@ class TestStationaryStorageConstraintsSubHourlyTimestep:
         discharge_t0 = storage_discharge.sel(time=str(t0))
 
         soc_start_array = xr.DataArray(
-            [[storage1.soc_start]],
+            [[storage1.battery.soc_start]],
             coords={
                 "scenario": ["deterministic_scenario"],
                 "stationary_storage": [storage1.name],
@@ -308,10 +310,7 @@ class TestStorageSocEndOptional:
     def storage_without_soc_end(self) -> StationaryStorage:
         return StationaryStorage(
             name="batt_free_end",
-            max_charge_power=200.0,
-            max_discharge_power=200.0,
-            capacity=100.0,
-            soc_start=0.5,
+            battery=Battery(max_charge_power=200.0, max_discharge_power=200.0, capacity=100.0, soc_start=0.5),
         )
 
     def _build_linopy_model(
@@ -356,7 +355,7 @@ class TestStorageSocEndOptional:
             time=last_time,
             stationary_storage=[storage1.name],
         )
-        expected_expr = soc_last == storage1.soc_end
+        expected_expr = soc_last == storage1.battery.soc_end
 
         assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
 

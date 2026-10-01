@@ -418,7 +418,7 @@ def _max_available_power_profile(
     """
     capacity_profiles = scenario.available_capacity_profiles or {}
 
-    baseline = sum(storage.max_discharge_power for storage in storages) + sum(
+    baseline = sum(storage.battery.max_discharge_power for storage in storages) + sum(
         market.max_trading_volume_per_step for market in markets
     )
     profile = [baseline] * number_of_steps
@@ -595,7 +595,7 @@ def _total_energy_supply(
         else:
             total_generator_energy += generator.nominal_power * number_of_steps * timestep_hours
 
-    total_storage_energy = sum(storage.capacity for storage in portfolio.assets_of(StationaryStorage))
+    total_storage_energy = sum(storage.battery.capacity for storage in portfolio.assets_of(StationaryStorage))
     total_market_volume = sum(market.max_trading_volume_per_step for market in markets)
     total_market_energy = total_market_volume * number_of_steps * timestep_hours
 

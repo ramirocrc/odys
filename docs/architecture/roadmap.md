@@ -111,6 +111,7 @@ That is 17 PRs in total. R1 and R2.4 can proceed in parallel. R3 is a strangler 
 | **Guarding tests** | the `Battery` validator tests (moved from the storage tests); R0 characterization unchanged |
 | **API impact** | breaking constructor shape |
 | **Risk** | medium: many test fixtures and examples change shape |
+| **Status** | Done (2026-10-01). `Battery` is exported in `__all__`. About 40 test and example call sites were rewritten by an AST script that moves the battery keyword arguments into `battery=Battery(...)` (none skipped). The field and SOC validator tests moved one-for-one to `test_battery.py`. New tests: battery frozen, no `name` on a battery, flat battery fields rejected on `StationaryStorage`, battery required. Characterization objectives unchanged. `python-reviewer`: no must-fix. |
 
 ### R2.2: Typed profiles, one `Scenario`, `ScenarioSet`
 

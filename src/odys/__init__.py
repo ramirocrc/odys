@@ -8,6 +8,7 @@ storages, and other energy assets using mathematical optimization techniques.
 from importlib.metadata import version
 
 from odys.domain.entities.base import Asset
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
@@ -29,6 +30,7 @@ __all__ = [
     "AllowedTradeDirection",
     "Asset",
     "AssetPortfolio",
+    "Battery",
     "CVaRTerm",
     "Charger",
     "ElectricVehicle",

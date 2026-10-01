@@ -6,8 +6,9 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+from odys.domain.entities.base import Asset
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.electric_vehicle import ElectricVehicle
-from odys.domain.entities.storage import Storage
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 
@@ -18,15 +19,19 @@ EV_SOC_START = 0.8
 NUM_TRIPS = 2
 NUM_STEPS = 24
 
+EV_BATTERY_PARAMS = MappingProxyType({
+    "capacity": EV_CAPACITY,
+    "max_charge_power": EV_MAX_CHARGE_POWER,
+    "max_discharge_power": EV_MAX_DISCHARGE_POWER,
+    "soc_start": EV_SOC_START,
+})
+
 
 @pytest.fixture
 def ev_base_params() -> MappingProxyType[str, Any]:
     return MappingProxyType({
         "name": "ev_1",
-        "capacity": EV_CAPACITY,
-        "max_charge_power": EV_MAX_CHARGE_POWER,
-        "max_discharge_power": EV_MAX_DISCHARGE_POWER,
-        "soc_start": EV_SOC_START,
+        "battery": Battery(**EV_BATTERY_PARAMS),
         "trips": (),
     })
 
@@ -34,17 +39,17 @@ def ev_base_params() -> MappingProxyType[str, Any]:
 def test_ev_creation_with_valid_parameters(ev_base_params: MappingProxyType[str, Any]) -> None:
     ev = ElectricVehicle(**dict(ev_base_params))
     assert ev.name == "ev_1"
-    assert ev.capacity == EV_CAPACITY
-    assert ev.max_charge_power == EV_MAX_CHARGE_POWER
-    assert ev.max_discharge_power == EV_MAX_DISCHARGE_POWER
-    assert ev.soc_start == EV_SOC_START
+    assert ev.battery.capacity == EV_CAPACITY
+    assert ev.battery.max_charge_power == EV_MAX_CHARGE_POWER
+    assert ev.battery.max_discharge_power == EV_MAX_DISCHARGE_POWER
+    assert ev.battery.soc_start == EV_SOC_START
     assert ev.trips == ()
 
 
-def test_ev_is_storage(ev_base_params: MappingProxyType[str, Any]) -> None:
+def test_ev_is_an_asset_that_has_a_battery(ev_base_params: MappingProxyType[str, Any]) -> None:
     ev = ElectricVehicle(**dict(ev_base_params))
-    assert isinstance(ev, Storage)
-    assert isinstance(ev, ElectricVehicle)
+    assert isinstance(ev, Asset)
+    assert isinstance(ev.battery, Battery)
 
 
 def test_ev_creation_with_trips(ev_base_params: MappingProxyType[str, Any]) -> None:
@@ -60,24 +65,23 @@ def test_ev_creation_with_trips(ev_base_params: MappingProxyType[str, Any]) -> N
 
 def test_ev_charge_only(ev_base_params: MappingProxyType[str, Any]) -> None:
     base_params = dict(ev_base_params)
-    base_params["max_discharge_power"] = 0.0
+    base_params["battery"] = Battery(**(dict(EV_BATTERY_PARAMS) | {"max_discharge_power": 0.0}))
     ev = ElectricVehicle(**base_params)
-    assert ev.max_discharge_power == 0.0
+    assert ev.battery.max_discharge_power == 0.0
 
 
-def test_ev_inherits_storage_validation(ev_base_params: MappingProxyType[str, Any]) -> None:
+def test_ev_validates_its_battery(ev_base_params: MappingProxyType[str, Any]) -> None:
     base_params = dict(ev_base_params)
-    base_params["capacity"] = 0.0
+    base_params["battery"] = dict(EV_BATTERY_PARAMS) | {"capacity": 0.0}
     with pytest.raises(ValidationError, match="Input should be greater than 0"):
-        ElectricVehicle(**base_params)
+        ElectricVehicle.model_validate(base_params)
 
 
 def test_ev_soc_validation(ev_base_params: MappingProxyType[str, Any]) -> None:
     base_params = dict(ev_base_params)
-    base_params["soc_start"] = 0.2
-    base_params["soc_min"] = 0.3
-    with pytest.raises(Exception, match="soc_start"):
-        ElectricVehicle(**base_params)
+    base_params["battery"] = dict(EV_BATTERY_PARAMS) | {"soc_start": 0.2, "soc_min": 0.3}
+    with pytest.raises(OdysValidationError, match="soc_start"):
+        ElectricVehicle.model_validate(base_params)
 
 
 def test_ev_validate_no_overlapping_trips(ev_base_params: MappingProxyType[str, Any]) -> None:

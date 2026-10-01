@@ -8,6 +8,7 @@ import pytest
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
+    Battery,
     Charger,
     ElectricVehicle,
     EnergyMarket,
@@ -39,10 +40,12 @@ def _create_ev(  # noqa: PLR0913
 ) -> ElectricVehicle:
     return ElectricVehicle(
         name=name,
-        capacity=capacity,
-        max_charge_power=max_charge_power,
-        max_discharge_power=max_discharge_power,
-        soc_start=soc_start,
+        battery=Battery(
+            capacity=capacity,
+            max_charge_power=max_charge_power,
+            max_discharge_power=max_discharge_power,
+            soc_start=soc_start,
+        ),
         trips=trips,
     )
 
@@ -141,10 +144,7 @@ class TestMixedFleet:
         charger = _create_charger("charger1")
         storage = StationaryStorage(
             name="battery",
-            capacity=STORAGE_CAPACITY,
-            max_charge_power=50.0,
-            max_discharge_power=50.0,
-            soc_start=0.5,
+            battery=Battery(capacity=STORAGE_CAPACITY, max_charge_power=50.0, max_discharge_power=50.0, soc_start=0.5),
         )
         gen = Generator(name="gen1", nominal_power=GENERATOR_POWER, variable_cost=20.0)
         load = FixedLoad(name="load1")

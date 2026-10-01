@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Asset`, the public base class of all user-owned entities (generators, storage, electric vehicles, chargers, loads).
 - `AssetPortfolio.assets_of(asset_type)` returns all assets of a given type.
 - `OptimalDispatchResults` is exported from `odys`.
+- `Battery`, a value object with the battery physics (capacity, power limits, efficiencies, state of charge, degradation, self-discharge).
 
 ### Changed
 
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `EnergySystem` raises `OdysValidationError` for an asset type the optimizer cannot model (a bare `Asset` or a custom `Asset` subclass) instead of silently leaving it out of the model.
 - **Breaking:** the per-type `AssetPortfolio` properties (`generators`, `standalone_storages`, `fixed_loads`, `flexible_loads`, `loads`, `electric_vehicles`, `chargers`) are removed; use `assets_of(Generator)` and so on.
 - **Breaking (rename):** `StandaloneStorage` → `StationaryStorage`. Also `results.standalone_storages` → `results.stationary_storages`, `StandaloneStorageDispatch` → `StationaryStorageDispatch`, and the result dimension and variable names `standalone_storage*` → `stationary_storage*`.
+- **Breaking:** `StationaryStorage` and `ElectricVehicle` take their battery fields in a `Battery`: `StationaryStorage(name=..., battery=Battery(capacity=..., ...))` and `ElectricVehicle(name=..., battery=Battery(...), trips=...)`. Read them as `storage.battery.capacity`. The `Storage` base class and the `asset_type()` method are removed.
 - **Breaking (rename):** `TradeDirection` → `AllowedTradeDirection`, and `EnergyMarket.trade_direction` → `EnergyMarket.allowed_trade_direction`.
 - **Breaking (rename):** `OptimalDisptachResults` → `OptimalDispatchResults` (spelling).
 - **Breaking:** `MarketDispatch.net_volume` returns a `pd.Series`, like every other dispatch property (was `xr.DataArray`).

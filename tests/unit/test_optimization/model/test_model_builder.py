@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
@@ -39,13 +40,15 @@ def asset_portfolio_sample(load1: FixedLoad) -> AssetPortfolio:
             ),
             StationaryStorage(
                 name="battery1",
-                max_charge_power=200.0,
-                max_discharge_power=200.0,
-                capacity=100.0,
-                efficiency_charging=1,
-                efficiency_discharging=1,
-                soc_start=1.0,
-                soc_end=0.5,
+                battery=Battery(
+                    max_charge_power=200.0,
+                    max_discharge_power=200.0,
+                    capacity=100.0,
+                    efficiency_charging=1,
+                    efficiency_discharging=1,
+                    soc_start=1.0,
+                    soc_end=0.5,
+                ),
             ),
             load1,
         ],
@@ -109,10 +112,7 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
                 *[
                     ElectricVehicle(
                         name=name,
-                        capacity=50.0,
-                        max_charge_power=22.0,
-                        max_discharge_power=0.0,
-                        soc_start=0.5,
+                        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.5),
                         trips=(),
                     )
                     for name in ev_names

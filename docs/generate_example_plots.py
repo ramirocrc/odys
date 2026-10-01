@@ -774,7 +774,7 @@ def generate_ev_fleet_dispatch_combined(result: OptimalDispatchResults) -> None:
 
     ev_dataset = result.electric_vehicles.to_dataset()
     for ev in EVS:
-        soc_values = [ev.soc_start, *ev_dataset.sel(ev=ev.name).soc.values]
+        soc_values = [ev.battery.soc_start, *ev_dataset.sel(ev=ev.name).soc.values]
         fig.add_trace(
             go.Scatter(
                 x=HOUR_EDGES,
@@ -877,7 +877,7 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
     for ev in EVS:
         soc_values = ev_dataset.sel(ev=ev.name).soc.values
         for trip in ev.trips:
-            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else ev.soc_start
+            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else ev.battery.soc_start
             rows.append((
                 f"{_ev_display_name(ev.name)} SoC before {trip.name} (t{trip.start_time})",
                 f"≥ {trip.min_soc_at_departure:.2f}",
@@ -886,14 +886,14 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
             ))
 
     for ev in EVS:
-        if ev.soc_end is None:
+        if ev.battery.soc_end is None:
             continue
         actual = float(ev_dataset.sel(ev=ev.name).soc.values[-1])
         rows.append((
             f"{_ev_display_name(ev.name)} end-of-day SoC",
-            f"= {ev.soc_end:.2f}",
+            f"= {ev.battery.soc_end:.2f}",
             f"{actual:.3f}",
-            abs(actual - ev.soc_end) <= tolerance,
+            abs(actual - ev.battery.soc_end) <= tolerance,
         ))
 
     worst_trip_power_kw = 0.0

@@ -27,17 +27,17 @@ class StationaryStorageParameters:
         names = [storage.name for storage in storages]
         dim = ModelDimension.StationaryStorages
         data = {
-            "capacity": [storage.capacity for storage in storages],
-            "max_charge_power": [storage.max_charge_power for storage in storages],
-            "max_discharge_power": [storage.max_discharge_power for storage in storages],
-            "efficiency_charging": [storage.efficiency_charging for storage in storages],
-            "efficiency_discharging": [storage.efficiency_discharging for storage in storages],
-            "self_discharge_rate": [storage.self_discharge_rate for storage in storages],
-            "soc_start": [storage.soc_start for storage in storages],
-            "soc_end": [storage.soc_end for storage in storages],
-            "soc_min": [storage.soc_min for storage in storages],
-            "soc_max": [storage.soc_max for storage in storages],
-            "degradation_cost": [storage.degradation_cost for storage in storages],
+            "capacity": [storage.battery.capacity for storage in storages],
+            "max_charge_power": [storage.battery.max_charge_power for storage in storages],
+            "max_discharge_power": [storage.battery.max_discharge_power for storage in storages],
+            "efficiency_charging": [storage.battery.efficiency_charging for storage in storages],
+            "efficiency_discharging": [storage.battery.efficiency_discharging for storage in storages],
+            "self_discharge_rate": [storage.battery.self_discharge_rate for storage in storages],
+            "soc_start": [storage.battery.soc_start for storage in storages],
+            "soc_end": [storage.battery.soc_end for storage in storages],
+            "soc_min": [storage.battery.soc_min for storage in storages],
+            "soc_max": [storage.battery.soc_max for storage in storages],
+            "degradation_cost": [storage.battery.degradation_cost for storage in storages],
         }
         self._dataset = xr.Dataset(
             {name: (dim, values) for name, values in data.items()},
