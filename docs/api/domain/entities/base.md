@@ -4,6 +4,6 @@ icon: lucide/box
 
 # `odys.domain.entities.base`
 
-Abstract base class for all energy entities. Defines the shared `name` field and frozen Pydantic configuration.
+Base classes for all energy entities: `EnergyEntity` (shared `name` field and frozen Pydantic configuration) and `Asset` (entities the user owns, the only ones allowed in an `AssetPortfolio`).
 
 ::: odys.domain.entities.base

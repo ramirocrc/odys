@@ -19,5 +19,5 @@ MILP constraint builders.
 - `market_constraints`
 - `model_constraint`
 - `scenario_constraints`
-- `standalone_storage_constraints`
+- `stationary_storage_constraints`
 - `storage_constraints`

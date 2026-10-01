@@ -6,10 +6,10 @@ in energy system optimization problems.
 
 from pydantic import Field
 
-from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.base import Asset
 
 
-class FlexibleLoad(EnergyEntity):
+class FlexibleLoad(Asset):
     """Represents a flexible load asset in the energy system.
 
     A flexible load is an energy asset that can adjust its consumption within

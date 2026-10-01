@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
     Charger,
     ElectricVehicle,
@@ -14,8 +15,7 @@ from odys import (
     FixedLoad,
     Generator,
     Scenario,
-    StandaloneStorage,
-    TradeDirection,
+    StationaryStorage,
     Trip,
 )
 
@@ -136,10 +136,10 @@ class TestMultipleEvsMultipleChargers:
 
 
 class TestMixedFleet:
-    def test_standalone_storage_independent_of_chargers(self) -> None:
+    def test_stationary_storage_independent_of_chargers(self) -> None:
         ev = _create_ev("ev1")
         charger = _create_charger("charger1")
-        storage = StandaloneStorage(
+        storage = StationaryStorage(
             name="battery",
             capacity=STORAGE_CAPACITY,
             max_charge_power=50.0,
@@ -161,7 +161,7 @@ class TestMixedFleet:
 
         assert result.solver_status == "ok"
 
-        storage_soc = result.standalone_storages.soc.unstack()
+        storage_soc = result.stationary_storages.soc.unstack()
         assert (storage_soc >= 0).all().all()
         assert (storage_soc <= 1).all().all()
 
@@ -178,13 +178,13 @@ class TestEvFleetWithMarket:
         load = FixedLoad(name="load1")
         market = EnergyMarket(
             name="grid",
-            trade_direction=TradeDirection.BUY_AND_SELL,
+            allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
             max_trading_volume_per_step=100.0,
         )
         load_profile = [50.0, 50.0, 50.0, 50.0, 50.0]
         market_prices = {"grid": [20.0, 20.0, 50.0, 50.0, 20.0]}
 
-        portfolio = AssetPortfolio(assets=[ev, charger, gen, load, market])
+        portfolio = AssetPortfolio(assets=[ev, charger, gen, load])
         system = EnergySystem(
             portfolio=portfolio,
             markets=[market],
@@ -208,12 +208,12 @@ class TestEvFleetWithMarket:
         charger = _create_charger("charger1")
         market = EnergyMarket(
             name="grid",
-            trade_direction=TradeDirection.BUY_AND_SELL,
+            allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
             max_trading_volume_per_step=100.0,
         )
         market_prices = {"grid": [5.0, 5.0, 200.0, 200.0, 5.0]}
 
-        portfolio = AssetPortfolio(assets=[ev, charger, market])
+        portfolio = AssetPortfolio(assets=[ev, charger])
         system = EnergySystem(
             portfolio=portfolio,
             markets=[market],

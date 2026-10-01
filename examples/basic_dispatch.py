@@ -39,17 +39,15 @@ available capacity profile is what actually determines how much solar can be
 used at each step.
 """
 
+import logging
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
+from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, OptimalDispatchResults, Scenario
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def run_basic_dispatch() -> OptimalDisptachResults:
+def run_basic_dispatch() -> OptimalDispatchResults:
     """Run the basic dispatch example and return the optimization results."""
     ccgt = Generator(
         name="ccgt",
@@ -86,6 +84,8 @@ def run_basic_dispatch() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_basic_dispatch()
     logger.info("Generators optimal dispatch")
     for gen_dispatch in result.generators:

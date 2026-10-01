@@ -11,8 +11,13 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from odys.domain.entities.charger import Charger
+from odys.domain.entities.electric_vehicle import ElectricVehicle
+from odys.domain.entities.flexible_load import FlexibleLoad
+from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
+from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.objective import Objective, ProfitTerm
 from odys.domain.scenarios import (
     Scenario,
@@ -30,8 +35,8 @@ from odys.parameters.entity_parameters.flexible_load_parameters import FlexibleL
 from odys.parameters.entity_parameters.generator_parameters import GeneratorParameters
 from odys.parameters.entity_parameters.market_parameters import MarketParameters
 from odys.parameters.entity_parameters.scenario_parameters import ScenarioParameters
-from odys.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
-from odys.results.optimization_results import OptimalDisptachResults
+from odys.parameters.entity_parameters.stationary_storage_parameters import StationaryStorageParameters
+from odys.results.optimization_results import OptimalDispatchResults
 from odys.solvers.solver import optimize_algebraic_model
 from odys.solvers.solver_config import SolverConfig
 
@@ -128,12 +133,12 @@ class EnergySystem(BaseModel):
 
     def build_parameters(self) -> EnergySystemParameters:
         """Build parameters from this energy system for the optimization model."""
-        gens = self.portfolio.generators
-        storages = self.portfolio.standalone_storages
-        flex = self.portfolio.flexible_loads
+        gens = self.portfolio.assets_of(Generator)
+        storages = self.portfolio.assets_of(StationaryStorage)
+        flex = self.portfolio.assets_of(FlexibleLoad)
         markets = self.collection_of_markets
-        chargers = self.portfolio.chargers
-        evs = self.portfolio.electric_vehicles
+        chargers = self.portfolio.assets_of(Charger)
+        evs = self.portfolio.assets_of(ElectricVehicle)
 
         coordinates_store = CoordinatesStore(
             scenarios=ModelCoordinates(
@@ -147,8 +152,8 @@ class EnergySystem(BaseModel):
             generators=ModelCoordinates(dimension=ModelDimension.Generators, values=tuple(g.name for g in gens))
             if gens
             else None,
-            standalone_storages=(
-                ModelCoordinates(dimension=ModelDimension.StandaloneStorages, values=tuple(s.name for s in storages))
+            stationary_storages=(
+                ModelCoordinates(dimension=ModelDimension.StationaryStorages, values=tuple(s.name for s in storages))
                 if storages
                 else None
             ),
@@ -175,14 +180,14 @@ class EnergySystem(BaseModel):
             coordinates_store=coordinates_store,
             scenarios=ScenarioParameters(self.collection_of_scenarios, coordinates_store),
             generators=GeneratorParameters(gens) if gens else None,
-            standalone_storages=StandaloneStorageParameters(storages) if storages else None,
+            stationary_storages=StationaryStorageParameters(storages) if storages else None,
             flexible_loads=FlexibleLoadParameters(flex) if flex else None,
             markets=MarketParameters(markets) if markets else None,
             chargers=ChargerParameters(chargers) if chargers else None,
             electric_vehicles=ElectricVehicleParameters(self.number_of_steps, evs) if evs else None,
         )
 
-    def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDisptachResults:
+    def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDispatchResults:
         """Optimize the energy system.
 
         This method builds and solves the optimization model using the configured solver.

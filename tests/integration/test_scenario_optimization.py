@@ -5,7 +5,7 @@ import pytest
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.standalone_storage import StandaloneStorage
+from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.scenarios import StochasticScenario
 from odys.energy_system import EnergySystem
 
@@ -29,9 +29,9 @@ def gas_generator() -> Generator:
 
 
 @pytest.fixture
-def battery() -> StandaloneStorage:
-    return StandaloneStorage(
-        name="standalone_storage",
+def battery() -> StationaryStorage:
+    return StationaryStorage(
+        name="stationary_storage",
         capacity=100.0,
         max_charge_power=80.0,
         max_discharge_power=80.0,
@@ -51,7 +51,7 @@ def load() -> FixedLoad:
 def portfolio_with_battery(
     wind_generator: Generator,
     gas_generator: Generator,
-    battery: StandaloneStorage,
+    battery: StationaryStorage,
     load: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio([wind_generator, gas_generator, battery, load])

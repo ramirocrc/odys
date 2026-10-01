@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from odys.domain.entities.market import TradeDirection
+from odys.domain.entities.market import AllowedTradeDirection
 from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
@@ -57,10 +57,10 @@ class MarketConstraints(ConstraintGroup):
 
     @constraint
     def _get_trade_direction_constraints(self) -> list[ModelConstraint]:
-        """Generate constraints based on trade_direction parameter for each market."""
+        """Generate constraints based on allowed_trade_direction parameter for each market."""
         constraints = []
 
-        buy_only_mask = self.params.trade_direction == TradeDirection.BUY_ONLY
+        buy_only_mask = self.params.allowed_trade_direction == AllowedTradeDirection.BUY_ONLY
         sell_constraint = self.model.vars.market_sell_volume.where(buy_only_mask, drop=True) == 0
         constraints.append(
             ModelConstraint(
@@ -69,7 +69,7 @@ class MarketConstraints(ConstraintGroup):
             ),
         )
 
-        sell_only_mask = self.params.trade_direction == TradeDirection.SELL_ONLY
+        sell_only_mask = self.params.allowed_trade_direction == AllowedTradeDirection.SELL_ONLY
         buy_constraint = self.model.vars.market_buy_volume.where(sell_only_mask, drop=True) == 0
         constraints.append(
             ModelConstraint(

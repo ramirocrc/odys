@@ -13,11 +13,11 @@ from odys.results.dispatch import (
     FlexibleLoadDispatch,
     GeneratorDispatch,
     MarketDispatch,
-    StandaloneStorageDispatch,
+    StationaryStorageDispatch,
 )
 
 
-class OptimalDisptachResults:
+class OptimalDispatchResults:
     """Frozen snapshot of data extracted from a solved EnergyMILPModel.
 
     Captures only what OptimizationResults needs, allowing the full
@@ -30,7 +30,7 @@ class OptimalDisptachResults:
         "_has_flexible_loads",
         "_has_generators",
         "_has_markets",
-        "_has_standalone_storages",
+        "_has_stationary_storages",
         "_objective_value",
         "_parameters",
         "_solution",
@@ -47,7 +47,7 @@ class OptimalDisptachResults:
         objective_value: float | None,
         parameters: EnergySystemParameters,
     ) -> None:
-        """Initialize OptimalDisptachResults."""
+        """Initialize OptimalDispatchResults."""
         self._solver_status = solver_status
         self._termination_condition = termination_condition
         if ModelDimension.Scenarios in solution.coords and len(solution.coords[ModelDimension.Scenarios]) == 1:
@@ -56,7 +56,7 @@ class OptimalDisptachResults:
         self._objective_value = objective_value
         self._variable_names = set(solution.variables.keys())
         self._has_generators = ModelDimension.Generators in solution.dims
-        self._has_standalone_storages = ModelDimension.StandaloneStorages in solution.dims
+        self._has_stationary_storages = ModelDimension.StationaryStorages in solution.dims
         self._has_electric_vehicles = ModelDimension.EVs in solution.dims
         self._has_chargers = ModelDimension.Chargers in solution.dims
         self._has_markets = ModelDimension.Markets in solution.dims
@@ -99,17 +99,17 @@ class OptimalDisptachResults:
         )
 
     @property
-    def standalone_storages(self) -> StandaloneStorageDispatch:
-        """Get standalone storage dispatch results."""
+    def stationary_storages(self) -> StationaryStorageDispatch:
+        """Get stationary storage dispatch results."""
         self._validate_terminated_successfully()
-        if not self._has_standalone_storages:
-            msg = "This model does not contain standalone storage results"
+        if not self._has_stationary_storages:
+            msg = "This model does not contain stationary storage results"
             raise OdysNoResultsError(msg)
 
-        return StandaloneStorageDispatch(
-            net_power=self._solution[VariableDefinitionRegistry.STANDALONE_STORAGE_POWER_NET.var_name],
-            soc=self._solution[VariableDefinitionRegistry.STANDALONE_STORAGE_SOC.var_name],
-            charge_mode=self._solution[VariableDefinitionRegistry.STANDALONE_STORAGE_CHARGE_MODE.var_name],
+        return StationaryStorageDispatch(
+            net_power=self._solution[VariableDefinitionRegistry.STATIONARY_STORAGE_POWER_NET.var_name],
+            soc=self._solution[VariableDefinitionRegistry.STATIONARY_STORAGE_SOC.var_name],
+            charge_mode=self._solution[VariableDefinitionRegistry.STATIONARY_STORAGE_CHARGE_MODE.var_name],
         )
 
     @property

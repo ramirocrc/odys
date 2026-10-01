@@ -18,6 +18,6 @@ Domain entity models.
 - `generator`
 - `market`
 - `portfolio`
-- `standalone_storage`
+- `stationary_storage`
 - `storage`
 - `trip`

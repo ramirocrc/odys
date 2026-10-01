@@ -29,7 +29,7 @@ class MarketParameters:
         data = {
             "max_volume": [market.max_trading_volume_per_step for market in markets],
             "stage_fixed": [market.stage_fixed for market in markets],
-            "trade_direction": [market.trade_direction for market in markets],
+            "allowed_trade_direction": [market.allowed_trade_direction for market in markets],
         }
         self._dataset = xr.Dataset(
             {name: (dim, values) for name, values in data.items()},
@@ -47,6 +47,6 @@ class MarketParameters:
         return self._dataset["stage_fixed"]
 
     @property
-    def trade_direction(self) -> xr.DataArray:
+    def allowed_trade_direction(self) -> xr.DataArray:
         """Return the allowed trade direction (buy, sell, or both) per market."""
-        return self._dataset["trade_direction"]
+        return self._dataset["allowed_trade_direction"]

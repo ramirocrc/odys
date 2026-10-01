@@ -46,23 +46,22 @@ Next: see the CVaR Market Risk example to add risk-aware optimization, or the
 Stochastic Optimization guide to model uncertain trip schedules.
 """
 
+import logging
 from datetime import timedelta
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
     Charger,
     ElectricVehicle,
     EnergyMarket,
     EnergySystem,
+    OptimalDispatchResults,
     Scenario,
-    TradeDirection,
     Trip,
 )
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 ev_1 = ElectricVehicle(
     name="ev_1",
@@ -188,12 +187,12 @@ MARKET_PRICES: list[float] = [
 ]
 
 
-def run_ev_fleet_optimization() -> OptimalDisptachResults:
+def run_ev_fleet_optimization() -> OptimalDispatchResults:
     """Run the EV fleet optimization example and return the optimization results."""
     market = EnergyMarket(
         name="grid_market",
         max_trading_volume_per_step=0.100,
-        trade_direction=TradeDirection.BUY_AND_SELL,
+        allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
     )
 
     portfolio = AssetPortfolio(assets=[*EVS, *CHARGERS])
@@ -214,6 +213,8 @@ def run_ev_fleet_optimization() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_ev_fleet_optimization()
 
     logger.info("EV charging/discharging schedules and SoC")

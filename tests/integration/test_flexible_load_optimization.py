@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
     CVaRTerm,
     EnergyMarket,
@@ -13,9 +14,8 @@ from odys import (
     Objective,
     ProfitTerm,
     Scenario,
-    StandaloneStorage,
+    StationaryStorage,
     StochasticScenario,
-    TradeDirection,
 )
 
 MAX_DECREASE = 30.0
@@ -329,7 +329,7 @@ def test_flexible_load_with_storage() -> None:
         nominal_power=150.0,
         variable_cost=50.0,
     )
-    battery = StandaloneStorage(
+    battery = StationaryStorage(
         name="battery",
         capacity=100.0,
         max_charge_power=50.0,
@@ -365,13 +365,13 @@ def test_flexible_load_with_storage() -> None:
     flex_dispatch = results.flexible_loads
     assert flex_dispatch.load_adjustment.sum().item() > 0
 
-    storage_dispatch = results.standalone_storages
+    storage_dispatch = results.stationary_storages
     assert len(storage_dispatch.soc) > 0
 
     solution = results.to_dataset()
     gen_power = solution["generator_power"]
-    storage_out = solution["standalone_storage_power_out"]
-    storage_in = solution["standalone_storage_power_in"]
+    storage_out = solution["stationary_storage_power_out"]
+    storage_in = solution["stationary_storage_power_in"]
     market_buy = solution["market_buy_volume"]
     market_sell = solution["market_sell_volume"]
 
@@ -455,7 +455,7 @@ def _build_cvar_flexible_load_system(objective: Objective) -> EnergySystem:
         name="market1",
         max_trading_volume_per_step=50.0,
         stage_fixed=True,
-        trade_direction=TradeDirection.SELL_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
     )
     portfolio = AssetPortfolio([generator, flexible_load])
 
