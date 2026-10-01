@@ -7,12 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Asset`, the public base class of all user-owned entities (generators, storage, electric vehicles, chargers, loads).
+- `AssetPortfolio.assets_of(asset_type)` returns all assets of a given type.
+- `OptimalDispatchResults` is exported from `odys`.
+
 ### Changed
 
+- **Breaking:** `AssetPortfolio` accepts only `Asset` instances and raises `OdysValidationError` for anything else, such as an `EnergyMarket` (before, a market in the portfolio was silently ignored).
+- `EnergySystem` raises `OdysValidationError` for an asset type the optimizer cannot model (a bare `Asset` or a custom `Asset` subclass) instead of silently leaving it out of the model.
+- **Breaking:** the per-type `AssetPortfolio` properties (`generators`, `standalone_storages`, `fixed_loads`, `flexible_loads`, `loads`, `electric_vehicles`, `chargers`) are removed; use `assets_of(Generator)` and so on.
+- **Breaking (rename):** `StandaloneStorage` → `StationaryStorage`. Also `results.standalone_storages` → `results.stationary_storages`, `StandaloneStorageDispatch` → `StationaryStorageDispatch`, and the result dimension and variable names `standalone_storage*` → `stationary_storage*`.
+- **Breaking (rename):** `TradeDirection` → `AllowedTradeDirection`, and `EnergyMarket.trade_direction` → `EnergyMarket.allowed_trade_direction`.
+- **Breaking (rename):** `OptimalDisptachResults` → `OptimalDispatchResults` (spelling).
+- **Breaking:** `MarketDispatch.net_volume` returns a `pd.Series`, like every other dispatch property (was `xr.DataArray`).
 - **Breaking (results):** generator variable cost, market revenue/cost, and flexible-load value of consumption are now multiplied by the timestep length in hours, consistent with storage and EV degradation cost. Objective values (and CVaR values) change for any timestep other than one hour.
+
+### Removed
+
+- **Breaking:** `odys.utils` (`get_logger`, `setup_rich_logging`). It was never part of `__all__`; use the standard `logging` module.
+- Internal `AssetRegistry`, which nothing used.
 
 ### Fixed
 
+- `AssetPortfolio` built from a one-shot iterable (such as a generator expression) now keeps all assets; before, it was silently empty.
 - Objective terms priced per MWh now scale with the timestep length (see Changed).
 - Scenario probabilities are now checked with a floating-point tolerance, so equiprobable scenarios such as 49 × `1/49` are accepted.
 - Stochastic scenarios passed as a tuple (or any non-list sequence) are now validated; before, the probability-sum and unique-name checks were skipped.

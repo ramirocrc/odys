@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 
 from odys.domain.scenarios import StochasticScenario
-from odys.optimization.model.coordinates import CoordinatesStore, ModelCoordinates
+from odys.optimization.model.coordinates import CoordinatesStore
 
 
 class ScenarioParameters:
@@ -26,16 +26,6 @@ class ScenarioParameters:
         """
         self._scenarios = scenarios
         self._indices = coordinates_store
-
-    @property
-    def time_index(self) -> ModelCoordinates:
-        """Return the time coordinates."""
-        return self._indices.time
-
-    @property
-    def scenario_index(self) -> ModelCoordinates:
-        """Return the scenario coordinates."""
-        return self._indices.scenarios
 
     @cached_property
     def fixed_load_profiles(self) -> xr.DataArray | None:

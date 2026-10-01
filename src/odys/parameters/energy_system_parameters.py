@@ -16,7 +16,7 @@ from odys.parameters.entity_parameters.flexible_load_parameters import FlexibleL
 from odys.parameters.entity_parameters.generator_parameters import GeneratorParameters
 from odys.parameters.entity_parameters.market_parameters import MarketParameters
 from odys.parameters.entity_parameters.scenario_parameters import ScenarioParameters
-from odys.parameters.entity_parameters.standalone_storage_parameters import StandaloneStorageParameters
+from odys.parameters.entity_parameters.stationary_storage_parameters import StationaryStorageParameters
 
 
 class EnergySystemParameters(BaseModel):
@@ -34,7 +34,7 @@ class EnergySystemParameters(BaseModel):
     coordinates_store: CoordinatesStore
 
     generators: GeneratorParameters | None = None
-    standalone_storages: StandaloneStorageParameters | None = None
+    stationary_storages: StationaryStorageParameters | None = None
     flexible_loads: FlexibleLoadParameters | None = None
     markets: MarketParameters | None = None
     chargers: ChargerParameters | None = None

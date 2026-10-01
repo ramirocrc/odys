@@ -52,22 +52,28 @@ data centers, aluminum smelters, water pumping, and other processes where
 timing can be adjusted without affecting total output.
 """
 
+import logging
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, FlexibleLoad, Scenario, TradeDirection
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
+from odys import (
+    AllowedTradeDirection,
+    AssetPortfolio,
+    EnergyMarket,
+    EnergySystem,
+    FlexibleLoad,
+    OptimalDispatchResults,
+    Scenario,
+)
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def run_flexible_load_market() -> OptimalDisptachResults:
+def run_flexible_load_market() -> OptimalDispatchResults:
     """Run the flexible load market example and return the optimization results."""
     market = EnergyMarket(
         name="market",
         max_trading_volume_per_step=80,
-        trade_direction=TradeDirection.BUY_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
     )
 
     industrial_process = FlexibleLoad(
@@ -100,6 +106,8 @@ def run_flexible_load_market() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_flexible_load_market()
 
     logger.info("Load adjustment (MW)")

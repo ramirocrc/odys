@@ -24,9 +24,9 @@ class ScenarioConstraints(ConstraintGroup):
         if self._params.generators is not None:
             lhs += self.model.vars.generator_power.sum(ModelDimension.Generators)
 
-        if self._params.standalone_storages is not None:
-            lhs += self.model.vars.standalone_storage_power_out.sum(ModelDimension.StandaloneStorages)
-            lhs += -self.model.vars.standalone_storage_power_in.sum(ModelDimension.StandaloneStorages)
+        if self._params.stationary_storages is not None:
+            lhs += self.model.vars.stationary_storage_power_out.sum(ModelDimension.StationaryStorages)
+            lhs += -self.model.vars.stationary_storage_power_in.sum(ModelDimension.StationaryStorages)
 
         if self._params.electric_vehicles is not None:
             lhs += self.model.vars.ev_power_out.sum(ModelDimension.EVs)

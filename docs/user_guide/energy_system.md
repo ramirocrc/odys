@@ -18,7 +18,7 @@ flowchart TD
     subgraph Assets [ ]
         direction LR
         GEN["Generator(s)"]
-        STO["StandaloneStorage(s)"]
+        STO["StationaryStorage(s)"]
         EV["ElectricVehicle(s)"]
         CHG["Charger(s)"]
         LD["Load(s)"]
@@ -161,7 +161,7 @@ Call `.optimize()` to build and solve the mathematical model:
 result = energy_system.optimize()
 ```
 
-This returns an `OptimalDisptachResults` object. See [Optimization](optimization.md) for how to read and interpret the results.
+This returns an `OptimalDispatchResults` object. See [Optimization](optimization.md) for how to read and interpret the results.
 
 ## What happens under the hood
 
@@ -170,7 +170,7 @@ When you call `.optimize()`, odys:
 1. Validates the full system configuration (asset names match scenario profiles, probabilities sum to 1, etc.)
 2. Builds a mixed-integer linear program (MILP) using linopy
 3. Solves it with the HiGHS solver (or the solver you configure)
-4. Wraps the solution in an `OptimalDisptachResults` object
+4. Wraps the solution in an `OptimalDispatchResults` object
 
 You don't need to interact with any of these internals -- but if you're curious, the [API Reference](../api/energy_system.md) has the full details.
 

@@ -16,5 +16,4 @@ Model building and Linopy integration.
 - `milp_model`
 - `model_builder`
 - `objectives`
-- `registry`
 - `variable_definitions`

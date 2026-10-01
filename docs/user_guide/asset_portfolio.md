@@ -11,11 +11,11 @@ We use a separate portfolio object because it keeps asset management clean. You 
 ## Basic usage
 
 ```python
-from odys import AssetPortfolio, FixedLoad, Generator, StandaloneStorage
+from odys import AssetPortfolio, FixedLoad, Generator, StationaryStorage
 
 portfolio = AssetPortfolio([
     Generator(name="gen", nominal_power=100.0, variable_cost=50.0),
-    StandaloneStorage(
+    StationaryStorage(
         name="bess",
         capacity=50.0,
         max_charge_power=25.0,
@@ -56,19 +56,20 @@ all_assets = portfolio.assets  # MappingProxyType (read-only dict)
 
 ## Filtering by type
 
-The portfolio has convenience properties to get assets by type:
+Use `assets_of` with the asset class you want:
 
 ```python
-portfolio.generators  # tuple of all Generator assets
-portfolio.standalone_storages  # tuple of all StandaloneStorage assets
-portfolio.electric_vehicles  # tuple of all ElectricVehicle assets
-portfolio.chargers  # tuple of all Charger assets
-portfolio.fixed_loads  # tuple of all FixedLoad assets
-portfolio.flexible_loads  # tuple of all FlexibleLoad assets
-portfolio.loads  # tuple of all FixedLoad and FlexibleLoad assets
+from odys import FixedLoad, FlexibleLoad, Generator
+
+portfolio.assets_of(Generator)  # tuple of all Generator assets
+portfolio.assets_of(FixedLoad) + portfolio.assets_of(FlexibleLoad)  # all loads
 ```
 
-These return tuples, so they're safe to iterate over without worrying about accidental modification.
+It returns a tuple in the order you added the assets, so it's safe to iterate over without worrying about accidental modification.
+
+## Only assets belong in a portfolio
+
+A portfolio holds what you own and operate: generators, storage, electric vehicles, chargers, and loads. Every one of them is an `Asset`. Markets are not assets, so pass them to `EnergySystem(markets=...)`. Putting a market in a portfolio raises an `OdysValidationError`.
 
 ## Next steps
 

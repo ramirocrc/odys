@@ -10,12 +10,15 @@ from datetime import timedelta
 
 from pydantic import BaseModel, ConfigDict
 
+from odys.domain.entities.base import Asset
+from odys.domain.entities.charger import Charger
+from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.standalone_storage import StandaloneStorage
+from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import StochasticScenario
 
@@ -40,9 +43,14 @@ def validate_energy_system_inputs(
         OdysValidationError: If any validation check fails.
 
     """
-    validate_fixed_loads_consistent_with_scenarios(portfolio.fixed_loads, scenarios)
-    validate_flexible_loads_consistent_with_scenarios(portfolio.flexible_loads, scenarios)
-    validate_flexible_load_max_decrease_within_base_profile(portfolio.flexible_loads, scenarios)
+    validate_assets_are_supported(portfolio)
+
+    generators = portfolio.assets_of(Generator)
+    stationary_storages = portfolio.assets_of(StationaryStorage)
+    flexible_loads = portfolio.assets_of(FlexibleLoad)
+    validate_fixed_loads_consistent_with_scenarios(portfolio.assets_of(FixedLoad), scenarios)
+    validate_flexible_loads_consistent_with_scenarios(flexible_loads, scenarios)
+    validate_flexible_load_max_decrease_within_base_profile(flexible_loads, scenarios)
     validate_markets_consistent_with_scenarios(markets, scenarios)
     validate_electric_vehicle_trips(portfolio, number_of_steps)
     validate_chargers_and_evs_consistency(portfolio)
@@ -53,14 +61,47 @@ def validate_energy_system_inputs(
 
         validate_enough_power_to_meet_demand(
             scenario,
-            portfolio.generators,
-            portfolio.standalone_storages,
+            generators,
+            stationary_storages,
             markets,
-            portfolio.flexible_loads,
+            flexible_loads,
         )
 
         if not markets:
             validate_enough_energy_to_meet_demand(scenario, portfolio, markets, timestep)
+
+
+_SUPPORTED_ASSET_TYPES: tuple[type[Asset], ...] = (
+    Generator,
+    StationaryStorage,
+    ElectricVehicle,
+    Charger,
+    FixedLoad,
+    FlexibleLoad,
+)
+
+
+def validate_assets_are_supported(portfolio: AssetPortfolio) -> None:
+    """Validate that every asset is of a type the optimizer can model.
+
+    A bare `Asset` or a user-defined `Asset` subclass would otherwise be
+    accepted and then silently left out of the model.
+
+    Args:
+        portfolio: The asset portfolio to validate.
+
+    Raises:
+        OdysValidationError: If an asset's type is not supported.
+
+    """
+    for asset in portfolio.assets.values():
+        if not isinstance(asset, _SUPPORTED_ASSET_TYPES):
+            supported = ", ".join(asset_type.__name__ for asset_type in _SUPPORTED_ASSET_TYPES)
+            msg = (
+                f"Asset type {type(asset).__name__} is not supported by the optimizer: '{asset.name}'. "
+                f"Supported types: {supported}."
+            )
+            raise OdysValidationError(msg)
 
 
 class _ScenarioProfileSpec(BaseModel):
@@ -364,7 +405,7 @@ def _validate_flexible_load_power_demand(
 def _max_available_power_profile(
     scenario: StochasticScenario,
     generators: Sequence[Generator],
-    storages: Sequence[StandaloneStorage],
+    storages: Sequence[StationaryStorage],
     markets: Sequence[EnergyMarket],
     number_of_steps: int,
 ) -> list[float]:
@@ -393,7 +434,7 @@ def _max_available_power_profile(
 def validate_enough_power_to_meet_demand(
     scenario: StochasticScenario,
     generators: Sequence[Generator],
-    storages: Sequence[StandaloneStorage],
+    storages: Sequence[StationaryStorage],
     markets: Sequence[EnergyMarket],
     flexible_loads: Sequence[FlexibleLoad] | None = None,
 ) -> None:
@@ -508,7 +549,7 @@ def validate_enough_energy_to_meet_demand(
     timestep_hours = timestep.total_seconds() / 3600
     number_of_steps = len(next(iter(demand_profiles.values())))
 
-    total_energy_demand = _total_energy_demand(scenario, portfolio.flexible_loads, timestep_hours)
+    total_energy_demand = _total_energy_demand(scenario, portfolio.assets_of(FlexibleLoad), timestep_hours)
     total_energy_supply = _total_energy_supply(scenario, portfolio, markets, number_of_steps, timestep_hours)
 
     if total_energy_demand > total_energy_supply:
@@ -547,14 +588,14 @@ def _total_energy_supply(
 ) -> float:
     capacity_profiles = scenario.available_capacity_profiles or {}
     total_generator_energy = 0.0
-    for generator in portfolio.generators:
+    for generator in portfolio.assets_of(Generator):
         available_profile = capacity_profiles.get(generator.name)
         if available_profile is not None:
             total_generator_energy += sum(available_profile) * timestep_hours
         else:
             total_generator_energy += generator.nominal_power * number_of_steps * timestep_hours
 
-    total_storage_energy = sum(storage.capacity for storage in portfolio.standalone_storages)
+    total_storage_energy = sum(storage.capacity for storage in portfolio.assets_of(StationaryStorage))
     total_market_volume = sum(market.max_trading_volume_per_step for market in markets)
     total_market_energy = total_market_volume * number_of_steps * timestep_hours
 
@@ -578,7 +619,7 @@ def validate_electric_vehicle_trips(
         OdysValidationError: If any trip validation fails.
 
     """
-    for ev in portfolio.electric_vehicles:
+    for ev in portfolio.assets_of(ElectricVehicle):
         ev.validate_no_overlapping_trips()
         ev.validate_trips_within_horizon(number_of_steps)
         ev.validate_min_soc_at_departure_feasible()
@@ -598,8 +639,8 @@ def validate_chargers_and_evs_consistency(portfolio: AssetPortfolio) -> None:
             vehicles, or electric vehicles without chargers.
 
     """
-    number_of_chargers = len(portfolio.chargers)
-    number_of_evs = len(portfolio.electric_vehicles)
+    number_of_chargers = len(portfolio.assets_of(Charger))
+    number_of_evs = len(portfolio.assets_of(ElectricVehicle))
     if (number_of_chargers > 0) != (number_of_evs > 0):
         msg = (
             "Portfolio must contain both chargers and electric vehicles, or neither: "

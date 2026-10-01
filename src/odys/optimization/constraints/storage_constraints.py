@@ -1,7 +1,7 @@
 """Shared battery constraint builders for storage-like assets.
 
 Provides reusable constraint-building functions for assets that share
-battery physics (StandaloneStorage, ElectricVehicle). Each function
+battery physics (StationaryStorage, ElectricVehicle). Each function
 accepts variable and parameter references and returns a ModelConstraint.
 """
 

@@ -34,7 +34,7 @@ The generator gives us a local source of electricity, and the market gives us an
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, FixedLoad, Generator, Scenario, TradeDirection
+from odys import AssetPortfolio, EnergyMarket, EnergySystem, FixedLoad, Generator, Scenario, AllowedTradeDirection
 
 generator_1 = Generator(name="ccgt", nominal_power=100, variable_cost=50)
 load = FixedLoad(name="load")
@@ -42,7 +42,7 @@ load = FixedLoad(name="load")
 market = EnergyMarket(
     name="market",
     max_trading_volume_per_step=100,
-    trade_direction=TradeDirection.BUY_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
 )
 portfolio = AssetPortfolio(assets=[generator_1, load])
 ```

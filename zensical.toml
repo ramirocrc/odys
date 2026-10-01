@@ -18,7 +18,7 @@ nav = [
     { "EnergySystem" = "user_guide/energy_system.md" },
     { "Generator" = "user_guide/generator.md" },
     { "Load" = "user_guide/load.md" },
-    { "StandaloneStorage" = "user_guide/storage.md" },
+    { "StationaryStorage" = "user_guide/storage.md" },
     { "ElectricVehicle" = "user_guide/electric_vehicle.md" },
     { "Charger" = "user_guide/charger.md" },
     { "Market" = "user_guide/market.md" },
@@ -43,6 +43,8 @@ nav = [
   { "Architecture Review" = [
     { "Phase 1: Inventory" = "architecture/inventory.md" },
     { "Phase 2: Findings" = "architecture/findings.md" },
+    { "Phase 3: Target model" = "architecture/target-model.md" },
+    { "Phase 4: Roadmap" = "architecture/roadmap.md" },
   ] },
   { "API Reference" = [
     { "Overview" = "api/index.md" },
@@ -57,7 +59,7 @@ nav = [
         { "fixed_load" = "api/domain/entities/fixed_load.md" },
         { "flexible_load" = "api/domain/entities/flexible_load.md" },
         { "storage" = "api/domain/entities/storage.md" },
-        { "standalone_storage" = "api/domain/entities/standalone_storage.md" },
+        { "stationary_storage" = "api/domain/entities/stationary_storage.md" },
         { "electric_vehicle" = "api/domain/entities/electric_vehicle.md" },
         { "charger" = "api/domain/entities/charger.md" },
         { "trip" = "api/domain/entities/trip.md" },
@@ -87,7 +89,7 @@ nav = [
         { "market_constraints" = "api/optimization/constraints/market_constraints.md" },
         { "model_constraint" = "api/optimization/constraints/model_constraint.md" },
         { "scenario_constraints" = "api/optimization/constraints/scenario_constraints.md" },
-        { "standalone_storage_constraints" = "api/optimization/constraints/standalone_storage_constraints.md" },
+        { "stationary_storage_constraints" = "api/optimization/constraints/stationary_storage_constraints.md" },
         { "storage_constraints" = "api/optimization/constraints/storage_constraints.md" },
       ] },
       { "model" = [
@@ -98,7 +100,6 @@ nav = [
         { "milp_model" = "api/optimization/model/milp_model.md" },
         { "model_builder" = "api/optimization/model/model_builder.md" },
         { "objectives" = "api/optimization/model/objectives.md" },
-        { "registry" = "api/optimization/model/registry.md" },
         { "variable_definitions" = "api/optimization/model/variable_definitions.md" },
       ] },
       { "parameters" = [
@@ -110,7 +111,7 @@ nav = [
         { "generator_parameters" = "api/optimization/parameters/generator_parameters.md" },
         { "market_parameters" = "api/optimization/parameters/market_parameters.md" },
         { "scenario_parameters" = "api/optimization/parameters/scenario_parameters.md" },
-        { "standalone_storage_parameters" = "api/optimization/parameters/standalone_storage_parameters.md" },
+        { "stationary_storage_parameters" = "api/optimization/parameters/stationary_storage_parameters.md" },
       ] },
     ] },
     { "solvers" = [
@@ -118,10 +119,6 @@ nav = [
       { "config_translators" = "api/solvers/config_translators.md" },
       { "solver" = "api/solvers/solver.md" },
       { "solver_config" = "api/solvers/solver_config.md" },
-    ] },
-    { "utils" = [
-      { "Overview" = "api/utils/index.md" },
-      { "logging" = "api/utils/logging.md" },
     ] },
   ] },
 ]

@@ -27,11 +27,11 @@ class VariableStore:
     generator_status: linopy.Variable
     generator_startup: linopy.Variable
     generator_shutdown: linopy.Variable
-    standalone_storage_power_in: linopy.Variable
-    standalone_storage_net_power: linopy.Variable
-    standalone_storage_power_out: linopy.Variable
-    standalone_storage_soc: linopy.Variable
-    standalone_storage_charge_mode: linopy.Variable
+    stationary_storage_power_in: linopy.Variable
+    stationary_storage_net_power: linopy.Variable
+    stationary_storage_power_out: linopy.Variable
+    stationary_storage_soc: linopy.Variable
+    stationary_storage_charge_mode: linopy.Variable
     ev_power_in: linopy.Variable
     ev_net_power: linopy.Variable
     ev_power_out: linopy.Variable
@@ -131,13 +131,13 @@ class EnergyMILPModel:
                 ).sum([ModelDimension.Time, ModelDimension.FlexibleLoads]),
             )
 
-        if self._parameters.standalone_storages is not None:
+        if self._parameters.stationary_storages is not None:
             profit_terms.append(
                 -(
-                    (self.vars.standalone_storage_power_in + self.vars.standalone_storage_power_out)
+                    (self.vars.stationary_storage_power_in + self.vars.stationary_storage_power_out)
                     * timestep_hours
-                    * self._parameters.standalone_storages.degradation_cost
-                ).sum([ModelDimension.Time, ModelDimension.StandaloneStorages]),
+                    * self._parameters.stationary_storages.degradation_cost
+                ).sum([ModelDimension.Time, ModelDimension.StationaryStorages]),
             )
 
         if self._parameters.electric_vehicles is not None:

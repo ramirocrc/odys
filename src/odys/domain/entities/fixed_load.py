@@ -4,10 +4,10 @@ This module provides the FixedLoad class for modeling fixed energy consumption
 in energy system optimization problems.
 """
 
-from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.base import Asset
 
 
-class FixedLoad(EnergyEntity):
+class FixedLoad(Asset):
     """Represents a fixed load asset in the energy system.
 
     A fixed load is an energy asset that consumes power at a predetermined rate.

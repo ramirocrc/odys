@@ -64,7 +64,6 @@ dev = [
   "pytest-cov>=7.1.0",
   "pytest-xdist>=3.8.0",
   "radon>=6.0.1",
-  "rich>=15.0.0",
   "ruff>=0.15.22",
   "ty>=0.0.61",
   "vulture>=2.16",
@@ -108,10 +107,22 @@ source = ["src"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["highspy", "cplex", "gurobipy", "pyscipopt"]
-DEP004 = ["rich"]
 
 [tool.importlinter]
 root_package = "odys"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain uses no numerical or modeling libraries"
+type = "forbidden"
+source_modules = ["odys.domain"]
+forbidden_modules = ["linopy", "xarray", "numpy", "pandas"]
+
+[[tool.importlinter.contracts]]
+name = "Parameters do not use the modeling library"
+type = "forbidden"
+source_modules = ["odys.parameters"]
+forbidden_modules = ["linopy"]
 
 [[tool.importlinter.contracts]]
 name = "Domain is independent of the rest of odys"
@@ -163,7 +174,7 @@ modules = [
   "odys.optimization.constraints.flexible_load_constraints",
   "odys.optimization.constraints.generator_constraints",
   "odys.optimization.constraints.market_constraints",
-  "odys.optimization.constraints.standalone_storage_constraints",
+  "odys.optimization.constraints.stationary_storage_constraints",
 ]
 
 [tool.pyrefly]

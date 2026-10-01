@@ -37,12 +37,12 @@ The [market](../user_guide/market.md) gives us an external source of electricity
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, FlexibleLoad, Scenario, TradeDirection
+from odys import AssetPortfolio, EnergyMarket, EnergySystem, FlexibleLoad, Scenario, AllowedTradeDirection
 
 market = EnergyMarket(
     name="market",
     max_trading_volume_per_step=80,
-    trade_direction=TradeDirection.BUY_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
 )
 
 industrial_process = FlexibleLoad(

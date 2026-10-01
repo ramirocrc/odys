@@ -7,7 +7,7 @@ from pydantic import Field
 from odys.domain.entities.base import EnergyEntity
 
 
-class TradeDirection(StrEnum):
+class AllowedTradeDirection(StrEnum):
     """Allowed trading direction for an energy market.
 
     Determines whether a market permits buying energy, selling energy,
@@ -41,14 +41,14 @@ class EnergyMarket(EnergyEntity):
         max_trading_volume_per_step: Maximum power (in MW) that can be traded
             in a single optimization timestep. The traded energy is this power
             times the timestep length.
-        trade_direction: Allowed trading direction for the market.
+        allowed_trade_direction: Allowed trading direction for the market.
         stage_fixed: If ``True``, trading volumes are fixed across all stochastic
             scenarios (non-anticipativity constraint).
     """
 
     name: str
     max_trading_volume_per_step: float = Field(gt=0)
-    trade_direction: TradeDirection = TradeDirection.BUY_AND_SELL
+    allowed_trade_direction: AllowedTradeDirection = AllowedTradeDirection.BUY_AND_SELL
     stage_fixed: bool = Field(
         default=False,
         description="If true, the associated variables are fixed across scenarios.",

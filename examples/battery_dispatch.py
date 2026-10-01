@@ -44,17 +44,23 @@ gas.
 
 """
 
+import logging
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario, StandaloneStorage
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
+from odys import (
+    AssetPortfolio,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    OptimalDispatchResults,
+    Scenario,
+    StationaryStorage,
+)
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def run_battery_dispatch() -> OptimalDisptachResults:
+def run_battery_dispatch() -> OptimalDispatchResults:
     """Run the battery dispatch example and return the optimization results."""
     generator_1 = Generator(
         name="ccgt",
@@ -70,7 +76,7 @@ def run_battery_dispatch() -> OptimalDisptachResults:
         name="load",
     )
 
-    battery = StandaloneStorage(
+    battery = StationaryStorage(
         name="battery",
         capacity=300,
         max_charge_power=200,
@@ -100,9 +106,11 @@ def run_battery_dispatch() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_battery_dispatch()
     logger.info("generators power")
     logger.info(result.generators.power)
 
     logger.info("battery net power")
-    logger.info(result.standalone_storages.net_power)
+    logger.info(result.stationary_storages.net_power)

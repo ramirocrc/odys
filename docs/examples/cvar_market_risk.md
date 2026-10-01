@@ -38,7 +38,7 @@ from odys import (
     Objective,
     ProfitTerm,
     StochasticScenario,
-    TradeDirection,
+    AllowedTradeDirection,
 )
 
 ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=20.0)
@@ -48,13 +48,13 @@ sdac = EnergyMarket(
     name="sdac",
     max_trading_volume_per_step=150,
     stage_fixed=True,
-    trade_direction=TradeDirection.SELL_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
 sidc = EnergyMarket(
     name="sidc",
     stage_fixed=False,
     max_trading_volume_per_step=100,
-    trade_direction=TradeDirection.SELL_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
 ```
 

@@ -390,7 +390,7 @@ Recorded from the user's review (2026-09-30).
 
 ### Status of the section 7 bugs (2026-10-01)
 
-Fixed on branch `fix/review-bugs` (git worktree `../odys-review-bugs`, based on `main`), each with a regression test that fails without the fix. Not yet committed.
+Fixed and committed on `chore/claude-guardrails` (`7c67484`), each with a regression test that fails without the fix.
 
 | Bug | Resolution |
 | --- | --- |

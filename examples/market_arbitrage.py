@@ -42,17 +42,24 @@ keeps the example focused on a single question: when should you generate, and
 when should you simply buy?
 """
 
+import logging
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, FixedLoad, Generator, Scenario, TradeDirection
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
+from odys import (
+    AllowedTradeDirection,
+    AssetPortfolio,
+    EnergyMarket,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    OptimalDispatchResults,
+    Scenario,
+)
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def run_market_arbitrage() -> OptimalDisptachResults:
+def run_market_arbitrage() -> OptimalDispatchResults:
     """Run the market arbitrage example and return the optimization results."""
     generator_1 = Generator(
         name="ccgt",
@@ -66,7 +73,7 @@ def run_market_arbitrage() -> OptimalDisptachResults:
     market = EnergyMarket(
         name="market",
         max_trading_volume_per_step=100,
-        trade_direction=TradeDirection.BUY_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
     )
 
     portfolio = AssetPortfolio(assets=[generator_1, load])
@@ -94,5 +101,7 @@ def run_market_arbitrage() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_market_arbitrage()
     logger.info(result.generators.to_dataframe())

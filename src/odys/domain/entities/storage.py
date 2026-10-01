@@ -9,11 +9,11 @@ from typing import Self
 
 from pydantic import Field, model_validator
 
-from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.base import Asset
 from odys.domain.exceptions import OdysValidationError
 
 
-class Storage(EnergyEntity, ABC):
+class Storage(Asset, ABC):
     """Represents a storage system in the energy system.
 
     This class models storage assets with various operational constraints

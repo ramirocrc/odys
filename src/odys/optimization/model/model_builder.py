@@ -17,8 +17,8 @@ from odys.optimization.constraints.market_constraints import MarketConstraints
 from odys.optimization.constraints.scenario_constraints import (
     ScenarioConstraints,
 )
-from odys.optimization.constraints.standalone_storage_constraints import (
-    StandaloneStorageConstraints,
+from odys.optimization.constraints.stationary_storage_constraints import (
+    StationaryStorageConstraints,
 )
 from odys.optimization.model.linopy_converter import get_linopy_variable_parameters
 from odys.optimization.model.milp_model import EnergyMILPModel
@@ -30,7 +30,7 @@ from odys.optimization.model.variable_definitions import (
     FLEXIBLE_LOAD_VARIABLES,
     GENERATOR_VARIABLES,
     MARKET_VARIABLES,
-    STANDALONE_STORAGE_VARIABLES,
+    STATIONARY_STORAGE_VARIABLES,
     VariableDefinitionRegistry,
 )
 from odys.parameters.energy_system_parameters import EnergySystemParameters
@@ -87,8 +87,8 @@ class EnergyAlgebraicModelBuilder:
         if params.generators is not None:
             variables_to_add.extend(GENERATOR_VARIABLES)
 
-        if params.standalone_storages is not None:
-            variables_to_add.extend(STANDALONE_STORAGE_VARIABLES)
+        if params.stationary_storages is not None:
+            variables_to_add.extend(STATIONARY_STORAGE_VARIABLES)
 
         if params.markets is not None:
             variables_to_add.extend(MARKET_VARIABLES)
@@ -121,8 +121,8 @@ class EnergyAlgebraicModelBuilder:
         if params.generators is not None:
             groups.append(GeneratorConstraints(self._milp_model))
 
-        if params.standalone_storages is not None:
-            groups.append(StandaloneStorageConstraints(self._milp_model))
+        if params.stationary_storages is not None:
+            groups.append(StationaryStorageConstraints(self._milp_model))
 
         if params.electric_vehicles is not None:
             groups.append(ElectricVehicleConstraints(self._milp_model))

@@ -9,7 +9,7 @@ import pytest
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.market import EnergyMarket, TradeDirection
+from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
@@ -57,7 +57,7 @@ def market_serving_fixed_load() -> TimestepCase:
         markets=EnergyMarket(
             name="market",
             max_trading_volume_per_step=MARKET_VOLUME,
-            trade_direction=TradeDirection.BUY_ONLY,
+            allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
         ),
         timestep=HALF_HOUR,
         number_of_steps=len(LOAD_PROFILE),

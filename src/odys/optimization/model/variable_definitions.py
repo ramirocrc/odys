@@ -60,34 +60,34 @@ class VariableDefinitionRegistry(Enum):
         dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
         lower_bound_type=BoundType.UNBOUNDED,
     )
-    STANDALONE_STORAGE_POWER_IN = VariableDefinition(
-        name="standalone_storage_power_in",
+    STATIONARY_STORAGE_POWER_IN = VariableDefinition(
+        name="stationary_storage_power_in",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    STANDALONE_STORAGE_POWER_NET = VariableDefinition(
-        name="standalone_storage_net_power",
+    STATIONARY_STORAGE_POWER_NET = VariableDefinition(
+        name="stationary_storage_net_power",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
         lower_bound_type=BoundType.UNBOUNDED,
     )
-    STANDALONE_STORAGE_POWER_OUT = VariableDefinition(
-        name="standalone_storage_power_out",
+    STATIONARY_STORAGE_POWER_OUT = VariableDefinition(
+        name="stationary_storage_power_out",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    STANDALONE_STORAGE_SOC = VariableDefinition(
-        name="standalone_storage_soc",
+    STATIONARY_STORAGE_SOC = VariableDefinition(
+        name="stationary_storage_soc",
         is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
         lower_bound_type=BoundType.NON_NEGATIVE,
     )
-    STANDALONE_STORAGE_CHARGE_MODE = VariableDefinition(
-        name="standalone_storage_charge_mode",
+    STATIONARY_STORAGE_CHARGE_MODE = VariableDefinition(
+        name="stationary_storage_charge_mode",
         is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StandaloneStorages],
+        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
         lower_bound_type=BoundType.UNBOUNDED,
     )
     EV_POWER_IN = VariableDefinition(
@@ -189,10 +189,10 @@ GENERATOR_VARIABLES = [
     for var in VariableDefinitionRegistry
     if var.value.dimensions and ModelDimension.Generators in var.value.dimensions
 ]
-STANDALONE_STORAGE_VARIABLES = [
+STATIONARY_STORAGE_VARIABLES = [
     var
     for var in VariableDefinitionRegistry
-    if var.value.dimensions and ModelDimension.StandaloneStorages in var.value.dimensions
+    if var.value.dimensions and ModelDimension.StationaryStorages in var.value.dimensions
 ]
 FLEXIBLE_LOAD_VARIABLES = [
     var

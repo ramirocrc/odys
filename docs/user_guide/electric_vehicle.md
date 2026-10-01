@@ -6,7 +6,7 @@ icon: fontawesome/solid/car
 
 An `ElectricVehicle` is a storage asset with trip schedules. It inherits all battery physics from storage and adds constraints that make the vehicle unavailable for charging while driving and consume energy during trips.
 
-Unlike a stationary [StandaloneStorage](storage.md), EVs must connect through a [Charger](charger.md) to charge or discharge. With more EVs than chargers, the optimizer assigns vehicles to chargers dynamically.
+Unlike a stationary [StationaryStorage](storage.md), EVs must connect through a [Charger](charger.md) to charge or discharge. With more EVs than chargers, the optimizer assigns vehicles to chargers dynamically.
 
 See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
 
