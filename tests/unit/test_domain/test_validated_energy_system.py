@@ -10,6 +10,7 @@ from datetime import timedelta
 import pytest
 
 from odys.domain.entities.base import Asset
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
@@ -36,12 +37,14 @@ def testing_generator() -> Generator:
 def testing_battery() -> StationaryStorage:
     return StationaryStorage(
         name="test_battery",
-        capacity=50.0,
-        max_charge_power=25.0,
-        max_discharge_power=25.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.9,
-        soc_start=0.5,
+        battery=Battery(
+            capacity=50.0,
+            max_charge_power=25.0,
+            max_discharge_power=25.0,
+            efficiency_charging=0.9,
+            efficiency_discharging=0.9,
+            soc_start=0.5,
+        ),
     )
 
 
@@ -184,12 +187,14 @@ def portfolio_without_generators() -> AssetPortfolio:
         assets=[
             StationaryStorage(
                 name="battery",
-                capacity=50.0,
-                max_charge_power=25.0,
-                max_discharge_power=25.0,
-                efficiency_charging=0.9,
-                efficiency_discharging=0.9,
-                soc_start=0.5,
+                battery=Battery(
+                    capacity=50.0,
+                    max_charge_power=25.0,
+                    max_discharge_power=25.0,
+                    efficiency_charging=0.9,
+                    efficiency_discharging=0.9,
+                    soc_start=0.5,
+                ),
             ),
             FixedLoad(name="load"),
         ],

@@ -2,6 +2,7 @@
 
 import pytest
 
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
@@ -41,10 +42,7 @@ def trip2() -> Trip:
 def ev1(trip1: Trip, trip2: Trip) -> ElectricVehicle:
     return ElectricVehicle(
         name="ev1",
-        capacity=50.0,
-        max_charge_power=22.0,
-        max_discharge_power=0.0,
-        soc_start=0.8,
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.8),
         trips=(trip1, trip2),
     )
 
@@ -53,10 +51,7 @@ def ev1(trip1: Trip, trip2: Trip) -> ElectricVehicle:
 def ev2() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev2",
-        capacity=75.0,
-        max_charge_power=50.0,
-        max_discharge_power=25.0,
-        soc_start=0.5,
+        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=25.0, soc_start=0.5),
         trips=(),
     )
 
@@ -150,10 +145,7 @@ def test_ev_parameters_empty_trips() -> None:
     """Test that ElectricVehicleParameters with no trips build empty arrays."""
     ev = ElectricVehicle(
         name="ev_no_trips",
-        capacity=50.0,
-        max_charge_power=22.0,
-        max_discharge_power=0.0,
-        soc_start=0.8,
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.8),
         trips=(),
     )
     params = ElectricVehicleParameters(24, [ev])

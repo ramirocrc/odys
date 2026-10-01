@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -32,13 +33,15 @@ def gas_generator() -> Generator:
 def battery() -> StationaryStorage:
     return StationaryStorage(
         name="stationary_storage",
-        capacity=100.0,
-        max_charge_power=80.0,
-        max_discharge_power=80.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.9,
-        soc_start=0.5,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=100.0,
+            max_charge_power=80.0,
+            max_discharge_power=80.0,
+            efficiency_charging=0.9,
+            efficiency_discharging=0.9,
+            soc_start=0.5,
+            soc_end=0.5,
+        ),
     )
 
 

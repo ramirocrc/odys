@@ -11,18 +11,20 @@ We use a separate portfolio object because it keeps asset management clean. You 
 ## Basic usage
 
 ```python
-from odys import AssetPortfolio, FixedLoad, Generator, StationaryStorage
+from odys import AssetPortfolio, Battery, FixedLoad, Generator, StationaryStorage
 
 portfolio = AssetPortfolio([
     Generator(name="gen", nominal_power=100.0, variable_cost=50.0),
     StationaryStorage(
         name="bess",
-        capacity=50.0,
-        max_charge_power=25.0,
-        max_discharge_power=25.0,
-        efficiency_charging=0.95,
-        efficiency_discharging=0.95,
-        soc_start=0.5,
+        battery=Battery(
+            capacity=50.0,
+            max_charge_power=25.0,
+            max_discharge_power=25.0,
+            efficiency_charging=0.95,
+            efficiency_discharging=0.95,
+            soc_start=0.5,
+        ),
     ),
     FixedLoad(name="demand"),
 ])

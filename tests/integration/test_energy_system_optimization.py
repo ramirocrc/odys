@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from odys.domain.entities.base import Asset
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
@@ -77,13 +78,15 @@ def perfect_battery() -> StationaryStorage:
     """Battery with perfect efficiency fixture."""
     return StationaryStorage(
         name="energy_storage",
-        capacity=STANDARD_STORAGE_CAPACITY,
-        max_charge_power=STANDARD_GENERATOR_POWER,
-        max_discharge_power=STANDARD_GENERATOR_POWER,
-        efficiency_charging=PERFECT_EFFICIENCY,
-        efficiency_discharging=PERFECT_EFFICIENCY,
-        soc_start=0.0,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=STANDARD_STORAGE_CAPACITY,
+            max_charge_power=STANDARD_GENERATOR_POWER,
+            max_discharge_power=STANDARD_GENERATOR_POWER,
+            efficiency_charging=PERFECT_EFFICIENCY,
+            efficiency_discharging=PERFECT_EFFICIENCY,
+            soc_start=0.0,
+            soc_end=0.5,
+        ),
     )
 
 
@@ -235,13 +238,15 @@ def _create_generator_and_battery_system() -> SystemTestCase:
     )
     battery = StationaryStorage(
         name="energy_storage",
-        capacity=STANDARD_STORAGE_CAPACITY,
-        max_charge_power=STANDARD_GENERATOR_POWER,
-        max_discharge_power=STANDARD_GENERATOR_POWER,
-        efficiency_charging=PERFECT_EFFICIENCY,
-        efficiency_discharging=PERFECT_EFFICIENCY,
-        soc_start=0.0,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=STANDARD_STORAGE_CAPACITY,
+            max_charge_power=STANDARD_GENERATOR_POWER,
+            max_discharge_power=STANDARD_GENERATOR_POWER,
+            efficiency_charging=PERFECT_EFFICIENCY,
+            efficiency_discharging=PERFECT_EFFICIENCY,
+            soc_start=0.0,
+            soc_end=0.5,
+        ),
     )
 
     load = FixedLoad(name="load1")
@@ -280,13 +285,15 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
     )
     battery = StationaryStorage(
         name="battery",
-        capacity=STANDARD_STORAGE_CAPACITY,
-        max_charge_power=STANDARD_GENERATOR_POWER,
-        max_discharge_power=STANDARD_GENERATOR_POWER,
-        efficiency_charging=HALF_EFFICIENCY,
-        efficiency_discharging=HALF_EFFICIENCY,
-        soc_start=0.0,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=STANDARD_STORAGE_CAPACITY,
+            max_charge_power=STANDARD_GENERATOR_POWER,
+            max_discharge_power=STANDARD_GENERATOR_POWER,
+            efficiency_charging=HALF_EFFICIENCY,
+            efficiency_discharging=HALF_EFFICIENCY,
+            soc_start=0.0,
+            soc_end=0.5,
+        ),
     )
 
     load = FixedLoad(name="load1")

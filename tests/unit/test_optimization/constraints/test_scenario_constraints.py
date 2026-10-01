@@ -7,6 +7,7 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
@@ -24,13 +25,15 @@ logger = logging.getLogger(__name__)
 def battery1() -> StationaryStorage:
     return StationaryStorage(
         name="batt1",
-        max_charge_power=200.0,
-        max_discharge_power=200.0,
-        capacity=100.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.8,
-        soc_start=0.25,
-        soc_end=0.5,
+        battery=Battery(
+            max_charge_power=200.0,
+            max_discharge_power=200.0,
+            capacity=100.0,
+            efficiency_charging=0.9,
+            efficiency_discharging=0.8,
+            soc_start=0.25,
+            soc_end=0.5,
+        ),
     )
 
 

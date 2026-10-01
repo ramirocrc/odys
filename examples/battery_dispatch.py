@@ -49,6 +49,7 @@ from datetime import timedelta
 
 from odys import (
     AssetPortfolio,
+    Battery,
     EnergySystem,
     FixedLoad,
     Generator,
@@ -78,11 +79,7 @@ def run_battery_dispatch() -> OptimalDispatchResults:
 
     battery = StationaryStorage(
         name="battery",
-        capacity=300,
-        max_charge_power=200,
-        max_discharge_power=200,
-        soc_start=0,
-        soc_end=0,
+        battery=Battery(capacity=300, max_charge_power=200, max_discharge_power=200, soc_start=0, soc_end=0),
     )
     portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
 

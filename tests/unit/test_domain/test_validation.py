@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
@@ -54,12 +55,14 @@ def generator() -> Generator:
 def storage() -> StationaryStorage:
     return StationaryStorage(
         name="bat1",
-        capacity=STORAGE_CAPACITY,
-        max_charge_power=STORAGE_MAX_CHARGE_POWER,
-        max_discharge_power=STORAGE_MAX_DISCHARGE_POWER,
-        efficiency_charging=STORAGE_EFFICIENCY,
-        efficiency_discharging=STORAGE_EFFICIENCY,
-        soc_start=SOC_START,
+        battery=Battery(
+            capacity=STORAGE_CAPACITY,
+            max_charge_power=STORAGE_MAX_CHARGE_POWER,
+            max_discharge_power=STORAGE_MAX_DISCHARGE_POWER,
+            efficiency_charging=STORAGE_EFFICIENCY,
+            efficiency_discharging=STORAGE_EFFICIENCY,
+            soc_start=SOC_START,
+        ),
     )
 
 
@@ -565,10 +568,12 @@ class TestValidateElectricVehicleTrips:
         trip2 = Trip(name="evening", start_time=17, end_time=19, energy_consumption=TRIP_ENERGY)
         ev = ElectricVehicle(
             name="ev1",
-            capacity=EV_CAPACITY,
-            max_charge_power=EV_MAX_CHARGE_POWER,
-            max_discharge_power=0.0,
-            soc_start=EV_SOC_START,
+            battery=Battery(
+                capacity=EV_CAPACITY,
+                max_charge_power=EV_MAX_CHARGE_POWER,
+                max_discharge_power=0.0,
+                soc_start=EV_SOC_START,
+            ),
             trips=(trip1, trip2),
         )
         portfolio = AssetPortfolio(assets=[ev])
@@ -583,10 +588,12 @@ class TestValidateElectricVehicleTrips:
         trip2 = Trip(name="overlapping", start_time=9, end_time=11, energy_consumption=TRIP_ENERGY)
         ev = ElectricVehicle(
             name="ev1",
-            capacity=EV_CAPACITY,
-            max_charge_power=EV_MAX_CHARGE_POWER,
-            max_discharge_power=0.0,
-            soc_start=EV_SOC_START,
+            battery=Battery(
+                capacity=EV_CAPACITY,
+                max_charge_power=EV_MAX_CHARGE_POWER,
+                max_discharge_power=0.0,
+                soc_start=EV_SOC_START,
+            ),
             trips=(trip1, trip2),
         )
         portfolio = AssetPortfolio(assets=[ev])
@@ -597,10 +604,12 @@ class TestValidateElectricVehicleTrips:
         trip1 = Trip(name="late_trip", start_time=20, end_time=30, energy_consumption=TRIP_ENERGY)
         ev = ElectricVehicle(
             name="ev1",
-            capacity=EV_CAPACITY,
-            max_charge_power=EV_MAX_CHARGE_POWER,
-            max_discharge_power=0.0,
-            soc_start=EV_SOC_START,
+            battery=Battery(
+                capacity=EV_CAPACITY,
+                max_charge_power=EV_MAX_CHARGE_POWER,
+                max_discharge_power=0.0,
+                soc_start=EV_SOC_START,
+            ),
             trips=(trip1,),
         )
         portfolio = AssetPortfolio(assets=[ev])
@@ -617,10 +626,12 @@ class TestValidateElectricVehicleTrips:
         )
         ev = ElectricVehicle(
             name="ev1",
-            capacity=EV_CAPACITY,
-            max_charge_power=EV_MAX_CHARGE_POWER,
-            max_discharge_power=0.0,
-            soc_start=0.5,
+            battery=Battery(
+                capacity=EV_CAPACITY,
+                max_charge_power=EV_MAX_CHARGE_POWER,
+                max_discharge_power=0.0,
+                soc_start=0.5,
+            ),
             trips=(trip,),
         )
         portfolio = AssetPortfolio(assets=[ev])
@@ -637,10 +648,12 @@ class TestValidateElectricVehicleTrips:
         )
         ev = ElectricVehicle(
             name="ev1",
-            capacity=EV_CAPACITY,
-            max_charge_power=EV_MAX_CHARGE_POWER,
-            max_discharge_power=0.0,
-            soc_start=0.5,
+            battery=Battery(
+                capacity=EV_CAPACITY,
+                max_charge_power=EV_MAX_CHARGE_POWER,
+                max_discharge_power=0.0,
+                soc_start=0.5,
+            ),
             trips=(trip,),
         )
         portfolio = AssetPortfolio(assets=[ev])
@@ -656,10 +669,12 @@ CHARGER_MAX_POWER = 50.0
 def _make_ev() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev1",
-        capacity=EV_CAPACITY,
-        max_charge_power=EV_MAX_CHARGE_POWER,
-        max_discharge_power=0.0,
-        soc_start=EV_SOC_START,
+        battery=Battery(
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=0.0,
+            soc_start=EV_SOC_START,
+        ),
         trips=(),
     )
 

@@ -5,6 +5,7 @@ from datetime import timedelta
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
+    Battery,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
@@ -331,13 +332,15 @@ def test_flexible_load_with_storage() -> None:
     )
     battery = StationaryStorage(
         name="battery",
-        capacity=100.0,
-        max_charge_power=50.0,
-        max_discharge_power=50.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.9,
-        soc_start=0.5,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=100.0,
+            max_charge_power=50.0,
+            max_discharge_power=50.0,
+            efficiency_charging=0.9,
+            efficiency_discharging=0.9,
+            soc_start=0.5,
+            soc_end=0.5,
+        ),
     )
     flexible_load = FlexibleLoad(
         name="flex_load",
