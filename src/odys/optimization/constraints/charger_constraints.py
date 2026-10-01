@@ -19,7 +19,7 @@ class ChargerConstraints(ConstraintGroup):
     """Builds constraints for charger assignment and power limits.
 
     These constraints only apply to ElectricVehicle instances.
-    StandaloneStorage assets are not affected by charger constraints.
+    StationaryStorage assets are not affected by charger constraints.
     """
 
     def __init__(self, milp_model: EnergyMILPModel) -> None:

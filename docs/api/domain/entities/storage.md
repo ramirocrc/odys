@@ -6,6 +6,6 @@ icon: fontawesome/solid/battery-three-quarters
 
 Energy storage asset with capacity, power limits, charging/discharging efficiency, state-of-charge bounds, and degradation cost.
 
-See [StandaloneStorage](../../../user_guide/storage.md) in the User Guide.
+See [StationaryStorage](../../../user_guide/storage.md) in the User Guide.
 
 ::: odys.domain.entities.storage

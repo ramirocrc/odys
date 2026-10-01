@@ -36,7 +36,7 @@ class CoordinatesStore(BaseModel):
     scenarios: ModelCoordinates
     time: ModelCoordinates
     generators: ModelCoordinates | None = None
-    standalone_storages: ModelCoordinates | None = None
+    stationary_storages: ModelCoordinates | None = None
     flexible_loads: ModelCoordinates | None = None
     markets: ModelCoordinates | None = None
     chargers: ModelCoordinates | None = None
@@ -52,7 +52,7 @@ class CoordinatesStore(BaseModel):
             ModelDimension.Scenarios: self.scenarios,
             ModelDimension.Time: self.time,
             ModelDimension.Generators: self.generators,
-            ModelDimension.StandaloneStorages: self.standalone_storages,
+            ModelDimension.StationaryStorages: self.stationary_storages,
             ModelDimension.FlexibleLoads: self.flexible_loads,
             ModelDimension.Markets: self.markets,
             ModelDimension.Chargers: self.chargers,

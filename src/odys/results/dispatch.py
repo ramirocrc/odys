@@ -97,14 +97,14 @@ class GeneratorDispatch:
         return f"GeneratorDispatch(names={self._generator_names!r})"
 
 
-class StandaloneStorageDispatch:
-    """Dispatch results for standalone storages in the portfolio."""
+class StationaryStorageDispatch:
+    """Dispatch results for stationary storages in the portfolio."""
 
     __slots__ = (
         "_charge_mode",
         "_net_power",
         "_soc",
-        "_standalone_storage_names",
+        "_stationary_storage_names",
     )
 
     def __init__(
@@ -113,32 +113,32 @@ class StandaloneStorageDispatch:
         soc: xr.DataArray,
         charge_mode: xr.DataArray,
     ) -> None:
-        """Initialize standalone storage dispatch results."""
+        """Initialize stationary storage dispatch results."""
         self._net_power = net_power
         self._soc = soc
         self._charge_mode = charge_mode
-        self._standalone_storage_names = net_power.coords[ModelDimension.StandaloneStorages]
+        self._stationary_storage_names = net_power.coords[ModelDimension.StationaryStorages]
 
-    def __getitem__(self, key: str) -> StandaloneStorageDispatch:
-        """Return new instance for a specific standalone storage."""
-        return StandaloneStorageDispatch(
-            net_power=self._net_power.sel(standalone_storage=key),
-            soc=self._soc.sel(standalone_storage=key),
-            charge_mode=self._charge_mode.sel(standalone_storage=key),
+    def __getitem__(self, key: str) -> StationaryStorageDispatch:
+        """Return new instance for a specific stationary storage."""
+        return StationaryStorageDispatch(
+            net_power=self._net_power.sel(stationary_storage=key),
+            soc=self._soc.sel(stationary_storage=key),
+            charge_mode=self._charge_mode.sel(stationary_storage=key),
         )
 
-    def __iter__(self) -> Iterator[StandaloneStorageDispatch]:
+    def __iter__(self) -> Iterator[StationaryStorageDispatch]:
         """Iterate over dispatch instances."""
-        for name in self._standalone_storage_names:
+        for name in self._stationary_storage_names:
             yield self[name]
 
     def __len__(self) -> int:
-        """Number of standalone storages."""
-        return len(self._standalone_storage_names)
+        """Number of stationary storages."""
+        return len(self._stationary_storage_names)
 
     def __contains__(self, key: str) -> bool:
-        """Check if standalone storage exists by name."""
-        return key in self._standalone_storage_names
+        """Check if stationary storage exists by name."""
+        return key in self._stationary_storage_names
 
     @property
     def net_power(self) -> pd.Series:
@@ -171,7 +171,7 @@ class StandaloneStorageDispatch:
 
     def __repr__(self) -> str:
         """String representation."""
-        return f"StandaloneStorageDispatch(names={self._standalone_storage_names!r})"
+        return f"StationaryStorageDispatch(names={self._stationary_storage_names!r})"
 
 
 class ElectricVehicleDispatch:
@@ -371,8 +371,11 @@ class MarketDispatch:
         return self._buy_volume.to_series()
 
     @property
-    def net_volume(self) -> xr.DataArray:
+    def net_volume(self) -> pd.Series:
         """Net volume (sell - buy)."""
+        return self._net_volume().to_series()
+
+    def _net_volume(self) -> xr.DataArray:
         net_volume: xr.DataArray = self._sell_volume - self._buy_volume
         return net_volume
 
@@ -382,7 +385,7 @@ class MarketDispatch:
             data_vars={
                 "sell_volume": self._sell_volume,
                 "buy_volume": self._buy_volume,
-                "net_volume": self.net_volume,
+                "net_volume": self._net_volume(),
             },
         )
 

@@ -151,7 +151,7 @@ $$
 
 ### Storage and EV constraints
 
-Standalone storage and electric vehicles share the same battery physics. For each storage-like asset $b$:
+Stationary storage and electric vehicles share the same battery physics. For each storage-like asset $b$:
 
 $$
 0 \le p^{ch}_{b,t,s}, \qquad 0 \le p^{dis}_{b,t,s}, \qquad 0 \le SOC_{b,t,s}, \qquad z_{b,t,s} \in \{0,1\}
@@ -235,7 +235,7 @@ The adjustment variable $\Delta d_{l,t,s}$ is bounded by the maximum decrease an
 
 ## Reading results
 
-The `optimize()` call returns an `OptimalDisptachResults` object:
+The `optimize()` call returns an `OptimalDispatchResults` object:
 
 ```python
 result = energy_system.optimize()
@@ -260,10 +260,10 @@ result.generators.status  # on/off (1/0)
 result.generators.startup  # startup events
 result.generators.shutdown  # shutdown events
 
-# Standalone storages
-result.standalone_storages.net_power  # positive = charging, negative = discharging
-result.standalone_storages.soc  # state of charge (fraction of capacity)
-result.standalone_storages.charge_mode  # binary charging mode
+# Stationary storages
+result.stationary_storages.net_power  # positive = charging, negative = discharging
+result.stationary_storages.soc  # state of charge (fraction of capacity)
+result.stationary_storages.charge_mode  # binary charging mode
 
 # Electric vehicles
 result.electric_vehicles.net_power  # positive = charging, negative = discharging
@@ -287,7 +287,7 @@ All of these properties are `pandas.Series` objects. Each dispatch container als
 
 ```python
 result.generators.to_dataframe()
-result.standalone_storages.to_dataset()
+result.stationary_storages.to_dataset()
 ```
 
 For the full raw solution as an xarray Dataset:

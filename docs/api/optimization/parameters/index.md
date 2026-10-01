@@ -17,4 +17,4 @@ Model parameter builders.
 - `entity_parameters.generator_parameters`
 - `entity_parameters.market_parameters`
 - `entity_parameters.scenario_parameters`
-- `entity_parameters.standalone_storage_parameters`
+- `entity_parameters.stationary_storage_parameters`

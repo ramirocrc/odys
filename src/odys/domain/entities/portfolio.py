@@ -1,7 +1,7 @@
 """Asset portfolio management for energy systems.
 
-This module provides the AssetPortfolio class for managing collections
-of energy system assets including generators, storages, and other components.
+This module provides the AssetPortfolio class, the collection of assets the
+user owns and operates.
 """
 
 from collections import Counter
@@ -9,59 +9,44 @@ from collections.abc import Iterable
 from types import MappingProxyType
 from typing import TypeVar
 
-from odys.domain.entities.base import EnergyEntity
-from odys.domain.entities.charger import Charger
-from odys.domain.entities.electric_vehicle import ElectricVehicle
-from odys.domain.entities.fixed_load import FixedLoad
-from odys.domain.entities.flexible_load import FlexibleLoad
-from odys.domain.entities.generator import Generator
-from odys.domain.entities.standalone_storage import StandaloneStorage
+from odys.domain.entities.base import Asset
 from odys.domain.exceptions import OdysValidationError
 
-T = TypeVar("T", bound=EnergyEntity)
+AssetT = TypeVar("AssetT", bound=Asset)
 
 
 class AssetPortfolio:
-    """A collection of energy system assets.
+    """A collection of assets the user owns and operates.
 
-    This class manages a portfolio of energy assets including generators,
-    storages, and other energy system components. It provides methods
-    to add, retrieve, and filter assets by type.
+    Assets are indexed by name, which must be unique. Markets are not assets
+    and are rejected; pass them to `EnergySystem` instead.
     """
 
     def __init__(
         self,
-        assets: Iterable[EnergyEntity] | None = None,
+        assets: Iterable[Asset] | None = None,
     ) -> None:
         """Initialize an asset portfolio.
 
         Args:
-            assets: Iterable of energy assets to add to the portfolio.
+            assets: Iterable of assets to add to the portfolio.
 
         Raises:
-            OdysValidationError: If an asset with the same name already exists
-                or if there are duplicate names in the input.
+            OdysValidationError: If an entity is not an asset, or if names are not unique.
         """
-        self._assets: dict[str, EnergyEntity] = {}
-        if assets:
-            self._validate_unique_asset_names(assets)
-            for asset in assets:
-                self._add_single_asset(asset)
+        asset_list = tuple(assets or ())
+        self._validate_only_assets(asset_list)
+        self._validate_unique_asset_names(asset_list)
+        self._assets: dict[str, Asset] = {asset.name: asset for asset in asset_list}
 
-    def _add_single_asset(self, asset: EnergyEntity) -> None:
-        if asset.name in self._assets:
-            msg = f"Asset with name '{asset.name}' already exists."
-            raise OdysValidationError(msg)
-        self._assets[asset.name] = asset
-
-    def get_asset(self, name: str) -> EnergyEntity:
+    def get_asset(self, name: str) -> Asset:
         """Retrieve an asset from the portfolio by name.
 
         Args:
             name: The name of the asset to retrieve.
 
         Returns:
-            The energy asset with the specified name.
+            The asset with the specified name.
 
         Raises:
             OdysValidationError: If no asset with the specified name exists.
@@ -72,18 +57,19 @@ class AssetPortfolio:
             raise OdysValidationError(msg)
         return self._assets[name]
 
-    def _get_assets_by_type(self, asset_type: type[T]) -> tuple[T, ...]:
+    def assets_of(self, asset_type: type[AssetT]) -> tuple[AssetT, ...]:
+        """Return all assets of the given type, in insertion order.
+
+        Args:
+            asset_type: The asset class to filter by (subclasses included).
+
+        Returns:
+            A tuple with every asset that is an instance of `asset_type`.
+        """
         return tuple(asset for asset in self._assets.values() if isinstance(asset, asset_type))
 
-    def _validate_unique_asset_names(self, assets: Iterable[EnergyEntity]) -> None:
-        names_count = Counter(asset.name for asset in assets)
-        duplicates = [name for name, count in names_count.items() if count > 1]
-        if duplicates:
-            msg = f"Duplicate asset names in input: {duplicates}"
-            raise OdysValidationError(msg)
-
     @property
-    def assets(self) -> MappingProxyType[str, EnergyEntity]:
+    def assets(self) -> MappingProxyType[str, Asset]:
         """Get a read-only view of all assets in the portfolio.
 
         Returns:
@@ -92,72 +78,22 @@ class AssetPortfolio:
         """
         return MappingProxyType(self._assets)
 
-    @property
-    def generators(self) -> tuple[Generator, ...]:
-        """Get all generators in the portfolio.
+    @staticmethod
+    def _validate_only_assets(entities: tuple[object, ...]) -> None:
+        """Reject non-assets from callers that bypass type checking (hence `object`, not `Asset`)."""
+        for entity in entities:
+            if not isinstance(entity, Asset):
+                name = getattr(entity, "name", repr(entity))
+                msg = (
+                    f"AssetPortfolio only accepts assets; got '{name}' of type {type(entity).__name__}. "
+                    "Pass markets to EnergySystem(markets=...) instead."
+                )
+                raise OdysValidationError(msg)
 
-        Returns:
-            A tuple containing all Generator assets.
-
-        """
-        return self._get_assets_by_type(Generator)
-
-    @property
-    def standalone_storages(self) -> tuple[StandaloneStorage, ...]:
-        """Get all standalone storages in the portfolio.
-
-        Returns:
-            A tuple containing all StandaloneStorage assets.
-
-        """
-        return self._get_assets_by_type(StandaloneStorage)
-
-    @property
-    def fixed_loads(self) -> tuple[FixedLoad, ...]:
-        """Get all fixed loads in the portfolio.
-
-        Returns:
-            A tuple containing all FixedLoad assets.
-
-        """
-        return self._get_assets_by_type(FixedLoad)
-
-    @property
-    def flexible_loads(self) -> tuple[FlexibleLoad, ...]:
-        """Get all flexible loads in the portfolio.
-
-        Returns:
-            A tuple containing all FlexibleLoad assets.
-
-        """
-        return self._get_assets_by_type(FlexibleLoad)
-
-    @property
-    def loads(self) -> tuple[FixedLoad | FlexibleLoad, ...]:
-        """Get all loads (fixed and flexible) in the portfolio.
-
-        Returns:
-            A tuple containing all load assets.
-
-        """
-        return tuple(asset for asset in self._assets.values() if isinstance(asset, (FixedLoad, FlexibleLoad)))
-
-    @property
-    def electric_vehicles(self) -> tuple[ElectricVehicle, ...]:
-        """Get all electric vehicles in the portfolio.
-
-        Returns:
-            A tuple containing all ElectricVehicle assets.
-
-        """
-        return self._get_assets_by_type(ElectricVehicle)
-
-    @property
-    def chargers(self) -> tuple[Charger, ...]:
-        """Get all chargers in the portfolio.
-
-        Returns:
-            A tuple containing all Charger assets.
-
-        """
-        return self._get_assets_by_type(Charger)
+    @staticmethod
+    def _validate_unique_asset_names(assets: tuple[Asset, ...]) -> None:
+        names_count = Counter(asset.name for asset in assets)
+        duplicates = [name for name, count in names_count.items() if count > 1]
+        if duplicates:
+            msg = f"Duplicate asset names in input: {duplicates}"
+            raise OdysValidationError(msg)

@@ -2,9 +2,9 @@
 icon: fontawesome/solid/battery-three-quarters
 ---
 
-# `odys.optimization.constraints.standalone_storage_constraints`
+# `odys.optimization.constraints.stationary_storage_constraints`
 
-Standalone storage constraint construction.
+Stationary storage constraint construction.
 
 Charge and discharge power are bounded by the binary charging mode:
 
@@ -50,6 +50,6 @@ $$
 p^{net}_{b,t,s} = p^{ch}_{b,t,s} - p^{dis}_{b,t,s}
 $$
 
-See also [StandaloneStorage](../../domain/entities/standalone_storage.md) for the domain model and [standalone_storage_parameters](../parameters/standalone_storage_parameters.md) for the parameter extraction.
+See also [StationaryStorage](../../domain/entities/stationary_storage.md) for the domain model and [stationary_storage_parameters](../parameters/stationary_storage_parameters.md) for the parameter extraction.
 
-::: odys.optimization.constraints.standalone_storage_constraints
+::: odys.optimization.constraints.stationary_storage_constraints

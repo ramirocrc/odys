@@ -6,7 +6,7 @@ from linopy.testing import assert_linequal
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.standalone_storage import StandaloneStorage
+from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.model.dimensions import ModelDimension
@@ -63,8 +63,8 @@ def generator_without_shutdown_cost() -> Generator:
 
 
 @pytest.fixture
-def storage_with_degradation_cost() -> StandaloneStorage:
-    return StandaloneStorage(
+def storage_with_degradation_cost() -> StationaryStorage:
+    return StationaryStorage(
         name="storage_with_degradation_cost",
         capacity=STANDARD_CAPACITY,
         max_charge_power=STANDARD_MAX_CHARGE_POWER,
@@ -76,8 +76,8 @@ def storage_with_degradation_cost() -> StandaloneStorage:
 
 
 @pytest.fixture
-def storage_without_degradation_cost() -> StandaloneStorage:
-    return StandaloneStorage(
+def storage_without_degradation_cost() -> StationaryStorage:
+    return StationaryStorage(
         name="storage_without_degradation_cost",
         capacity=STANDARD_CAPACITY,
         max_charge_power=STANDARD_MAX_CHARGE_POWER,
@@ -87,7 +87,7 @@ def storage_without_degradation_cost() -> StandaloneStorage:
     )
 
 
-def _build_milp_model(assets: list[Generator | StandaloneStorage], load: FixedLoad) -> EnergyMILPModel:
+def _build_milp_model(assets: list[Generator | StationaryStorage], load: FixedLoad) -> EnergyMILPModel:
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(assets=[*assets, load]),
         number_of_steps=len(DEMAND_PROFILE),
@@ -112,14 +112,14 @@ class TestPerScenarioProfitDegradationCost:
         generator1: Generator,
         load1: FixedLoad,
     ) -> None:
-        storage: StandaloneStorage = request.getfixturevalue(storage_fixture_name)
+        storage: StationaryStorage = request.getfixturevalue(storage_fixture_name)
         model = _build_milp_model([generator1, storage], load1)
 
         actual_profit = model.per_scenario_profit()
 
         generators = model.parameters.generators
         assert generators is not None
-        storages = model.parameters.standalone_storages
+        storages = model.parameters.stationary_storages
         assert storages is not None
         timestep_hours = TIMESTEP / timedelta(hours=1)
         expected_profit = -(
@@ -127,10 +127,10 @@ class TestPerScenarioProfitDegradationCost:
             + model.vars.generator_startup * generators.startup_cost
             + model.vars.generator_shutdown * generators.shutdown_cost
         ).sum([ModelDimension.Time, ModelDimension.Generators]) - (
-            (model.vars.standalone_storage_power_in + model.vars.standalone_storage_power_out)
+            (model.vars.stationary_storage_power_in + model.vars.stationary_storage_power_out)
             * timestep_hours
             * storages.degradation_cost
-        ).sum([ModelDimension.Time, ModelDimension.StandaloneStorages])
+        ).sum([ModelDimension.Time, ModelDimension.StationaryStorages])
 
         assert_linequal(actual_profit, expected_profit)
 

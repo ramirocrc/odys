@@ -24,7 +24,6 @@ Use this section to find the public import surface first, then drill into intern
 
 - `odys.optimization`
 - `odys.solvers`
-- `odys.utils`
 
 ## Package tree
 
@@ -39,7 +38,7 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.domain.entities.generator`
     - `odys.domain.entities.market`
     - `odys.domain.entities.portfolio`
-    - `odys.domain.entities.standalone_storage`
+    - `odys.domain.entities.stationary_storage`
     - `odys.domain.entities.storage`
     - `odys.domain.entities.trip`
   - `odys.domain.exceptions`
@@ -58,7 +57,7 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.optimization.constraints.market_constraints`
     - `odys.optimization.constraints.model_constraint`
     - `odys.optimization.constraints.scenario_constraints`
-    - `odys.optimization.constraints.standalone_storage_constraints`
+    - `odys.optimization.constraints.stationary_storage_constraints`
     - `odys.optimization.constraints.storage_constraints`
   - `odys.optimization.model`
     - `odys.optimization.model.dimensions`
@@ -67,7 +66,6 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.optimization.model.milp_model`
     - `odys.optimization.model.model_builder`
     - `odys.optimization.model.objectives`
-    - `odys.optimization.model.registry`
     - `odys.optimization.model.variable_definitions`
   - `odys.parameters`
     - `odys.parameters.energy_system_parameters`
@@ -78,7 +76,7 @@ Use this section to find the public import surface first, then drill into intern
       - `odys.parameters.entity_parameters.generator_parameters`
       - `odys.parameters.entity_parameters.market_parameters`
       - `odys.parameters.entity_parameters.scenario_parameters`
-      - `odys.parameters.entity_parameters.standalone_storage_parameters`
+      - `odys.parameters.entity_parameters.stationary_storage_parameters`
 - `odys.results`
   - `odys.results.dispatch`
   - `odys.results.optimization_results`
@@ -86,5 +84,3 @@ Use this section to find the public import surface first, then drill into intern
   - `odys.solvers.config_translators`
   - `odys.solvers.solver`
   - `odys.solvers.solver_config`
-- `odys.utils`
-  - `odys.utils.logging`

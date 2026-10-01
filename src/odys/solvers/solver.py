@@ -9,7 +9,7 @@ from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysSolverError
 from odys.optimization.model.milp_model import EnergyMILPModel
-from odys.results.optimization_results import OptimalDisptachResults
+from odys.results.optimization_results import OptimalDispatchResults
 from odys.solvers.config_translators import translate_solver_config
 from odys.solvers.solver_config import SolverConfig, SolverName
 
@@ -17,7 +17,7 @@ from odys.solvers.solver_config import SolverConfig, SolverName
 def optimize_algebraic_model(
     milp_model: EnergyMILPModel,
     solver_config: SolverConfig | None = None,
-) -> OptimalDisptachResults:
+) -> OptimalDispatchResults:
     """Solve the optimization model using the configured solver.
 
     Args:
@@ -40,7 +40,7 @@ def optimize_algebraic_model(
         **translate_solver_config(config),
     )
 
-    return OptimalDisptachResults(
+    return OptimalDispatchResults(
         solver_status=SolverStatus(solver_status),
         termination_condition=TerminationCondition(termination_condition),
         solution=milp_model.linopy_model.solution,

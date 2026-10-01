@@ -116,27 +116,26 @@ attractive. That is the core value of CVaR: it makes the optimizer care about
 bad outcomes, not only the average one.
 """
 
+import logging
 from datetime import timedelta
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
     Generator,
     Objective,
+    OptimalDispatchResults,
     ProfitTerm,
     StochasticScenario,
-    TradeDirection,
 )
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def run_cvar_market_risk() -> tuple[OptimalDisptachResults, OptimalDisptachResults]:
+def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
     """Run the CVaR market risk example and return both optimization results."""
     ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=20.0)
 
@@ -146,13 +145,13 @@ def run_cvar_market_risk() -> tuple[OptimalDisptachResults, OptimalDisptachResul
         name="sdac",
         max_trading_volume_per_step=150,
         stage_fixed=True,
-        trade_direction=TradeDirection.SELL_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
     )
     sidc = EnergyMarket(
         name="sidc",
         stage_fixed=False,
         max_trading_volume_per_step=100,
-        trade_direction=TradeDirection.SELL_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
     )
 
     scenarios = [
@@ -205,6 +204,8 @@ def run_cvar_market_risk() -> tuple[OptimalDisptachResults, OptimalDisptachResul
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result_max_expected_profit, result_penalized_cvar = run_cvar_market_risk()
     logger.info("optimal solution for max expected profit")
     logger.info(result_max_expected_profit.markets.sell_volume)

@@ -16,7 +16,7 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $s$ | Scenario |
 | $s_0$ | First scenario |
 | $g$ | Generator |
-| $b$ | Standalone storage asset |
+| $b$ | Stationary storage asset |
 | $e$ | Electric vehicle |
 | $c$ | Charger |
 | $l$ | Load |

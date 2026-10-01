@@ -45,7 +45,7 @@ $$
 | ----------------------------- | ---------------- | -------- | -------- | ----------------------------------------------------------- |
 | `name`                        | `str`            | Yes      | -        | Unique identifier for the market                            |
 | `max_trading_volume_per_step` | `float`          | Yes      | -        | Maximum volume that can be traded per timestep (MW)         |
-| `trade_direction`             | `TradeDirection` | No       | `BUY_AND_SELL` | Allowed directions: `BUY_ONLY`, `SELL_ONLY`, or `BUY_AND_SELL` |
+| `allowed_trade_direction`             | `AllowedTradeDirection` | No       | `BUY_AND_SELL` | Allowed directions: `BUY_ONLY`, `SELL_ONLY`, or `BUY_AND_SELL` |
 | `stage_fixed`                 | `bool`           | No       | `False`  | If `True`, trading decisions are fixed across all scenarios |
 
 ## Trade direction
@@ -53,20 +53,20 @@ $$
 You can restrict which way the market trades. Use `BUY_ONLY` for procurement markets, `SELL_ONLY` for feed-in tariffs, or leave the default `BUY_AND_SELL` for markets that allow two-way trading.
 
 ```python
-from odys import EnergyMarket, TradeDirection
+from odys import EnergyMarket, AllowedTradeDirection
 
 # Can only sell into this market
 sell_only = EnergyMarket(
     name="feed_in",
     max_trading_volume_per_step=100.0,
-    trade_direction=TradeDirection.SELL_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
 
 # Can only buy from this market
 buy_only = EnergyMarket(
     name="backup_supply",
     max_trading_volume_per_step=50.0,
-    trade_direction=TradeDirection.BUY_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
 )
 ```
 

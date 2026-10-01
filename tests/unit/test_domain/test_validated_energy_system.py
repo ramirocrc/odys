@@ -9,11 +9,12 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.entities.base import Asset
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.standalone_storage import StandaloneStorage
+from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.scenarios import Scenario, StochasticScenario
 from odys.energy_system import EnergySystem
@@ -32,8 +33,8 @@ def testing_generator() -> Generator:
 
 
 @pytest.fixture
-def testing_battery() -> StandaloneStorage:
-    return StandaloneStorage(
+def testing_battery() -> StationaryStorage:
+    return StationaryStorage(
         name="test_battery",
         capacity=50.0,
         max_charge_power=25.0,
@@ -52,7 +53,7 @@ def testing_load() -> FixedLoad:
 @pytest.fixture
 def testing_portfolio(
     testing_generator: Generator,
-    testing_battery: StandaloneStorage,
+    testing_battery: StationaryStorage,
     testing_load: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[testing_generator, testing_battery, testing_load])
@@ -181,7 +182,7 @@ def portfolio_without_loads() -> AssetPortfolio:
 def portfolio_without_generators() -> AssetPortfolio:
     return AssetPortfolio(
         assets=[
-            StandaloneStorage(
+            StationaryStorage(
                 name="battery",
                 capacity=50.0,
                 max_charge_power=25.0,
@@ -427,4 +428,28 @@ def test_stochastic_scenarios_with_duplicate_names_raise_for_any_sequence_type(
             number_of_steps=len(valid_demand_profile),
             timestep=timedelta(hours=1),
             scenarios=scenarios,
+        )
+
+
+class _UnsupportedHeatPump(Asset):
+    """An asset type the optimizer has no model for."""
+
+
+@pytest.mark.parametrize(
+    "unsupported_asset",
+    [Asset(name="bare_asset"), _UnsupportedHeatPump(name="heat_pump")],
+    ids=["bare_asset", "unknown_subclass"],
+)
+def test_energy_system_rejects_asset_types_the_optimizer_cannot_model(
+    testing_portfolio: AssetPortfolio,
+    valid_demand_profile: list[float],
+    unsupported_asset: Asset,
+) -> None:
+    portfolio = AssetPortfolio([*testing_portfolio.assets.values(), unsupported_asset])
+    with pytest.raises(OdysValidationError, match=rf"not supported.*'{unsupported_asset.name}'"):
+        EnergySystem(
+            portfolio=portfolio,
+            number_of_steps=len(valid_demand_profile),
+            timestep=timedelta(hours=1),
+            scenarios=Scenario(fixed_load_profiles={"test_load": valid_demand_profile}),
         )

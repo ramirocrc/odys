@@ -6,10 +6,10 @@ in energy system optimization problems.
 
 from pydantic import Field
 
-from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.base import Asset
 
 
-class Charger(EnergyEntity):
+class Charger(Asset):
     """Represents an EV charger in the energy system.
 
     Chargers are constraint entities that track which EV is connected

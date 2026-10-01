@@ -172,4 +172,4 @@ scenario = Scenario(
 
 ## Next steps
 
-Ready to add time-shifting to your portfolio? See [StandaloneStorage](storage.md) to model batteries, or [ElectricVehicle](electric_vehicle.md) for mobile storage with trip schedules.
+Ready to add time-shifting to your portfolio? See [StationaryStorage](storage.md) to model batteries, or [ElectricVehicle](electric_vehicle.md) for mobile storage with trip schedules.

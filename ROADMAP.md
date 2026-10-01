@@ -8,7 +8,7 @@ Energy system components that can be included in an optimization portfolio.
 
 **Current:**
 - Generator (ramp rates, min up/down time, startup/shutdown costs)
-- StandaloneStorage (stationary battery with charge/discharge, efficiency, SOC constraints)
+- StationaryStorage (stationary battery with charge/discharge, efficiency, SOC constraints)
 - ElectricVehicle (storage with trip schedules and charging constraints)
 - Charger (EV charging infrastructure with power limits)
 - FixedLoad (inelastic demand)
@@ -66,7 +66,7 @@ MILP formulation, constraints, solver infrastructure, and performance.
 - [ ] DoD-dependent battery degradation (cyclic aging with depth-of-discharge bins, calendar aging)
 - [ ] Grid/transformer capacity constraints (aggregate charger loads through transformer limits)
 - [ ] Here-and-now staging (non-anticipativity) for EV charging and charger-assignment decisions (extend stage_fixed beyond markets)
-- [ ] Remove redundant ev_net_power decision variable (derive net power in results post-processing; same applies to standalone_storage_net_power)
+- [ ] Remove redundant ev_net_power decision variable (derive net power in results post-processing; same applies to stationary_storage_net_power)
 
 ## Results & Output
 
@@ -74,7 +74,7 @@ Dispatch results, analysis capabilities, and export formats.
 
 **Current:**
 - OptimalDispatchResults (frozen snapshot of solved model)
-- Per-asset dispatch classes (GeneratorDispatch, StandaloneStorageDispatch, etc.)
+- Per-asset dispatch classes (GeneratorDispatch, StationaryStorageDispatch, etc.)
 - Export: xarray Dataset, pandas DataFrame, pandas Series
 
 **Coming soon:**

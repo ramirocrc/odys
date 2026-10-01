@@ -7,7 +7,7 @@ from linopy.testing import assert_conequal
 
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.market import EnergyMarket, TradeDirection
+from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.scenarios import Scenario
 from odys.energy_system import EnergySystem
@@ -22,7 +22,7 @@ def market_buy_only() -> EnergyMarket:
     return EnergyMarket(
         name="market_buy",
         max_trading_volume_per_step=100.0,
-        trade_direction=TradeDirection.BUY_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
     )
 
 
@@ -31,7 +31,7 @@ def market_sell_only() -> EnergyMarket:
     return EnergyMarket(
         name="market_sell",
         max_trading_volume_per_step=150.0,
-        trade_direction=TradeDirection.SELL_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
     )
 
 
@@ -40,7 +40,7 @@ def market_buy_and_sell() -> EnergyMarket:
     return EnergyMarket(
         name="market_both",
         max_trading_volume_per_step=200.0,
-        trade_direction=TradeDirection.BUY_AND_SELL,
+        allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
     )
 
 
