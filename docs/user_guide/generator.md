@@ -149,20 +149,22 @@ $$
 
 ## Available capacity profiles
 
-In a `Scenario`, you can limit the generator's available capacity per timestep using `available_capacity_profiles`. This is useful for modeling things like planned maintenance or variable renewable output:
+In a `Scenario`, you can limit the generator's available capacity per timestep with an `AvailableCapacityProfile`. This is useful for modeling things like planned maintenance or variable renewable output:
 
 ```python
-from odys import Scenario
+from odys import AvailableCapacityProfile, LoadProfile, FixedLoad, Scenario
+
+load = FixedLoad(name="load")
 
 scenario = Scenario(
-    available_capacity_profiles={
-        "gas_turbine": [100, 100, 50, 50, 100, 100, 100],
-    },
-    fixed_load_profiles={"load": [80, 90, 70, 60, 85, 95, 80]},
+    profiles=(
+        AvailableCapacityProfile(generator=gen, values=[100, 100, 50, 50, 100, 100, 100]),
+        LoadProfile(load=load, values=[80, 90, 70, 60, 85, 95, 80]),
+    ),
 )
 ```
 
-The key in the dict must match the generator's `name`.
+The profile references the generator object, and each value must lie between 0 and its `nominal_power`; otherwise building the profile raises an `OdysValidationError`.
 
 The implemented constraint is:
 

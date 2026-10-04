@@ -58,6 +58,7 @@ from odys import (
     EnergyMarket,
     EnergySystem,
     OptimalDispatchResults,
+    PriceProfile,
     Scenario,
     Trip,
 )
@@ -186,9 +187,7 @@ def run_ev_fleet_optimization() -> OptimalDispatchResults:
 
     portfolio = AssetPortfolio(assets=[*EVS, *CHARGERS])
 
-    scenario = Scenario(
-        market_prices={"grid_market": MARKET_PRICES},
-    )
+    scenario = Scenario(profiles=(PriceProfile(market=market, values=MARKET_PRICES),))
 
     energy_system = EnergySystem(
         portfolio=portfolio,

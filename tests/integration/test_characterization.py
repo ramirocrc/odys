@@ -17,13 +17,16 @@ import pytest
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
+    AvailableCapacityProfile,
     Battery,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
     Generator,
+    LoadProfile,
     OptimalDispatchResults,
+    PriceProfile,
     Scenario,
     SolverConfig,
     StationaryStorage,
@@ -125,13 +128,16 @@ def _unit_commitment_system() -> EnergySystem:
         variable_cost=80.0,
         startup_cost=10.0,
     )
+    demand = FixedLoad(name="demand")
     return EnergySystem(
-        portfolio=AssetPortfolio([baseload, peaker, FixedLoad(name="demand")]),
+        portfolio=AssetPortfolio([baseload, peaker, demand]),
         timestep=ONE_HOUR,
         number_of_steps=len(COMMITMENT_LOAD),
         scenarios=Scenario(
-            available_capacity_profiles={"baseload": BASELOAD_CAPACITY},
-            fixed_load_profiles={"demand": COMMITMENT_LOAD},
+            profiles=(
+                AvailableCapacityProfile(generator=baseload, values=BASELOAD_CAPACITY),
+                LoadProfile(load=demand, values=COMMITMENT_LOAD),
+            ),
         ),
     )
 
@@ -159,15 +165,18 @@ def _storage_and_market_system() -> EnergySystem:
         max_trading_volume_per_step=150.0,
         allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
     )
+    site = FixedLoad(name="site")
     return EnergySystem(
-        portfolio=AssetPortfolio([battery, flexible, FixedLoad(name="site")]),
+        portfolio=AssetPortfolio([battery, flexible, site]),
         markets=market,
         timestep=HALF_HOUR,
         number_of_steps=len(STORAGE_LOAD),
         scenarios=Scenario(
-            fixed_load_profiles={"site": STORAGE_LOAD},
-            flexible_load_base_profiles={"process": FLEXIBLE_BASE},
-            market_prices={"grid": STORAGE_PRICES},
+            profiles=(
+                LoadProfile(load=site, values=STORAGE_LOAD),
+                LoadProfile(load=flexible, values=FLEXIBLE_BASE),
+                PriceProfile(market=market, values=STORAGE_PRICES),
+            ),
         ),
     )
 

@@ -4,9 +4,14 @@ import xarray as xr
 from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
-from odys.optimization.model.dimensions import ModelDimension
-from odys.optimization.model.variable_definitions import VariableDefinitionRegistry
-from odys.parameters.energy_system_parameters import EnergySystemParameters
+from odys.optimization.formulations.charging import ChargingFormulation
+from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
+from odys.optimization.formulations.energy_market import EnergyMarketFormulation
+from odys.optimization.formulations.flexible_load import FlexibleLoadFormulation
+from odys.optimization.formulations.generator import GeneratorFormulation
+from odys.optimization.formulations.stationary_storage import StationaryStorageFormulation
+from odys.optimization.problem import OptimizationProblem
+from odys.parameters.dimensions import ModelDimension
 from odys.results.dispatch import (
     ChargerDispatch,
     ElectricVehicleDispatch,
@@ -25,14 +30,8 @@ class OptimalDispatchResults:
     """
 
     __slots__ = (
-        "_has_chargers",
-        "_has_electric_vehicles",
-        "_has_flexible_loads",
-        "_has_generators",
-        "_has_markets",
-        "_has_stationary_storages",
         "_objective_value",
-        "_parameters",
+        "_problem",
         "_solution",
         "_solver_status",
         "_termination_condition",
@@ -45,7 +44,7 @@ class OptimalDispatchResults:
         termination_condition: TerminationCondition,
         solution: xr.Dataset,
         objective_value: float | None,
-        parameters: EnergySystemParameters,
+        problem: OptimizationProblem,
     ) -> None:
         """Initialize OptimalDispatchResults."""
         self._solver_status = solver_status
@@ -55,13 +54,7 @@ class OptimalDispatchResults:
         self._solution = solution
         self._objective_value = objective_value
         self._variable_names = set(solution.variables.keys())
-        self._has_generators = ModelDimension.Generators in solution.dims
-        self._has_stationary_storages = ModelDimension.StationaryStorages in solution.dims
-        self._has_electric_vehicles = ModelDimension.EVs in solution.dims
-        self._has_chargers = ModelDimension.Chargers in solution.dims
-        self._has_markets = ModelDimension.Markets in solution.dims
-        self._has_flexible_loads = ModelDimension.FlexibleLoads in solution.dims
-        self._parameters = parameters
+        self._problem = problem
 
     @property
     def solver_status(self) -> str:
@@ -87,89 +80,86 @@ class OptimalDispatchResults:
     def generators(self) -> GeneratorDispatch:
         """Get generator dispatch results."""
         self._validate_terminated_successfully()
-        if not self._has_generators:
+        if self._problem.formulation_of(GeneratorFormulation) is None:
             msg = "This model does not contain generator results"
             raise OdysNoResultsError(msg)
 
         return GeneratorDispatch(
-            power=self._solution[VariableDefinitionRegistry.GENERATOR_POWER.var_name],
-            status=self._solution[VariableDefinitionRegistry.GENERATOR_STATUS.var_name],
-            startup=self._solution[VariableDefinitionRegistry.GENERATOR_STARTUP.var_name],
-            shutdown=self._solution[VariableDefinitionRegistry.GENERATOR_SHUTDOWN.var_name],
+            power=self._solution[GeneratorFormulation.power_name],
+            status=self._solution[GeneratorFormulation.status_name],
+            startup=self._solution[GeneratorFormulation.startup_name],
+            shutdown=self._solution[GeneratorFormulation.shutdown_name],
         )
 
     @property
     def stationary_storages(self) -> StationaryStorageDispatch:
         """Get stationary storage dispatch results."""
         self._validate_terminated_successfully()
-        if not self._has_stationary_storages:
+        if self._problem.formulation_of(StationaryStorageFormulation) is None:
             msg = "This model does not contain stationary storage results"
             raise OdysNoResultsError(msg)
 
         return StationaryStorageDispatch(
-            net_power=self._solution[VariableDefinitionRegistry.STATIONARY_STORAGE_POWER_NET.var_name],
-            soc=self._solution[VariableDefinitionRegistry.STATIONARY_STORAGE_SOC.var_name],
-            charge_mode=self._solution[VariableDefinitionRegistry.STATIONARY_STORAGE_CHARGE_MODE.var_name],
+            net_power=self._solution[StationaryStorageFormulation.net_power_name],
+            soc=self._solution[StationaryStorageFormulation.soc_name],
+            charge_mode=self._solution[StationaryStorageFormulation.charge_mode_name],
         )
 
     @property
     def electric_vehicles(self) -> ElectricVehicleDispatch:
         """Get electric vehicle dispatch results."""
         self._validate_terminated_successfully()
-        if not self._has_electric_vehicles:
+        if self._problem.formulation_of(ElectricVehicleFormulation) is None:
             msg = "This model does not contain electric vehicle results"
             raise OdysNoResultsError(msg)
 
         return ElectricVehicleDispatch(
-            net_power=self._solution[VariableDefinitionRegistry.EV_POWER_NET.var_name],
-            soc=self._solution[VariableDefinitionRegistry.EV_SOC.var_name],
-            charge_mode=self._solution[VariableDefinitionRegistry.EV_CHARGE_MODE.var_name],
+            net_power=self._solution[ElectricVehicleFormulation.net_power_name],
+            soc=self._solution[ElectricVehicleFormulation.soc_name],
+            charge_mode=self._solution[ElectricVehicleFormulation.charge_mode_name],
         )
 
     @property
     def chargers(self) -> ChargerDispatch:
         """Get charger dispatch results."""
         self._validate_terminated_successfully()
-        if not self._has_chargers:
+        if self._problem.formulation_of(ChargingFormulation) is None:
             msg = "This model does not contain charger results"
             raise OdysNoResultsError(msg)
 
         return ChargerDispatch(
-            assignment=self._solution[VariableDefinitionRegistry.CHARGER_EV_ASSIGNMENT.var_name],
-            power_in=self._solution[VariableDefinitionRegistry.EV_POWER_IN.var_name],
+            assignment=self._solution[ChargingFormulation.assignment_name],
+            power_in=self._solution[ElectricVehicleFormulation.power_in_name],
         )
 
     @property
     def markets(self) -> MarketDispatch:
         """Get market dispatch results."""
         self._validate_terminated_successfully()
-        if not self._has_markets:
+        if self._problem.formulation_of(EnergyMarketFormulation) is None:
             msg = "This model does not contain market results"
             raise OdysNoResultsError(msg)
 
         return MarketDispatch(
-            sell_volume=self._solution[VariableDefinitionRegistry.MARKET_SELL.var_name],
-            buy_volume=self._solution[VariableDefinitionRegistry.MARKET_BUY.var_name],
+            sell_volume=self._solution[EnergyMarketFormulation.sell_volume_name],
+            buy_volume=self._solution[EnergyMarketFormulation.buy_volume_name],
         )
 
     @property
     def flexible_loads(self) -> FlexibleLoadDispatch:
         """Get flexible load dispatch results."""
         self._validate_terminated_successfully()
-        if not self._has_flexible_loads:
+        flexible_loads = self._problem.formulation_of(FlexibleLoadFormulation)
+        if flexible_loads is None:
             msg = "This model does not contain flexible load results"
             raise OdysNoResultsError(msg)
-
-        base_profiles = self._parameters.scenarios.flexible_load_base_profiles
-        if base_profiles is None:
-            msg = "Flexible loads exist but base profiles are missing"
-            raise OdysNoResultsError(msg)
+        base_profiles = flexible_loads.base_profiles
 
         if ModelDimension.Scenarios in base_profiles.dims and len(base_profiles.coords[ModelDimension.Scenarios]) == 1:
             base_profiles = base_profiles.squeeze(ModelDimension.Scenarios, drop=True)
 
         return FlexibleLoadDispatch(
-            load_adjustment=self._solution[VariableDefinitionRegistry.LOAD_ADJUSTMENT.var_name],
+            load_adjustment=self._solution[FlexibleLoadFormulation.variable_name],
             base_profiles=base_profiles,
         )
 

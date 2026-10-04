@@ -5,6 +5,7 @@ from enum import StrEnum
 from pydantic import Field
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.horizon import OperatingConditions
 
 
 class AllowedTradeDirection(StrEnum):
@@ -36,8 +37,8 @@ class EnergyMarket(EnergyEntity):
     ``stage_fixed`` ``False`` can react to each scenario independently.
 
     Attributes:
-        name: Unique name of the energy market. Must match the corresponding
-            key in the scenario's ``market_prices`` mapping.
+        name: Unique name of the energy market. Each scenario gives its prices
+            in a ``PriceProfile`` that references the market.
         max_trading_volume_per_step: Maximum power (in MW) that can be traded
             in a single optimization timestep. The traded energy is this power
             times the timestep length.
@@ -53,3 +54,7 @@ class EnergyMarket(EnergyEntity):
         default=False,
         description="If true, the associated variables are fixed across scenarios.",
     )
+
+    def max_supply(self, conditions: OperatingConditions) -> tuple[float, ...]:
+        """Return the maximum trading volume at each timestep, in MW."""
+        return (self.max_trading_volume_per_step,) * conditions.horizon.number_of_steps

@@ -60,6 +60,8 @@ A `Trip` defines when the vehicle is driving, how much energy it consumes, and t
 
 While a trip is active, the EV cannot charge, discharge, or be assigned to a charger. Trip energy is subtracted from the battery SoC during the trip window.
 
+Building an `ElectricVehicle` raises an `OdysValidationError` if two of its trips overlap, or if a trip departing at `start_time=0` cannot be served from the starting charge: it needs a higher `min_soc_at_departure` than the battery's `soc_start`, or more energy than the battery holds above `soc_min` at the start (`(soc_start − soc_min) × capacity`). There is no earlier step to charge in, and the vehicle cannot charge while driving. Creating the `EnergySystem` also checks that every trip ends within `number_of_steps`.
+
 ```python
 Trip(
     name="midday_route",

@@ -1,41 +1,23 @@
 """Parameter definitions for energy system optimization models.
 
-This module defines the EnergySystemParameters bag that holds all
-parameters needed by the optimization model.
+This module defines EnergySystemParameters, which holds what the formulations
+do not own yet: the shared context and the objective (until R3.5).
 """
-
-from datetime import timedelta
 
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.objective import Objective
-from odys.optimization.model.coordinates import CoordinatesStore
-from odys.parameters.entity_parameters.charger_parameters import ChargerParameters
-from odys.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
-from odys.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
-from odys.parameters.entity_parameters.generator_parameters import GeneratorParameters
-from odys.parameters.entity_parameters.market_parameters import MarketParameters
-from odys.parameters.entity_parameters.scenario_parameters import ScenarioParameters
-from odys.parameters.entity_parameters.stationary_storage_parameters import StationaryStorageParameters
+from odys.parameters.context import ModelContext
 
 
 class EnergySystemParameters(BaseModel):
-    """Collection of all energy system parameters for optimization models.
+    """The shared context (coordinates, step length, probabilities) and the objective of the problem.
 
-    Time and scenario coordinates are always present. Asset parameter blocks
-    are present only when the corresponding asset type exists in the portfolio.
+    Every entity type's parameters live in its formulation; this holds only what
+    is not owned by one, until the objective terms become formulations (R3.5).
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
 
-    timestep: timedelta
+    context: ModelContext
     objective: Objective
-    scenarios: ScenarioParameters
-    coordinates_store: CoordinatesStore
-
-    generators: GeneratorParameters | None = None
-    stationary_storages: StationaryStorageParameters | None = None
-    flexible_loads: FlexibleLoadParameters | None = None
-    markets: MarketParameters | None = None
-    chargers: ChargerParameters | None = None
-    electric_vehicles: ElectricVehicleParameters | None = None

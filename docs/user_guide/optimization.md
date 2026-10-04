@@ -56,10 +56,14 @@ Configure weights with `Objective`, `ProfitTerm`, and `CVaRTerm`:
 from odys import CVaRTerm, Objective, ProfitTerm
 
 objective = Objective(
-    profit=ProfitTerm(weight=1.0),
-    cvar=CVaRTerm(weight=0.5, confidence_level=0.95),
+    terms=(
+        ProfitTerm(weight=1.0),
+        CVaRTerm(weight=0.5, confidence_level=0.95),
+    ),
 )
 ```
+
+An `Objective` holds a tuple of terms: a `ProfitTerm` is required, a `CVaRTerm` is optional, and each type appears at most once (otherwise building it raises an `OdysValidationError`). `Objective()` is the default, `Objective(terms=(ProfitTerm(weight=1.0),))`, which maximizes expected profit. Read a term back with `objective.term_of(CVaRTerm)`.
 
 If you enable CVaR, the shortfall variables satisfy:
 
