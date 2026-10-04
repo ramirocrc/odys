@@ -7,9 +7,10 @@ on initialization and provides an optimize() method for solving.
 
 from collections.abc import Sequence
 from datetime import timedelta
+from functools import cached_property
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
@@ -18,24 +19,18 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.stationary_storage import StationaryStorage
-from odys.domain.objective import Objective, ProfitTerm
-from odys.domain.scenarios import (
-    Scenario,
-    StochasticScenario,
-    validate_sequence_of_stochastic_scenarios,
-)
+from odys.domain.horizon import Horizon
+from odys.domain.objective import Objective
+from odys.domain.scenario import Scenario, ScenarioSet
 from odys.domain.validation import validate_energy_system_inputs
-from odys.optimization.model.coordinates import CoordinatesStore, ModelCoordinates
-from odys.optimization.model.dimensions import ModelDimension
+from odys.optimization.formulations import FORMULATIONS
+from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.optimization.model.model_builder import build_model
+from odys.optimization.problem import OptimizationProblem
+from odys.parameters.context import ModelContext
+from odys.parameters.coordinates import Coordinates
+from odys.parameters.dimensions import ModelDimension
 from odys.parameters.energy_system_parameters import EnergySystemParameters
-from odys.parameters.entity_parameters.charger_parameters import ChargerParameters
-from odys.parameters.entity_parameters.electric_vehicle_parameters import ElectricVehicleParameters
-from odys.parameters.entity_parameters.flexible_load_parameters import FlexibleLoadParameters
-from odys.parameters.entity_parameters.generator_parameters import GeneratorParameters
-from odys.parameters.entity_parameters.market_parameters import MarketParameters
-from odys.parameters.entity_parameters.scenario_parameters import ScenarioParameters
-from odys.parameters.entity_parameters.stationary_storage_parameters import StationaryStorageParameters
 from odys.results.optimization_results import OptimalDispatchResults
 from odys.solvers.solver import optimize_algebraic_model
 from odys.solvers.solver_config import SolverConfig
@@ -50,25 +45,26 @@ class EnergySystem(BaseModel):
     for solving the optimization problem.
 
     Validation includes:
-    - Validating that scenario probabilities sum to 1
-    - Ensuring unique scenario names
-    - Validating load profiles match portfolio loads
-    - Validating market prices match configured markets
-    - Checking capacity profile lengths match time steps
-    - Verifying available capacity profiles are only for generators
-    - Ensuring maximum available power can meet peak demand
+    - Validating that the timestep is positive and there is at least one step
+    - Validating that scenario probabilities sum to 1 and names are unique
+    - Checking that each profile references an asset or market of the system
+    - Checking that every load and market has a profile in every scenario
+    - Checking that every profile has one value per timestep
+    - Checking that electric vehicle trips fit the horizon
+    - Ensuring maximum supply can meet minimum demand at every timestep
 
     Raises:
         OdysValidationError: If the system configuration is invalid or infeasible.
 
     Example:
         >>> gen = Generator(name="gen1", nominal_power=100, variable_cost=20)
-        >>> portfolio = AssetPortfolio(assets=[gen])
+        >>> load = FixedLoad(name="load1")
+        >>> portfolio = AssetPortfolio(assets=[gen, load])
         >>> system = EnergySystem(
         ...     portfolio=portfolio,
         ...     timestep=timedelta(hours=1),
-        ...     number_of_steps=24,
-        ...     scenarios=[Scenario()],
+        ...     number_of_steps=3,
+        ...     scenarios=Scenario(profiles=(LoadProfile(load=load, values=[50, 80, 60]),)),
         ... )
         >>> results = system.optimize()
     """
@@ -78,61 +74,43 @@ class EnergySystem(BaseModel):
     portfolio: AssetPortfolio
     timestep: timedelta
     number_of_steps: int
-    objective: Objective | None = None
+    objective: Objective = Field(default_factory=Objective)
     markets: EnergyMarket | Sequence[EnergyMarket] | None = Field(default=None, init_var=True)
-    scenarios: Scenario | Sequence[StochasticScenario] = Field(init_var=True)
-
-    @field_validator("scenarios", mode="after")
-    @staticmethod
-    def _validate_scenarios(
-        value: Scenario | Sequence[StochasticScenario],
-    ) -> Scenario | Sequence[StochasticScenario]:
-        if not isinstance(value, Scenario):
-            validate_sequence_of_stochastic_scenarios(value)
-        return value
+    scenarios: Scenario | Sequence[Scenario] = Field(init_var=True)
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:
         validate_energy_system_inputs(
             portfolio=self.portfolio,
-            scenarios=self.collection_of_scenarios,
+            scenario_set=self.scenario_set,
             markets=self.collection_of_markets,
-            number_of_steps=self.number_of_steps,
-            timestep=self.timestep,
+            horizon=self.horizon,
         )
         return self
 
     @property
-    def collection_of_scenarios(self) -> tuple[StochasticScenario, ...]:
-        """Return scenarios as a normalized tuple.
+    def horizon(self) -> Horizon:
+        """Return the time grid of the optimization."""
+        return Horizon(timestep=self.timestep, number_of_steps=self.number_of_steps)
 
-        If a single deterministic Scenario is provided, it is wrapped in a
-        StochasticScenario with probability 1.0.
-        """
+    @cached_property
+    def scenario_set(self) -> ScenarioSet:
+        """Return the scenarios as a `ScenarioSet`; a single `Scenario` becomes a one-element set."""
         if isinstance(self.scenarios, Scenario):
-            return (
-                StochasticScenario(
-                    name="deterministic_scenario",
-                    probability=1.0,
-                    available_capacity_profiles=self.scenarios.available_capacity_profiles,
-                    fixed_load_profiles=self.scenarios.fixed_load_profiles,
-                    flexible_load_base_profiles=self.scenarios.flexible_load_base_profiles,
-                    market_prices=self.scenarios.market_prices,
-                ),
-            )
-        return tuple(self.scenarios)
+            return ScenarioSet(scenarios=(self.scenarios,))
+        return ScenarioSet(scenarios=tuple(self.scenarios))
 
-    @property
+    @cached_property
     def collection_of_markets(self) -> tuple[EnergyMarket, ...]:
         """Return markets as a normalized tuple."""
-        if not self.markets:
+        if self.markets is None:
             return ()
         if isinstance(self.markets, EnergyMarket):
             return (self.markets,)
         return tuple(self.markets)
 
-    def build_parameters(self) -> EnergySystemParameters:
-        """Build parameters from this energy system for the optimization model."""
+    def build_problem(self) -> OptimizationProblem:
+        """Build the optimization problem of this energy system: one formulation per entity type present."""
         gens = self.portfolio.assets_of(Generator)
         storages = self.portfolio.assets_of(StationaryStorage)
         flex = self.portfolio.assets_of(FlexibleLoad)
@@ -140,52 +118,32 @@ class EnergySystem(BaseModel):
         chargers = self.portfolio.assets_of(Charger)
         evs = self.portfolio.assets_of(ElectricVehicle)
 
-        coordinates_store = CoordinatesStore(
-            scenarios=ModelCoordinates(
-                dimension=ModelDimension.Scenarios,
-                values=tuple(scenario.name for scenario in self.collection_of_scenarios),
-            ),
-            time=ModelCoordinates(
-                dimension=ModelDimension.Time,
-                values=tuple(str(t) for t in range(self.number_of_steps)),
-            ),
-            generators=ModelCoordinates(dimension=ModelDimension.Generators, values=tuple(g.name for g in gens))
-            if gens
-            else None,
-            stationary_storages=(
-                ModelCoordinates(dimension=ModelDimension.StationaryStorages, values=tuple(s.name for s in storages))
-                if storages
-                else None
-            ),
-            flexible_loads=(
-                ModelCoordinates(dimension=ModelDimension.FlexibleLoads, values=tuple(f.name for f in flex))
-                if flex
-                else None
-            ),
-            markets=ModelCoordinates(dimension=ModelDimension.Markets, values=tuple(m.name for m in markets))
-            if markets
-            else None,
-            chargers=ModelCoordinates(dimension=ModelDimension.Chargers, values=tuple(c.name for c in chargers))
-            if chargers
-            else None,
-            electric_vehicles=(
-                ModelCoordinates(dimension=ModelDimension.EVs, values=tuple(e.name for e in evs)) if evs else None
-            ),
+        entity_groups = (
+            (ModelDimension.Generators, gens),
+            (ModelDimension.StationaryStorages, storages),
+            (ModelDimension.FlexibleLoads, flex),
+            (ModelDimension.Markets, markets),
+            (ModelDimension.Chargers, chargers),
+            (ModelDimension.EVs, evs),
         )
-        objective = self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0))
+        coordinates = {
+            dimension: Coordinates.of_entities(dimension, entities) for dimension, entities in entity_groups if entities
+        }
+        context = ModelContext(
+            horizon=self.horizon,
+            scenario_set=self.scenario_set,
+            entity_coordinates=tuple(coordinates.values()),
+        )
 
-        return EnergySystemParameters(
-            timestep=self.timestep,
-            objective=objective,
-            coordinates_store=coordinates_store,
-            scenarios=ScenarioParameters(self.collection_of_scenarios, coordinates_store),
-            generators=GeneratorParameters(gens) if gens else None,
-            stationary_storages=StationaryStorageParameters(storages) if storages else None,
-            flexible_loads=FlexibleLoadParameters(flex) if flex else None,
-            markets=MarketParameters(markets) if markets else None,
-            chargers=ChargerParameters(chargers) if chargers else None,
-            electric_vehicles=ElectricVehicleParameters(self.number_of_steps, evs) if evs else None,
-        )
+        legacy = EnergySystemParameters(context=context, objective=self.objective)
+        entities = (*self.portfolio.assets.values(), *markets)
+        formulations: tuple[Formulation, ...] = ()
+        for formulation_type in FORMULATIONS:
+            inputs = FormulationInputs(entities=entities, context=context, built=formulations)
+            formulation = formulation_type.build(inputs)
+            if formulation is not None:
+                formulations = (*formulations, formulation)
+        return OptimizationProblem(legacy=legacy, formulations=formulations)
 
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDispatchResults:
         """Optimize the energy system.
@@ -199,8 +157,7 @@ class EnergySystem(BaseModel):
             OptimizationResults containing the solution and metadata.
 
         """
-        params = self.build_parameters()
-        milp_model = build_model(params)
+        milp_model = build_model(self.build_problem())
         return optimize_algebraic_model(
             milp_model=milp_model,
             solver_config=solver_config,

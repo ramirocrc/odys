@@ -7,7 +7,7 @@ from collections.abc import Iterator
 import pandas as pd
 import xarray as xr
 
-from odys.optimization.model.dimensions import ModelDimension
+from odys.parameters.dimensions import ModelDimension
 
 
 class GeneratorDispatch:

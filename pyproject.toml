@@ -137,17 +137,11 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Parameters only use model dimensions and coordinates from optimization"
+name = "Parameters do not import optimization"
 type = "forbidden"
 source_modules = ["odys.parameters"]
 forbidden_modules = [
-  "odys.optimization.constraints",
-  "odys.optimization.model.milp_model",
-  "odys.optimization.model.model_builder",
-  "odys.optimization.model.objectives",
-  "odys.optimization.model.registry",
-  "odys.optimization.model.variable_definitions",
-  "odys.optimization.model.linopy_converter",
+  "odys.optimization",
   "odys.solvers",
   "odys.results",
   "odys.energy_system",
@@ -166,15 +160,19 @@ source_modules = ["odys.solvers", "odys.results"]
 forbidden_modules = ["odys.energy_system"]
 
 [[tool.importlinter.contracts]]
-name = "Asset constraint groups are independent of each other"
+name = "Formulations are independent of each other (charging may use electric vehicles)"
 type = "independence"
 modules = [
-  "odys.optimization.constraints.charger_constraints",
-  "odys.optimization.constraints.electric_vehicle_constraints",
-  "odys.optimization.constraints.flexible_load_constraints",
-  "odys.optimization.constraints.generator_constraints",
-  "odys.optimization.constraints.market_constraints",
-  "odys.optimization.constraints.stationary_storage_constraints",
+  "odys.optimization.formulations.charging",
+  "odys.optimization.formulations.electric_vehicle",
+  "odys.optimization.formulations.energy_market",
+  "odys.optimization.formulations.fixed_load",
+  "odys.optimization.formulations.flexible_load",
+  "odys.optimization.formulations.generator",
+  "odys.optimization.formulations.stationary_storage",
+]
+ignore_imports = [
+  "odys.optimization.formulations.charging -> odys.optimization.formulations.electric_vehicle",
 ]
 
 [tool.pyrefly]

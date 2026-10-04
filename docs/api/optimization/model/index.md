@@ -10,8 +10,6 @@ Model building and Linopy integration.
 
 ## Modules
 
-- `dimensions`
-- `coordinates`
 - `linopy_converter`
 - `milp_model`
 - `model_builder`

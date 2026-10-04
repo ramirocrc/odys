@@ -48,11 +48,14 @@ from datetime import timedelta
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
+    AvailableCapacityProfile,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
     Generator,
+    LoadProfile,
     OptimalDispatchResults,
+    PriceProfile,
     Scenario,
 )
 
@@ -79,15 +82,14 @@ def run_market_arbitrage() -> OptimalDispatchResults:
     portfolio = AssetPortfolio(assets=[generator_1, load])
 
     scenario = Scenario(
-        available_capacity_profiles={
-            "ccgt": 24 * [100],
-        },
-        fixed_load_profiles={
-            "load": 24 * [70],
-        },
-        market_prices={
-            "market": [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
-        },
+        profiles=(
+            AvailableCapacityProfile(generator=generator_1, values=24 * [100]),
+            LoadProfile(load=load, values=24 * [70]),
+            PriceProfile(
+                market=market,
+                values=[80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
+            ),
+        ),
     )
     energy_system = EnergySystem(
         portfolio=portfolio,

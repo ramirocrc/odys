@@ -11,10 +11,12 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysError
-from odys.domain.scenarios import Scenario
+from odys.domain.profiles import LoadProfile
+from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
-from odys.optimization.model.dimensions import ModelDimension
+from odys.optimization.formulations.charging import ChargingFormulation
 from odys.optimization.model.model_builder import EnergyAlgebraicModelBuilder
+from odys.parameters.dimensions import ModelDimension
 
 logger = logging.getLogger(__name__)
 
@@ -56,24 +58,21 @@ def asset_portfolio_sample(load1: FixedLoad) -> AssetPortfolio:
 
 
 @pytest.fixture
-def energy_system_sample(asset_portfolio_sample: AssetPortfolio) -> EnergySystem:
+def energy_system_sample(asset_portfolio_sample: AssetPortfolio, load1: FixedLoad) -> EnergySystem:
     demand_profile = [150, 200, 150]
     return EnergySystem(
         portfolio=asset_portfolio_sample,
         number_of_steps=len(demand_profile),
         timestep=timedelta(hours=1),
-        scenarios=Scenario(
-            available_capacity_profiles={},
-            fixed_load_profiles={"load1": demand_profile},
-        ),
+        scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile),)),
     )
 
 
 def test_model_build_components(
     energy_system_sample: EnergySystem,
 ) -> None:
-    params = energy_system_sample.build_parameters()
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
+    problem = energy_system_sample.build_problem()
+    model_builder = EnergyAlgebraicModelBuilder(problem=problem)
     energy_milp_model = model_builder.build()
     linopy_model = energy_milp_model.linopy_model
 
@@ -123,17 +122,14 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
         ),
         number_of_steps=len(demand_profile),
         timestep=timedelta(hours=1),
-        scenarios=Scenario(
-            available_capacity_profiles={},
-            fixed_load_profiles={"load1": demand_profile},
-        ),
+        scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile),)),
     )
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=energy_system.build_parameters())
+    model_builder = EnergyAlgebraicModelBuilder(problem=energy_system.build_problem())
     energy_milp_model = model_builder.build()
 
     assert "charger_ev_assignment" in set(energy_milp_model.linopy_model.variables)
 
-    assignment = energy_milp_model.vars.charger_ev_assignment
+    assignment = energy_milp_model.linopy_model.variables[ChargingFormulation.assignment_name]
     assert assignment.attrs["binary"]
     assert set(assignment.dims) == {
         ModelDimension.Scenarios.value,
@@ -148,8 +144,8 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
 def test_model_already_built(
     energy_system_sample: EnergySystem,
 ) -> None:
-    params = energy_system_sample.build_parameters()
-    model_builder = EnergyAlgebraicModelBuilder(energy_system_parameters=params)
+    problem = energy_system_sample.build_problem()
+    model_builder = EnergyAlgebraicModelBuilder(problem=problem)
     model_builder.build()
     with pytest.raises(OdysError, match=r"Model has already been built."):
         model_builder.build()

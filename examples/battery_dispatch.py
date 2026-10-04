@@ -49,10 +49,12 @@ from datetime import timedelta
 
 from odys import (
     AssetPortfolio,
+    AvailableCapacityProfile,
     Battery,
     EnergySystem,
     FixedLoad,
     Generator,
+    LoadProfile,
     OptimalDispatchResults,
     Scenario,
     StationaryStorage,
@@ -84,13 +86,14 @@ def run_battery_dispatch() -> OptimalDispatchResults:
     portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
 
     scenario = Scenario(
-        available_capacity_profiles={
-            "ccgt": 24 * [100],
-            "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
-        },
-        fixed_load_profiles={
-            "load": 24 * [70],
-        },
+        profiles=(
+            AvailableCapacityProfile(generator=generator_1, values=24 * [100]),
+            AvailableCapacityProfile(
+                generator=generator_2,
+                values=[0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
+            ),
+            LoadProfile(load=load, values=24 * [70]),
+        ),
     )
     energy_system = EnergySystem(
         portfolio=portfolio,

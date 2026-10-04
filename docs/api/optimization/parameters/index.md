@@ -4,17 +4,15 @@ icon: lucide/sliders
 
 # `odys.parameters`
 
-Model parameter builders.
+The xarray layer between the domain and the optimization model: dimensions, coordinates, the shared `ModelContext`, and the vectorized parameters of every entity type. It imports only `odys.domain`.
 
 ::: odys.parameters
 
 ## Modules
 
+- `dimensions`
+- `coordinates`
+- `context`
+- `vectorize`
+- `entity_arrays`
 - `energy_system_parameters`
-- `entity_parameters.charger_parameters`
-- `entity_parameters.electric_vehicle_parameters`
-- `entity_parameters.flexible_load_parameters`
-- `entity_parameters.generator_parameters`
-- `entity_parameters.market_parameters`
-- `entity_parameters.scenario_parameters`
-- `entity_parameters.stationary_storage_parameters`
