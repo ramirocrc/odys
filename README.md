@@ -39,7 +39,7 @@ Define your assets, describe the scenario, and call `.optimize()`:
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario
+from odys import AssetPortfolio, LoadProfile, EnergySystem, FixedLoad, Generator, Scenario
 
 generator = Generator(name="gen", nominal_power=100.0, variable_cost=50.0)
 load = FixedLoad(name="demand")
@@ -48,7 +48,7 @@ portfolio = AssetPortfolio([generator, load])
 
 energy_system = EnergySystem(
     portfolio=portfolio,
-    scenarios=Scenario(fixed_load_profiles={"demand": [60, 90, 40, 70]}),
+    scenarios=Scenario(profiles=(LoadProfile(load=load, values=[60, 90, 40, 70]),)),
     timestep=timedelta(hours=1),
     number_of_steps=4,
 )

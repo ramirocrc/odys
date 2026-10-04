@@ -43,40 +43,40 @@ Use this section to find the public import surface first, then drill into intern
     - `odys.domain.entities.trip`
   - `odys.domain.exceptions`
   - `odys.domain.objective`
-  - `odys.domain.scenarios`
+  - `odys.domain.profiles`
+  - `odys.domain.scenario`
   - `odys.domain.validation`
 - `odys.energy_system`
 - `odys.optimization`
   - `odys.optimization.constraints`
-    - `odys.optimization.constraints.charger_constraints`
     - `odys.optimization.constraints.constraints_group`
     - `odys.optimization.constraints.cvar_constraints`
-    - `odys.optimization.constraints.electric_vehicle_constraints`
-    - `odys.optimization.constraints.flexible_load_constraints`
-    - `odys.optimization.constraints.generator_constraints`
-    - `odys.optimization.constraints.market_constraints`
     - `odys.optimization.constraints.model_constraint`
-    - `odys.optimization.constraints.scenario_constraints`
-    - `odys.optimization.constraints.stationary_storage_constraints`
-    - `odys.optimization.constraints.storage_constraints`
+  - `odys.optimization.formulations`
+    - `odys.optimization.formulations.base`
+    - `odys.optimization.formulations.charging`
+    - `odys.optimization.formulations.electric_vehicle`
+    - `odys.optimization.formulations.energy_market`
+    - `odys.optimization.formulations.fixed_load`
+    - `odys.optimization.formulations.flexible_load`
+    - `odys.optimization.formulations.generator`
+    - `odys.optimization.formulations.stationary_storage`
+    - `odys.optimization.formulations.storage`
   - `odys.optimization.model`
-    - `odys.optimization.model.dimensions`
-    - `odys.optimization.model.coordinates`
     - `odys.optimization.model.linopy_converter`
     - `odys.optimization.model.milp_model`
     - `odys.optimization.model.model_builder`
     - `odys.optimization.model.objectives`
     - `odys.optimization.model.variable_definitions`
+  - `odys.optimization.power_balance`
+  - `odys.optimization.problem`
   - `odys.parameters`
+    - `odys.parameters.dimensions`
+    - `odys.parameters.coordinates`
+    - `odys.parameters.context`
+    - `odys.parameters.vectorize`
+    - `odys.parameters.entity_arrays`
     - `odys.parameters.energy_system_parameters`
-    - `odys.parameters.entity_parameters`
-      - `odys.parameters.entity_parameters.charger_parameters`
-      - `odys.parameters.entity_parameters.electric_vehicle_parameters`
-      - `odys.parameters.entity_parameters.flexible_load_parameters`
-      - `odys.parameters.entity_parameters.generator_parameters`
-      - `odys.parameters.entity_parameters.market_parameters`
-      - `odys.parameters.entity_parameters.scenario_parameters`
-      - `odys.parameters.entity_parameters.stationary_storage_parameters`
 - `odys.results`
   - `odys.results.dispatch`
   - `odys.results.optimization_results`

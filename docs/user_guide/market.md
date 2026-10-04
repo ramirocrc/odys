@@ -98,20 +98,22 @@ $$
 
 ## Market prices
 
-Prices are provided through the `Scenario` (or `StochasticScenario`), not on the market object itself:
+Prices are provided as `PriceProfile` objects in each `Scenario`, not on the market object itself:
 
 ```python
-from odys import Scenario
+from odys import LoadProfile, FixedLoad, PriceProfile, Scenario
+
+load = FixedLoad(name="load")
 
 scenario = Scenario(
-    market_prices={
-        "day_ahead": [50, 55, 45, 60, 70, 65, 50],
-    },
-    fixed_load_profiles={"load": [100, 120, 80, 90, 110, 100, 95]},
+    profiles=(
+        PriceProfile(market=day_ahead, values=[50, 55, 45, 60, 70, 65, 50]),
+        LoadProfile(load=load, values=[100, 120, 80, 90, 110, 100, 95]),
+    ),
 )
 ```
 
-The key must match the market's `name`.
+Every market passed to the `EnergySystem` needs a `PriceProfile` in every scenario.
 
 Revenue and cost enter the objective as:
 

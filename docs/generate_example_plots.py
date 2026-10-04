@@ -31,7 +31,7 @@ from examples.ev_fleet_optimization import (  # pyrefly: ignore
 from examples.flexible_load_market import run_flexible_load_market  # pyrefly: ignore
 from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
 from odys import Charger, OptimalDispatchResults
-from odys.optimization.model.dimensions import ModelDimension
+from odys.parameters.dimensions import ModelDimension
 
 OUTPUT_DIR = Path(__file__).parent / "assets" / "examples"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

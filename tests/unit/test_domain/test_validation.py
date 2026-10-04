@@ -15,18 +15,17 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
-from odys.domain.scenarios import StochasticScenario
+from odys.domain.horizon import Horizon
+from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
+from odys.domain.scenario import Scenario, ScenarioSet
 from odys.domain.validation import (
-    validate_available_capacity_profiles,
-    validate_chargers_and_evs_consistency,
-    validate_electric_vehicle_trips,
+    validate_energy_system_inputs,
     validate_enough_energy_to_meet_demand,
     validate_enough_power_to_meet_demand,
-    validate_fixed_loads_consistent_with_scenarios,
-    validate_flexible_load_max_decrease_within_base_profile,
-    validate_flexible_loads_consistent_with_scenarios,
-    validate_load_profiles,
-    validate_markets_consistent_with_scenarios,
+    validate_has_load_or_market,
+    validate_profile_lengths,
+    validate_profiles_reference_system_entities,
+    validate_required_profiles_present,
 )
 
 NOMINAL_POWER = 100.0
@@ -38,12 +37,18 @@ STORAGE_EFFICIENCY = 0.9
 SOC_START = 0.5
 MAX_TRADING_VOLUME = 100.0
 NUMBER_OF_STEPS = 4
+HORIZON = Horizon(timestep=timedelta(hours=1), number_of_steps=NUMBER_OF_STEPS)
 SCENARIO_PROBABILITY = 1.0
 DEMAND_PROFILE = [80.0, 120.0, 90.0, 100.0]
 MARKET_PRICES = [10.0, 20.0, 30.0, 40.0]
+CAPACITY_PROFILE = [90.0, 100.0, 95.0, 100.0]
 MAX_INCREASE = 50.0
 MAX_DECREASE = 30.0
 VALUE_OF_CONSUMPTION = 100.0
+EV_CAPACITY = 50.0
+EV_MAX_CHARGE_POWER = 22.0
+EV_MAX_DISCHARGE_POWER = 30.0
+CHARGER_MAX_POWER = 50.0
 
 
 @pytest.fixture
@@ -87,11 +92,11 @@ def portfolio(generator: Generator, storage: StationaryStorage, load: FixedLoad)
 
 
 @pytest.fixture
-def scenario() -> StochasticScenario:
-    return StochasticScenario(
+def scenario(load: FixedLoad) -> Scenario:
+    return Scenario(
         name="s1",
         probability=SCENARIO_PROBABILITY,
-        fixed_load_profiles={"load1": DEMAND_PROFILE},
+        profiles=(LoadProfile(load=load, values=DEMAND_PROFILE),),
     )
 
 
@@ -100,251 +105,282 @@ def market() -> EnergyMarket:
     return EnergyMarket(name="market1", max_trading_volume_per_step=MAX_TRADING_VOLUME)
 
 
-# --- validate_fixed_loads_consistent_with_scenarios ---
+def _electric_vehicle(trips: tuple[Trip, ...] = ()) -> ElectricVehicle:
+    return ElectricVehicle(
+        name="ev1",
+        battery=Battery(
+            capacity=EV_CAPACITY,
+            max_charge_power=EV_MAX_CHARGE_POWER,
+            max_discharge_power=EV_MAX_DISCHARGE_POWER,
+            soc_start=SOC_START,
+        ),
+        trips=trips,
+    )
 
 
-class TestValidateLoadsConsistentWithScenarios:
-    def test_valid(self, load: FixedLoad, scenario: StochasticScenario) -> None:
-        validate_fixed_loads_consistent_with_scenarios((load,), (scenario,))
+class TestValidateEnergySystemInputs:
+    def test_valid(self, portfolio: AssetPortfolio, scenario: Scenario) -> None:
+        validate_energy_system_inputs(portfolio, ScenarioSet(scenarios=(scenario,)), (), HORIZON)
 
-    def test_no_loads_no_profiles(self) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
-        validate_fixed_loads_consistent_with_scenarios((), (scenario,))
+    def test_checks_every_entity_against_the_horizon(self, generator: Generator, load: FixedLoad) -> None:
+        late_trip = Trip(name="late_trip", start_time=2, end_time=NUMBER_OF_STEPS + 1, energy_consumption=5.0)
+        portfolio = AssetPortfolio([
+            generator,
+            load,
+            _electric_vehicle((late_trip,)),
+            Charger(name="charger1", max_power=CHARGER_MAX_POWER),
+        ])
+        scenario = Scenario(profiles=(LoadProfile(load=load, values=DEMAND_PROFILE),))
+        with pytest.raises(OdysValidationError, match="Trip 'late_trip' for vehicle 'ev1' extends beyond"):
+            validate_energy_system_inputs(portfolio, ScenarioSet(scenarios=(scenario,)), (), HORIZON)
+
+    def test_energy_check_is_skipped_with_markets(self, storage: StationaryStorage, load: FixedLoad) -> None:
+        small_volume = 1.0
+        market = EnergyMarket(name="market1", max_trading_volume_per_step=small_volume)
+        scenario = Scenario(
+            profiles=(
+                LoadProfile(load=load, values=[20.0] * NUMBER_OF_STEPS),
+                PriceProfile(market=market, values=MARKET_PRICES),
+            ),
+        )
+        validate_energy_system_inputs(
+            AssetPortfolio([storage, load]),
+            ScenarioSet(scenarios=(scenario,)),
+            (market,),
+            HORIZON,
+        )
+
+
+class TestValidateProfilesReferenceSystemEntities:
+    def test_profiles_referencing_system_entities_are_valid(
+        self,
+        portfolio: AssetPortfolio,
+        generator: Generator,
+        market: EnergyMarket,
+        scenario: Scenario,
+    ) -> None:
+        capacity_and_price = Scenario(
+            name="s2",
+            probability=0.0,
+            profiles=(
+                AvailableCapacityProfile(generator=generator, values=CAPACITY_PROFILE),
+                PriceProfile(market=market, values=MARKET_PRICES),
+            ),
+        )
+        validate_profiles_reference_system_entities((scenario, capacity_and_price), portfolio, (market,))
+
+    def test_market_and_asset_sharing_a_name_are_both_matched(
+        self,
+        portfolio: AssetPortfolio,
+        generator: Generator,
+        market: EnergyMarket,
+    ) -> None:
+        market_named_like_generator = market.model_copy(update={"name": generator.name})
+        scenario = Scenario(
+            profiles=(
+                AvailableCapacityProfile(generator=generator, values=CAPACITY_PROFILE),
+                PriceProfile(market=market_named_like_generator, values=MARKET_PRICES),
+            ),
+        )
+        validate_profiles_reference_system_entities((scenario,), portfolio, (market_named_like_generator,))
+
+    def test_rejects_fixed_load_profile_for_a_load_not_in_the_portfolio(
+        self,
+        portfolio: AssetPortfolio,
+        load: FixedLoad,
+    ) -> None:
+        extra_load = load.model_copy(update={"name": "extra"})
+        scenario = Scenario(
+            name="s1",
+            profiles=(
+                LoadProfile(load=load, values=DEMAND_PROFILE),
+                LoadProfile(load=extra_load, values=DEMAND_PROFILE),
+            ),
+        )
+        with pytest.raises(
+            OdysValidationError,
+            match="Scenario 's1' has a LoadProfile for 'extra', which is not in the energy system",
+        ):
+            validate_profiles_reference_system_entities((scenario,), portfolio, ())
+
+    def test_rejects_flexible_load_profile_when_the_portfolio_has_no_flexible_loads(
+        self,
+        portfolio: AssetPortfolio,
+        flexible_load: FlexibleLoad,
+    ) -> None:
+        scenario = Scenario(name="s1", profiles=(LoadProfile(load=flexible_load, values=DEMAND_PROFILE),))
+        with pytest.raises(
+            OdysValidationError,
+            match="Scenario 's1' has a LoadProfile for 'flex_load1', which is not in the energy system",
+        ):
+            validate_profiles_reference_system_entities((scenario,), portfolio, ())
+
+    def test_rejects_price_for_a_market_not_in_the_system(
+        self,
+        portfolio: AssetPortfolio,
+        market: EnergyMarket,
+    ) -> None:
+        extra_market = market.model_copy(update={"name": "extra"})
+        scenario = Scenario(
+            name="s1",
+            profiles=(
+                PriceProfile(market=market, values=MARKET_PRICES),
+                PriceProfile(market=extra_market, values=MARKET_PRICES),
+            ),
+        )
+        with pytest.raises(
+            OdysValidationError,
+            match="Scenario 's1' has a PriceProfile for 'extra', which is not in the energy system",
+        ):
+            validate_profiles_reference_system_entities((scenario,), portfolio, (market,))
+
+    def test_rejects_price_when_the_system_has_no_markets(
+        self,
+        portfolio: AssetPortfolio,
+        market: EnergyMarket,
+    ) -> None:
+        scenario = Scenario(name="s1", profiles=(PriceProfile(market=market, values=MARKET_PRICES),))
+        with pytest.raises(
+            OdysValidationError,
+            match="Scenario 's1' has a PriceProfile for 'market1', which is not in the energy system",
+        ):
+            validate_profiles_reference_system_entities((scenario,), portfolio, ())
+
+    def test_rejects_asset_profile_for_a_different_asset_with_the_same_name(
+        self,
+        portfolio: AssetPortfolio,
+        generator: Generator,
+    ) -> None:
+        stale_generator = generator.model_copy(update={"nominal_power": NOMINAL_POWER / 2})
+        scenario = Scenario(
+            name="s1",
+            profiles=(AvailableCapacityProfile(generator=stale_generator, values=[50.0] * 4),),
+        )
+        with pytest.raises(
+            OdysValidationError,
+            match="Scenario 's1': the AvailableCapacityProfile for 'gen1' does not reference the entity",
+        ):
+            validate_profiles_reference_system_entities((scenario,), portfolio, ())
+
+    def test_rejects_capacity_for_a_generator_named_like_a_non_generator_asset(
+        self,
+        portfolio: AssetPortfolio,
+        generator: Generator,
+        storage: StationaryStorage,
+    ) -> None:
+        impostor = generator.model_copy(update={"name": storage.name})
+        scenario = Scenario(
+            name="s1",
+            profiles=(AvailableCapacityProfile(generator=impostor, values=[25.0, 25.0, 25.0, 25.0]),),
+        )
+        with pytest.raises(
+            OdysValidationError,
+            match="Scenario 's1': the AvailableCapacityProfile for 'bat1' does not reference the entity",
+        ):
+            validate_profiles_reference_system_entities((scenario,), portfolio, ())
+
+    def test_rejects_price_for_a_different_market_with_the_same_name(
+        self,
+        portfolio: AssetPortfolio,
+        market: EnergyMarket,
+    ) -> None:
+        stale_market = market.model_copy(update={"max_trading_volume_per_step": MAX_TRADING_VOLUME / 2})
+        scenario = Scenario(name="s1", profiles=(PriceProfile(market=stale_market, values=MARKET_PRICES),))
+        with pytest.raises(OdysValidationError, match="the PriceProfile for 'market1' does not reference the entity"):
+            validate_profiles_reference_system_entities((scenario,), portfolio, (market,))
+
+
+class TestValidateRequiredProfilesPresent:
+    def test_valid(self, generator: Generator, load: FixedLoad, market: EnergyMarket) -> None:
+        scenario = Scenario(
+            profiles=(
+                LoadProfile(load=load, values=DEMAND_PROFILE),
+                PriceProfile(market=market, values=MARKET_PRICES),
+            ),
+        )
+        validate_required_profiles_present((scenario,), (generator, load, market))
+
+    def test_no_entities_need_no_profiles(self) -> None:
+        validate_required_profiles_present((Scenario(),), ())
+
+    def test_generator_capacity_profile_is_optional(self, generator: Generator) -> None:
+        validate_required_profiles_present((Scenario(),), (generator,))
+
+    def test_missing_fixed_load_profile(self, load: FixedLoad) -> None:
+        other_load = load.model_copy(update={"name": "load2"})
+        scenario = Scenario(name="s1", profiles=(LoadProfile(load=load, values=DEMAND_PROFILE),))
+        with pytest.raises(OdysValidationError, match=r"Scenario 's1' is missing a LoadProfile for: \['load2'\]"):
+            validate_required_profiles_present((scenario,), (load, other_load))
 
     def test_loads_but_no_profiles(self, load: FixedLoad) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
-        with pytest.raises(OdysValidationError, match="has no fixed load profiles"):
-            validate_fixed_loads_consistent_with_scenarios((load,), (scenario,))
+        with pytest.raises(OdysValidationError, match=r"Scenario 's1' is missing a LoadProfile for: \['load1'\]"):
+            validate_required_profiles_present((Scenario(name="s1"),), (load,))
 
-    def test_missing_load_profile(self, load: FixedLoad) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles={})
-        with pytest.raises(OdysValidationError, match="is missing fixed load profiles for"):
-            validate_fixed_loads_consistent_with_scenarios((load,), (scenario,))
-
-    def test_extra_load_profile(self, load: FixedLoad) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            fixed_load_profiles={"load1": DEMAND_PROFILE, "extra": DEMAND_PROFILE},
-        )
-        with pytest.raises(OdysValidationError, match="has fixed load profiles for loads not in portfolio"):
-            validate_fixed_loads_consistent_with_scenarios((load,), (scenario,))
-
-    def test_no_loads_but_has_profiles(self) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles={"load1": DEMAND_PROFILE})
-        with pytest.raises(OdysValidationError, match="Portfolio contains no fixed loads"):
-            validate_fixed_loads_consistent_with_scenarios((), (scenario,))
-
-
-# --- validate_flexible_loads_consistent_with_scenarios ---
-
-
-class TestValidateFlexibleLoadsConsistentWithScenarios:
-    def test_valid(self, flexible_load: FlexibleLoad) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": DEMAND_PROFILE},
-        )
-        validate_flexible_loads_consistent_with_scenarios((flexible_load,), (scenario,))
-
-    def test_no_loads_no_profiles(self) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, flexible_load_base_profiles=None)
-        validate_flexible_loads_consistent_with_scenarios((), (scenario,))
-
-    def test_loads_but_no_profiles(self, flexible_load: FlexibleLoad) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, flexible_load_base_profiles=None)
-        with pytest.raises(OdysValidationError, match="has no flexible load base profiles"):
-            validate_flexible_loads_consistent_with_scenarios((flexible_load,), (scenario,))
-
-    def test_missing_load_profile(self, flexible_load: FlexibleLoad) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, flexible_load_base_profiles={})
-        with pytest.raises(OdysValidationError, match="is missing flexible load base profiles for"):
-            validate_flexible_loads_consistent_with_scenarios((flexible_load,), (scenario,))
-
-    def test_extra_load_profile(self, flexible_load: FlexibleLoad) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": DEMAND_PROFILE, "extra": DEMAND_PROFILE},
-        )
-        with pytest.raises(OdysValidationError, match="has flexible load base profiles for loads not in portfolio"):
-            validate_flexible_loads_consistent_with_scenarios((flexible_load,), (scenario,))
-
-    def test_no_loads_but_has_profiles(self) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": DEMAND_PROFILE},
-        )
-        with pytest.raises(OdysValidationError, match="Portfolio contains no flexible loads"):
-            validate_flexible_loads_consistent_with_scenarios((), (scenario,))
-
-
-# --- validate_flexible_load_max_decrease_within_base_profile ---
-
-
-class TestValidateFlexibleLoadMaxDecreaseWithinBaseProfile:
-    def test_valid(self, flexible_load: FlexibleLoad) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": DEMAND_PROFILE},
-        )
-        validate_flexible_load_max_decrease_within_base_profile((flexible_load,), (scenario,))
-
-    def test_no_loads_no_profiles(self) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, flexible_load_base_profiles=None)
-        validate_flexible_load_max_decrease_within_base_profile((), (scenario,))
-
-    def test_max_decrease_exceeds_base_profile(self, flexible_load: FlexibleLoad) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": [80.0, 20.0, 90.0, 100.0]},
-        )
-        with pytest.raises(OdysValidationError, match="would allow actual load to go negative"):
-            validate_flexible_load_max_decrease_within_base_profile((flexible_load,), (scenario,))
-
-    def test_max_decrease_equals_base_profile_is_valid(self, flexible_load: FlexibleLoad) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": [MAX_DECREASE, 80.0, 90.0, 100.0]},
-        )
-        validate_flexible_load_max_decrease_within_base_profile((flexible_load,), (scenario,))
-
-    def test_unrelated_flexible_load_name_is_ignored(self) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"unrelated_load": [0.0, 0.0]},
-        )
-        validate_flexible_load_max_decrease_within_base_profile((), (scenario,))
-
-
-# --- validate_markets_consistent_with_scenarios ---
-
-
-class TestValidateMarketsConsistentWithScenarios:
-    def test_valid(self, market: EnergyMarket) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            market_prices={"market1": MARKET_PRICES},
-        )
-        validate_markets_consistent_with_scenarios((market,), (scenario,))
-
-    def test_no_markets_no_prices(self) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, market_prices=None)
-        validate_markets_consistent_with_scenarios((), (scenario,))
-
-    def test_markets_but_no_prices(self, market: EnergyMarket) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, market_prices=None)
-        with pytest.raises(OdysValidationError, match="has no market prices"):
-            validate_markets_consistent_with_scenarios((market,), (scenario,))
+    def test_missing_flexible_load_profile(self, flexible_load: FlexibleLoad) -> None:
+        other_load = flexible_load.model_copy(update={"name": "flex_load2"})
+        scenario = Scenario(name="s1", profiles=(LoadProfile(load=flexible_load, values=DEMAND_PROFILE),))
+        with pytest.raises(OdysValidationError, match=r"is missing a LoadProfile for: \['flex_load2'\]"):
+            validate_required_profiles_present((scenario,), (flexible_load, other_load))
 
     def test_missing_market_prices(self, market: EnergyMarket) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, market_prices={})
-        with pytest.raises(OdysValidationError, match="is missing market prices for"):
-            validate_markets_consistent_with_scenarios((market,), (scenario,))
+        other_market = market.model_copy(update={"name": "market2"})
+        scenario = Scenario(name="s1", profiles=(PriceProfile(market=market, values=MARKET_PRICES),))
+        with pytest.raises(OdysValidationError, match=r"is missing a PriceProfile for: \['market2'\]"):
+            validate_required_profiles_present((scenario,), (market, other_market))
 
-    def test_extra_market_prices(self, market: EnergyMarket) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            market_prices={"market1": MARKET_PRICES, "extra": MARKET_PRICES},
-        )
-        with pytest.raises(OdysValidationError, match="has market prices for markets not in portfolio"):
-            validate_markets_consistent_with_scenarios((market,), (scenario,))
-
-    def test_no_markets_but_has_prices(self) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, market_prices={"m": MARKET_PRICES})
-        with pytest.raises(OdysValidationError, match="EnergySystem contains no markets"):
-            validate_markets_consistent_with_scenarios((), (scenario,))
+    def test_every_scenario_is_checked(self, load: FixedLoad) -> None:
+        complete = Scenario(name="s1", probability=0.5, profiles=(LoadProfile(load=load, values=DEMAND_PROFILE),))
+        incomplete = Scenario(name="s2", probability=0.5)
+        with pytest.raises(OdysValidationError, match=r"Scenario 's2' is missing a LoadProfile for: \['load1'\]"):
+            validate_required_profiles_present((complete, incomplete), (load,))
 
 
-# --- validate_load_profiles ---
+class TestValidateProfileLengths:
+    def test_valid(self, scenario: Scenario) -> None:
+        validate_profile_lengths((scenario,), HORIZON)
+
+    def test_no_profiles(self) -> None:
+        validate_profile_lengths((Scenario(),), HORIZON)
+
+    def test_fixed_load_length_mismatch(self, load: FixedLoad) -> None:
+        scenario = Scenario(name="s1", profiles=(LoadProfile(load=load, values=[1.0, 2.0]),))
+        with pytest.raises(
+            OdysValidationError,
+            match="Scenario 's1': the LoadProfile for 'load1' has 2 values, but the horizon has 4 steps",
+        ):
+            validate_profile_lengths((scenario,), HORIZON)
+
+    def test_flexible_load_length_mismatch(self, flexible_load: FlexibleLoad) -> None:
+        scenario = Scenario(name="s1", profiles=(LoadProfile(load=flexible_load, values=[40.0, 50.0]),))
+        with pytest.raises(OdysValidationError, match="the LoadProfile for 'flex_load1' has 2 values"):
+            validate_profile_lengths((scenario,), HORIZON)
+
+    def test_capacity_length_mismatch(self, generator: Generator) -> None:
+        scenario = Scenario(name="s1", profiles=(AvailableCapacityProfile(generator=generator, values=[90.0, 100.0]),))
+        with pytest.raises(OdysValidationError, match="the AvailableCapacityProfile for 'gen1' has 2 values"):
+            validate_profile_lengths((scenario,), HORIZON)
+
+    def test_price_length_mismatch(self, market: EnergyMarket) -> None:
+        scenario = Scenario(name="s1", profiles=(PriceProfile(market=market, values=[10.0, 20.0, 30.0]),))
+        with pytest.raises(OdysValidationError, match="the PriceProfile for 'market1' has 3 values"):
+            validate_profile_lengths((scenario,), HORIZON)
 
 
-class TestValidateLoadProfiles:
-    def test_valid(self, scenario: StochasticScenario) -> None:
-        validate_load_profiles(scenario, NUMBER_OF_STEPS)
+class TestValidateHasLoadOrMarket:
+    def test_load_without_market_is_valid(self, scenario: Scenario) -> None:
+        validate_has_load_or_market(scenario, ())
 
-    def test_none_profiles(self) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
-        validate_load_profiles(scenario, NUMBER_OF_STEPS)
+    def test_market_only_no_loads_is_valid(self, market: EnergyMarket) -> None:
+        validate_has_load_or_market(Scenario(), (market,))
 
-    def test_length_mismatch(self) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles={"load1": [1.0, 2.0]})
-        with pytest.raises(OdysValidationError, match="does not match the number of time steps"):
-            validate_load_profiles(scenario, NUMBER_OF_STEPS)
-
-    def test_flexible_load_length_mismatch(self) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": [1.0, 2.0]},
-        )
-        with pytest.raises(OdysValidationError, match="does not match the number of time steps"):
-            validate_load_profiles(scenario, NUMBER_OF_STEPS)
-
-
-# --- validate_available_capacity_profiles ---
-
-
-class TestValidateAvailableCapacityProfiles:
-    def test_valid(self, portfolio: AssetPortfolio) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            available_capacity_profiles={"gen1": [90.0, 100.0, 95.0, 100.0]},
-        )
-        validate_available_capacity_profiles(scenario, portfolio, NUMBER_OF_STEPS)
-
-    def test_none_profiles(self, portfolio: AssetPortfolio) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, available_capacity_profiles=None)
-        validate_available_capacity_profiles(scenario, portfolio, NUMBER_OF_STEPS)
-
-    def test_non_generator_asset(self, portfolio: AssetPortfolio) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            available_capacity_profiles={"bat1": [25.0, 25.0, 25.0, 25.0]},
-        )
-        with pytest.raises(OdysValidationError, match="Available capacity can only be specified for generators"):
-            validate_available_capacity_profiles(scenario, portfolio, NUMBER_OF_STEPS)
-
-    def test_length_mismatch(self, portfolio: AssetPortfolio) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            available_capacity_profiles={"gen1": [90.0, 100.0]},
-        )
-        with pytest.raises(OdysValidationError, match="does not match the number of time steps"):
-            validate_available_capacity_profiles(scenario, portfolio, NUMBER_OF_STEPS)
-
-    def test_value_out_of_range(self, portfolio: AssetPortfolio) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            available_capacity_profiles={"gen1": [90.0, 150.0, 95.0, 100.0]},
-        )
-        with pytest.raises(OdysValidationError, match=r"Available capacity value.*is invalid"):
-            validate_available_capacity_profiles(scenario, portfolio, NUMBER_OF_STEPS)
-
-
-# --- validate_enough_power_to_meet_demand ---
+    def test_no_load_and_no_market(self) -> None:
+        with pytest.raises(OdysValidationError, match="Load profile is empty, there is nothing to balance"):
+            validate_has_load_or_market(Scenario(), ())
 
 
 class TestValidateEnoughPowerToMeetDemand:
-    def test_valid(self, generator: Generator, storage: StationaryStorage, scenario: StochasticScenario) -> None:
-        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
-
-    def test_no_load_profiles(self, generator: Generator, storage: StationaryStorage) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
-        with pytest.raises(OdysValidationError, match="Load profile is empty"):
-            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
+    def test_valid(self, generator: Generator, storage: StationaryStorage, load: FixedLoad, scenario: Scenario) -> None:
+        validate_enough_power_to_meet_demand(scenario, (generator, storage, load), HORIZON)
 
     def test_market_only_no_loads_is_valid(
         self,
@@ -352,17 +388,34 @@ class TestValidateEnoughPowerToMeetDemand:
         storage: StationaryStorage,
         market: EnergyMarket,
     ) -> None:
-        scenario = StochasticScenario(name="s1", probability=1.0, fixed_load_profiles=None)
-        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
+        scenario = Scenario(profiles=(PriceProfile(market=market, values=MARKET_PRICES),))
+        validate_enough_power_to_meet_demand(scenario, (generator, storage, market), HORIZON)
 
-    def test_demand_exceeds_capacity(self, generator: Generator, storage: StationaryStorage) -> None:
-        scenario = StochasticScenario(
+    def test_demand_exceeds_capacity(self, generator: Generator, storage: StationaryStorage, load: FixedLoad) -> None:
+        scenario = Scenario(name="s1", profiles=(LoadProfile(load=load, values=[80.0, 200.0, 90.0, 100.0]),))
+        with pytest.raises(
+            OdysValidationError,
+            match=r"Infeasible problem in scenario 's1' at time index 1: minimum demand = 200.0.* = 125.0",
+        ):
+            validate_enough_power_to_meet_demand(scenario, (generator, storage, load), HORIZON)
+
+    def test_demand_is_summed_over_loads(
+        self,
+        generator: Generator,
+        storage: StationaryStorage,
+        load: FixedLoad,
+    ) -> None:
+        other_load = load.model_copy(update={"name": "load2"})
+        within_supply_alone = [100.0, 100.0, 100.0, 100.0]
+        scenario = Scenario(
             name="s1",
-            probability=1.0,
-            fixed_load_profiles={"load1": [80.0, 200.0, 90.0, 100.0]},
+            profiles=(
+                LoadProfile(load=load, values=within_supply_alone),
+                LoadProfile(load=other_load, values=within_supply_alone),
+            ),
         )
-        with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
+        with pytest.raises(OdysValidationError, match=r"time index 0: minimum demand = 200\.0"):
+            validate_enough_power_to_meet_demand(scenario, (generator, storage, load, other_load), HORIZON)
 
     def test_flexible_load_feasible_after_decrease(
         self,
@@ -370,31 +423,17 @@ class TestValidateEnoughPowerToMeetDemand:
         storage: StationaryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": [80.0, 150.0, 90.0, 100.0]},
-        )
-        validate_enough_power_to_meet_demand(
-            scenario,
-            (generator,),
-            (storage,),
-            (),
-            (flexible_load,),
-        )
+        scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 150.0, 90.0, 100.0]),))
+        validate_enough_power_to_meet_demand(scenario, (generator, storage, flexible_load), HORIZON)
 
-    def test_unrelated_flexible_load_name_is_skipped(
+    def test_flexible_load_feasible_with_decrease_at_the_limit(
         self,
         generator: Generator,
         storage: StationaryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"unrelated_load": [80.0, 150.0, 90.0, 100.0]},
-        )
-        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (), (flexible_load,))
+        scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 155.0, 90.0, 100.0]),))
+        validate_enough_power_to_meet_demand(scenario, (generator, storage, flexible_load), HORIZON)
 
     def test_flexible_load_infeasible_even_with_decrease(
         self,
@@ -402,298 +441,101 @@ class TestValidateEnoughPowerToMeetDemand:
         storage: StationaryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": [80.0, 200.0, 90.0, 100.0]},
-        )
-        with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_power_to_meet_demand(
-                scenario,
-                (generator,),
-                (storage,),
-                (),
-                (flexible_load,),
-            )
-
-    def test_flexible_load_feasible_with_decrease(
-        self,
-        generator: Generator,
-        storage: StationaryStorage,
-        flexible_load: FlexibleLoad,
-    ) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": [80.0, 155.0, 90.0, 100.0]},
-        )
-        validate_enough_power_to_meet_demand(
-            scenario,
-            (generator,),
-            (storage,),
-            (),
-            (flexible_load,),
-        )
+        scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 200.0, 90.0, 100.0]),))
+        with pytest.raises(OdysValidationError, match=r"time index 1: minimum demand = 170\.0"):
+            validate_enough_power_to_meet_demand(scenario, (generator, storage, flexible_load), HORIZON)
 
     def test_market_volume_counted_toward_available_power(
         self,
         generator: Generator,
         storage: StationaryStorage,
         market: EnergyMarket,
+        load: FixedLoad,
     ) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            fixed_load_profiles={"load1": [80.0, 200.0, 90.0, 100.0]},
-        )
-        validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
+        scenario = Scenario(profiles=(LoadProfile(load=load, values=[80.0, 200.0, 90.0, 100.0]),))
+        validate_enough_power_to_meet_demand(scenario, (generator, storage, market, load), HORIZON)
 
     def test_infeasible_even_with_market(
         self,
         generator: Generator,
         storage: StationaryStorage,
         market: EnergyMarket,
+        load: FixedLoad,
     ) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            fixed_load_profiles={"load1": [80.0, 300.0, 90.0, 100.0]},
-        )
+        scenario = Scenario(profiles=(LoadProfile(load=load, values=[80.0, 300.0, 90.0, 100.0]),))
         with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), (market,))
+            validate_enough_power_to_meet_demand(scenario, (generator, storage, market, load), HORIZON)
 
     def test_uses_available_capacity_profile_per_timestep(
         self,
         generator: Generator,
         storage: StationaryStorage,
+        load: FixedLoad,
     ) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            available_capacity_profiles={"gen1": [100.0, 50.0, 100.0, 100.0]},
-            fixed_load_profiles={"load1": [70.0, 80.0, 70.0, 70.0]},
+        scenario = Scenario(
+            profiles=(
+                AvailableCapacityProfile(generator=generator, values=[100.0, 50.0, 100.0, 100.0]),
+                LoadProfile(load=load, values=[70.0, 80.0, 70.0, 70.0]),
+            ),
         )
         with pytest.raises(OdysValidationError, match="time index 1"):
-            validate_enough_power_to_meet_demand(scenario, (generator,), (storage,), ())
+            validate_enough_power_to_meet_demand(scenario, (generator, storage, load), HORIZON)
 
+    def test_electric_vehicle_discharge_counts_as_supply(self, generator: Generator, load: FixedLoad) -> None:
+        above_generator_alone = [120.0, 120.0, 120.0, 120.0]
+        scenario = Scenario(profiles=(LoadProfile(load=load, values=above_generator_alone),))
+        with pytest.raises(OdysValidationError, match="Infeasible problem"):
+            validate_enough_power_to_meet_demand(scenario, (generator, load), HORIZON)
 
-# --- validate_enough_energy_to_meet_demand ---
+        validate_enough_power_to_meet_demand(scenario, (generator, load, _electric_vehicle()), HORIZON)
 
 
 class TestValidateEnoughEnergyToMeetDemand:
-    def test_noop_no_loads(self, portfolio: AssetPortfolio) -> None:
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            fixed_load_profiles=None,
-            flexible_load_base_profiles=None,
-        )
-        validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+    def test_no_loads(self, generator: Generator, storage: StationaryStorage) -> None:
+        validate_enough_energy_to_meet_demand(Scenario(), (generator, storage), HORIZON)
 
-    def test_valid(self, portfolio: AssetPortfolio, scenario: StochasticScenario) -> None:
-        validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+    def test_valid(self, generator: Generator, storage: StationaryStorage, load: FixedLoad, scenario: Scenario) -> None:
+        validate_enough_energy_to_meet_demand(scenario, (generator, storage, load), HORIZON)
 
     def test_infeasible_energy_but_feasible_power(self, storage: StationaryStorage, load: FixedLoad) -> None:
-        portfolio = AssetPortfolio([storage, load])
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            fixed_load_profiles={"load1": [20.0, 20.0, 20.0, 20.0]},
-        )
-        validate_enough_power_to_meet_demand(scenario, (), (storage,), ())
+        scenario = Scenario(name="s1", profiles=(LoadProfile(load=load, values=[20.0, 20.0, 20.0, 20.0]),))
+        validate_enough_power_to_meet_demand(scenario, (storage, load), HORIZON)
 
-        with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+        with pytest.raises(
+            OdysValidationError,
+            match=r"Infeasible problem in scenario 's1': total energy demand \(80.0\).*available energy \(50.0\)",
+        ):
+            validate_enough_energy_to_meet_demand(scenario, (storage, load), HORIZON)
 
-    def test_uses_available_capacity_profile_not_nominal_power(
-        self,
-        generator: Generator,
-        load: FixedLoad,
-    ) -> None:
-        portfolio = AssetPortfolio([generator, load])
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            available_capacity_profiles={"gen1": [20.0, 20.0, 20.0, 20.0]},
-            fixed_load_profiles={"load1": [25.0, 25.0, 25.0, 25.0]},
+    def test_uses_available_capacity_profile_not_nominal_power(self, generator: Generator, load: FixedLoad) -> None:
+        scenario = Scenario(
+            profiles=(
+                AvailableCapacityProfile(generator=generator, values=[20.0, 20.0, 20.0, 20.0]),
+                LoadProfile(load=load, values=[25.0, 25.0, 25.0, 25.0]),
+            ),
         )
         with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+            validate_enough_energy_to_meet_demand(scenario, (generator, load), HORIZON)
 
     def test_market_energy_included(self, load: FixedLoad, market: EnergyMarket) -> None:
-        portfolio = AssetPortfolio([load])
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            fixed_load_profiles={"load1": [25.0, 25.0, 25.0, 25.0]},
-        )
+        scenario = Scenario(profiles=(LoadProfile(load=load, values=[25.0, 25.0, 25.0, 25.0]),))
         with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+            validate_enough_energy_to_meet_demand(scenario, (load,), HORIZON)
 
-        validate_enough_energy_to_meet_demand(scenario, portfolio, (market,), timedelta(hours=1))
+        validate_enough_energy_to_meet_demand(scenario, (load, market), HORIZON)
 
     def test_flexible_load_min_possible_demand_used(self, flexible_load: FlexibleLoad) -> None:
-        portfolio = AssetPortfolio([flexible_load])
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"flex_load1": [40.0, 40.0, 40.0, 40.0]},
-        )
-        with pytest.raises(OdysValidationError, match="Infeasible problem"):
-            validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
+        scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[40.0, 40.0, 40.0, 40.0]),))
+        with pytest.raises(OdysValidationError, match=r"total energy demand \(40.0\)"):
+            validate_enough_energy_to_meet_demand(scenario, (flexible_load,), HORIZON)
 
-    def test_unrelated_flexible_load_name_is_skipped(self, flexible_load: FlexibleLoad) -> None:
-        portfolio = AssetPortfolio([flexible_load])
-        scenario = StochasticScenario(
-            name="s1",
-            probability=1.0,
-            flexible_load_base_profiles={"unrelated_load": [40.0, 40.0, 40.0, 40.0]},
-        )
-        validate_enough_energy_to_meet_demand(scenario, portfolio, (), timedelta(hours=1))
-
-
-# --- validate_electric_vehicle_trips ---
-
-
-EV_CAPACITY = 50.0
-EV_MAX_CHARGE_POWER = 22.0
-EV_SOC_START = 0.8
-TRIP_ENERGY = 5.0
-EV_NUMBER_OF_STEPS = 24
-
-
-class TestValidateElectricVehicleTrips:
-    def test_valid(self) -> None:
-        trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=TRIP_ENERGY)
-        trip2 = Trip(name="evening", start_time=17, end_time=19, energy_consumption=TRIP_ENERGY)
-        ev = ElectricVehicle(
-            name="ev1",
-            battery=Battery(
-                capacity=EV_CAPACITY,
-                max_charge_power=EV_MAX_CHARGE_POWER,
-                max_discharge_power=0.0,
-                soc_start=EV_SOC_START,
+    def test_energy_scales_with_timestep(self, generator: Generator, load: FixedLoad) -> None:
+        half_hour = Horizon(timestep=timedelta(minutes=30), number_of_steps=NUMBER_OF_STEPS)
+        scenario = Scenario(
+            profiles=(
+                AvailableCapacityProfile(generator=generator, values=[20.0, 20.0, 20.0, 20.0]),
+                LoadProfile(load=load, values=[25.0, 25.0, 25.0, 25.0]),
             ),
-            trips=(trip1, trip2),
         )
-        portfolio = AssetPortfolio(assets=[ev])
-        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
-
-    def test_no_evs_no_profiles(self) -> None:
-        portfolio = AssetPortfolio()
-        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
-
-    def test_overlapping_trips(self) -> None:
-        trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=TRIP_ENERGY)
-        trip2 = Trip(name="overlapping", start_time=9, end_time=11, energy_consumption=TRIP_ENERGY)
-        ev = ElectricVehicle(
-            name="ev1",
-            battery=Battery(
-                capacity=EV_CAPACITY,
-                max_charge_power=EV_MAX_CHARGE_POWER,
-                max_discharge_power=0.0,
-                soc_start=EV_SOC_START,
-            ),
-            trips=(trip1, trip2),
-        )
-        portfolio = AssetPortfolio(assets=[ev])
-        with pytest.raises(OdysValidationError, match="overlap"):
-            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
-
-    def test_trips_beyond_horizon(self) -> None:
-        trip1 = Trip(name="late_trip", start_time=20, end_time=30, energy_consumption=TRIP_ENERGY)
-        ev = ElectricVehicle(
-            name="ev1",
-            battery=Battery(
-                capacity=EV_CAPACITY,
-                max_charge_power=EV_MAX_CHARGE_POWER,
-                max_discharge_power=0.0,
-                soc_start=EV_SOC_START,
-            ),
-            trips=(trip1,),
-        )
-        portfolio = AssetPortfolio(assets=[ev])
-        with pytest.raises(OdysValidationError, match="beyond"):
-            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
-
-    def test_min_soc_at_departure_infeasible_at_t0(self) -> None:
-        trip = Trip(
-            name="early_trip",
-            start_time=0,
-            end_time=1,
-            energy_consumption=TRIP_ENERGY,
-            min_soc_at_departure=0.8,
-        )
-        ev = ElectricVehicle(
-            name="ev1",
-            battery=Battery(
-                capacity=EV_CAPACITY,
-                max_charge_power=EV_MAX_CHARGE_POWER,
-                max_discharge_power=0.0,
-                soc_start=0.5,
-            ),
-            trips=(trip,),
-        )
-        portfolio = AssetPortfolio(assets=[ev])
-        with pytest.raises(OdysValidationError, match=r"min_soc_at_departure.*soc_start"):
-            validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
-
-    def test_min_soc_at_departure_feasible_at_t0(self) -> None:
-        trip = Trip(
-            name="early_trip",
-            start_time=0,
-            end_time=1,
-            energy_consumption=TRIP_ENERGY,
-            min_soc_at_departure=0.3,
-        )
-        ev = ElectricVehicle(
-            name="ev1",
-            battery=Battery(
-                capacity=EV_CAPACITY,
-                max_charge_power=EV_MAX_CHARGE_POWER,
-                max_discharge_power=0.0,
-                soc_start=0.5,
-            ),
-            trips=(trip,),
-        )
-        portfolio = AssetPortfolio(assets=[ev])
-        validate_electric_vehicle_trips(portfolio, EV_NUMBER_OF_STEPS)
-
-
-# --- validate_chargers_and_evs_consistency ---
-
-
-CHARGER_MAX_POWER = 50.0
-
-
-def _make_ev() -> ElectricVehicle:
-    return ElectricVehicle(
-        name="ev1",
-        battery=Battery(
-            capacity=EV_CAPACITY,
-            max_charge_power=EV_MAX_CHARGE_POWER,
-            max_discharge_power=0.0,
-            soc_start=EV_SOC_START,
-        ),
-        trips=(),
-    )
-
-
-class TestValidateChargersAndEvsConsistency:
-    def test_both_present(self) -> None:
-        portfolio = AssetPortfolio(assets=[_make_ev(), Charger(name="charger1", max_power=CHARGER_MAX_POWER)])
-        validate_chargers_and_evs_consistency(portfolio)
-
-    def test_both_absent(self) -> None:
-        portfolio = AssetPortfolio()
-        validate_chargers_and_evs_consistency(portfolio)
-
-    def test_evs_without_chargers(self) -> None:
-        portfolio = AssetPortfolio(assets=[_make_ev()])
-        with pytest.raises(OdysValidationError, match="both chargers and electric vehicles"):
-            validate_chargers_and_evs_consistency(portfolio)
-
-    def test_chargers_without_evs(self) -> None:
-        portfolio = AssetPortfolio(assets=[Charger(name="charger1", max_power=CHARGER_MAX_POWER)])
-        with pytest.raises(OdysValidationError, match="both chargers and electric vehicles"):
-            validate_chargers_and_evs_consistency(portfolio)
+        with pytest.raises(OdysValidationError, match=r"total energy demand \(50.0\).*available energy \(40.0\)"):
+            validate_enough_energy_to_meet_demand(scenario, (generator, load), half_hour)

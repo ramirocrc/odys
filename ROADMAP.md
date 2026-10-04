@@ -30,9 +30,8 @@ Energy system components that can be included in an optimization portfolio.
 Scenario definitions and uncertainty modeling for stochastic optimization.
 
 **Current:**
-- Scenario (deterministic single-scenario optimization)
-- StochasticScenario (multiple scenarios with probabilities)
-- Profiles: available_capacity, fixed_load, flexible_load_base, market_prices
+- Scenario (one scenario for deterministic optimization, several with probabilities for stochastic optimization)
+- Typed profiles that reference their entity: LoadProfile, AvailableCapacityProfile, PriceProfile
 
 **Coming soon:**
 - [ ] Trip uncertainty (energy consumption, arrival/departure times across scenarios)

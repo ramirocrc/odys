@@ -4,44 +4,26 @@ This module provides the EnergyMILPModel class that wraps a linopy Model
 with typed accessors for energy system decision variables.
 """
 
-from datetime import timedelta
+from __future__ import annotations
+
 from functools import cached_property
-from typing import cast
+from typing import TYPE_CHECKING
 
 import linopy
 
-from odys.domain.exceptions import OdysValidationError
-from odys.optimization.model.dimensions import ModelDimension
-from odys.optimization.model.linopy_converter import LinopyVariableParameters
-from odys.parameters.energy_system_parameters import EnergySystemParameters
+if TYPE_CHECKING:
+    from odys.optimization.model.linopy_converter import LinopyVariableParameters
+    from odys.optimization.problem import OptimizationProblem
+    from odys.parameters.energy_system_parameters import EnergySystemParameters
 
 
 class VariableStore:
-    """Typed view of linopy decision variables (explicit fields for autocomplete).
+    """Typed view of the CVaR decision variables, the only ones still declared in the registry (until R3.5).
 
     Constructed from a linopy model after variables have been added. Field names
     are the linopy variable names from ``VariableDefinition.name``.
     """
 
-    generator_power: linopy.Variable
-    generator_status: linopy.Variable
-    generator_startup: linopy.Variable
-    generator_shutdown: linopy.Variable
-    stationary_storage_power_in: linopy.Variable
-    stationary_storage_net_power: linopy.Variable
-    stationary_storage_power_out: linopy.Variable
-    stationary_storage_soc: linopy.Variable
-    stationary_storage_charge_mode: linopy.Variable
-    ev_power_in: linopy.Variable
-    ev_net_power: linopy.Variable
-    ev_power_out: linopy.Variable
-    ev_soc: linopy.Variable
-    ev_charge_mode: linopy.Variable
-    market_sell_volume: linopy.Variable
-    market_buy_volume: linopy.Variable
-    market_trade_mode: linopy.Variable
-    load_adjustment: linopy.Variable
-    charger_ev_assignment: linopy.Variable
     cvar_value_at_risk: linopy.Variable
     cvar_shortfall: linopy.Variable
 
@@ -59,14 +41,15 @@ class VariableStore:
 class EnergyMILPModel:
     """Wrapper around a linopy Model with typed variable accessors for energy systems."""
 
-    def __init__(self, parameters: EnergySystemParameters) -> None:
-        """Initialize the MILP model with energy system parameters.
+    def __init__(self, problem: OptimizationProblem) -> None:
+        """Initialize the MILP model for an optimization problem.
 
         Args:
-            parameters: Validated energy system parameters.
+            problem: The legacy parameters and the formulations of the energy system.
 
         """
-        self._parameters = parameters
+        self._problem = problem
+        self._parameters = problem.legacy
         self._linopy_model = linopy.Model(force_dim_names=True)
 
     @cached_property
@@ -80,8 +63,13 @@ class EnergyMILPModel:
         return self._linopy_model
 
     @property
+    def problem(self) -> OptimizationProblem:
+        """Return the optimization problem: the formulations, the context and the objective."""
+        return self._problem
+
+    @property
     def parameters(self) -> EnergySystemParameters:
-        """Return the energy system parameters."""
+        """Return the context and the objective (legacy container until R3.5)."""
         return self._parameters
 
     def add_variable(self, var_params: LinopyVariableParameters) -> None:
@@ -96,64 +84,3 @@ class EnergyMILPModel:
             lower=var_params.lower,
             binary=var_params.binary,
         )
-
-    def per_scenario_profit(self) -> linopy.LinearExpression:
-        """Profit per scenario, summed over time and assets but not over scenarios.
-
-        Does not apply scenario probabilities; this is the raw per-scenario profit.
-        Used in both the CVaR shortfall constraint and the CVaR objective term.
-        """
-        profit_terms: list[linopy.LinearExpression] = []
-        timestep_hours = self._parameters.timestep / timedelta(hours=1)
-
-        if self._parameters.scenarios.market_prices is not None:
-            profit_terms.append(
-                (
-                    (self.vars.market_sell_volume - self.vars.market_buy_volume)  # pyrefly: ignore
-                    * timestep_hours
-                    * self._parameters.scenarios.market_prices
-                ).sum([ModelDimension.Time, ModelDimension.Markets]),
-            )
-
-        if self._parameters.generators is not None:
-            profit_terms.append(
-                -(
-                    self.vars.generator_power * timestep_hours * self._parameters.generators.variable_cost
-                    + self.vars.generator_startup * self._parameters.generators.startup_cost
-                    + self.vars.generator_shutdown * self._parameters.generators.shutdown_cost
-                ).sum([ModelDimension.Time, ModelDimension.Generators]),
-            )
-
-        if self._parameters.flexible_loads is not None:
-            profit_terms.append(
-                (
-                    self.vars.load_adjustment * timestep_hours * self._parameters.flexible_loads.value_of_consumption
-                ).sum([ModelDimension.Time, ModelDimension.FlexibleLoads]),
-            )
-
-        if self._parameters.stationary_storages is not None:
-            profit_terms.append(
-                -(
-                    (self.vars.stationary_storage_power_in + self.vars.stationary_storage_power_out)
-                    * timestep_hours
-                    * self._parameters.stationary_storages.degradation_cost
-                ).sum([ModelDimension.Time, ModelDimension.StationaryStorages]),
-            )
-
-        if self._parameters.electric_vehicles is not None:
-            profit_terms.append(
-                -(
-                    (self.vars.ev_power_in + self.vars.ev_power_out)
-                    * timestep_hours
-                    * self._parameters.electric_vehicles.degradation_cost
-                ).sum([ModelDimension.Time, ModelDimension.EVs]),
-            )
-
-        if not profit_terms:
-            msg = (
-                "per_scenario_profit requires at least one revenue or cost source "
-                "(markets, generators, or flexible loads)"
-            )
-            raise OdysValidationError(msg)
-
-        return cast("linopy.LinearExpression", sum(profit_terms))

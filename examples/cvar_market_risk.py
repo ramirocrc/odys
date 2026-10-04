@@ -122,14 +122,16 @@ from datetime import timedelta
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
+    AvailableCapacityProfile,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
     Generator,
     Objective,
     OptimalDispatchResults,
+    PriceProfile,
     ProfitTerm,
-    StochasticScenario,
+    Scenario,
 )
 
 logger = logging.getLogger(__name__)
@@ -155,23 +157,32 @@ def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResul
     )
 
     scenarios = [
-        StochasticScenario(
+        Scenario(
             name="high",
             probability=1 / 3,
-            available_capacity_profiles={"ccgt": [100]},
-            market_prices={"sdac": [190], "sidc": [280]},
+            profiles=(
+                AvailableCapacityProfile(generator=ccgt, values=[100]),
+                PriceProfile(market=sdac, values=[190]),
+                PriceProfile(market=sidc, values=[280]),
+            ),
         ),
-        StochasticScenario(
+        Scenario(
             name="mid",
             probability=1 / 3,
-            available_capacity_profiles={"ccgt": [100]},
-            market_prices={"sdac": [200], "sidc": [200]},
+            profiles=(
+                AvailableCapacityProfile(generator=ccgt, values=[100]),
+                PriceProfile(market=sdac, values=[200]),
+                PriceProfile(market=sidc, values=[200]),
+            ),
         ),
-        StochasticScenario(
+        Scenario(
             name="low",
             probability=1 / 3,
-            available_capacity_profiles={"ccgt": [100]},
-            market_prices={"sdac": [210], "sidc": [140]},
+            profiles=(
+                AvailableCapacityProfile(generator=ccgt, values=[100]),
+                PriceProfile(market=sdac, values=[210]),
+                PriceProfile(market=sidc, values=[140]),
+            ),
         ),
     ]
 
@@ -181,9 +192,7 @@ def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResul
         scenarios=scenarios,
         number_of_steps=1,
         timestep=timedelta(hours=24),
-        objective=Objective(
-            profit=ProfitTerm(weight=1),
-        ),
+        objective=Objective(terms=(ProfitTerm(weight=1),)),
     )
     result_max_expected_profit = energy_system_max_expected_profit.optimize()
 
@@ -194,8 +203,10 @@ def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResul
         number_of_steps=1,
         timestep=timedelta(hours=24),
         objective=Objective(
-            profit=ProfitTerm(weight=1),
-            cvar=CVaRTerm(weight=1, confidence_level=0.6),
+            terms=(
+                ProfitTerm(weight=1),
+                CVaRTerm(weight=1, confidence_level=0.6),
+            ),
         ),
     )
     result_penalized_cvar = energy_system_penalized_cvar.optimize()

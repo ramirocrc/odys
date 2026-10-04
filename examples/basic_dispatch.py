@@ -42,7 +42,16 @@ used at each step.
 import logging
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, OptimalDispatchResults, Scenario
+from odys import (
+    AssetPortfolio,
+    AvailableCapacityProfile,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    LoadProfile,
+    OptimalDispatchResults,
+    Scenario,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +74,14 @@ def run_basic_dispatch() -> OptimalDispatchResults:
     portfolio = AssetPortfolio([ccgt, solar_pv, load])
 
     scenario = Scenario(
-        available_capacity_profiles={
-            "ccgt": 24 * [100],
-            "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
-        },
-        fixed_load_profiles={
-            "load": 24 * [70],
-        },
+        profiles=(
+            AvailableCapacityProfile(generator=ccgt, values=24 * [100]),
+            AvailableCapacityProfile(
+                generator=solar_pv,
+                values=[0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
+            ),
+            LoadProfile(load=load, values=24 * [70]),
+        ),
     )
     energy_system = EnergySystem(
         portfolio=portfolio,

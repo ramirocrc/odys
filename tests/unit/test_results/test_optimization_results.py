@@ -7,7 +7,8 @@ from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.stationary_storage import StationaryStorage
-from odys.domain.scenarios import Scenario
+from odys.domain.profiles import LoadProfile
+from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 
 
@@ -43,10 +44,7 @@ def energy_system_sample() -> EnergySystem:
         portfolio=portfolio,
         number_of_steps=len(demand_profile),
         timestep=timedelta(minutes=30),
-        scenarios=Scenario(
-            available_capacity_profiles={},
-            fixed_load_profiles={"load_1": demand_profile},
-        ),
+        scenarios=Scenario(profiles=(LoadProfile(load=load_1, values=demand_profile),)),
     )
 
 

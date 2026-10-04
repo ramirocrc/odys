@@ -15,7 +15,8 @@ class CVaRConstraints(ConstraintGroup):
     @constraint
     def _get_shortfall_constraint(self) -> ModelConstraint:
         constraint_expr = (
-            self.model.vars.cvar_shortfall >= self.model.vars.cvar_value_at_risk - self.model.per_scenario_profit()
+            self.model.vars.cvar_shortfall
+            >= self.model.vars.cvar_value_at_risk - self.model.problem.per_scenario_profit()
         )
         return ModelConstraint(
             constraint=constraint_expr,

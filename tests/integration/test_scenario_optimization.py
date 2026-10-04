@@ -7,7 +7,8 @@ from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.stationary_storage import StationaryStorage
-from odys.domain.scenarios import StochasticScenario
+from odys.domain.profiles import AvailableCapacityProfile, LoadProfile
+from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 
 
@@ -70,29 +71,25 @@ def portfolio_without_battery(
 
 
 @pytest.fixture
-def scenarios() -> list[StochasticScenario]:
+def scenarios(wind_generator: Generator, gas_generator: Generator, load: FixedLoad) -> list[Scenario]:
     return [
-        StochasticScenario(
+        Scenario(
             name="high_wind",
             probability=0.6,
-            available_capacity_profiles={
-                "wind_farm": [150.0, 120.0, 100.0],
-                "gas_plant": [100.0, 100.0, 100.0],
-            },
-            fixed_load_profiles={
-                "load1": [120.0, 100.0, 80.0],
-            },
+            profiles=(
+                AvailableCapacityProfile(generator=wind_generator, values=[150.0, 120.0, 100.0]),
+                AvailableCapacityProfile(generator=gas_generator, values=[100.0, 100.0, 100.0]),
+                LoadProfile(load=load, values=[120.0, 100.0, 80.0]),
+            ),
         ),
-        StochasticScenario(
+        Scenario(
             name="low_wind",
             probability=0.4,
-            available_capacity_profiles={
-                "wind_farm": [50.0, 30.0, 20.0],
-                "gas_plant": [100.0, 100.0, 100.0],
-            },
-            fixed_load_profiles={
-                "load1": [120.0, 100.0, 80.0],
-            },
+            profiles=(
+                AvailableCapacityProfile(generator=wind_generator, values=[50.0, 30.0, 20.0]),
+                AvailableCapacityProfile(generator=gas_generator, values=[100.0, 100.0, 100.0]),
+                LoadProfile(load=load, values=[120.0, 100.0, 80.0]),
+            ),
         ),
     ]
 
@@ -104,7 +101,7 @@ def demand_profile() -> list[float]:
 
 def test_two_scenario_optimization_with_anticipativity(
     portfolio_with_battery: AssetPortfolio,
-    scenarios: list[StochasticScenario],
+    scenarios: list[Scenario],
     demand_profile: list[float],
 ) -> None:
     energy_system_anticipative = EnergySystem(
@@ -122,7 +119,7 @@ def test_two_scenario_optimization_with_anticipativity(
 
 def test_two_scenario_optimization_with_non_anticipativity(
     portfolio_with_battery: AssetPortfolio,
-    scenarios: list[StochasticScenario],
+    scenarios: list[Scenario],
     demand_profile: list[float],
 ) -> None:
     energy_system_non_anticipative = EnergySystem(
@@ -140,7 +137,7 @@ def test_two_scenario_optimization_with_non_anticipativity(
 
 def test_anticipativity_vs_non_anticipativity_comparison(
     portfolio_without_battery: AssetPortfolio,
-    scenarios: list[StochasticScenario],
+    scenarios: list[Scenario],
     demand_profile: list[float],
 ) -> None:
     energy_system = EnergySystem(

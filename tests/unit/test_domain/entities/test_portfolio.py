@@ -135,7 +135,8 @@ def test_assets_of_electric_vehicle_returns_only_electric_vehicles() -> None:
         trips=(),
     )
     gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
-    portfolio = AssetPortfolio(assets=[ev1, ev2, gen])
+    charger = Charger(name="charger1", max_power=22.0)
+    portfolio = AssetPortfolio(assets=[ev1, ev2, gen, charger])
 
     evs = portfolio.assets_of(ElectricVehicle)
     assert len(evs) == len([ev1, ev2])
@@ -147,7 +148,12 @@ def test_assets_of_charger_returns_only_chargers() -> None:
     charger1 = Charger(name="charger1", max_power=22.0)
     charger2 = Charger(name="charger2", max_power=50.0)
     gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
-    portfolio = AssetPortfolio(assets=[charger1, charger2, gen])
+    ev = ElectricVehicle(
+        name="ev1",
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.5),
+        trips=(),
+    )
+    portfolio = AssetPortfolio(assets=[charger1, charger2, gen, ev])
 
     chargers = portfolio.assets_of(Charger)
     assert len(chargers) == len([charger1, charger2])
@@ -184,3 +190,31 @@ def test_portfolio_keeps_all_assets_from_a_one_shot_iterable(
 ) -> None:
     portfolio = AssetPortfolio(assets=(generator for generator in [sample_generator_1, sample_generator_2]))
     assert portfolio.assets_of(Generator) == (sample_generator_1, sample_generator_2)
+
+
+def _electric_vehicle() -> ElectricVehicle:
+    return ElectricVehicle(
+        name="ev1",
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.5),
+        trips=(),
+    )
+
+
+def _charger() -> Charger:
+    return Charger(name="charger1", max_power=22.0)
+
+
+def test_portfolio_accepts_chargers_with_electric_vehicles() -> None:
+    portfolio = AssetPortfolio(assets=[_electric_vehicle(), _charger()])
+
+    assert len(portfolio.assets) == len(["ev1", "charger1"])
+
+
+def test_portfolio_rejects_electric_vehicles_without_chargers() -> None:
+    with pytest.raises(OdysValidationError, match=r"both chargers and electric vehicles.*found 0 charger\(s\) and 1"):
+        AssetPortfolio(assets=[_electric_vehicle()])
+
+
+def test_portfolio_rejects_chargers_without_electric_vehicles() -> None:
+    with pytest.raises(OdysValidationError, match=r"both chargers and electric vehicles.*found 1 charger\(s\) and 0"):
+        AssetPortfolio(assets=[_charger()])

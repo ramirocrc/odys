@@ -13,5 +13,11 @@ Most users do not need these pages directly. They are useful if you are extendin
 ## Subpackages
 
 - `constraints`
+- `formulations`
 - `model`
 - `parameters`
+
+## Modules
+
+- `problem`
+- `power_balance`

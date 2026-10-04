@@ -56,6 +56,7 @@ from odys import (
     ElectricVehicle,
     EnergyMarket,
     EnergySystem,
+    PriceProfile,
     Scenario,
     Trip,
 )
@@ -136,7 +137,7 @@ market_prices = [
 ]
 
 scenario = Scenario(
-    market_prices={"grid_market": market_prices},
+    profiles=(PriceProfile(market=market, values=market_prices),),
 )
 ```
 

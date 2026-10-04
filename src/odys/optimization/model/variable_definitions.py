@@ -8,7 +8,7 @@ from enum import Enum, unique
 
 from pydantic import BaseModel, ConfigDict
 
-from odys.optimization.model.dimensions import ModelDimension
+from odys.parameters.dimensions import ModelDimension
 
 
 class BoundType(Enum):
@@ -36,120 +36,6 @@ class VariableDefinition(BaseModel):
 class VariableDefinitionRegistry(Enum):
     """All decision variables in the energy system optimization model."""
 
-    GENERATOR_POWER = VariableDefinition(
-        name="generator_power",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    GENERATOR_STATUS = VariableDefinition(
-        name="generator_status",
-        is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    GENERATOR_STARTUP = VariableDefinition(
-        name="generator_startup",
-        is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    GENERATOR_SHUTDOWN = VariableDefinition(
-        name="generator_shutdown",
-        is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Generators],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    STATIONARY_STORAGE_POWER_IN = VariableDefinition(
-        name="stationary_storage_power_in",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    STATIONARY_STORAGE_POWER_NET = VariableDefinition(
-        name="stationary_storage_net_power",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    STATIONARY_STORAGE_POWER_OUT = VariableDefinition(
-        name="stationary_storage_power_out",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    STATIONARY_STORAGE_SOC = VariableDefinition(
-        name="stationary_storage_soc",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    STATIONARY_STORAGE_CHARGE_MODE = VariableDefinition(
-        name="stationary_storage_charge_mode",
-        is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.StationaryStorages],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    EV_POWER_IN = VariableDefinition(
-        name="ev_power_in",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    EV_POWER_NET = VariableDefinition(
-        name="ev_net_power",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    EV_POWER_OUT = VariableDefinition(
-        name="ev_power_out",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    EV_SOC = VariableDefinition(
-        name="ev_soc",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    EV_CHARGE_MODE = VariableDefinition(
-        name="ev_charge_mode",
-        is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.EVs],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    MARKET_SELL = VariableDefinition(
-        name="market_sell_volume",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    MARKET_BUY = VariableDefinition(
-        name="market_buy_volume",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
-        lower_bound_type=BoundType.NON_NEGATIVE,
-    )
-    MARKET_TRADE_MODE = VariableDefinition(
-        name="market_trade_mode",
-        is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Markets],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    LOAD_ADJUSTMENT = VariableDefinition(
-        name="load_adjustment",
-        is_binary=False,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.FlexibleLoads],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
-    CHARGER_EV_ASSIGNMENT = VariableDefinition(
-        name="charger_ev_assignment",
-        is_binary=True,
-        dimensions=[ModelDimension.Scenarios, ModelDimension.Time, ModelDimension.Chargers, ModelDimension.EVs],
-        lower_bound_type=BoundType.UNBOUNDED,
-    )
     VALUE_AT_RISK = VariableDefinition(
         name="cvar_value_at_risk",
         is_binary=False,
@@ -184,34 +70,4 @@ class VariableDefinitionRegistry(Enum):
         return self.value.is_binary
 
 
-GENERATOR_VARIABLES = [
-    var
-    for var in VariableDefinitionRegistry
-    if var.value.dimensions and ModelDimension.Generators in var.value.dimensions
-]
-STATIONARY_STORAGE_VARIABLES = [
-    var
-    for var in VariableDefinitionRegistry
-    if var.value.dimensions and ModelDimension.StationaryStorages in var.value.dimensions
-]
-FLEXIBLE_LOAD_VARIABLES = [
-    var
-    for var in VariableDefinitionRegistry
-    if var.value.dimensions and ModelDimension.FlexibleLoads in var.value.dimensions
-]
-MARKET_VARIABLES = [
-    var for var in VariableDefinitionRegistry if var.value.dimensions and ModelDimension.Markets in var.value.dimensions
-]
-CHARGER_VARIABLES = [
-    var
-    for var in VariableDefinitionRegistry
-    if var.value.dimensions and ModelDimension.Chargers in var.value.dimensions
-]
-EV_VARIABLES = [
-    var
-    for var in VariableDefinitionRegistry
-    if var.value.dimensions
-    and ModelDimension.EVs in var.value.dimensions
-    and var is not VariableDefinitionRegistry.CHARGER_EV_ASSIGNMENT
-]
 CVAR_VARIABLES = [VariableDefinitionRegistry.VALUE_AT_RISK, VariableDefinitionRegistry.SHORTFALL_REVENUE]

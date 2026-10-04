@@ -61,7 +61,9 @@ from odys import (
     EnergyMarket,
     EnergySystem,
     FlexibleLoad,
+    LoadProfile,
     OptimalDispatchResults,
+    PriceProfile,
     Scenario,
 )
 
@@ -86,12 +88,13 @@ def run_flexible_load_market() -> OptimalDispatchResults:
     portfolio = AssetPortfolio(assets=[industrial_process])
 
     scenario = Scenario(
-        flexible_load_base_profiles={
-            "industrial_process": 24 * [60],
-        },
-        market_prices={
-            "market": [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
-        },
+        profiles=(
+            LoadProfile(load=industrial_process, values=24 * [60]),
+            PriceProfile(
+                market=market,
+                values=[80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
+            ),
+        ),
     )
 
     energy_system = EnergySystem(

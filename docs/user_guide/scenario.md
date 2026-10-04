@@ -4,132 +4,197 @@ icon: lucide/file-text
 
 # Scenario
 
-A `Scenario` defines the operating conditions for your energy system -- load demand, generator availability, and market prices over time. It's the bridge between your asset definitions and the actual timeseries data the optimizer works with.
+A `Scenario` describes the operating conditions of your energy system over time: how much each load demands, how much each generator can produce, and what each market pays. Each time series is a **profile** that points at the asset or market it belongs to.
 
 ## Basic usage
 
-Let's define a scenario.
+Let's describe the demand of one load over four timesteps.
 
 ```python
-from odys import Scenario
+from odys import LoadProfile, FixedLoad, Scenario
+
+demand = FixedLoad(name="demand")
 
 scenario = Scenario(
-    fixed_load_profiles={"demand": [60, 90, 40, 70]},
+    profiles=(LoadProfile(load=demand, values=[60, 90, 40, 70]),),
 )
 ```
 
-This tells the optimizer: "here's what demand looks like over four timesteps." The key `"demand"` must match the `name` of a `FixedLoad` in your portfolio.
+This tells the optimizer: "here's what `demand` consumes over four timesteps." The profile holds the load object itself, so it cannot be attached to the wrong kind of asset, and a typo in a name string is no longer possible.
 
 ## Fields
 
-| Field                         | Type                     | Required | Default | Description                                                  |
-| ----------------------------- | ------------------------ | -------- | ------- | ------------------------------------------------------------ |
-| `fixed_load_profiles`         | `dict[str, list[float]]` | No       | `None`  | Load values per timestep for fixed loads, keyed by load name |
-| `flexible_load_base_profiles` | `dict[str, list[float]]` | No       | `None`  | Base load values per timestep for flexible loads, keyed by load name |
-| `available_capacity_profiles` | `dict[str, list[float]]` | No       | `None`  | Max available capacity per timestep, keyed by generator name |
-| `market_prices`               | `dict[str, list[float]]` | No       | `None`  | Market prices per timestep, keyed by market name             |
+| Field         | Type                  | Required | Default  | Description                                           |
+| ------------- | --------------------- | -------- | -------- | ----------------------------------------------------- |
+| `name`        | `str`                 | No       | `"base"` | Unique identifier of the scenario                     |
+| `probability` | `float`               | No       | `1.0`    | Probability (0-1) of the scenario                     |
+| `profiles`    | `tuple` of profiles   | No       | `()`     | Time series of the scenario's assets and markets      |
 
-All fields are optional -- you only include what you need. If a field is omitted, the optimizer won't apply that constraint (e.g., generators without an `available_capacity_profiles` entry can produce up to their `nominal_power`).
+Every profile has one value per optimization timestep, so its length must equal `number_of_steps`. Each asset or market has at most one profile of each kind per scenario.
 
-## Fixed load profiles
+## Profiles
 
-Specify how much power each fixed load demands at each timestep:
+| Profile                    | References   | Unit         | Required in every scenario | Meaning                                                      |
+| -------------------------- | ------------ | ------------ | -------------------------- | ------------------------------------------------------------ |
+| `LoadProfile`              | `load=`      | MW           | Yes, for every load        | Demand of a `FixedLoad`, or base profile of a `FlexibleLoad` |
+| `AvailableCapacityProfile` | `generator=` | MW           | No                         | Upper bound on a generator's output at each timestep         |
+| `PriceProfile`             | `market=`    | currency/MWh | Yes, for every market      | Price of an `EnergyMarket` at each timestep                  |
+
+### Demand of a fixed load
+
+Every [FixedLoad](load.md#fixed-loads) in the portfolio needs a `LoadProfile` in every scenario:
 
 ```python
+from odys import LoadProfile, FixedLoad, Scenario
+
+factory = FixedLoad(name="factory")
+office = FixedLoad(name="office")
+
 scenario = Scenario(
-    fixed_load_profiles={
-        "factory": [100, 120, 80, 90],
-        "office": [20, 25, 15, 20],
-    },
+    profiles=(
+        LoadProfile(load=factory, values=[100, 120, 80, 90]),
+        LoadProfile(load=office, values=[20, 25, 15, 20]),
+    ),
 )
 ```
 
-The keys must match the `name` of a [FixedLoad](load.md#fixed-loads) in your portfolio.
+### Base demand of a flexible load
 
-## Flexible load base profiles
-
-Specify the base demand for each flexible load at each timestep. The optimizer can adjust consumption up or down from this base:
+For a [FlexibleLoad](load.md#flexible-loads), `LoadProfile` is the base profile. The optimizer can adjust consumption up or down from it:
 
 ```python
+from odys import LoadProfile, FlexibleLoad, Scenario
+
+process = FlexibleLoad(name="industrial_process", max_increase=20, max_decrease=10, value_of_consumption=60)
+
 scenario = Scenario(
-    flexible_load_base_profiles={
-        "industrial_process": [80, 80, 80, 80],
-    },
+    profiles=(LoadProfile(load=process, values=[80, 80, 80, 80]),),
 )
 ```
 
-The keys must match the `name` of a [FlexibleLoad](load.md#flexible-loads) in your portfolio.
-
-## Available capacity profiles
+### Available capacity of a generator
 
 Cap the output of specific generators over time. This is how you model variable renewable generation like wind or solar:
 
 ```python
+from odys import AvailableCapacityProfile, LoadProfile, FixedLoad, Generator, Scenario
+
+wind = Generator(name="wind_farm", nominal_power=100, variable_cost=0)
+solar = Generator(name="solar", nominal_power=100, variable_cost=0)
+demand = FixedLoad(name="demand")
+
 scenario = Scenario(
-    available_capacity_profiles={
-        "wind_farm": [80, 60, 90, 70],
-        "solar": [0, 50, 80, 30],
-    },
-    fixed_load_profiles={"demand": [100, 120, 80, 90]},
+    profiles=(
+        AvailableCapacityProfile(generator=wind, values=[80, 60, 90, 70]),
+        AvailableCapacityProfile(generator=solar, values=[0, 50, 80, 30]),
+        LoadProfile(load=demand, values=[100, 120, 80, 90]),
+    ),
 )
 ```
 
-The keys must match the `name` of a [Generator](generator.md) in your portfolio. At each timestep, the generator can't produce more than the value specified here (or its `nominal_power`, whichever is lower).
+At each timestep, the generator can't produce more than this value. Each value must lie between 0 and the generator's `nominal_power`. A generator without an `AvailableCapacityProfile` can produce up to its `nominal_power`.
 
-## Market prices
+### Price of a market
 
-Provide price timeseries for each [Market](market.md):
+Provide a price time series for each [EnergyMarket](market.md) passed to the `EnergySystem`:
 
 ```python
+from odys import LoadProfile, EnergyMarket, FixedLoad, PriceProfile, Scenario
+
+day_ahead = EnergyMarket(name="day_ahead", max_trading_volume_per_step=200)
+demand = FixedLoad(name="demand")
+
 scenario = Scenario(
-    market_prices={
-        "day_ahead": [50, 55, 45, 60],
-    },
-    fixed_load_profiles={"demand": [100, 120, 80, 90]},
+    profiles=(
+        PriceProfile(market=day_ahead, values=[50, 55, 45, 60]),
+        LoadProfile(load=demand, values=[100, 120, 80, 90]),
+    ),
 )
 ```
-
-The keys must match the `name` of an `EnergyMarket` passed to the `EnergySystem`.
 
 ## Putting it all together
 
-A scenario with all four fields might look like:
+Build the assets and markets first, then a scenario that references them, and pass both to the [EnergySystem](energy_system.md):
 
 ```python
-from odys import Scenario
+from datetime import timedelta
+
+from odys import (
+    AssetPortfolio,
+    AvailableCapacityProfile,
+    LoadProfile,
+    EnergyMarket,
+    EnergySystem,
+    FixedLoad,
+    FlexibleLoad,
+    Generator,
+    PriceProfile,
+    Scenario,
+)
+
+wind = Generator(name="wind_farm", nominal_power=100, variable_cost=0)
+demand = FixedLoad(name="demand")
+process = FlexibleLoad(name="industrial_process", max_increase=20, max_decrease=10, value_of_consumption=60)
+day_ahead = EnergyMarket(name="day_ahead", max_trading_volume_per_step=200)
 
 scenario = Scenario(
-    fixed_load_profiles={
-        "demand": [100, 120, 80, 90],
-    },
-    flexible_load_base_profiles={
-        "industrial_process": [80, 80, 80, 80],
-    },
-    available_capacity_profiles={
-        "wind_farm": [80, 60, 90, 70],
-    },
-    market_prices={
-        "day_ahead": [50, 55, 45, 60],
-    },
+    profiles=(
+        LoadProfile(load=demand, values=[100, 120, 80, 90]),
+        LoadProfile(load=process, values=[80, 80, 80, 80]),
+        AvailableCapacityProfile(generator=wind, values=[80, 60, 90, 70]),
+        PriceProfile(market=day_ahead, values=[50, 55, 45, 60]),
+    ),
 )
-```
 
-Then pass it to the [EnergySystem](energy_system.md):
-
-```python
 energy_system = EnergySystem(
-    portfolio=portfolio,
+    portfolio=AssetPortfolio([wind, demand, process]),
+    markets=day_ahead,
     scenarios=scenario,
     timestep=timedelta(hours=1),
     number_of_steps=4,
 )
 ```
 
-## When you need multiple scenarios
+When the system is created, Odys checks that every load and market has its profile, that no profile points at something outside the system, and that every profile has `number_of_steps` values.
 
-A single `Scenario` represents one deterministic future. If you want to optimize under uncertainty -- accounting for multiple possible outcomes -- use `StochasticScenario` instead.
+## Multiple scenarios
 
-Use `Scenario` when you have a single forecast. Switch to `StochasticScenario` when the future is uncertain and you want to hedge against multiple outcomes.
+A single `Scenario` is one deterministic future; its name defaults to `"base"` and its probability to `1.0`. To optimize under uncertainty, pass a list of scenarios, each with a unique `name` and a `probability`:
+
+```python
+gas = Generator(name="gas", nominal_power=150, variable_cost=60)
+
+low_wind = Scenario(
+    name="low_wind",
+    probability=0.3,
+    profiles=(
+        AvailableCapacityProfile(generator=wind, values=[30, 20, 40, 25]),
+        LoadProfile(load=demand, values=[100, 120, 80, 90]),
+    ),
+)
+high_wind = Scenario(
+    name="high_wind",
+    probability=0.7,
+    profiles=(
+        AvailableCapacityProfile(generator=wind, values=[80, 90, 100, 95]),
+        LoadProfile(load=demand, values=[100, 120, 80, 90]),
+    ),
+)
+
+energy_system = EnergySystem(
+    portfolio=AssetPortfolio([wind, gas, demand]),
+    scenarios=[low_wind, high_wind],
+    timestep=timedelta(hours=1),
+    number_of_steps=4,
+)
+```
+
+Odys enforces two rules across the scenarios and raises `OdysValidationError` otherwise:
+
+1. **Probabilities sum to 1.0**, within floating-point tolerance, so 49 scenarios of `1 / 49` each are accepted.
+2. **Names are unique.**
+
+Any profile can differ between scenarios, so a single run can capture renewable, demand and price uncertainty at once. See [Stochastic Optimization](stochastic.md) for how the optimizer weighs the scenarios.
 
 ## Next steps
 

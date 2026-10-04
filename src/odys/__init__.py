@@ -19,7 +19,8 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.entities.trip import Trip
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
-from odys.domain.scenarios import Scenario, StochasticScenario
+from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
+from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.results.optimization_results import OptimalDispatchResults
 from odys.solvers.solver_config import SolverConfig, SolverName
@@ -30,6 +31,7 @@ __all__ = [
     "AllowedTradeDirection",
     "Asset",
     "AssetPortfolio",
+    "AvailableCapacityProfile",
     "Battery",
     "CVaRTerm",
     "Charger",
@@ -39,13 +41,14 @@ __all__ = [
     "FixedLoad",
     "FlexibleLoad",
     "Generator",
+    "LoadProfile",
     "Objective",
     "OptimalDispatchResults",
+    "PriceProfile",
     "ProfitTerm",
     "Scenario",
     "SolverConfig",
     "SolverName",
     "StationaryStorage",
-    "StochasticScenario",
     "Trip",
 ]

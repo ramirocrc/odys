@@ -11,7 +11,8 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.scenarios import Scenario
+from odys.domain.profiles import LoadProfile, PriceProfile
+from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 
 HALF_HOUR = timedelta(minutes=30)
@@ -36,34 +37,33 @@ class TimestepCase:
 
 
 def generator_serving_fixed_load() -> TimestepCase:
+    load = FixedLoad(name="load")
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(
-            [
-                Generator(name="gen", nominal_power=GENERATOR_POWER, variable_cost=GENERATOR_COST),
-                FixedLoad(name="load"),
-            ],
+            [Generator(name="gen", nominal_power=GENERATOR_POWER, variable_cost=GENERATOR_COST), load],
         ),
         timestep=HALF_HOUR,
         number_of_steps=len(LOAD_PROFILE),
-        scenarios=Scenario(fixed_load_profiles={"load": LOAD_PROFILE}),
+        scenarios=Scenario(profiles=(LoadProfile(load=load, values=LOAD_PROFILE),)),
     )
     expected_cost = sum(LOAD_PROFILE) * HALF_HOUR_IN_HOURS * GENERATOR_COST
     return TimestepCase(energy_system=energy_system, expected_objective=-expected_cost)
 
 
 def market_serving_fixed_load() -> TimestepCase:
+    load = FixedLoad(name="load")
+    market = EnergyMarket(
+        name="market",
+        max_trading_volume_per_step=MARKET_VOLUME,
+        allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
+    )
     energy_system = EnergySystem(
-        portfolio=AssetPortfolio([FixedLoad(name="load")]),
-        markets=EnergyMarket(
-            name="market",
-            max_trading_volume_per_step=MARKET_VOLUME,
-            allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
-        ),
+        portfolio=AssetPortfolio([load]),
+        markets=market,
         timestep=HALF_HOUR,
         number_of_steps=len(LOAD_PROFILE),
         scenarios=Scenario(
-            fixed_load_profiles={"load": LOAD_PROFILE},
-            market_prices={"market": MARKET_PRICES},
+            profiles=(LoadProfile(load=load, values=LOAD_PROFILE), PriceProfile(market=market, values=MARKET_PRICES)),
         ),
     )
     expected_cost = sum(
@@ -73,21 +73,19 @@ def market_serving_fixed_load() -> TimestepCase:
 
 
 def flexible_load_increasing_consumption() -> TimestepCase:
+    flexible_load = FlexibleLoad(
+        name="flex",
+        max_increase=FLEXIBLE_MAX_CHANGE,
+        max_decrease=FLEXIBLE_MAX_CHANGE,
+        value_of_consumption=VALUE_OF_CONSUMPTION,
+    )
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(
-            [
-                Generator(name="gen", nominal_power=GENERATOR_POWER, variable_cost=GENERATOR_COST),
-                FlexibleLoad(
-                    name="flex",
-                    max_increase=FLEXIBLE_MAX_CHANGE,
-                    max_decrease=FLEXIBLE_MAX_CHANGE,
-                    value_of_consumption=VALUE_OF_CONSUMPTION,
-                ),
-            ],
+            [Generator(name="gen", nominal_power=GENERATOR_POWER, variable_cost=GENERATOR_COST), flexible_load],
         ),
         timestep=HALF_HOUR,
         number_of_steps=len(FLEXIBLE_BASE_PROFILE),
-        scenarios=Scenario(flexible_load_base_profiles={"flex": FLEXIBLE_BASE_PROFILE}),
+        scenarios=Scenario(profiles=(LoadProfile(load=flexible_load, values=FLEXIBLE_BASE_PROFILE),)),
     )
     expected_objective = sum(
         HALF_HOUR_IN_HOURS

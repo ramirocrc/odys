@@ -12,7 +12,8 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.stationary_storage import StationaryStorage
-from odys.domain.scenarios import Scenario
+from odys.domain.profiles import LoadProfile, PriceProfile
+from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 
 STANDARD_GENERATOR_POWER = 100.0
@@ -91,7 +92,7 @@ def perfect_battery() -> StationaryStorage:
 
 
 @dataclass
-class LoadProfile:
+class LoadProfileCase:
     """Container for load profile data with metadata."""
 
     values: list[float]
@@ -133,7 +134,7 @@ def _create_energy_system(
     load_profile: list[float],
     load: FixedLoad,
     markets: list[EnergyMarket] | None = None,
-    market_prices: dict[str, list[float]] | None = None,
+    prices: tuple[PriceProfile, ...] = (),
 ) -> EnergySystem:
     """Create energy system with common setup logic."""
     portfolio = AssetPortfolio([*assets, load])
@@ -143,11 +144,7 @@ def _create_energy_system(
         markets=markets,
         timestep=timedelta(hours=1),
         number_of_steps=len(load_profile),
-        scenarios=Scenario(
-            available_capacity_profiles={},
-            fixed_load_profiles={load.name: load_profile},
-            market_prices=market_prices,
-        ),
+        scenarios=Scenario(profiles=(LoadProfile(load=load, values=load_profile), *prices)),
     )
 
 
@@ -344,7 +341,7 @@ def _create_generator_load_and_market_system() -> SystemTestCase:
         load_profile,
         load,
         markets=[market],
-        market_prices={"energy_market": MARKET_HIGH_PRICES},
+        prices=(PriceProfile(market=market, values=MARKET_HIGH_PRICES),),
     )
 
     expected_generator_results = _create_expected_dataframe(
@@ -389,10 +386,10 @@ def _create_generator_and_two_markets_system() -> SystemTestCase:
         load_profile,
         load,
         markets=[cheap_market, expensive_market],
-        market_prices={
-            "cheap_market": MARKET_LOW_PRICES,
-            "expensive_market": MARKET_HIGH_PRICES,
-        },
+        prices=(
+            PriceProfile(market=cheap_market, values=MARKET_LOW_PRICES),
+            PriceProfile(market=expensive_market, values=MARKET_HIGH_PRICES),
+        ),
     )
 
     expected_generator_results = _create_expected_dataframe(
@@ -427,7 +424,7 @@ def _create_market_only_system() -> SystemTestCase:
         load_profile,
         load,
         markets=[market],
-        market_prices={"energy_market": MARKET_LOW_PRICES},
+        prices=(PriceProfile(market=market, values=MARKET_LOW_PRICES),),
     )
 
     return SystemTestCase(

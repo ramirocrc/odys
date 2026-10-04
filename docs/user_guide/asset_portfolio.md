@@ -42,6 +42,8 @@ portfolio = AssetPortfolio([generator, battery, fixed_load, flexible_load])
 
     Asset names must be unique within a portfolio. Adding two assets with the same `name` raises an `OdysValidationError`.
 
+    Chargers and electric vehicles come together: a portfolio with electric vehicles but no charger, or chargers but no electric vehicle, also raises an `OdysValidationError`.
+
 ## Accessing assets
 
 You can retrieve a specific asset by name:
