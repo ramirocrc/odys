@@ -14,5 +14,6 @@ It is usually only relevant if you are working on the optimization internals.
 ## Modules
 
 - `config_translators`
+- `outcome`
 - `solver`
 - `solver_config`

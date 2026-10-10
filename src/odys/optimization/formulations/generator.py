@@ -18,7 +18,7 @@ from odys.parameters.entity_arrays import GeneratorArrays
 from odys.parameters.vectorize import vectorize
 
 TIME = ModelDimension.Time
-GENERATOR = ModelDimension.Generators
+GENERATOR = "generator"
 
 
 class GeneratorVariables(BaseModel):
@@ -35,6 +35,8 @@ class GeneratorVariables(BaseModel):
 class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
     """Generators: power limits, available capacity, startup and shutdown, minimum up and down time, ramping."""
 
+    dimension = GENERATOR
+    entity_type = Generator
     power_name: ClassVar[str] = "generator_power"
     status_name: ClassVar[str] = "generator_status"
     startup_name: ClassVar[str] = "generator_startup"
@@ -47,13 +49,12 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
             generators: The generators, at least one.
             context: The shared indexing of the problem.
         """
-        super().__init__(context)
-        self.coordinates = context.coordinates_of(ModelDimension.Generators)
+        super().__init__(generators, context)
         self.arrays = vectorize(GeneratorArrays, generators, self.coordinates)
         self.available_capacity = context.profiles(
             AvailableCapacityProfile,
             generators,
-            ModelDimension.Generators,
+            self.coordinates,
             default=np.inf,
         )
 
@@ -216,7 +217,7 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
 
     def power_injection(self) -> linopy.LinearExpression:
         """Return the total generator output, per scenario and time."""
-        injection: linopy.LinearExpression = self.variables.power.sum(ModelDimension.Generators)
+        injection: linopy.LinearExpression = self.variables.power.sum(GENERATOR)
         return injection
 
     def profit(self) -> linopy.LinearExpression:
@@ -226,5 +227,5 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
             + self.variables.startup * self.arrays.startup_cost
             + self.variables.shutdown * self.arrays.shutdown_cost
         )
-        profit: linopy.LinearExpression = -cost.sum([ModelDimension.Time, ModelDimension.Generators])
+        profit: linopy.LinearExpression = -cost.sum([TIME, GENERATOR])
         return profit

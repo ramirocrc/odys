@@ -15,7 +15,8 @@ from odys.domain.profiles import LoadProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.charging import ChargingFormulation
-from odys.optimization.model.model_builder import EnergyAlgebraicModelBuilder
+from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
+from odys.optimization.model.model_builder import build_model
 from odys.parameters.dimensions import ModelDimension
 
 logger = logging.getLogger(__name__)
@@ -72,9 +73,7 @@ def test_model_build_components(
     energy_system_sample: EnergySystem,
 ) -> None:
     problem = energy_system_sample.build_problem()
-    model_builder = EnergyAlgebraicModelBuilder(problem=problem)
-    energy_milp_model = model_builder.build()
-    linopy_model = energy_milp_model.linopy_model
+    linopy_model = build_model(problem)
 
     # Variables
     variable_names = set(linopy_model.variables)
@@ -124,28 +123,26 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
         timestep=timedelta(hours=1),
         scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile),)),
     )
-    model_builder = EnergyAlgebraicModelBuilder(problem=energy_system.build_problem())
-    energy_milp_model = model_builder.build()
+    linopy_model = build_model(energy_system.build_problem())
 
-    assert "charger_ev_assignment" in set(energy_milp_model.linopy_model.variables)
+    assert "charger_ev_assignment" in set(linopy_model.variables)
 
-    assignment = energy_milp_model.linopy_model.variables[ChargingFormulation.assignment_name]
+    assignment = linopy_model.variables[ChargingFormulation.assignment_name]
     assert assignment.attrs["binary"]
     assert set(assignment.dims) == {
         ModelDimension.Scenarios.value,
         ModelDimension.Time.value,
-        ModelDimension.Chargers.value,
-        ModelDimension.EVs.value,
+        ChargingFormulation.dimension,
+        ElectricVehicleFormulation.dimension,
     }
-    assert list(assignment.coords[ModelDimension.Chargers.value].values) == charger_names
-    assert list(assignment.coords[ModelDimension.EVs.value].values) == ev_names
+    assert list(assignment.coords[ChargingFormulation.dimension].values) == charger_names
+    assert list(assignment.coords[ElectricVehicleFormulation.dimension].values) == ev_names
 
 
 def test_model_already_built(
     energy_system_sample: EnergySystem,
 ) -> None:
     problem = energy_system_sample.build_problem()
-    model_builder = EnergyAlgebraicModelBuilder(problem=problem)
-    model_builder.build()
-    with pytest.raises(OdysError, match=r"Model has already been built."):
-        model_builder.build()
+    build_model(problem)
+    with pytest.raises(OdysError, match="already has variables; build a new problem for each model"):
+        build_model(problem)

@@ -125,39 +125,22 @@ source_modules = ["odys.parameters"]
 forbidden_modules = ["linopy"]
 
 [[tool.importlinter.contracts]]
-name = "Domain is independent of the rest of odys"
-type = "forbidden"
-source_modules = ["odys.domain"]
-forbidden_modules = [
-  "odys.parameters",
-  "odys.optimization",
-  "odys.solvers",
-  "odys.results",
-  "odys.energy_system"
+name = "Packages import only lower layers (optimization and solvers are independent)"
+type = "layers"
+containers = ["odys"]
+layers = [
+  "energy_system",
+  "results",
+  "optimization | solvers",
+  "parameters",
+  "domain",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Parameters do not import optimization"
+name = "Solvers depend on no model layer"
 type = "forbidden"
-source_modules = ["odys.parameters"]
-forbidden_modules = [
-  "odys.optimization",
-  "odys.solvers",
-  "odys.results",
-  "odys.energy_system",
-]
-
-[[tool.importlinter.contracts]]
-name = "Optimization does not depend on solving, results, or the composition root"
-type = "forbidden"
-source_modules = ["odys.optimization"]
-forbidden_modules = ["odys.solvers", "odys.results", "odys.energy_system"]
-
-[[tool.importlinter.contracts]]
-name = "Solvers and results do not depend on the composition root"
-type = "forbidden"
-source_modules = ["odys.solvers", "odys.results"]
-forbidden_modules = ["odys.energy_system"]
+source_modules = ["odys.solvers"]
+forbidden_modules = ["odys.parameters"]
 
 [[tool.importlinter.contracts]]
 name = "Formulations are independent of each other (charging may use electric vehicles)"

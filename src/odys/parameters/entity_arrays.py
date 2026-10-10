@@ -12,7 +12,6 @@ import xarray as xr
 
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.parameters.coordinates import Coordinates
-from odys.parameters.dimensions import ModelDimension
 from odys.parameters.vectorize import EntityArrays, vectorize
 
 
@@ -122,7 +121,7 @@ def _trip_arrays(
             trip_energy[i, trip_steps] = trip.energy_consumption / (trip.end_time - trip.start_time)
             min_soc_at_departure[i, trip.start_time] = trip.min_soc_at_departure
 
-    dims = (ModelDimension.EVs.value, ModelDimension.Time.value)
+    dims = (coordinates.dimension, time.dimension)
     coords = coordinates.dimension_coordinates_map | time.dimension_coordinates_map
     return ElectricVehicleTripArrays(
         is_driving=xr.DataArray(is_driving, dims=dims, coords=coords),

@@ -12,27 +12,18 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from odys.domain.entities.charger import Charger
-from odys.domain.entities.electric_vehicle import ElectricVehicle
-from odys.domain.entities.flexible_load import FlexibleLoad
-from odys.domain.entities.generator import Generator
+from odys.domain.entities.base import EnergyEntity
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.horizon import Horizon
 from odys.domain.objective import Objective
 from odys.domain.scenario import Scenario, ScenarioSet
 from odys.domain.validation import validate_energy_system_inputs
-from odys.optimization.formulations import FORMULATIONS
-from odys.optimization.formulations.base import Formulation, FormulationInputs
+from odys.optimization.formulations import validate_entities_supported
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
-from odys.parameters.context import ModelContext
-from odys.parameters.coordinates import Coordinates
-from odys.parameters.dimensions import ModelDimension
-from odys.parameters.energy_system_parameters import EnergySystemParameters
 from odys.results.optimization_results import OptimalDispatchResults
-from odys.solvers.solver import optimize_algebraic_model
+from odys.solvers.solver import solve
 from odys.solvers.solver_config import SolverConfig
 
 
@@ -80,6 +71,7 @@ class EnergySystem(BaseModel):
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:
+        validate_entities_supported(self._entities)
         validate_energy_system_inputs(
             portfolio=self.portfolio,
             scenario_set=self.scenario_set,
@@ -109,41 +101,14 @@ class EnergySystem(BaseModel):
             return (self.markets,)
         return tuple(self.markets)
 
+    @property
+    def _entities(self) -> tuple[EnergyEntity, ...]:
+        """Return every asset of the portfolio, then every market."""
+        return (*self.portfolio.assets.values(), *self.collection_of_markets)
+
     def build_problem(self) -> OptimizationProblem:
-        """Build the optimization problem of this energy system: one formulation per entity type present."""
-        gens = self.portfolio.assets_of(Generator)
-        storages = self.portfolio.assets_of(StationaryStorage)
-        flex = self.portfolio.assets_of(FlexibleLoad)
-        markets = self.collection_of_markets
-        chargers = self.portfolio.assets_of(Charger)
-        evs = self.portfolio.assets_of(ElectricVehicle)
-
-        entity_groups = (
-            (ModelDimension.Generators, gens),
-            (ModelDimension.StationaryStorages, storages),
-            (ModelDimension.FlexibleLoads, flex),
-            (ModelDimension.Markets, markets),
-            (ModelDimension.Chargers, chargers),
-            (ModelDimension.EVs, evs),
-        )
-        coordinates = {
-            dimension: Coordinates.of_entities(dimension, entities) for dimension, entities in entity_groups if entities
-        }
-        context = ModelContext(
-            horizon=self.horizon,
-            scenario_set=self.scenario_set,
-            entity_coordinates=tuple(coordinates.values()),
-        )
-
-        legacy = EnergySystemParameters(context=context, objective=self.objective)
-        entities = (*self.portfolio.assets.values(), *markets)
-        formulations: tuple[Formulation, ...] = ()
-        for formulation_type in FORMULATIONS:
-            inputs = FormulationInputs(entities=entities, context=context, built=formulations)
-            formulation = formulation_type.build(inputs)
-            if formulation is not None:
-                formulations = (*formulations, formulation)
-        return OptimizationProblem(legacy=legacy, formulations=formulations)
+        """Build the optimization problem of this energy system: one formulation per entity type and objective term."""
+        return OptimizationProblem.assemble(self._entities, self.horizon, self.scenario_set, self.objective)
 
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDispatchResults:
         """Optimize the energy system.
@@ -157,8 +122,6 @@ class EnergySystem(BaseModel):
             OptimizationResults containing the solution and metadata.
 
         """
-        milp_model = build_model(self.build_problem())
-        return optimize_algebraic_model(
-            milp_model=milp_model,
-            solver_config=solver_config,
-        )
+        problem = self.build_problem()
+        outcome = solve(build_model(problem), solver_config or SolverConfig())
+        return OptimalDispatchResults(outcome, problem)

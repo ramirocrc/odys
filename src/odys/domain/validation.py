@@ -5,22 +5,17 @@ single entity or profile live on that object and run when it is built. The
 rules here treat every entity alike through its capability queries
 (`max_supply`, `min_demand`, `max_energy_supply`, `validate_horizon`) and
 every profile through its type's `entity_types` and `required` flags. A new
-asset type is covered by overriding those queries and adding it to
-`_SUPPORTED_ASSET_TYPES`; a new profile type by adding it to `AnyProfile` and
-`PROFILE_TYPES` in `profiles.py`.
+asset type is covered by overriding those queries (that the optimizer models
+it is checked against its formulations, in `odys.optimization.formulations`);
+a new profile type by adding it to `AnyProfile` and `PROFILE_TYPES` in
+`profiles.py`.
 """
 
 from collections.abc import Mapping, Sequence
 
 from odys.domain.entities.base import Asset, EnergyEntity
-from odys.domain.entities.charger import Charger
-from odys.domain.entities.electric_vehicle import ElectricVehicle
-from odys.domain.entities.fixed_load import FixedLoad
-from odys.domain.entities.flexible_load import FlexibleLoad
-from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.horizon import Horizon, OperatingConditions
 from odys.domain.profiles import PROFILE_TYPES, LoadProfile, Profile
@@ -45,7 +40,6 @@ def validate_energy_system_inputs(
         OdysValidationError: If any validation check fails.
 
     """
-    validate_assets_are_supported(portfolio)
     entities: tuple[EnergyEntity, ...] = (*portfolio.assets.values(), *markets)
     for entity in entities:
         entity.validate_horizon(horizon)
@@ -60,39 +54,6 @@ def validate_energy_system_inputs(
         validate_enough_power_to_meet_demand(scenario, entities, horizon)
         if not markets:
             validate_enough_energy_to_meet_demand(scenario, entities, horizon)
-
-
-_SUPPORTED_ASSET_TYPES: tuple[type[Asset], ...] = (
-    Generator,
-    StationaryStorage,
-    ElectricVehicle,
-    Charger,
-    FixedLoad,
-    FlexibleLoad,
-)
-
-
-def validate_assets_are_supported(portfolio: AssetPortfolio) -> None:
-    """Validate that every asset is of a type the optimizer can model.
-
-    A bare `Asset` or a user-defined `Asset` subclass would otherwise be
-    accepted and then silently left out of the model.
-
-    Args:
-        portfolio: The asset portfolio to validate.
-
-    Raises:
-        OdysValidationError: If an asset's type is not supported.
-
-    """
-    for asset in portfolio.assets.values():
-        if not isinstance(asset, _SUPPORTED_ASSET_TYPES):
-            supported = ", ".join(asset_type.__name__ for asset_type in _SUPPORTED_ASSET_TYPES)
-            msg = (
-                f"Asset type {type(asset).__name__} is not supported by the optimizer: '{asset.name}'. "
-                f"Supported types: {supported}."
-            )
-            raise OdysValidationError(msg)
 
 
 def validate_profiles_reference_system_entities(

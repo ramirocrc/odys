@@ -1,7 +1,10 @@
 """Base class of the model formulation of one entity type."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, Self, TypeVar
+from collections.abc import Sequence
+from functools import reduce
+from operator import add
+from typing import ClassVar, Self, TypeVar
 
 import linopy
 import xarray as xr
@@ -10,9 +13,10 @@ from pydantic import BaseModel, ConfigDict
 from odys.domain.entities.base import EnergyEntity
 from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup
+from odys.optimization.variable_owner import VariableOwner, VariablesT
 from odys.parameters.context import ModelContext
+from odys.parameters.coordinates import Coordinates
 
-VariablesT = TypeVar("VariablesT", bound=BaseModel)
 EntityT = TypeVar("EntityT", bound=EnergyEntity)
 FormulationT = TypeVar("FormulationT", bound="Formulation")
 
@@ -26,15 +30,23 @@ class Formulation(ConstraintGroup, ABC):
     balance, and its profit per scenario. It is built only when the system has
     at least one entity of its type, so its methods never check for absence.
     It holds its variables once added, so it belongs to a single model.
+
+    Each subclass names its own axis (`dimension`) and the entity type it models
+    (`entity_type`); its entities' names are the coordinates along that axis.
     """
 
-    def __init__(self, context: ModelContext) -> None:
-        """Initialize with the shared indexing of the problem.
+    dimension: ClassVar[str]
+    entity_type: ClassVar[type[EnergyEntity]]
+
+    def __init__(self, entities: Sequence[EnergyEntity], context: ModelContext) -> None:
+        """Initialize with this type's entities and the shared indexing of the problem.
 
         Args:
-            context: The coordinates, step length and profiles of the problem.
+            entities: The entities of this formulation's type, at least one, in order.
+            context: The time and scenario coordinates, step length and profiles of the problem.
         """
         self.context = context
+        self.coordinates = Coordinates.of_entities(self.dimension, entities)
 
     @classmethod
     @abstractmethod
@@ -90,48 +102,24 @@ class FormulationInputs(BaseModel):
         return next((formulation for formulation in self.built if isinstance(formulation, kind)), None)
 
 
-class VariableFormulation(Formulation, Generic[VariablesT]):
-    """A formulation with decision variables, held in a typed, frozen variables object.
+class VariableFormulation(VariableOwner[VariablesT], Formulation):
+    """An entity formulation with decision variables, held in a typed, frozen variables object (see `VariableOwner`)."""
 
-    The variables are created once, in `add_variables`, and belong to that one
-    model: a second `add_variables` raises, so a problem is built into one model only.
+
+def per_scenario_profit(formulations: Sequence[Formulation]) -> linopy.LinearExpression:
+    """Return the profit per scenario: every formulation's profit, summed over time and entities.
+
+    Scenario probabilities are not applied; the expected-profit and CVaR terms do that.
+
+    Args:
+        formulations: The formulations of the problem, whose variables are already added.
+
+    Raises:
+        OdysError: If no formulation contributes a profit term.
     """
-
-    def __init__(self, context: ModelContext) -> None:
-        """Initialize with the shared indexing of the problem; the variables come later.
-
-        Args:
-            context: The coordinates, step length and profiles of the problem.
-        """
-        super().__init__(context)
-        self._variables: VariablesT | None = None
-
-    @property
-    def variables(self) -> VariablesT:
-        """Return the decision variables.
-
-        Raises:
-            OdysError: If `add_variables` has not run yet.
-        """
-        if self._variables is None:
-            msg = f"{type(self).__name__}.add_variables must run before its variables are used."
-            raise OdysError(msg)
-        return self._variables
-
-    def add_variables(self, model: linopy.Model) -> None:
-        """Add this formulation's decision variables to the model.
-
-        Args:
-            model: The linopy model to add the variables to.
-
-        Raises:
-            OdysError: If the variables were already added to a model; build a new problem for each model.
-        """
-        if self._variables is not None:
-            msg = f"{type(self).__name__} already has variables; build a new problem for each model."
-            raise OdysError(msg)
-        self._variables = self._create_variables(model)
-
-    @abstractmethod
-    def _create_variables(self, model: linopy.Model) -> VariablesT:
-        """Add the decision variables to the model and return them as the typed variables object."""
+    profits = [profit for formulation in formulations if (profit := formulation.profit()) is not None]
+    if not profits:
+        msg = "The problem has no entity type that contributes a profit term."
+        raise OdysError(msg)
+    total: linopy.LinearExpression = reduce(add, profits)
+    return total

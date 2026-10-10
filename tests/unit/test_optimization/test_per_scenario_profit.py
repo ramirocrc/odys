@@ -11,10 +11,11 @@ from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.profiles import LoadProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
+from odys.optimization.formulations.base import per_scenario_profit
 from odys.optimization.formulations.generator import GeneratorFormulation
 from odys.optimization.formulations.stationary_storage import StationaryStorageFormulation
-from odys.optimization.model.milp_model import EnergyMILPModel
 from odys.optimization.model.model_builder import build_model
+from odys.optimization.problem import OptimizationProblem
 from odys.parameters.dimensions import ModelDimension
 
 STANDARD_NOMINAL_POWER = 100.0
@@ -95,14 +96,16 @@ def storage_without_degradation_cost() -> StationaryStorage:
     )
 
 
-def _build_milp_model(assets: list[Generator | StationaryStorage], load: FixedLoad) -> EnergyMILPModel:
+def _built_problem(assets: list[Generator | StationaryStorage], load: FixedLoad) -> OptimizationProblem:
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(assets=[*assets, load]),
         number_of_steps=len(DEMAND_PROFILE),
         timestep=TIMESTEP,
         scenarios=Scenario(profiles=(LoadProfile(load=load, values=DEMAND_PROFILE),)),
     )
-    return build_model(energy_system.build_problem())
+    problem = energy_system.build_problem()
+    build_model(problem)
+    return problem
 
 
 class TestPerScenarioProfitDegradationCost:
@@ -118,39 +121,39 @@ class TestPerScenarioProfitDegradationCost:
         load1: FixedLoad,
     ) -> None:
         storage: StationaryStorage = request.getfixturevalue(storage_fixture_name)
-        model = _build_milp_model([generator1, storage], load1)
+        problem = _built_problem([generator1, storage], load1)
 
-        actual_profit = model.problem.per_scenario_profit()
+        actual_profit = per_scenario_profit(problem.formulations)
 
-        generators = model.problem.formulation_of(GeneratorFormulation)
+        generators = problem.formulation_of(GeneratorFormulation)
         assert generators is not None
-        storages = model.problem.formulation_of(StationaryStorageFormulation)
+        storages = problem.formulation_of(StationaryStorageFormulation)
         assert storages is not None
         timestep_hours = TIMESTEP / timedelta(hours=1)
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
             + generators.variables.startup * generators.arrays.startup_cost
             + generators.variables.shutdown * generators.arrays.shutdown_cost
-        ).sum([ModelDimension.Time, ModelDimension.Generators]) - (
+        ).sum([ModelDimension.Time, GeneratorFormulation.dimension]) - (
             (storages.variables.power_in + storages.variables.power_out)
             * timestep_hours
             * storages.storage.battery.degradation_cost
-        ).sum([ModelDimension.Time, ModelDimension.StationaryStorages])
+        ).sum([ModelDimension.Time, StationaryStorageFormulation.dimension])
 
         assert_linequal(actual_profit, expected_profit)
 
     def test_profit_requires_no_storages_still_works(self, generator1: Generator, load1: FixedLoad) -> None:
-        model = _build_milp_model([generator1], load1)
+        problem = _built_problem([generator1], load1)
 
-        actual_profit = model.problem.per_scenario_profit()
+        actual_profit = per_scenario_profit(problem.formulations)
 
-        generators = model.problem.formulation_of(GeneratorFormulation)
+        generators = problem.formulation_of(GeneratorFormulation)
         assert generators is not None
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
             + generators.variables.startup * generators.arrays.startup_cost
             + generators.variables.shutdown * generators.arrays.shutdown_cost
-        ).sum([ModelDimension.Time, ModelDimension.Generators])
+        ).sum([ModelDimension.Time, GeneratorFormulation.dimension])
 
         assert_linequal(actual_profit, expected_profit)
 
@@ -167,16 +170,16 @@ class TestPerScenarioProfitShutdownCost:
         load1: FixedLoad,
     ) -> None:
         generator: Generator = request.getfixturevalue(generator_fixture_name)
-        model = _build_milp_model([generator], load1)
+        problem = _built_problem([generator], load1)
 
-        actual_profit = model.problem.per_scenario_profit()
+        actual_profit = per_scenario_profit(problem.formulations)
 
-        generators = model.problem.formulation_of(GeneratorFormulation)
+        generators = problem.formulation_of(GeneratorFormulation)
         assert generators is not None
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
             + generators.variables.startup * generators.arrays.startup_cost
             + generators.variables.shutdown * generators.arrays.shutdown_cost
-        ).sum([ModelDimension.Time, ModelDimension.Generators])
+        ).sum([ModelDimension.Time, GeneratorFormulation.dimension])
 
         assert_linequal(actual_profit, expected_profit)

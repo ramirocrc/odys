@@ -4,9 +4,10 @@ import pytest
 
 from odys.domain.entities.generator import Generator
 from odys.parameters.coordinates import Coordinates
-from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import GeneratorArrays
 from odys.parameters.vectorize import vectorize
+
+GENERATOR_DIMENSION = "generator"
 
 STANDARD_NOMINAL_POWER = 100.0
 STANDARD_VARIABLE_COST = 20.0
@@ -16,7 +17,7 @@ EXPLICIT_RAMP_UP = 10.0
 
 
 def _generator_arrays(generators: list[Generator]) -> GeneratorArrays:
-    return vectorize(GeneratorArrays, generators, Coordinates.of_entities(ModelDimension.Generators, generators))
+    return vectorize(GeneratorArrays, generators, Coordinates.of_entities(GENERATOR_DIMENSION, generators))
 
 
 @pytest.fixture
