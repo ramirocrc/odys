@@ -6,7 +6,6 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.base import EnergyEntity
-from odys.parameters.dimensions import ModelDimension
 
 
 class Coordinates(BaseModel):
@@ -14,11 +13,11 @@ class Coordinates(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    dimension: ModelDimension
+    dimension: str
     labels: tuple[str, ...]
 
     @classmethod
-    def of_entities(cls, dimension: ModelDimension, entities: Sequence[EnergyEntity]) -> Self:
+    def of_entities(cls, dimension: str, entities: Sequence[EnergyEntity]) -> Self:
         """Return coordinates labelled by the entities' names, in order.
 
         Args:
@@ -34,4 +33,4 @@ class Coordinates(BaseModel):
     @property
     def dimension_coordinates_map(self) -> dict[str, list[str]]:
         """Return the xarray coordinate mapping for this dimension."""
-        return {self.dimension.value: list(self.labels)}
+        return {self.dimension: list(self.labels)}

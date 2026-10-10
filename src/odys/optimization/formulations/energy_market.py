@@ -16,6 +16,8 @@ from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import MarketArrays
 from odys.parameters.vectorize import vectorize
 
+MARKET = "market"
+
 
 class EnergyMarketVariables(BaseModel):
     """Decision variables of the energy markets."""
@@ -30,6 +32,8 @@ class EnergyMarketVariables(BaseModel):
 class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
     """Energy markets: volume limits, buy-or-sell exclusivity, trade direction and non-anticipativity."""
 
+    dimension = MARKET
+    entity_type = EnergyMarket
     sell_volume_name: ClassVar[str] = "market_sell_volume"
     buy_volume_name: ClassVar[str] = "market_buy_volume"
     trade_mode_name: ClassVar[str] = "market_trade_mode"
@@ -41,10 +45,9 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
             markets: The energy markets, at least one.
             context: The shared indexing of the problem.
         """
-        super().__init__(context)
-        self.coordinates = context.coordinates_of(ModelDimension.Markets)
+        super().__init__(markets, context)
         self.arrays = vectorize(MarketArrays, markets, self.coordinates)
-        self.prices = context.profiles(PriceProfile, markets, ModelDimension.Markets)
+        self.prices = context.profiles(PriceProfile, markets, self.coordinates)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
@@ -136,13 +139,13 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
 
     def power_injection(self) -> linopy.LinearExpression:
         """Return the net purchase (buy minus sell volume), summed over markets."""
-        bought = self.variables.buy_volume.sum(ModelDimension.Markets)
-        injection: linopy.LinearExpression = bought - self.variables.sell_volume.sum(ModelDimension.Markets)
+        bought = self.variables.buy_volume.sum(MARKET)
+        injection: linopy.LinearExpression = bought - self.variables.sell_volume.sum(MARKET)
         return injection
 
     def profit(self) -> linopy.LinearExpression:
         """Return the trading revenue per scenario: (sell minus buy volume) times step length times price."""
         energy_price = self.context.timestep_hours * self.prices
         revenue = self.variables.sell_volume * energy_price - self.variables.buy_volume * energy_price
-        profit: linopy.LinearExpression = revenue.sum([ModelDimension.Time, ModelDimension.Markets])
+        profit: linopy.LinearExpression = revenue.sum([ModelDimension.Time, MARKET])
         return profit

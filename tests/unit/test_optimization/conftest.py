@@ -62,4 +62,4 @@ def linopy_model(optimization_problem: OptimizationProblem) -> Model:
 
     Each test module must define its own `energy_system_sample` fixture.
     """
-    return build_model(optimization_problem).linopy_model
+    return build_model(optimization_problem)

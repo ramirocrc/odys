@@ -16,6 +16,8 @@ from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.energy_system import EnergySystem
+from odys.optimization.formulations.charging import ChargingFormulation
+from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 from odys.optimization.problem import OptimizationProblem
 from odys.parameters.dimensions import ModelDimension
 
@@ -103,13 +105,17 @@ class TestChargingFormulationConstraints:
     def test_constraint_one_ev_per_charger(self) -> None:
         actual_constraint = self.linopy_model.constraints["charger_one_ev_per_charger_constraint"]
         assert isinstance(actual_constraint, linopy.Constraint)
-        expected_dims = {ModelDimension.Scenarios.value, ModelDimension.Time.value, ModelDimension.Chargers.value}
+        expected_dims = {ModelDimension.Scenarios.value, ModelDimension.Time.value, ChargingFormulation.dimension}
         assert expected_dims.issubset(set(actual_constraint.dims))
 
     def test_constraint_one_charger_per_ev(self) -> None:
         actual_constraint = self.linopy_model.constraints["charger_one_charger_per_ev_constraint"]
         assert isinstance(actual_constraint, linopy.Constraint)
-        expected_dims = {ModelDimension.Scenarios.value, ModelDimension.Time.value, ModelDimension.EVs.value}
+        expected_dims = {
+            ModelDimension.Scenarios.value,
+            ModelDimension.Time.value,
+            ElectricVehicleFormulation.dimension,
+        }
         assert expected_dims.issubset(set(actual_constraint.dims))
 
     def test_constraint_no_assignment_while_driving(self) -> None:
@@ -118,15 +124,19 @@ class TestChargingFormulationConstraints:
         expected_dims = {
             ModelDimension.Scenarios.value,
             ModelDimension.Time.value,
-            ModelDimension.Chargers.value,
-            ModelDimension.EVs.value,
+            ChargingFormulation.dimension,
+            ElectricVehicleFormulation.dimension,
         }
         assert expected_dims.issubset(set(actual_constraint.dims))
 
     def test_constraint_charger_power_limit(self) -> None:
         actual_constraint = self.linopy_model.constraints["charger_power_limit_constraint"]
         assert isinstance(actual_constraint, linopy.Constraint)
-        expected_dims = {ModelDimension.Scenarios.value, ModelDimension.Time.value, ModelDimension.EVs.value}
+        expected_dims = {
+            ModelDimension.Scenarios.value,
+            ModelDimension.Time.value,
+            ElectricVehicleFormulation.dimension,
+        }
         assert expected_dims.issubset(set(actual_constraint.dims))
 
     def test_charger_constraints_present(self) -> None:

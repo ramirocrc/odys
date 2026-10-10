@@ -59,7 +59,7 @@ def vectorize(arrays_type: type[ArraysT], models: Sequence[BaseModel], coordinat
     arrays = {
         field: xr.DataArray(
             [np.nan if (value := getattr(model, field)) is None else value for model in models],
-            dims=coordinates.dimension.value,
+            dims=coordinates.dimension,
             coords=coordinates.dimension_coordinates_map,
         )
         for field in arrays_type.model_fields

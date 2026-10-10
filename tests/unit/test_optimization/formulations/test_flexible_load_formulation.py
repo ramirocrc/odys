@@ -94,7 +94,7 @@ def optimization_problem(energy_system_sample: EnergySystem) -> OptimizationProb
 
 @pytest.fixture
 def linopy_model(optimization_problem: OptimizationProblem) -> linopy.Model:
-    return build_model(optimization_problem).linopy_model
+    return build_model(optimization_problem)
 
 
 @pytest.fixture

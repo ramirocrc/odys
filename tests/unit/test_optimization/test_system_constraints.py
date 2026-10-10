@@ -116,7 +116,7 @@ def linopy_model_with_non_anticipativity(
     energy_system_with_multiple_scenarios: EnergySystem,
 ) -> linopy.Model:
     problem = energy_system_with_multiple_scenarios.build_problem()
-    return build_model(problem).linopy_model
+    return build_model(problem)
 
 
 class TestPowerBalanceAndAvailableCapacity:

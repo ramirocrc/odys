@@ -2,10 +2,9 @@
 
 from collections.abc import Sequence
 from functools import cached_property
-from typing import Self
 
 import xarray as xr
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.base import EnergyEntity
 from odys.domain.exceptions import OdysError
@@ -19,9 +18,9 @@ from odys.parameters.dimensions import ModelDimension
 class ModelContext(BaseModel):
     """Shared indexing of one optimization problem.
 
-    Holds the time and scenario coordinates, the step length, the scenario
-    probabilities and the coordinates of every entity dimension, and turns
-    scenario profiles into arrays. It is the only producer of time labels,
+    Holds the time and scenario coordinates, the step length and the scenario
+    probabilities, and turns scenario profiles into arrays. Entity coordinates
+    belong to each entity type's formulation. It is the only producer of time labels,
     which are strings ("0", "1", ...): arrays with integer time coordinates
     would align with nothing and silently mask every constraint using them.
     """
@@ -30,16 +29,6 @@ class ModelContext(BaseModel):
 
     horizon: Horizon
     scenario_set: ScenarioSet
-    entity_coordinates: tuple[Coordinates, ...] = ()
-
-    @model_validator(mode="after")
-    def _validate_one_coordinates_per_entity_dimension(self) -> Self:
-        dimensions = [coordinates.dimension for coordinates in self.entity_coordinates]
-        reserved = {ModelDimension.Time, ModelDimension.Scenarios}
-        if len(dimensions) != len(set(dimensions)) or reserved & set(dimensions):
-            msg = f"Entity coordinates need one entry per entity dimension, without time or scenario: {dimensions}."
-            raise OdysError(msg)
-        return self
 
     @cached_property
     def time(self) -> Coordinates:
@@ -67,29 +56,6 @@ class ModelContext(BaseModel):
             coords=self.scenarios.dimension_coordinates_map,
         )
 
-    def coordinates_of(self, dimension: ModelDimension) -> Coordinates:
-        """Return the coordinates of a dimension.
-
-        Args:
-            dimension: The dimension to look up.
-
-        Returns:
-            The coordinates of that dimension.
-
-        Raises:
-            OdysError: If the problem has no coordinates for that dimension (no entity of that type).
-
-        """
-        if dimension not in self._coordinates_by_dimension:
-            msg = f"The problem has no coordinates for dimension '{dimension}'."
-            raise OdysError(msg)
-        return self._coordinates_by_dimension[dimension]
-
-    @cached_property
-    def _coordinates_by_dimension(self) -> dict[ModelDimension, Coordinates]:
-        all_coordinates = (self.time, self.scenarios, *self.entity_coordinates)
-        return {coordinates.dimension: coordinates for coordinates in all_coordinates}
-
     def variable_coords(self, *entity_coordinates: Coordinates) -> dict[str, list[str]]:
         """Return the coordinates of a decision variable over scenario, time and the given entity dimensions.
 
@@ -109,7 +75,7 @@ class ModelContext(BaseModel):
         self,
         kind: type[Profile],
         entities: Sequence[EnergyEntity],
-        dimension: ModelDimension,
+        coordinates: Coordinates,
         *,
         default: float | None = None,
     ) -> xr.DataArray:
@@ -118,11 +84,11 @@ class ModelContext(BaseModel):
         Args:
             kind: The profile type to read, such as `PriceProfile`.
             entities: The entities, in the order of their coordinates.
-            dimension: The dimension the entities are indexed along.
+            coordinates: The entities' coordinates, which name their dimension.
             default: The value at every step for an entity without a profile in a scenario.
 
         Returns:
-            An array with dimensions (scenario, `dimension`, time).
+            An array with dimensions (scenario, the entity dimension, time).
 
         Raises:
             OdysError: If an entity has no profile in a scenario and there is no default.
@@ -136,7 +102,7 @@ class ModelContext(BaseModel):
             data=data,
             coords=(
                 self.scenarios.dimension_coordinates_map
-                | Coordinates.of_entities(dimension, entities).dimension_coordinates_map
+                | coordinates.dimension_coordinates_map
                 | self.time.dimension_coordinates_map
             ),
         )

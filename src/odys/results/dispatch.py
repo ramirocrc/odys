@@ -7,7 +7,12 @@ from collections.abc import Iterator
 import pandas as pd
 import xarray as xr
 
-from odys.parameters.dimensions import ModelDimension
+from odys.optimization.formulations.charging import ChargingFormulation
+from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
+from odys.optimization.formulations.energy_market import EnergyMarketFormulation
+from odys.optimization.formulations.flexible_load import FlexibleLoadFormulation
+from odys.optimization.formulations.generator import GeneratorFormulation
+from odys.optimization.formulations.stationary_storage import StationaryStorageFormulation
 
 
 class GeneratorDispatch:
@@ -33,7 +38,7 @@ class GeneratorDispatch:
         self._status = status
         self._startup = startup
         self._shutdown = shutdown
-        self._generator_names = power.coords[ModelDimension.Generators]
+        self._generator_names = power.coords[GeneratorFormulation.dimension]
 
     def __getitem__(self, key: str) -> GeneratorDispatch:
         """Return new instance for a specific generator."""
@@ -117,7 +122,7 @@ class StationaryStorageDispatch:
         self._net_power = net_power
         self._soc = soc
         self._charge_mode = charge_mode
-        self._stationary_storage_names = net_power.coords[ModelDimension.StationaryStorages]
+        self._stationary_storage_names = net_power.coords[StationaryStorageFormulation.dimension]
 
     def __getitem__(self, key: str) -> StationaryStorageDispatch:
         """Return new instance for a specific stationary storage."""
@@ -194,7 +199,7 @@ class ElectricVehicleDispatch:
         self._net_power = net_power
         self._soc = soc
         self._charge_mode = charge_mode
-        self._ev_names = net_power.coords[ModelDimension.EVs]
+        self._ev_names = net_power.coords[ElectricVehicleFormulation.dimension]
 
     def __getitem__(self, key: str) -> ElectricVehicleDispatch:
         """Return new instance for a specific electric vehicle."""
@@ -269,8 +274,8 @@ class ChargerDispatch:
         """Initialize charger dispatch results."""
         self._assignment = assignment
         self._power_in = power_in
-        self._charger_names = assignment.coords[ModelDimension.Chargers]
-        self._ev_names = assignment.coords[ModelDimension.EVs]
+        self._charger_names = assignment.coords[ChargingFormulation.dimension]
+        self._ev_names = assignment.coords[ElectricVehicleFormulation.dimension]
 
     def __getitem__(self, key: str) -> ChargerDispatch:
         """Return new instance for a specific charger."""
@@ -300,7 +305,7 @@ class ChargerDispatch:
     @property
     def power(self) -> pd.Series:
         """Power delivered by each charger (MWh)."""
-        delivered: xr.DataArray = (self._assignment * self._power_in).sum(ModelDimension.EVs.value)
+        delivered: xr.DataArray = (self._assignment * self._power_in).sum(ElectricVehicleFormulation.dimension)
         return delivered.to_series()
 
     def to_dataset(self) -> xr.Dataset:
@@ -308,7 +313,7 @@ class ChargerDispatch:
         return xr.Dataset(
             data_vars={
                 "assignment": self._assignment,
-                "power": (self._assignment * self._power_in).sum(ModelDimension.EVs.value),
+                "power": (self._assignment * self._power_in).sum(ElectricVehicleFormulation.dimension),
             },
         )
 
@@ -338,7 +343,7 @@ class MarketDispatch:
         """Initialize market dispatch results."""
         self._sell_volume = sell_volume
         self._buy_volume = buy_volume
-        self._market_names = sell_volume.coords[ModelDimension.Markets]
+        self._market_names = sell_volume.coords[EnergyMarketFormulation.dimension]
 
     def __getitem__(self, key: str) -> MarketDispatch:
         """Return new instance for a specific market."""
@@ -415,7 +420,7 @@ class FlexibleLoadDispatch:
         """Initialize flexible load dispatch results."""
         self._load_adjustment = load_adjustment
         self._base_profiles = base_profiles
-        self._flexible_load_names = load_adjustment.coords[ModelDimension.FlexibleLoads]
+        self._flexible_load_names = load_adjustment.coords[FlexibleLoadFormulation.dimension]
 
     def __getitem__(self, key: str) -> FlexibleLoadDispatch:
         """Return new instance for a specific flexible load."""

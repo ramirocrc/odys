@@ -229,7 +229,7 @@ class TestStationaryStorageConstraintsSubHourlyTimestep:
         energy_system_15min: EnergySystem,
     ) -> linopy.Model:
         problem = energy_system_15min.build_problem()
-        return build_model(problem).linopy_model
+        return build_model(problem)
 
     def test_soc_dynamics_with_15min_timestep(
         self,
@@ -330,7 +330,7 @@ class TestStorageSocEndOptional:
             timestep=timedelta(hours=1),
             scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile_sample),)),
         )
-        return build_model(energy_system.build_problem()).linopy_model
+        return build_model(energy_system.build_problem())
 
     def test_constraint_covers_only_storages_with_soc_end(
         self,

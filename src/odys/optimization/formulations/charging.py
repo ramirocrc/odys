@@ -13,9 +13,11 @@ from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 from odys.parameters.context import ModelContext
-from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import ChargerArrays
 from odys.parameters.vectorize import vectorize
+
+CHARGER = "charger"
+EV = ElectricVehicleFormulation.dimension
 
 
 class ChargingVariables(BaseModel):
@@ -34,6 +36,8 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
     the vehicles do.
     """
 
+    dimension = CHARGER
+    entity_type = Charger
     assignment_name: ClassVar[str] = "charger_ev_assignment"
 
     def __init__(
@@ -49,8 +53,7 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
             context: The shared indexing of the problem.
             electric_vehicles: The formulation of the vehicles the chargers serve.
         """
-        super().__init__(context)
-        self.coordinates = context.coordinates_of(ModelDimension.Chargers)
+        super().__init__(chargers, context)
         self.arrays = vectorize(ChargerArrays, chargers, self.coordinates)
         self.electric_vehicles = electric_vehicles
 
@@ -72,7 +75,7 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
 
     def _create_variables(self, model: linopy.Model) -> ChargingVariables:
         """Add the binary assignment of each vehicle to each charger, per scenario and time."""
-        coords = self.context.variable_coords(self.coordinates, self.context.coordinates_of(ModelDimension.EVs))
+        coords = self.context.variable_coords(self.coordinates, self.electric_vehicles.coordinates)
         return ChargingVariables(
             assignment=model.add_variables(name=self.assignment_name, coords=coords, binary=True),
         )
@@ -81,7 +84,7 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
     def _get_charger_one_ev_per_charger_constraint(self) -> ModelConstraint:
         """Each charger serves at most one vehicle at a time."""
         return ModelConstraint(
-            constraint=self.variables.assignment.sum(ModelDimension.EVs) <= 1,
+            constraint=self.variables.assignment.sum(EV) <= 1,
             name="charger_one_ev_per_charger_constraint",
         )
 
@@ -89,7 +92,7 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
     def _get_charger_one_charger_per_ev_constraint(self) -> ModelConstraint:
         """Each vehicle is connected to at most one charger at a time."""
         return ModelConstraint(
-            constraint=self.variables.assignment.sum(ModelDimension.Chargers) <= 1,
+            constraint=self.variables.assignment.sum(CHARGER) <= 1,
             name="charger_one_charger_per_ev_constraint",
         )
 
@@ -107,7 +110,7 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
 
         With no charger assigned the cap is 0, so a vehicle charges or discharges (V2G) only through a charger.
         """
-        available_power = (self.variables.assignment * self.arrays.max_power).sum(ModelDimension.Chargers)
+        available_power = (self.variables.assignment * self.arrays.max_power).sum(CHARGER)
         vehicles = self.electric_vehicles.variables
         return ModelConstraint(
             constraint=vehicles.power_in + vehicles.power_out <= available_power,

@@ -29,13 +29,16 @@ NOMINAL_POWER = 100.0
 FIRST = FixedLoad(name="load_a")
 SECOND = FixedLoad(name="load_b")
 GENERATOR = Generator(name="gen", nominal_power=NOMINAL_POWER, variable_cost=1.0)
+LOAD_DIMENSION = "fixed_load"
+GENERATOR_DIMENSION = "generator"
+LOAD_COORDINATES = Coordinates.of_entities(LOAD_DIMENSION, [FIRST, SECOND])
+GENERATOR_COORDINATES = Coordinates.of_entities(GENERATOR_DIMENSION, [GENERATOR])
 
 
-def _context(*scenarios: Scenario, entity_coordinates: tuple[Coordinates, ...] = ()) -> ModelContext:
+def _context(*scenarios: Scenario) -> ModelContext:
     return ModelContext(
         horizon=Horizon(timestep=HALF_HOUR, number_of_steps=NUMBER_OF_STEPS),
         scenario_set=ScenarioSet(scenarios=scenarios),
-        entity_coordinates=entity_coordinates,
     )
 
 
@@ -49,12 +52,11 @@ def context() -> ModelContext:
     return _context(
         Scenario(name="low", probability=LOW_PROBABILITY, profiles=profiles),
         Scenario(name="high", probability=HIGH_PROBABILITY, profiles=profiles[:2]),
-        entity_coordinates=(Coordinates.of_entities(ModelDimension.Generators, [GENERATOR]),),
     )
 
 
 def test_context_time_labels_are_strings(context: ModelContext) -> None:
-    assert context.time.dimension is ModelDimension.Time
+    assert context.time.dimension == ModelDimension.Time
     assert context.time.labels == ("0", "1", "2")
 
 
@@ -71,19 +73,12 @@ def test_context_probabilities(context: ModelContext) -> None:
     xr.testing.assert_allclose(context.probabilities, expected)
 
 
-def test_context_coordinates_of_known_dimensions(context: ModelContext) -> None:
-    assert context.coordinates_of(ModelDimension.Time) == context.time
-    assert context.coordinates_of(ModelDimension.Scenarios) == context.scenarios
-    assert context.coordinates_of(ModelDimension.Generators).labels == ("gen",)
-
-
-def test_context_coordinates_of_absent_dimension_raises(context: ModelContext) -> None:
-    with pytest.raises(OdysError, match="no coordinates for dimension 'market'"):
-        context.coordinates_of(ModelDimension.Markets)
+def test_context_indexes_only_scenario_and_time() -> None:
+    assert set(ModelContext.model_fields) == {"horizon", "scenario_set"}
 
 
 def test_context_profiles_follow_entity_order_not_profile_order(context: ModelContext) -> None:
-    profiles = context.profiles(LoadProfile, [FIRST, SECOND], ModelDimension.FixedLoads)
+    profiles = context.profiles(LoadProfile, [FIRST, SECOND], LOAD_COORDINATES)
 
     expected = xr.DataArray(
         [[FIRST_LOAD, SECOND_LOAD], [FIRST_LOAD, SECOND_LOAD]],
@@ -93,7 +88,7 @@ def test_context_profiles_follow_entity_order_not_profile_order(context: ModelCo
 
 
 def test_context_profiles_use_default_for_entity_without_profile(context: ModelContext) -> None:
-    profiles = context.profiles(AvailableCapacityProfile, [GENERATOR], ModelDimension.Generators, default=np.inf)
+    profiles = context.profiles(AvailableCapacityProfile, [GENERATOR], GENERATOR_COORDINATES, default=np.inf)
 
     expected = xr.DataArray(
         [[CAPACITY], [(np.inf,) * NUMBER_OF_STEPS]],
@@ -104,7 +99,7 @@ def test_context_profiles_use_default_for_entity_without_profile(context: ModelC
 
 def test_context_profiles_without_default_raise_for_missing_profile(context: ModelContext) -> None:
     with pytest.raises(OdysError, match="Scenario 'high' has no AvailableCapacityProfile for 'gen'"):
-        context.profiles(AvailableCapacityProfile, [GENERATOR], ModelDimension.Generators)
+        context.profiles(AvailableCapacityProfile, [GENERATOR], GENERATOR_COORDINATES)
 
 
 def test_context_profiles_match_the_entity_not_only_its_name() -> None:
@@ -114,33 +109,15 @@ def test_context_profiles_match_the_entity_not_only_its_name() -> None:
     profiles = context.profiles(
         AvailableCapacityProfile,
         [copy_with_other_power],
-        ModelDimension.Generators,
+        Coordinates.of_entities(GENERATOR_DIMENSION, [copy_with_other_power]),
         default=0.0,
     )
 
     assert float(profiles.sum()) == pytest.approx(0.0)
 
 
-@pytest.mark.parametrize(
-    "entity_coordinates",
-    [
-        (
-            Coordinates(dimension=ModelDimension.Generators, labels=("gen",)),
-            Coordinates(dimension=ModelDimension.Generators, labels=("other",)),
-        ),
-        (Coordinates(dimension=ModelDimension.Time, labels=("0",)),),
-    ],
-    ids=["duplicate_dimension", "time_as_entity_dimension"],
-)
-def test_context_rejects_ambiguous_entity_coordinates(entity_coordinates: tuple[Coordinates, ...]) -> None:
-    with pytest.raises(OdysError, match="one entry per entity dimension, without time or scenario"):
-        _context(Scenario(), entity_coordinates=entity_coordinates)
-
-
 def test_context_variable_coords_are_scenario_time_then_entity_dimensions(context: ModelContext) -> None:
-    generators = context.coordinates_of(ModelDimension.Generators)
-
-    coords = context.variable_coords(generators)
+    coords = context.variable_coords(GENERATOR_COORDINATES)
 
     assert list(coords) == ["scenario", "time", "generator"]
     assert coords["generator"] == ["gen"]

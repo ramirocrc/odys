@@ -31,7 +31,7 @@ from examples.ev_fleet_optimization import (  # pyrefly: ignore
 from examples.flexible_load_market import run_flexible_load_market  # pyrefly: ignore
 from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
 from odys import Charger, OptimalDispatchResults
-from odys.parameters.dimensions import ModelDimension
+from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 
 OUTPUT_DIR = Path(__file__).parent / "assets" / "examples"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -912,7 +912,7 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
     net_power_kw_by_ev = {ev.name: np.abs(ev_dataset.sel(ev=ev.name).net_power.values) * 1000 for ev in EVS}
     for charger in CHARGERS:
         connected = assignment.sel(charger=charger.name)
-        most_evs = float(connected.sum(ModelDimension.EVs.value).max())
+        most_evs = float(connected.sum(ElectricVehicleFormulation.dimension).max())
         rows.append((
             f"Most EVs on {_charger_display_name(charger)} in any hour",
             "≤ 1",

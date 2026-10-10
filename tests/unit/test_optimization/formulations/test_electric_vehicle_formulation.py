@@ -17,6 +17,7 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.trip import Trip
 from odys.energy_system import EnergySystem
+from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 from odys.optimization.problem import OptimizationProblem
 from odys.parameters.dimensions import ModelDimension
 
@@ -101,7 +102,11 @@ class TestElectricVehicleFormulationConstraints:
     def test_constraint_ev_driving(self) -> None:
         actual_constraint = self.linopy_model.constraints["ev_driving_constraint"]
         assert isinstance(actual_constraint, linopy.Constraint)
-        expected_dims = {ModelDimension.Scenarios.value, ModelDimension.Time.value, ModelDimension.EVs.value}
+        expected_dims = {
+            ModelDimension.Scenarios.value,
+            ModelDimension.Time.value,
+            ElectricVehicleFormulation.dimension,
+        }
         assert expected_dims.issubset(set(actual_constraint.dims))
 
     def test_constraint_ev_driving_has_no_masked_entries(self) -> None:
@@ -117,7 +122,11 @@ class TestElectricVehicleFormulationConstraints:
     def test_constraint_ev_min_soc_departure(self) -> None:
         actual_constraint = self.linopy_model.constraints["ev_min_soc_departure_constraint"]
         assert isinstance(actual_constraint, linopy.Constraint)
-        expected_dims = {ModelDimension.Scenarios.value, ModelDimension.Time.value, ModelDimension.EVs.value}
+        expected_dims = {
+            ModelDimension.Scenarios.value,
+            ModelDimension.Time.value,
+            ElectricVehicleFormulation.dimension,
+        }
         assert expected_dims.issubset(set(actual_constraint.dims))
 
     def test_constraint_ev_soc_dynamics_includes_trip_energy(self) -> None:

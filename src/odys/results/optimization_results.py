@@ -1,7 +1,6 @@
-"""Frozen snapshot of solved model data for result extraction."""
+"""Dispatch results of one solve."""
 
 import xarray as xr
-from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.optimization.formulations.charging import ChargingFormulation
@@ -20,51 +19,42 @@ from odys.results.dispatch import (
     MarketDispatch,
     StationaryStorageDispatch,
 )
+from odys.solvers.outcome import SolveOutcome, SolveStatus
 
 
 class OptimalDispatchResults:
-    """Frozen snapshot of data extracted from a solved EnergyMILPModel.
-
-    Captures only what OptimizationResults needs, allowing the full
-    linopy model to be garbage-collected after solving.
-    """
+    """Dispatch results of one solve, read from the solve outcome and the problem the model was built from."""
 
     __slots__ = (
+        "_has_solution",
         "_objective_value",
         "_problem",
         "_solution",
         "_solver_status",
         "_termination_condition",
-        "_variable_names",
     )
 
-    def __init__(
-        self,
-        solver_status: SolverStatus,
-        termination_condition: TerminationCondition,
-        solution: xr.Dataset,
-        objective_value: float | None,
-        problem: OptimizationProblem,
-    ) -> None:
-        """Initialize OptimalDispatchResults."""
-        self._solver_status = solver_status
-        self._termination_condition = termination_condition
+    def __init__(self, outcome: SolveOutcome, problem: OptimizationProblem) -> None:
+        """Initialize OptimalDispatchResults from the solve outcome and the problem the model was built from."""
+        self._solver_status = outcome.status
+        self._has_solution = outcome.has_solution
+        self._termination_condition = outcome.termination_condition
+        solution = outcome.solution
         if ModelDimension.Scenarios in solution.coords and len(solution.coords[ModelDimension.Scenarios]) == 1:
             solution = solution.squeeze(ModelDimension.Scenarios, drop=True)
         self._solution = solution
-        self._objective_value = objective_value
-        self._variable_names = set(solution.variables.keys())
+        self._objective_value = outcome.objective_value
         self._problem = problem
 
     @property
-    def solver_status(self) -> str:
+    def solver_status(self) -> SolveStatus:
         """Get the solver status."""
-        return self._solver_status.value
+        return self._solver_status
 
     @property
     def termination_condition(self) -> str:
         """Get the termination condition."""
-        return self._termination_condition.value
+        return self._termination_condition
 
     def to_dataset(self) -> xr.Dataset:
         """Get the raw solution dataset."""
@@ -72,7 +62,7 @@ class OptimalDispatchResults:
         return self._solution
 
     def _validate_terminated_successfully(self) -> None:
-        if self._solver_status != SolverStatus.ok:
+        if not self._has_solution:
             msg = f"No solution available. Optimization Termination Condition: {self._termination_condition}."
             raise OdysSolverError(msg)
 

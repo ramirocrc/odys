@@ -11,17 +11,20 @@ from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
 from odys.optimization.formulations.storage import StorageFormulation, StorageVariables
 from odys.parameters.context import ModelContext
-from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import BatteryArrays
 from odys.parameters.vectorize import vectorize
+
+STATIONARY_STORAGE = "stationary_storage"
 
 
 class StationaryStorageFormulation(VariableFormulation[StorageVariables]):
     """Stationary storage: the shared battery model, injecting its net discharge into the bus."""
 
-    net_power_name: ClassVar[str] = f"{ModelDimension.StationaryStorages.value}_net_power"
-    soc_name: ClassVar[str] = f"{ModelDimension.StationaryStorages.value}_soc"
-    charge_mode_name: ClassVar[str] = f"{ModelDimension.StationaryStorages.value}_charge_mode"
+    dimension = STATIONARY_STORAGE
+    entity_type = StationaryStorage
+    net_power_name: ClassVar[str] = f"{STATIONARY_STORAGE}_net_power"
+    soc_name: ClassVar[str] = f"{STATIONARY_STORAGE}_soc"
+    charge_mode_name: ClassVar[str] = f"{STATIONARY_STORAGE}_charge_mode"
 
     def __init__(self, storages: Sequence[StationaryStorage], context: ModelContext) -> None:
         """Initialize with the stationary storages of the system.
@@ -30,10 +33,9 @@ class StationaryStorageFormulation(VariableFormulation[StorageVariables]):
             storages: The stationary storages, at least one.
             context: The shared indexing of the problem.
         """
-        super().__init__(context)
-        coordinates = context.coordinates_of(ModelDimension.StationaryStorages)
-        battery = vectorize(BatteryArrays, [storage.battery for storage in storages], coordinates)
-        self.storage = StorageFormulation(coordinates, battery, context)
+        super().__init__(storages, context)
+        battery = vectorize(BatteryArrays, [storage.battery for storage in storages], self.coordinates)
+        self.storage = StorageFormulation(self.coordinates, battery, context)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:

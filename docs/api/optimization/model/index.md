@@ -10,8 +10,4 @@ Model building and Linopy integration.
 
 ## Modules
 
-- `linopy_converter`
-- `milp_model`
 - `model_builder`
-- `objectives`
-- `variable_definitions`

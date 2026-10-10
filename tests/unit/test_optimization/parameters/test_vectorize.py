@@ -11,7 +11,6 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.exceptions import OdysError
 from odys.parameters.coordinates import Coordinates
-from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import (
     BatteryArrays,
     ChargerArrays,
@@ -20,6 +19,8 @@ from odys.parameters.entity_arrays import (
     MarketArrays,
 )
 from odys.parameters.vectorize import EntityArrays, vectorize
+
+GENERATOR_DIMENSION = "generator"
 
 FIRST_POWER = 10.0
 SECOND_POWER = 20.0
@@ -35,7 +36,7 @@ class _ArraysWithUnknownField(EntityArrays):
 
 
 def test_vectorize_follows_model_order_along_the_dimension() -> None:
-    arrays = vectorize(GeneratorArrays, GENERATORS, Coordinates.of_entities(ModelDimension.Generators, GENERATORS))
+    arrays = vectorize(GeneratorArrays, GENERATORS, Coordinates.of_entities(GENERATOR_DIMENSION, GENERATORS))
 
     expected = xr.DataArray([SECOND_POWER, FIRST_POWER], coords={"generator": ["gen_b", "gen_a"]})
     xr.testing.assert_equal(arrays.nominal_power, expected)
@@ -43,11 +44,11 @@ def test_vectorize_follows_model_order_along_the_dimension() -> None:
 
 def test_vectorize_rejects_a_field_the_models_lack() -> None:
     with pytest.raises(OdysError, match=r"_ArraysWithUnknownField reads fields the models do not have: \['not_a"):
-        vectorize(_ArraysWithUnknownField, GENERATORS, Coordinates.of_entities(ModelDimension.Generators, GENERATORS))
+        vectorize(_ArraysWithUnknownField, GENERATORS, Coordinates.of_entities(GENERATOR_DIMENSION, GENERATORS))
 
 
 def test_vectorize_rejects_a_label_count_mismatch() -> None:
-    one_label = Coordinates(dimension=ModelDimension.Generators, labels=("gen_a",))
+    one_label = Coordinates(dimension=GENERATOR_DIMENSION, labels=("gen_a",))
     with pytest.raises(OdysError, match="Cannot vectorize 2 models along 1 labels of 'generator'"):
         vectorize(GeneratorArrays, GENERATORS, one_label)
 

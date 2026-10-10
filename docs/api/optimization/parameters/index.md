@@ -15,4 +15,3 @@ The xarray layer between the domain and the optimization model: dimensions, coor
 - `context`
 - `vectorize`
 - `entity_arrays`
-- `energy_system_parameters`

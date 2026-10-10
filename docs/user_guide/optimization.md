@@ -248,7 +248,7 @@ result = energy_system.optimize()
 ### Solver status
 
 ```python
-result.solver_status  # "ok" if the solver found a solution
+result.solver_status  # SolveStatus.OK ("ok") if the solver found a solution
 result.termination_condition  # "optimal" if it's the best possible solution
 result.objective_value  # objective value of the solved model
 ```

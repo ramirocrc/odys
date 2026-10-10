@@ -1,5 +1,6 @@
 """The power balance: at every scenario and timestep, the net power into the bus is zero."""
 
+from collections.abc import Sequence
 from functools import reduce
 from operator import add
 from typing import assert_never
@@ -10,7 +11,7 @@ import xarray as xr
 from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.model.milp_model import EnergyMILPModel
+from odys.optimization.formulations.base import Formulation
 
 
 class PowerBalance(ConstraintGroup):
@@ -20,16 +21,16 @@ class PowerBalance(ConstraintGroup):
     formulations outside the balance (charging) return None and are skipped.
     """
 
-    def __init__(self, milp_model: EnergyMILPModel) -> None:
-        """Initialize with the MILP model, whose problem holds the formulations."""
-        self.model = milp_model
+    def __init__(self, formulations: Sequence[Formulation]) -> None:
+        """Initialize with the formulations of the problem, whose variables are already added."""
+        self.formulations = formulations
 
     @constraint
     def _get_power_balance_constraint(self) -> ModelConstraint:
         """Net power into the bus equals zero: supply equals demand."""
         variable_injections: list[linopy.LinearExpression] = []
         fixed_injections: list[xr.DataArray] = []
-        for formulation in self.model.problem.formulations:
+        for formulation in self.formulations:
             match injection := formulation.power_injection():
                 case linopy.LinearExpression():
                     variable_injections.append(injection)

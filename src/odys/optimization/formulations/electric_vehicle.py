@@ -14,6 +14,8 @@ from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import ElectricVehicleTripArrays, electric_vehicle_arrays
 
+EV = "ev"
+
 
 class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
     """Electric vehicles: the shared battery model with trip energy drawn from the battery while driving.
@@ -22,10 +24,12 @@ class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
     before each trip. It charges and discharges only through a charger (`ChargingFormulation`).
     """
 
-    power_in_name: ClassVar[str] = f"{ModelDimension.EVs.value}_power_in"
-    net_power_name: ClassVar[str] = f"{ModelDimension.EVs.value}_net_power"
-    soc_name: ClassVar[str] = f"{ModelDimension.EVs.value}_soc"
-    charge_mode_name: ClassVar[str] = f"{ModelDimension.EVs.value}_charge_mode"
+    dimension = EV
+    entity_type = ElectricVehicle
+    power_in_name: ClassVar[str] = f"{EV}_power_in"
+    net_power_name: ClassVar[str] = f"{EV}_net_power"
+    soc_name: ClassVar[str] = f"{EV}_soc"
+    charge_mode_name: ClassVar[str] = f"{EV}_charge_mode"
 
     def __init__(self, electric_vehicles: Sequence[ElectricVehicle], context: ModelContext) -> None:
         """Initialize with the electric vehicles of the system.
@@ -34,12 +38,11 @@ class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
             electric_vehicles: The electric vehicles, at least one.
             context: The shared indexing of the problem.
         """
-        super().__init__(context)
-        coordinates = context.coordinates_of(ModelDimension.EVs)
-        arrays = electric_vehicle_arrays(electric_vehicles, coordinates, context.time)
+        super().__init__(electric_vehicles, context)
+        arrays = electric_vehicle_arrays(electric_vehicles, self.coordinates, context.time)
         self.trips: ElectricVehicleTripArrays = arrays.trips
         self.storage = StorageFormulation(
-            coordinates,
+            self.coordinates,
             arrays.battery,
             context,
             soc_drop=arrays.trips.trip_energy / arrays.battery.capacity,

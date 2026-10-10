@@ -5,9 +5,10 @@ import pytest
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.parameters.coordinates import Coordinates
-from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import BatteryArrays
 from odys.parameters.vectorize import vectorize
+
+STORAGE_DIMENSION = "stationary_storage"
 
 STANDARD_CAPACITY = 100.0
 STANDARD_MAX_CHARGE_POWER = 50.0
@@ -18,7 +19,7 @@ EXPLICIT_SOC_END = 0.4
 
 
 def _battery_arrays(storages: list[StationaryStorage]) -> BatteryArrays:
-    coordinates = Coordinates.of_entities(ModelDimension.StationaryStorages, storages)
+    coordinates = Coordinates.of_entities(STORAGE_DIMENSION, storages)
     return vectorize(BatteryArrays, [storage.battery for storage in storages], coordinates)
 
 
