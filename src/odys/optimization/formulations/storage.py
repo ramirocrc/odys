@@ -57,13 +57,13 @@ class StorageFormulation:
         self.soc_drop = soc_drop
 
     @property
-    def dimension(self) -> ModelDimension:
+    def dimension(self) -> str:
         """Return the dimension the batteries are indexed along."""
         return self.coordinates.dimension
 
     def name(self, what: str) -> str:
         """Return the model name of a variable or constraint of this entity type, such as `ev_soc`."""
-        return f"{self.dimension.value}_{what}"
+        return f"{self.dimension}_{what}"
 
     def create_variables(self, model: linopy.Model) -> StorageVariables:
         """Add the battery variables: powers and SOC are non-negative, net power is free, the mode is binary."""

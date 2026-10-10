@@ -17,6 +17,8 @@ from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import FlexibleLoadArrays
 from odys.parameters.vectorize import vectorize
 
+FLEXIBLE_LOAD = "flexible_load"
+
 
 class FlexibleLoadVariables(BaseModel):
     """Decision variables of the flexible loads."""
@@ -29,6 +31,8 @@ class FlexibleLoadVariables(BaseModel):
 class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
     """Flexible loads: a base demand the optimizer can raise or lower within bounds, for a value per MWh."""
 
+    dimension = FLEXIBLE_LOAD
+    entity_type = FlexibleLoad
     variable_name: ClassVar[str] = "load_adjustment"
 
     def __init__(self, flexible_loads: Sequence[FlexibleLoad], context: ModelContext) -> None:
@@ -38,10 +42,9 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
             flexible_loads: The flexible loads, at least one.
             context: The shared indexing of the problem.
         """
-        super().__init__(context)
-        self.coordinates = context.coordinates_of(ModelDimension.FlexibleLoads)
+        super().__init__(flexible_loads, context)
         self.arrays = vectorize(FlexibleLoadArrays, flexible_loads, self.coordinates)
-        self.base_profiles = context.profiles(LoadProfile, flexible_loads, ModelDimension.FlexibleLoads)
+        self.base_profiles = context.profiles(LoadProfile, flexible_loads, self.coordinates)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
@@ -77,12 +80,12 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
 
     def power_injection(self) -> linopy.LinearExpression:
         """Return minus the adjusted demand (base profile plus adjustment), summed over flexible loads."""
-        adjustment = self.variables.load_adjustment.sum(ModelDimension.FlexibleLoads)
-        injection: linopy.LinearExpression = -adjustment - self.base_profiles.sum(ModelDimension.FlexibleLoads)
+        adjustment = self.variables.load_adjustment.sum(FLEXIBLE_LOAD)
+        injection: linopy.LinearExpression = -adjustment - self.base_profiles.sum(FLEXIBLE_LOAD)
         return injection
 
     def profit(self) -> linopy.LinearExpression:
         """Return the value of the adjusted consumption per scenario, in currency (energy times value per MWh)."""
         value = self.variables.load_adjustment * self.context.timestep_hours * self.arrays.value_of_consumption
-        profit: linopy.LinearExpression = value.sum([ModelDimension.Time, ModelDimension.FlexibleLoads])
+        profit: linopy.LinearExpression = value.sum([ModelDimension.Time, FLEXIBLE_LOAD])
         return profit

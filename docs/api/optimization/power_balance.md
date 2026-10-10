@@ -17,6 +17,6 @@ $$
 = 0
 $$
 
-Migrated entity types contribute their `Formulation.power_injection()`; the others contribute their variables directly until they are migrated.
+Every entity type contributes its `Formulation.power_injection()`; charging returns none, since the EV formulation already counts the charging power.
 
 ::: odys.optimization.power_balance

@@ -23,6 +23,7 @@ from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PricePro
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.results.optimization_results import OptimalDispatchResults
+from odys.solvers.outcome import SolveStatus
 from odys.solvers.solver_config import SolverConfig, SolverName
 
 __version__ = version("odys")
@@ -47,6 +48,7 @@ __all__ = [
     "PriceProfile",
     "ProfitTerm",
     "Scenario",
+    "SolveStatus",
     "SolverConfig",
     "SolverName",
     "StationaryStorage",

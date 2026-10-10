@@ -2,11 +2,11 @@
 icon: lucide/target
 ---
 
-# `odys.optimization.model.objectives`
+# `odys.optimization.objective_terms`
 
-Objective model construction.
+Model formulations, one per objective term type. An `ObjectiveTermFormulation` adds its own variables and constraints (CVaR's value at risk, shortfalls and shortfall constraint) and returns its weighted expression; the objective is their sum. `OBJECTIVE_TERM_FORMULATIONS` lists every term type's formulation, in build order.
 
-The implementation builds the same weighted objective used in the public configuration:
+The model maximizes the weighted sum of the objective's terms:
 
 $$
 \max\; w_{\text{profit}} \sum_s \pi_s \Pi_s
@@ -31,4 +31,10 @@ $$
 
 See also [domain.objective](../../domain/objective.md) for the public configuration interface.
 
-::: odys.optimization.model.objectives
+## Modules
+
+- `base`
+- `cvar`
+- `profit`
+
+::: odys.optimization.objective_terms

@@ -15,6 +15,8 @@ from odys.parameters.coordinates import Coordinates
 from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import ElectricVehicleArrays, electric_vehicle_arrays
 
+EV_DIMENSION = "ev"
+
 NUM_EVS = 2
 TRIP1_ENERGY_PER_HOUR = 5.0
 TRIP2_ENERGY_PER_HOUR = 7.5
@@ -69,7 +71,7 @@ def ev2() -> ElectricVehicle:
 
 @pytest.fixture
 def ev_arrays(ev1: ElectricVehicle, ev2: ElectricVehicle) -> ElectricVehicleArrays:
-    return electric_vehicle_arrays([ev1, ev2], Coordinates.of_entities(ModelDimension.EVs, [ev1, ev2]), TIME)
+    return electric_vehicle_arrays([ev1, ev2], Coordinates.of_entities(EV_DIMENSION, [ev1, ev2]), TIME)
 
 
 def test_ev_arrays_creation(ev_arrays: ElectricVehicleArrays) -> None:
@@ -81,13 +83,13 @@ def test_ev_arrays_creation(ev_arrays: ElectricVehicleArrays) -> None:
 def test_ev_arrays_empty_raises_error() -> None:
     """Vectorizing no EVs is an internal error: the EV block is absent instead."""
     with pytest.raises(OdysError, match="BatteryArrays requires at least one model"):
-        electric_vehicle_arrays([], Coordinates.of_entities(ModelDimension.EVs, []), TIME)
+        electric_vehicle_arrays([], Coordinates.of_entities(EV_DIMENSION, []), TIME)
 
 
 def test_ev_arrays_is_driving(ev_arrays: ElectricVehicleArrays) -> None:
     """Test that is_driving array is correctly built."""
     is_driving = ev_arrays.trips.is_driving
-    assert is_driving.dims == (ModelDimension.EVs.value, ModelDimension.Time.value)
+    assert is_driving.dims == (EV_DIMENSION, ModelDimension.Time.value)
     assert is_driving.shape == (2, 24)
 
     # ev1 is driving during trip1 (8-10) and trip2 (17-19)
@@ -106,7 +108,7 @@ def test_ev_arrays_is_driving(ev_arrays: ElectricVehicleArrays) -> None:
 def test_ev_arrays_trip_energy(ev_arrays: ElectricVehicleArrays) -> None:
     """Test that trip_energy array is correctly built."""
     trip_energy = ev_arrays.trips.trip_energy
-    assert trip_energy.dims == (ModelDimension.EVs.value, ModelDimension.Time.value)
+    assert trip_energy.dims == (EV_DIMENSION, ModelDimension.Time.value)
     assert trip_energy.shape == (2, 24)
 
     # ev1 trip1: 10 MWh over 2 hours = 5 MWh/hour at t=8,9
@@ -125,7 +127,7 @@ def test_ev_arrays_trip_energy(ev_arrays: ElectricVehicleArrays) -> None:
 def test_ev_arrays_min_soc_at_departure(ev_arrays: ElectricVehicleArrays) -> None:
     """Test that min_soc_at_departure array is correctly built."""
     min_soc = ev_arrays.trips.min_soc_at_departure
-    assert min_soc.dims == (ModelDimension.EVs.value, ModelDimension.Time.value)
+    assert min_soc.dims == (EV_DIMENSION, ModelDimension.Time.value)
     assert min_soc.shape == (2, 24)
 
     # ev1 trip1: min_soc_at_departure=0.3 at t=8
@@ -163,7 +165,7 @@ def test_ev_arrays_empty_trips() -> None:
         battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.8),
         trips=(),
     )
-    params = electric_vehicle_arrays([ev], Coordinates.of_entities(ModelDimension.EVs, [ev]), TIME)
+    params = electric_vehicle_arrays([ev], Coordinates.of_entities(EV_DIMENSION, [ev]), TIME)
 
     assert params.trips.is_driving.shape == (1, 24)
     assert params.trips.trip_energy.shape == (1, 24)

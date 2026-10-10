@@ -1,17 +1,19 @@
 """Everything needed to build the optimization model of one energy system."""
 
-from functools import reduce
-from operator import add
-from typing import TypeVar
+from collections.abc import Sequence
+from typing import Self, TypeVar
 
-import linopy
 from pydantic import BaseModel, ConfigDict
 
-from odys.domain.exceptions import OdysError
+from odys.domain.entities.base import EnergyEntity
+from odys.domain.horizon import Horizon
 from odys.domain.objective import Objective
-from odys.optimization.formulations.base import Formulation
+from odys.domain.scenario import ScenarioSet
+from odys.optimization.formulations import FORMULATIONS
+from odys.optimization.formulations.base import Formulation, FormulationInputs
+from odys.optimization.objective_terms import OBJECTIVE_TERM_FORMULATIONS
+from odys.optimization.objective_terms.base import ObjectiveTermFormulation, ObjectiveTermInputs
 from odys.parameters.context import ModelContext
-from odys.parameters.energy_system_parameters import EnergySystemParameters
 
 FormulationT = TypeVar("FormulationT", bound=Formulation)
 
@@ -19,9 +21,8 @@ FormulationT = TypeVar("FormulationT", bound=Formulation)
 class OptimizationProblem(BaseModel):
     """The input of the model builder for one energy system.
 
-    It holds one formulation per entity type present in the system, and the
-    remaining legacy parameters (the context and the objective, until the
-    objective terms become formulations).
+    It holds the shared indexing, one formulation per entity type present in the
+    system, and one formulation per objective term.
     Formulations keep the variables of the model they are built into, so a
     problem is built into one model only; call `EnergySystem.build_problem()`
     again for another model.
@@ -29,18 +30,45 @@ class OptimizationProblem(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
 
-    legacy: EnergySystemParameters
-    formulations: tuple[Formulation, ...] = ()
+    context: ModelContext
+    formulations: tuple[Formulation, ...]
+    objective_terms: tuple[ObjectiveTermFormulation, ...]
 
-    @property
-    def context(self) -> ModelContext:
-        """Return the shared indexing of the problem."""
-        return self.legacy.context
+    @classmethod
+    def assemble(
+        cls,
+        entities: Sequence[EnergyEntity],
+        horizon: Horizon,
+        scenario_set: ScenarioSet,
+        objective: Objective,
+    ) -> Self:
+        """Build the shared indexing and the formulations of the entity types present and of the objective's terms.
 
-    @property
-    def objective(self) -> Objective:
-        """Return the objective to maximize."""
-        return self.legacy.objective
+        Entity formulations are built in `FORMULATIONS` order, each seeing the ones
+        built before it; objective terms in `OBJECTIVE_TERM_FORMULATIONS` order.
+
+        Args:
+            entities: Every asset and market of the system.
+            horizon: The time grid of the optimization.
+            scenario_set: The scenarios of the problem.
+            objective: The objective to maximize.
+
+        Returns:
+            The problem, ready for the model builder.
+        """
+        context = ModelContext(horizon=horizon, scenario_set=scenario_set)
+        all_entities = tuple(entities)
+        formulations: tuple[Formulation, ...] = ()
+        for formulation_type in FORMULATIONS:
+            inputs = FormulationInputs(entities=all_entities, context=context, built=formulations)
+            formulation = formulation_type.build(inputs)
+            if formulation is not None:
+                formulations = (*formulations, formulation)
+        term_inputs = ObjectiveTermInputs(objective=objective, context=context, formulations=formulations)
+        objective_terms = tuple(
+            term for term_type in OBJECTIVE_TERM_FORMULATIONS if (term := term_type.build(term_inputs)) is not None
+        )
+        return cls(context=context, formulations=formulations, objective_terms=objective_terms)
 
     def formulation_of(self, kind: type[FormulationT]) -> FormulationT | None:
         """Return the formulation of the given type, if the system has entities of that type.
@@ -53,18 +81,3 @@ class OptimizationProblem(BaseModel):
 
         """
         return next((formulation for formulation in self.formulations if isinstance(formulation, kind)), None)
-
-    def per_scenario_profit(self) -> linopy.LinearExpression:
-        """Return the profit per scenario: every formulation's profit, summed over time and entities.
-
-        Scenario probabilities are not applied; the expected-profit and CVaR terms do that.
-
-        Raises:
-            OdysError: If no formulation contributes a profit term.
-        """
-        profits = [profit for formulation in self.formulations if (profit := formulation.profit()) is not None]
-        if not profits:
-            msg = "The problem has no entity type that contributes a profit term."
-            raise OdysError(msg)
-        total: linopy.LinearExpression = reduce(add, profits)
-        return total

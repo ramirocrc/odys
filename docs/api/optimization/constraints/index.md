@@ -11,5 +11,4 @@ MILP constraint builders.
 ## Modules
 
 - `constraints_group`
-- `cvar_constraints`
 - `model_constraint`

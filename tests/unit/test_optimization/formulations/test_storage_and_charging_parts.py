@@ -65,7 +65,7 @@ def optimization_problem() -> OptimizationProblem:
 
 @pytest.fixture
 def linopy_model(optimization_problem: OptimizationProblem) -> linopy.Model:
-    return build_model(optimization_problem).linopy_model
+    return build_model(optimization_problem)
 
 
 @pytest.fixture
@@ -165,7 +165,7 @@ def test_soc_start_draws_the_energy_of_a_trip_departing_at_t0() -> None:
             number_of_steps=NUMBER_OF_STEPS,
             scenarios=Scenario(profiles=(LoadProfile(load=LOAD, values=DEMAND),)),
         ).build_problem(),
-    ).linopy_model
+    )
     soc_start = model.constraints["ev_soc_start_constraint"]
 
     leaving_at_t0 = soc_start.rhs.sel(scenario="base", ev=EV_LEAVING_AT_T0.name)
