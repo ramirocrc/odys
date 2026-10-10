@@ -62,6 +62,6 @@ $$
 \sum_{\tau=t-D_g+1}^{t} (1 - u_{g,\tau,s}) \ge D_g y^{start}_{g,t+1,s}
 $$
 
-See also [Generator](../../domain/entities/generator.md) for the domain model and [entity_arrays](../parameters/entity_arrays.md) for the parameter arrays.
+See also [Generator](../../domain/entities/generator.md) for the domain model and [entity_arrays](../../parameters/entity_arrays.md) for the parameter arrays.
 
 ::: odys.optimization.formulations.generator

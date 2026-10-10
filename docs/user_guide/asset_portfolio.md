@@ -35,7 +35,7 @@ portfolio = AssetPortfolio([
 Pass a list of assets to the `AssetPortfolio` constructor:
 
 ```python
-portfolio = AssetPortfolio([generator, battery, fixed_load, flexible_load])
+portfolio = AssetPortfolio([generator, storage, fixed_load, flexible_load])
 ```
 
 !!! warning

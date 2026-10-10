@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import ClassVar, Self
 
 import linopy
+import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.charger import Charger
@@ -15,6 +16,7 @@ from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormu
 from odys.parameters.context import ModelContext
 from odys.parameters.entity_arrays import ChargerArrays
 from odys.parameters.vectorize import vectorize
+from odys.results.dispatch import ChargerDispatch
 
 CHARGER = "charger"
 EV = ElectricVehicleFormulation.dimension
@@ -119,3 +121,9 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
 
     def power_injection(self) -> None:
         """Return None: chargers are outside the power balance; the vehicles they serve inject."""
+
+    def dispatch(self, solution: xr.Dataset) -> ChargerDispatch:
+        """Return the assignment of vehicles to chargers and the power each charger delivers."""
+        assignment = solution[self.assignment_name]
+        power: xr.DataArray = (assignment * solution[ElectricVehicleFormulation.power_in_name]).sum(EV)
+        return ChargerDispatch(xr.Dataset({"assignment": assignment, "power": power}), CHARGER)

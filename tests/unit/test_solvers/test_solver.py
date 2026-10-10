@@ -54,6 +54,8 @@ def test_solve_reports_an_infeasible_model_without_a_solution() -> None:
 
 
 def test_solve_with_ok_status_but_no_solution_has_no_solution(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A time limit before the first incumbent (simulated; see the mocking exception in tests/CLAUDE.md)."""
+
     def stop_at_time_limit_without_incumbent(*_args: object, **_kwargs: object) -> tuple[str, str]:
         return SolveStatus.OK.value, "time_limit"
 
@@ -64,9 +66,11 @@ def test_solve_with_ok_status_but_no_solution_has_no_solution(monkeypatch: pytes
     assert outcome.status is SolveStatus.OK
     assert not outcome.has_solution
     assert outcome.objective_value is None
+    assert not outcome.solution.data_vars
 
 
 def test_solve_with_an_unavailable_solver_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No solver is installed (simulated; see the mocking exception in tests/CLAUDE.md)."""
     monkeypatch.setattr(linopy, "available_solvers", [])
     with pytest.raises(OdysSolverError, match="not available"):
         solve(_bounded_model(lower=0.0), SolverConfig())

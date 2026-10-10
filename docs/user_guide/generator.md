@@ -152,8 +152,9 @@ $$
 In a `Scenario`, you can limit the generator's available capacity per timestep with an `AvailableCapacityProfile`. This is useful for modeling things like planned maintenance or variable renewable output:
 
 ```python
-from odys import AvailableCapacityProfile, LoadProfile, FixedLoad, Scenario
+from odys import AvailableCapacityProfile, LoadProfile, FixedLoad, Generator, Scenario
 
+gen = Generator(name="gas_turbine", nominal_power=100.0, variable_cost=50.0)
 load = FixedLoad(name="load")
 
 scenario = Scenario(
@@ -185,7 +186,7 @@ result.generators.startup  # startup events
 result.generators.shutdown  # shutdown events
 ```
 
-Each of these is a `pandas.DataFrame`.
+Each of these is a `pandas.Series` indexed by generator and time (and scenario, when there is more than one).
 
 ## Next steps
 

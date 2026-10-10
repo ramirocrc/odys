@@ -38,6 +38,6 @@ $$
 SOC_{v,t-1,s} \ge SOC^{min,dep}_{v,t}
 $$
 
-See also [ElectricVehicle](../../domain/entities/electric_vehicle.md) for the domain model and [entity_arrays](../parameters/entity_arrays.md) for the parameter arrays.
+See also [ElectricVehicle](../../domain/entities/electric_vehicle.md) for the domain model and [entity_arrays](../../parameters/entity_arrays.md) for the parameter arrays.
 
 ::: odys.optimization.formulations.electric_vehicle

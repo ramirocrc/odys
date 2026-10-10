@@ -129,7 +129,7 @@ See the [CVaR Market Risk example](../examples/cvar_market_risk.md) for a full w
 
 ## Results with multiple scenarios
 
-When you have multiple scenarios, the results DataFrames include a scenario dimension:
+When you have multiple scenarios, every results series includes a scenario level:
 
 ```python
 result = energy_system.optimize()

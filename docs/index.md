@@ -117,7 +117,7 @@ time  generator
 1     gen          90.0
 2     gen          40.0
 3     gen          70.0
-Name: generator_power, dtype: float64
+Name: power, dtype: float64
 ```
 
 Notice how the generator output matches demand exactly at every timestep. There's only one source of power, so the optimizer has no choice but to dispatch it to cover the load. Add a second generator with a different cost, and the story gets a lot more interesting -- the solver will use the cheaper one first and only call on the expensive one when necessary.

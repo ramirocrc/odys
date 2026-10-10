@@ -32,6 +32,6 @@ $$
 
 This applies to the sell volume, buy volume and trade mode.
 
-See also [Market](../../domain/entities/market.md) for the domain model and [entity_arrays](../parameters/entity_arrays.md) for the parameter arrays.
+See also [Market](../../domain/entities/market.md) for the domain model and [entity_arrays](../../parameters/entity_arrays.md) for the parameter arrays.
 
 ::: odys.optimization.formulations.energy_market

@@ -1,8 +1,7 @@
 """Characterization tests: pin today's optimal objective values before the architecture refactor.
 
 These values were recorded from the solver at commit 7c67484 (after the timestep-scaling fix), not
-derived by hand. They guard the refactor in
-`docs/architecture/roadmap.md`: every step must reproduce them. Only the objective value is pinned,
+derived by hand. Every refactor must reproduce them. Only the objective value is pinned,
 because MILPs often have several optimal dispatches; dispatch itself is covered by the other
 integration tests.
 """

@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import ClassVar, Self
 
 import linopy
+import xarray as xr
 
 from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.optimization.constraints.constraints_group import constraint
@@ -13,6 +14,7 @@ from odys.optimization.formulations.storage import StorageFormulation, StorageVa
 from odys.parameters.context import ModelContext
 from odys.parameters.entity_arrays import BatteryArrays
 from odys.parameters.vectorize import vectorize
+from odys.results.dispatch import StationaryStorageDispatch
 
 STATIONARY_STORAGE = "stationary_storage"
 
@@ -100,3 +102,7 @@ class StationaryStorageFormulation(VariableFormulation[StorageVariables]):
         """Return minus the degradation cost per scenario."""
         profit: linopy.LinearExpression = -self.storage.degradation_cost(self.variables)
         return profit
+
+    def dispatch(self, solution: xr.Dataset) -> StationaryStorageDispatch:
+        """Return the net power, state of charge and charge mode of the stationary storages."""
+        return StationaryStorageDispatch(self.storage.dispatch_data(solution), STATIONARY_STORAGE)

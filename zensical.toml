@@ -39,12 +39,7 @@ nav = [
     { "CVaR Market Risk" = "examples/cvar_market_risk.md" },
     { "EV Fleet" = "examples/ev_fleet_optimization.md" },
   ] },
-  { "Architecture Review" = [
-    { "Phase 1: Inventory" = "architecture/inventory.md" },
-    { "Phase 2: Findings" = "architecture/findings.md" },
-    { "Phase 3: Target model" = "architecture/target-model.md" },
-    { "Phase 4: Roadmap" = "architecture/roadmap.md" },
-  ] },
+  { "Architecture" = "architecture/model.md" },
   { "API Reference" = [
     { "Overview" = "api/index.md" },
     { "odys" = "api/odys.md" },
@@ -70,6 +65,14 @@ nav = [
       { "profiles" = "api/domain/profiles.md" },
       { "scenario" = "api/domain/scenario.md" },
       { "validation" = "api/domain/validation.md" },
+    ] },
+    { "parameters" = [
+      { "Overview" = "api/parameters/index.md" },
+      { "dimensions" = "api/parameters/dimensions.md" },
+      { "coordinates" = "api/parameters/coordinates.md" },
+      { "context" = "api/parameters/context.md" },
+      { "vectorize" = "api/parameters/vectorize.md" },
+      { "entity_arrays" = "api/parameters/entity_arrays.md" },
     ] },
     { "results" = [
       { "Overview" = "api/results/index.md" },
@@ -107,14 +110,6 @@ nav = [
       { "model" = [
         { "Overview" = "api/optimization/model/index.md" },
         { "model_builder" = "api/optimization/model/model_builder.md" },
-      ] },
-      { "parameters" = [
-        { "Overview" = "api/optimization/parameters/index.md" },
-        { "dimensions" = "api/optimization/parameters/dimensions.md" },
-        { "coordinates" = "api/optimization/parameters/coordinates.md" },
-        { "context" = "api/optimization/parameters/context.md" },
-        { "vectorize" = "api/optimization/parameters/vectorize.md" },
-        { "entity_arrays" = "api/optimization/parameters/entity_arrays.md" },
       ] },
     ] },
     { "solvers" = [

@@ -150,9 +150,10 @@ result = energy_system.optimize()
 
 result.markets.sell_volume  # energy sold per market per timestep
 result.markets.buy_volume  # energy bought per market per timestep
+result.markets.net_volume  # sell minus buy
 ```
 
-Each of these is a `pandas.DataFrame`.
+Each of these is a `pandas.Series` indexed by market and time (and scenario, when there is more than one).
 
 ## Next steps
 

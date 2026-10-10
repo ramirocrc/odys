@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Requires linopy 0.10 or later (was 0.7). Constraints that look at the previous or next timestep now state explicitly that the step outside the horizon counts as zero, so the model is the same under linopy's legacy and upcoming v1 semantics.
 - **Breaking:** `AssetPortfolio` accepts only `Asset` instances and raises `OdysValidationError` for anything else, such as an `EnergyMarket` (before, a market in the portfolio was silently ignored).
 - `EnergySystem` raises `OdysValidationError` for an asset type the optimizer cannot model (a bare `Asset` or a custom `Asset` subclass) instead of silently leaving it out of the model.
 - **Breaking:** the per-type `AssetPortfolio` properties (`generators`, `standalone_storages`, `fixed_loads`, `flexible_loads`, `loads`, `electric_vehicles`, `chargers`) are removed; use `assets_of(Generator)` and so on.
@@ -59,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     ```
 - **Breaking (rename):** `TradeDirection` → `AllowedTradeDirection`, and `EnergyMarket.trade_direction` → `EnergyMarket.allowed_trade_direction`.
 - **Breaking (rename):** `OptimalDisptachResults` → `OptimalDispatchResults` (spelling).
+- Dispatch series are named by their property: `results.generators.power.name` is `"power"` (was the internal variable name `"generator_power"`), and derived series (`net_volume`, `actual_load`, charger `power`) are named too (were unnamed). This shows in `pd.concat` columns, `.to_frame()` and plot legends; values and indexes are unchanged.
 - `results.solver_status` returns a `SolveStatus` instead of a `str`. It is a string enum, so `result.solver_status == "ok"` still works. `termination_condition` stays a `str`.
 - **Breaking:** `MarketDispatch.net_volume` returns a `pd.Series`, like every other dispatch property (was `xr.DataArray`).
 - **Breaking (results):** generator variable cost, market revenue/cost, and flexible-load value of consumption are now multiplied by the timestep length in hours, consistent with storage and EV degradation cost. Objective values (and CVaR values) change for any timestep other than one hour.
@@ -67,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking:** `odys.utils` (`get_logger`, `setup_rich_logging`). It was never part of `__all__`; use the standard `logging` module.
 - Internal `AssetRegistry`, which nothing used.
+- Internal: the per-type dispatch plumbing in `odys.results`. Every dispatch view is now a `Dispatch` (one dataset of its series, with the container protocol written once; stationary storage and EVs share `BatteryDispatch`), each model formulation builds its own view with `dispatch(solution)`, and `OptimalDispatchResults` takes the solve outcome and `OptimizationProblem.dispatches`. `odys.results` no longer imports `odys.optimization` or linopy. Result properties, series values, `to_dataset()`/`to_dataframe()` contents and error messages are unchanged (series names: see Changed).
 - Internal: `odys.solvers.solver.optimize_algebraic_model`. The solver's `solve(model, config)` now returns a `SolveOutcome` (status, termination condition, objective value, solution) and no longer builds results or knows the problem; `EnergySystem.optimize()` builds `OptimalDispatchResults` from the outcome. `odys.solvers` imports no model layer (import-linter contract).
 - Internal: the per-asset `ModelDimension` members, `ModelContext.entity_coordinates` and `coordinates_of`, and the supported-asset list in `domain/validation.py`. Each formulation now names its own dimension and entity type and builds its coordinates; `ModelDimension` keeps only scenario and time, and an asset no formulation models is rejected (as before, when the `EnergySystem` is built) by `odys.optimization.formulations.validate_entities_supported`. Dimension names, variable names and every result are unchanged.
 - Internal: `EnergyMILPModel`, `VariableStore`, `VariableDefinitionRegistry`, the linopy variable converter, `odys.optimization.model.objectives`, `CVaRConstraints`, `EnergySystemParameters` and `EnergyAlgebraicModelBuilder`. Each objective term is now a model formulation (`odys.optimization.objective_terms`: `ProfitTermFormulation`, `CVaRTermFormulation`) with its own variables and constraints, `OptimizationProblem.assemble` builds the entity and objective-term formulations, and `build_model` returns a plain `linopy.Model`. Variable and constraint names, objective values and every result are unchanged.
@@ -87,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SolverConfig.solver_options` is now passed to the solver and overrides translated common options, as documented. Before, it was ignored.
 - A solve that ends without a solution (for example an infeasible model, or a time limit reached before the first feasible solution) now returns results whose `solver_status` and `termination_condition` report it, and whose solution accessors raise `OdysSolverError`; before, `optimize()` crashed with an `AttributeError` from linopy.
 - Unit descriptions: `EnergyMarket.max_trading_volume_per_step` is a power in MW, and generator startup/shutdown costs are per event.
+- Documentation: result properties are documented as `pandas.Series` (were "DataFrame"), the available-capacity snippet in the generator guide no longer exceeds its generator's nominal power, the portfolio guide no longer lists a `Battery` as an asset, the README output shows the new series name, and the `odys.parameters` API pages moved out of `odys.optimization` to their own section.
 
 ### Known issues
 

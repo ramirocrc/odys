@@ -16,6 +16,8 @@ from odys.optimization.constraints.constraints_group import ConstraintGroup
 from odys.optimization.variable_owner import VariableOwner, VariablesT
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
+from odys.parameters.dimensions import ModelDimension
+from odys.results.dispatch import Dispatch
 
 EntityT = TypeVar("EntityT", bound=EnergyEntity)
 FormulationT = TypeVar("FormulationT", bound="Formulation")
@@ -27,7 +29,7 @@ class Formulation(ConstraintGroup, ABC):
     A formulation owns, for its entity type: the parameter arrays, the decision
     variables (created in `add_variables`), the `@constraint` methods (inherited
     discovery from `ConstraintGroup`), the net power it injects into the power
-    balance, and its profit per scenario. It is built only when the system has
+    balance, its profit per scenario and its dispatch results. It is built only when the system has
     at least one entity of its type, so its methods never check for absence.
     It holds its variables once added, so it belongs to a single model.
 
@@ -79,6 +81,16 @@ class Formulation(ConstraintGroup, ABC):
         """
         return None
 
+    @abstractmethod
+    def dispatch(self, solution: xr.Dataset) -> Dispatch | None:
+        """Return the dispatch results of these entities, read from the solution of the model.
+
+        None means the entity type has no results (fixed loads).
+
+        Args:
+            solution: The solution of the model this formulation was built into, by linopy variable name.
+        """
+
 
 class FormulationInputs(BaseModel):
     """What a formulation is built from: the system's entities, the shared indexing, and earlier formulations.
@@ -104,6 +116,24 @@ class FormulationInputs(BaseModel):
 
 class VariableFormulation(VariableOwner[VariablesT], Formulation):
     """An entity formulation with decision variables, held in a typed, frozen variables object (see `VariableOwner`)."""
+
+
+def time_shifted(variable: linopy.Variable, steps: int) -> linopy.LinearExpression:
+    """Return the variable moved `steps` timesteps along time, with 0 where the source step is outside the horizon.
+
+    `steps=1` gives each step the previous step's value (0 at the first step, as if everything was off or empty
+    before the horizon); `steps=-1` gives the next step's value (0 at the last step). The explicit zero keeps the
+    constraints the same under linopy's legacy and v1 semantics, where an absent slot would otherwise drop the term.
+
+    Args:
+        variable: The variable to shift; it must have the time dimension.
+        steps: How many timesteps to move it; positive looks back, negative looks ahead.
+
+    Returns:
+        A linear expression over the variable's coordinates, 0 at the steps shifted in from outside the horizon.
+    """
+    shifted: linopy.LinearExpression = variable.to_linexpr().shift({ModelDimension.Time: steps}).fillna(0)
+    return shifted
 
 
 def per_scenario_profit(formulations: Sequence[Formulation]) -> linopy.LinearExpression:

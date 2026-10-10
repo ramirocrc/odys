@@ -13,5 +13,5 @@ class ModelConstraint(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-    constraint: linopy.Constraint
+    constraint: linopy.ConstraintBase
     name: str

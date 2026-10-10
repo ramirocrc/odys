@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import ClassVar, Self
 
 import linopy
+import xarray as xr
 
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.optimization.constraints.constraints_group import constraint
@@ -13,6 +14,7 @@ from odys.optimization.formulations.storage import StorageFormulation, StorageVa
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import ElectricVehicleTripArrays, electric_vehicle_arrays
+from odys.results.dispatch import ElectricVehicleDispatch
 
 EV = "ev"
 
@@ -130,3 +132,7 @@ class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
         """Return minus the battery degradation cost per scenario."""
         profit: linopy.LinearExpression = -self.storage.degradation_cost(self.variables)
         return profit
+
+    def dispatch(self, solution: xr.Dataset) -> ElectricVehicleDispatch:
+        """Return the net power, state of charge and charge mode of the electric vehicles."""
+        return ElectricVehicleDispatch(self.storage.dispatch_data(solution), EV)

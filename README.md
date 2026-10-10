@@ -63,7 +63,7 @@ time  generator
 1     gen          90.0
 2     gen          40.0
 3     gen          70.0
-Name: generator_power, dtype: float64
+Name: power, dtype: float64
 ```
 
 See the [documentation](https://ramirocrc.github.io/odys/) for the full workflow, or check the [examples](https://ramirocrc.github.io/odys/examples/) for complete worked scenarios.

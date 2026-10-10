@@ -50,6 +50,6 @@ $$
 p^{net}_{b,t,s} = p^{ch}_{b,t,s} - p^{dis}_{b,t,s}
 $$
 
-See also [Battery](../../domain/entities/battery.md) for the domain model and [entity_arrays](../parameters/entity_arrays.md) for the parameter arrays.
+See also [Battery](../../domain/entities/battery.md) for the domain model and [entity_arrays](../../parameters/entity_arrays.md) for the parameter arrays.
 
 ::: odys.optimization.formulations.storage

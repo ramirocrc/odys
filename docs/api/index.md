@@ -22,6 +22,7 @@ Use this section to find the public import surface first, then drill into intern
 
 ## Internal reference
 
+- `odys.parameters`
 - `odys.optimization`
 - `odys.solvers`
 
@@ -47,6 +48,12 @@ Use this section to find the public import surface first, then drill into intern
   - `odys.domain.scenario`
   - `odys.domain.validation`
 - `odys.energy_system`
+- `odys.parameters`
+  - `odys.parameters.dimensions`
+  - `odys.parameters.coordinates`
+  - `odys.parameters.context`
+  - `odys.parameters.vectorize`
+  - `odys.parameters.entity_arrays`
 - `odys.optimization`
   - `odys.optimization.constraints`
     - `odys.optimization.constraints.constraints_group`
@@ -70,16 +77,11 @@ Use this section to find the public import surface first, then drill into intern
   - `odys.optimization.power_balance`
   - `odys.optimization.problem`
   - `odys.optimization.variable_owner`
-  - `odys.parameters`
-    - `odys.parameters.dimensions`
-    - `odys.parameters.coordinates`
-    - `odys.parameters.context`
-    - `odys.parameters.vectorize`
-    - `odys.parameters.entity_arrays`
 - `odys.results`
   - `odys.results.dispatch`
   - `odys.results.optimization_results`
 - `odys.solvers`
   - `odys.solvers.config_translators`
+  - `odys.solvers.outcome`
   - `odys.solvers.solver`
   - `odys.solvers.solver_config`

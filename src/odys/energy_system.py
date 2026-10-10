@@ -124,4 +124,4 @@ class EnergySystem(BaseModel):
         """
         problem = self.build_problem()
         outcome = solve(build_model(problem), solver_config or SolverConfig())
-        return OptimalDispatchResults(outcome, problem)
+        return OptimalDispatchResults(outcome, problem.dispatches)

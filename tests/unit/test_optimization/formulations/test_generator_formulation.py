@@ -132,7 +132,7 @@ class TestGeneratorFormulationConstraints:
         generator_startup = self.linopy_model.variables["generator_startup"]
         generator_status = self.linopy_model.variables["generator_status"]
 
-        expected_expr = generator_startup >= generator_status - generator_status.shift(time=1)
+        expected_expr = generator_startup >= generator_status - (1 * generator_status).shift(time=1).fillna(0)
         assert_conequal(expected_expr, actual_constraint.lhs >= actual_constraint.rhs)
 
     def test_constraint_generator_startup_upper_bound_1(self) -> None:
@@ -150,7 +150,7 @@ class TestGeneratorFormulationConstraints:
         generator_startup = self.linopy_model.variables["generator_startup"]
         generator_status = self.linopy_model.variables["generator_status"]
 
-        expected_expr = generator_startup + generator_status.shift(time=1) <= 1.0
+        expected_expr = generator_startup + (1 * generator_status).shift(time=1).fillna(0) <= 1.0
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
     def test_constraint_generator_shutdown_lower_bound(self) -> None:
@@ -159,7 +159,7 @@ class TestGeneratorFormulationConstraints:
         generator_shutdown = self.linopy_model.variables["generator_shutdown"]
         generator_status = self.linopy_model.variables["generator_status"]
 
-        expected_expr = generator_shutdown >= generator_status.shift(time=1) - generator_status
+        expected_expr = generator_shutdown >= (1 * generator_status).shift(time=1).fillna(0) - generator_status
         assert_conequal(expected_expr, actual_constraint.lhs >= actual_constraint.rhs)
 
     def test_constraint_generator_shutdown_upper_bound_1(self) -> None:
@@ -168,7 +168,7 @@ class TestGeneratorFormulationConstraints:
         generator_shutdown = self.linopy_model.variables["generator_shutdown"]
         generator_status = self.linopy_model.variables["generator_status"]
 
-        expected_expr = generator_shutdown <= generator_status.shift(time=1)
+        expected_expr = generator_shutdown <= (1 * generator_status).shift(time=1).fillna(0)
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
     def test_constraint_generator_shutdown_upper_bound_2(self) -> None:
@@ -194,14 +194,14 @@ class TestGeneratorFormulationConstraints:
         gen1_shutdown = generator_shutdown.sel(generator=self.generator1.name)
         gen1_expected_expr = gen1_status.rolling(
             time=self.generator1.min_up_time,
-        ).sum() >= self.generator1.min_up_time * gen1_shutdown.shift(time=-1)
+        ).sum() >= self.generator1.min_up_time * (1 * gen1_shutdown).shift(time=-1).fillna(0)
         assert_conequal(gen1_expected_expr, gen1_actual_constraint.lhs >= gen1_actual_constraint.rhs)
 
         gen2_status = generator_status.sel(generator=self.generator2.name)
         gen2_shutdown = generator_shutdown.sel(generator=self.generator2.name)
         gen2_expected_expr = gen2_status.rolling(
             time=self.generator2.min_up_time,
-        ).sum() >= self.generator2.min_up_time * gen2_shutdown.shift(time=-1)
+        ).sum() >= self.generator2.min_up_time * (1 * gen2_shutdown).shift(time=-1).fillna(0)
         assert_conequal(gen2_expected_expr, gen2_actual_constraint.lhs >= gen2_actual_constraint.rhs)
 
     def test_constraint_generator_min_downtime(self) -> None:
@@ -218,14 +218,14 @@ class TestGeneratorFormulationConstraints:
         gen1_startup = generator_startup.sel(generator=self.generator1.name)
         gen1_expected_expr = (1 - gen1_status).rolling(
             time=self.generator1.min_down_time,
-        ).sum() >= self.generator1.min_down_time * gen1_startup.shift(time=-1)
+        ).sum() >= self.generator1.min_down_time * (1 * gen1_startup).shift(time=-1).fillna(0)
         assert_conequal(gen1_expected_expr, gen1_actual_constraint.lhs >= gen1_actual_constraint.rhs)
 
         gen2_status = generator_status.sel(generator=self.generator2.name)
         gen2_startup = generator_startup.sel(generator=self.generator2.name)
         gen2_expected_expr = (1 - gen2_status).rolling(
             time=self.generator2.min_down_time,
-        ).sum() >= self.generator2.min_down_time * gen2_startup.shift(time=-1)
+        ).sum() >= self.generator2.min_down_time * (1 * gen2_startup).shift(time=-1).fillna(0)
         assert_conequal(gen2_expected_expr, gen2_actual_constraint.lhs >= gen2_actual_constraint.rhs)
 
     def test_constraint_generator_min_power(self) -> None:
@@ -254,7 +254,9 @@ class TestGeneratorFormulationConstraints:
             coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
-        expected_expr = (generator_power - generator_power.shift(time=1)).isel(time=slice(1, None)) <= max_ramp_up_array
+        expected_expr = (generator_power - (1 * generator_power).shift(time=1).fillna(0)).isel(
+            time=slice(1, None),
+        ) <= max_ramp_up_array
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
 
     def test_constraint_generator_max_ramp_down(self) -> None:
@@ -268,7 +270,7 @@ class TestGeneratorFormulationConstraints:
             coords={"generator": [self.generator1.name, self.generator2.name]},
         )
 
-        expected_expr = (generator_power.shift(time=1) - generator_power).isel(
+        expected_expr = ((1 * generator_power).shift(time=1).fillna(0) - generator_power).isel(
             time=slice(1, None),
         ) <= max_ramp_down_array
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)

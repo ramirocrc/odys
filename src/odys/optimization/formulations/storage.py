@@ -6,6 +6,7 @@ import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
 from odys.optimization.constraints.model_constraint import ModelConstraint
+from odys.optimization.formulations.base import time_shifted
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
 from odys.parameters.dimensions import ModelDimension
@@ -96,16 +97,15 @@ class StorageFormulation:
         dt = self.context.timestep_hours
         battery = self.battery
         soc = variables.soc
-        time_coords = soc.coords[TIME.value]
         expression = soc - (
-            soc.shift({TIME: 1}) * (1 - battery.self_discharge_rate * dt)
+            time_shifted(soc, 1) * (1 - battery.self_discharge_rate * dt)
             + battery.efficiency_charging * variables.power_in * dt / battery.capacity
             - 1 / battery.efficiency_discharging * variables.power_out * dt / battery.capacity
         )
         if self.soc_drop is not None:
             expression += self.soc_drop
         return ModelConstraint(
-            constraint=expression.where(time_coords != time_coords[0]).to_constraint("=", 0),
+            constraint=expression.isel({TIME: slice(1, None)}).to_constraint("=", 0),
             name=self.name("soc_dynamics_constraint"),
         )
 
@@ -181,3 +181,7 @@ class StorageFormulation:
         throughput = (variables.power_in + variables.power_out) * self.context.timestep_hours
         cost: linopy.LinearExpression = (throughput * self.battery.degradation_cost).sum([TIME, self.dimension])
         return cost
+
+    def dispatch_data(self, solution: xr.Dataset) -> xr.Dataset:
+        """Return the net power, state of charge and charge mode of the batteries, read from the solution."""
+        return xr.Dataset({what: solution[self.name(what)] for what in ("net_power", "soc", "charge_mode")})
