@@ -111,12 +111,12 @@ class TestStationaryStorageFormulationConstraints:
         self_discharge_rate = self.storage1.battery.self_discharge_rate or 0.0
 
         for t in self.time_index[1:]:  # Skip t=0
-            actual_t = actual_constraint.sel(time=str(t), stationary_storage="batt1")
+            actual_t = actual_constraint.sel(time=str(t), stationary_storage="batt1", drop=True)
 
-            soc_t = storage_soc.sel(time=str(t), stationary_storage="batt1")
-            soc_t_minus_1 = storage_soc.sel(time=str(t - 1), stationary_storage="batt1")
-            storage_charge_t = storage_charge.sel(time=str(t), stationary_storage="batt1")
-            storage_discharge_t = storage_discharge.sel(time=str(t), stationary_storage="batt1")
+            soc_t = storage_soc.sel(time=str(t), stationary_storage="batt1", drop=True)
+            soc_t_minus_1 = storage_soc.sel(time=str(t - 1), stationary_storage="batt1", drop=True)
+            storage_charge_t = storage_charge.sel(time=str(t), stationary_storage="batt1", drop=True)
+            storage_discharge_t = storage_discharge.sel(time=str(t), stationary_storage="batt1", drop=True)
             capacity = self.storage1.battery.capacity
             expected_expr = (
                 soc_t
@@ -252,12 +252,12 @@ class TestStationaryStorageConstraintsSubHourlyTimestep:
         capacity = storage1.battery.capacity
 
         for t in time_index[1:]:
-            actual_t = actual_constraint.sel(time=str(t), stationary_storage="batt1")
+            actual_t = actual_constraint.sel(time=str(t), stationary_storage="batt1", drop=True)
 
-            soc_t = storage_soc.sel(time=str(t), stationary_storage="batt1")
-            soc_t_minus_1 = storage_soc.sel(time=str(t - 1), stationary_storage="batt1")
-            charge_t = storage_charge.sel(time=str(t), stationary_storage="batt1")
-            discharge_t = storage_discharge.sel(time=str(t), stationary_storage="batt1")
+            soc_t = storage_soc.sel(time=str(t), stationary_storage="batt1", drop=True)
+            soc_t_minus_1 = storage_soc.sel(time=str(t - 1), stationary_storage="batt1", drop=True)
+            charge_t = storage_charge.sel(time=str(t), stationary_storage="batt1", drop=True)
+            discharge_t = storage_discharge.sel(time=str(t), stationary_storage="batt1", drop=True)
 
             expected_expr = (
                 soc_t

@@ -5,17 +5,19 @@ from typing import ClassVar, Self
 
 import linopy
 import numpy as np
+import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.generator import Generator
 from odys.domain.profiles import AvailableCapacityProfile
 from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
+from odys.optimization.formulations.base import FormulationInputs, VariableFormulation, time_shifted
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import GeneratorArrays
 from odys.parameters.vectorize import vectorize
+from odys.results.dispatch import GeneratorDispatch
 
 TIME = ModelDimension.Time
 GENERATOR = "generator"
@@ -99,7 +101,7 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
     def _get_generator_startup_lower_bound_constraint(self) -> ModelConstraint:
         """Startup indicator active when turning generator on."""
         return ModelConstraint(
-            constraint=self.variables.startup >= self.variables.status - self.variables.status.shift({TIME: 1}),
+            constraint=self.variables.startup >= self.variables.status - time_shifted(self.variables.status, 1),
             name="generator_startup_lower_bound_constraint",
         )
 
@@ -115,7 +117,7 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
     def _get_generator_startup_upper_bound_2_constraint(self) -> ModelConstraint:
         """Startup indicator bounded by previous status."""
         return ModelConstraint(
-            constraint=self.variables.startup + self.variables.status.shift({TIME: 1}) <= 1.0,
+            constraint=self.variables.startup + time_shifted(self.variables.status, 1) <= 1.0,
             name="generator_startup_upper_bound_2_constraint",
         )
 
@@ -123,7 +125,7 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
     def _get_generator_shutdown_lower_bound_constraint(self) -> ModelConstraint:
         """Shutdown indicator active when turning generator off."""
         return ModelConstraint(
-            constraint=self.variables.shutdown >= self.variables.status.shift({TIME: 1}) - self.variables.status,
+            constraint=self.variables.shutdown >= time_shifted(self.variables.status, 1) - self.variables.status,
             name="generator_shutdown_lower_bound_constraint",
         )
 
@@ -131,7 +133,7 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
     def _get_generator_shutdown_upper_bound_1_constraint(self) -> ModelConstraint:
         """Shutdown indicator bounded by previous status."""
         return ModelConstraint(
-            constraint=self.variables.shutdown <= self.variables.status.shift({TIME: 1}),
+            constraint=self.variables.shutdown <= time_shifted(self.variables.status, 1),
             name="generator_shutdown_upper_bound_1_constraint",
         )
 
@@ -152,7 +154,7 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
             generator_status = self.variables.status.sel({GENERATOR: generator})
             generator_shutdown = self.variables.shutdown.sel({GENERATOR: generator})
             steps_on = generator_status.rolling({TIME: min_up_time}).sum()
-            constraint_generator = steps_on >= min_up_time * generator_shutdown.shift({TIME: -1})
+            constraint_generator = steps_on >= min_up_time * time_shifted(generator_shutdown, -1)
             constraints.append(
                 ModelConstraint(
                     constraint=constraint_generator,
@@ -170,7 +172,7 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
             generator_status = self.variables.status.sel({GENERATOR: generator})
             generator_startup = self.variables.startup.sel({GENERATOR: generator})
             steps_off = (1 - generator_status).rolling({TIME: min_down_time}).sum()
-            constraint_generator = steps_off >= min_down_time * generator_startup.shift({TIME: -1})
+            constraint_generator = steps_off >= min_down_time * time_shifted(generator_startup, -1)
             constraints.append(
                 ModelConstraint(
                     constraint=constraint_generator,
@@ -191,9 +193,9 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
     def _get_max_ramp_up_constraint(self) -> ModelConstraint:
         """Output rises by at most `ramp_up` per step (unlimited, i.e. nominal power, when unset)."""
         max_ramp_up = self.arrays.ramp_up.fillna(self.arrays.nominal_power)
-        constraint_expr = self.variables.power - self.variables.power.shift({TIME: 1}) <= max_ramp_up
+        ramp = (self.variables.power - time_shifted(self.variables.power, 1)).isel({TIME: slice(1, None)})
         return ModelConstraint(
-            constraint=constraint_expr.isel({TIME: slice(1, None)}),
+            constraint=ramp.to_constraint("<=", max_ramp_up),
             name="generator_max_ramp_up_constraint",
         )
 
@@ -201,9 +203,9 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
     def _get_max_ramp_down_constraint(self) -> ModelConstraint:
         """Output falls by at most `ramp_down` per step (unlimited, i.e. nominal power, when unset)."""
         max_ramp_down = self.arrays.ramp_down.fillna(self.arrays.nominal_power)
-        constraint_expr = self.variables.power.shift({TIME: 1}) - self.variables.power <= max_ramp_down
+        ramp = (time_shifted(self.variables.power, 1) - self.variables.power).isel({TIME: slice(1, None)})
         return ModelConstraint(
-            constraint=constraint_expr.isel({TIME: slice(1, None)}),
+            constraint=ramp.to_constraint("<=", max_ramp_down),
             name="generator_max_ramp_down_constraint",
         )
 
@@ -229,3 +231,15 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
         )
         profit: linopy.LinearExpression = -cost.sum([TIME, GENERATOR])
         return profit
+
+    def dispatch(self, solution: xr.Dataset) -> GeneratorDispatch:
+        """Return the power, status, startups and shutdowns of the generators."""
+        data = xr.Dataset(
+            {
+                "power": solution[self.power_name],
+                "status": solution[self.status_name],
+                "startup": solution[self.startup_name],
+                "shutdown": solution[self.shutdown_name],
+            },
+        )
+        return GeneratorDispatch(data, GENERATOR)

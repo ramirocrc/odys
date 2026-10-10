@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import ClassVar, Self
 
 import linopy
+import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
@@ -15,6 +16,7 @@ from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import MarketArrays
 from odys.parameters.vectorize import vectorize
+from odys.results.dispatch import MarketDispatch
 
 MARKET = "market"
 
@@ -149,3 +151,11 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
         revenue = self.variables.sell_volume * energy_price - self.variables.buy_volume * energy_price
         profit: linopy.LinearExpression = revenue.sum([ModelDimension.Time, MARKET])
         return profit
+
+    def dispatch(self, solution: xr.Dataset) -> MarketDispatch:
+        """Return the sell, buy and net (sell minus buy) volumes of the markets."""
+        sell_volume = solution[self.sell_volume_name]
+        buy_volume = solution[self.buy_volume_name]
+        net_volume = sell_volume - buy_volume
+        data = xr.Dataset({"sell_volume": sell_volume, "buy_volume": buy_volume, "net_volume": net_volume})
+        return MarketDispatch(data, MARKET)

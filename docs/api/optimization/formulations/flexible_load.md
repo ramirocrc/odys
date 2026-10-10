@@ -14,6 +14,6 @@ $$
 
 Its power injection is $-\sum_l (D_{l,t,s} + \Delta d_{l,t,s})$ and its profit per scenario is $\sum_{t,l} \Delta d_{l,t,s}\,\Delta t\,v_l$.
 
-See also [FlexibleLoad](../../domain/entities/flexible_load.md) for the domain model and [entity_arrays](../parameters/entity_arrays.md) for the parameter arrays.
+See also [FlexibleLoad](../../domain/entities/flexible_load.md) for the domain model and [entity_arrays](../../parameters/entity_arrays.md) for the parameter arrays.
 
 ::: odys.optimization.formulations.flexible_load

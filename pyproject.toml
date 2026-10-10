@@ -32,7 +32,7 @@ classifiers = [
 
 dependencies = [
   "highspy>=1.14.0",
-  "linopy>=0.7.0",
+  "linopy>=0.10",
   "numpy>=2.4.1",
   "pandas>=2.3.3",
   "pydantic>=2.12.5",
@@ -125,16 +125,29 @@ source_modules = ["odys.parameters"]
 forbidden_modules = ["linopy"]
 
 [[tool.importlinter.contracts]]
-name = "Packages import only lower layers (optimization and solvers are independent)"
+name = "Packages import only lower layers (formulations build results; results read the solve outcome)"
 type = "layers"
 containers = ["odys"]
 layers = [
   "energy_system",
+  "optimization",
   "results",
-  "optimization | solvers",
+  "solvers",
   "parameters",
   "domain",
 ]
+
+[[tool.importlinter.contracts]]
+name = "Optimization does not depend on solving"
+type = "forbidden"
+source_modules = ["odys.optimization"]
+forbidden_modules = ["odys.solvers"]
+
+[[tool.importlinter.contracts]]
+name = "Results do not use the modeling library"
+type = "forbidden"
+source_modules = ["odys.results"]
+forbidden_modules = ["linopy"]
 
 [[tool.importlinter.contracts]]
 name = "Solvers depend on no model layer"

@@ -738,7 +738,7 @@ wheels = [
 
 [[package]]
 name = "linopy"
-version = "0.8.0"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bottleneck" },
@@ -755,9 +755,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "xarray" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/28/7f/80c12a3bba2a2bd8c17777fb272a37ccd16e65e53dc81d0d137fabd29241/linopy-0.8.0.tar.gz", hash = "sha256:566ede05d6134abf978fb4c1e18e0e5b67cd1acf0b26e9d80adcada3632d9c02", size = 1453088, upload-time = "2026-06-10T09:48:45.124Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d2/ef/da63a87cc78d7c8108e154904556f28acdec375e35c53f1f921cfe37426b/linopy-0.10.0.tar.gz", hash = "sha256:71ecb6c888fb2c9f12ea6736c2a594a879edb0e72a5db808ad978c948ac976e0", size = 1724337, upload-time = "2026-10-10T12:35:37.703Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bc/a9/987a9f2ad9a0b846147092edf0071b0f96b84c0e5933ac354192d8a3836d/linopy-0.8.0-py3-none-any.whl", hash = "sha256:107f9dcb63943bb02e457693f639e4adceea265040d76f8949bad8b496558304", size = 184634, upload-time = "2026-06-10T09:48:43.147Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/3f/efaf0032dac7d6d0512a98f329315c449ec5a533a647867c24af54f5e8b6/linopy-0.10.0-py3-none-any.whl", hash = "sha256:9f22b6df039aad0fd3c26299c6cf3c957e4b20d88842069e4338800d9114e132", size = 274915, upload-time = "2026-10-10T12:35:35.476Z" },
 ]
 
 [[package]]
@@ -1282,7 +1282,7 @@ requires-dist = [
     { name = "cplex", marker = "extra == 'cplex'", specifier = ">=22.1.2.1" },
     { name = "gurobipy", marker = "extra == 'gurobi'", specifier = ">=13.0.1" },
     { name = "highspy", specifier = ">=1.14.0" },
-    { name = "linopy", specifier = ">=0.7.0" },
+    { name = "linopy", specifier = ">=0.10" },
     { name = "numpy", specifier = ">=2.4.1" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "pydantic", specifier = ">=2.12.5" },

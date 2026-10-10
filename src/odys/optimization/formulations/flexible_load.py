@@ -5,6 +5,7 @@ from typing import ClassVar, Self
 
 import linopy
 import numpy as np
+import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.flexible_load import FlexibleLoad
@@ -16,6 +17,7 @@ from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import FlexibleLoadArrays
 from odys.parameters.vectorize import vectorize
+from odys.results.dispatch import FlexibleLoadDispatch
 
 FLEXIBLE_LOAD = "flexible_load"
 
@@ -89,3 +91,9 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
         value = self.variables.load_adjustment * self.context.timestep_hours * self.arrays.value_of_consumption
         profit: linopy.LinearExpression = value.sum([ModelDimension.Time, FLEXIBLE_LOAD])
         return profit
+
+    def dispatch(self, solution: xr.Dataset) -> FlexibleLoadDispatch:
+        """Return the load adjustment and the actual load (base profile plus adjustment) of the flexible loads."""
+        load_adjustment = solution[self.variable_name]
+        data = xr.Dataset({"load_adjustment": load_adjustment, "actual_load": self.base_profiles + load_adjustment})
+        return FlexibleLoadDispatch(data, FLEXIBLE_LOAD)

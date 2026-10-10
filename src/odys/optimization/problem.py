@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from typing import Self, TypeVar
 
+import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.base import EnergyEntity
@@ -14,6 +15,7 @@ from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.optimization.objective_terms import OBJECTIVE_TERM_FORMULATIONS
 from odys.optimization.objective_terms.base import ObjectiveTermFormulation, ObjectiveTermInputs
 from odys.parameters.context import ModelContext
+from odys.results.dispatch import Dispatch
 
 FormulationT = TypeVar("FormulationT", bound=Formulation)
 
@@ -81,3 +83,13 @@ class OptimizationProblem(BaseModel):
 
         """
         return next((formulation for formulation in self.formulations if isinstance(formulation, kind)), None)
+
+    def dispatches(self, solution: xr.Dataset) -> tuple[Dispatch, ...]:
+        """Return the dispatch results of every entity type that has them, read from the solution of the model.
+
+        Args:
+            solution: The solution of the model built from this problem, by linopy variable name.
+        """
+        return tuple(
+            dispatch for formulation in self.formulations if (dispatch := formulation.dispatch(solution)) is not None
+        )

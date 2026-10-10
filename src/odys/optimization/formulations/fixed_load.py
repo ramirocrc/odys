@@ -39,3 +39,6 @@ class FixedLoadFormulation(Formulation):
         """Return minus the total fixed-load demand, per scenario and time."""
         injection: xr.DataArray = -self.demand.sum(FIXED_LOAD)
         return injection
+
+    def dispatch(self, solution: xr.Dataset) -> None:
+        """Return None: fixed loads have no decision variables, so no dispatch results."""
