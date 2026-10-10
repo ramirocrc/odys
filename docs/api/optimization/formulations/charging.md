@@ -26,6 +26,6 @@ $$
 p^{ch}_{v,t,s} + p^{dis}_{v,t,s} \le \sum_{c} a_{c,v,t,s} \cdot P^{\max}_c
 $$
 
-See also [Charger](../../domain/entities/charger.md) for the domain model and [entity_arrays](../parameters/entity_arrays.md) for the parameter arrays.
+See also [Charger](../../domain/entities/charger.md) for the domain model and [entity_arrays](../../parameters/entity_arrays.md) for the parameter arrays.
 
 ::: odys.optimization.formulations.charging
