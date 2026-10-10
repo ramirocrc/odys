@@ -23,37 +23,45 @@ def test_flexible_load_creation() -> None:
 
 def test_flexible_load_requires_name() -> None:
     with pytest.raises(ValidationError):
-        FlexibleLoad(  # ty: ignore [missing-argument] # pyrefly: ignore [missing-argument]
-            max_increase=MAX_INCREASE,
-            max_decrease=MAX_DECREASE,
-            value_of_consumption=VALUE_OF_CONSUMPTION,
+        FlexibleLoad.model_validate(
+            {
+                "max_increase": MAX_INCREASE,
+                "max_decrease": MAX_DECREASE,
+                "value_of_consumption": VALUE_OF_CONSUMPTION,
+            },
         )
 
 
 def test_flexible_load_requires_max_increase() -> None:
     with pytest.raises(ValidationError):
-        FlexibleLoad(  # ty: ignore [missing-argument]# pyrefly: ignore [missing-argument]
-            name="test_load",
-            max_decrease=MAX_DECREASE,
-            value_of_consumption=VALUE_OF_CONSUMPTION,
+        FlexibleLoad.model_validate(
+            {
+                "name": "test_load",
+                "max_decrease": MAX_DECREASE,
+                "value_of_consumption": VALUE_OF_CONSUMPTION,
+            },
         )
 
 
 def test_flexible_load_requires_max_decrease() -> None:
     with pytest.raises(ValidationError):
-        FlexibleLoad(  # ty: ignore [missing-argument]# pyrefly: ignore [missing-argument]
-            name="test_load",
-            max_increase=MAX_INCREASE,
-            value_of_consumption=VALUE_OF_CONSUMPTION,
+        FlexibleLoad.model_validate(
+            {
+                "name": "test_load",
+                "max_increase": MAX_INCREASE,
+                "value_of_consumption": VALUE_OF_CONSUMPTION,
+            },
         )
 
 
 def test_flexible_load_requires_value_of_consumption() -> None:
     with pytest.raises(ValidationError):
-        FlexibleLoad(  # ty: ignore [missing-argument]# pyrefly: ignore [missing-argument]
-            name="test_load",
-            max_increase=MAX_INCREASE,
-            max_decrease=MAX_DECREASE,
+        FlexibleLoad.model_validate(
+            {
+                "name": "test_load",
+                "max_increase": MAX_INCREASE,
+                "max_decrease": MAX_DECREASE,
+            },
         )
 
 

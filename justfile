@@ -20,6 +20,12 @@ check:
     uv run --locked pyrefly check
     @echo "🚀 Static type checking: Running basedpyright"
     uv run --locked basedpyright
+    @echo "🚀 Static type checking: Running zuban (strict)"
+    uv run --locked zuban check
+    @echo "🚀 Cognitive complexity: Running complexipy"
+    uv run --locked complexipy
+    @echo "🚀 Architecture layers: Running import-linter"
+    uv run --locked lint-imports
     @echo "🚀 Checking for obsolete dependencies: Running deptry"
     uv run --locked deptry src
 

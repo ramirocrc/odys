@@ -16,28 +16,31 @@ from odys import FixedLoad
 load = FixedLoad(name="factory_demand")
 ```
 
-The actual demand values are specified later in the `Scenario` via `fixed_load_profiles`. We separate the load definition from its time series because the same load can appear in multiple scenarios with different profiles.
+The actual demand values are specified later in the `Scenario` as a `LoadProfile`. We separate the load definition from its time series because the same load can appear in multiple scenarios with different profiles.
 
 ### Fixed load profiles
 
-In your scenario, provide the demand time series keyed by the load's name:
+In your scenario, give the load a `LoadProfile`:
 
 ```python
-from odys import Scenario
+from odys import LoadProfile, Scenario
 
 scenario = Scenario(
-    fixed_load_profiles={"factory_demand": [100, 120, 80, 90]},
+    profiles=(LoadProfile(load=load, values=[100, 120, 80, 90]),),
 )
 ```
 
-For multiple fixed loads, add more entries:
+For multiple fixed loads, add one `LoadProfile` per load:
 
 ```python
+factory = FixedLoad(name="factory")
+office = FixedLoad(name="office")
+
 scenario = Scenario(
-    fixed_load_profiles={
-        "factory": [100, 120, 80, 90],
-        "office": [20, 25, 15, 20],
-    },
+    profiles=(
+        LoadProfile(load=factory, values=[100, 120, 80, 90]),
+        LoadProfile(load=office, values=[20, 25, 15, 20]),
+    ),
 )
 ```
 
@@ -71,9 +74,11 @@ Like fixed loads, flexible loads require a time series in the scenario. This is 
 
 ```python
 scenario = Scenario(
-    flexible_load_base_profiles={"industrial_process": [80, 80, 80, 80]},
+    profiles=(LoadProfile(load=flexible_load, values=[80, 80, 80, 80]),),
 )
 ```
+
+Every base value must be at least the load's `max_decrease`, so the adjusted load can never go negative. Otherwise building the `LoadProfile` raises an `OdysValidationError`.
 
 ### How flexible loads work
 
@@ -92,8 +97,10 @@ The adjustment is bounded:
 The optimizer decides whether to increase or decrease load based on economics. The profit contribution is:
 
 ```
-profit += load_adjustment * value_of_consumption
+profit += load_adjustment * timestep_hours * value_of_consumption
 ```
+
+`value_of_consumption` is per MWh, so the adjustment (in MW) is multiplied by the timestep length in hours.
 
 The procurement cost of adjusting load is captured implicitly through the power balance constraint: when the optimizer increases load, it must procure more energy from generators or markets (whose costs are already in the objective). When it decreases load, it frees up supply for other uses (e.g., selling to markets).
 
@@ -107,10 +114,12 @@ The procurement cost of adjusting load is captured implicitly through the power 
 from datetime import timedelta
 from odys import (
     AssetPortfolio,
+    LoadProfile,
     EnergyMarket,
     EnergySystem,
     FlexibleLoad,
     Generator,
+    PriceProfile,
     Scenario,
 )
 
@@ -137,8 +146,10 @@ system = EnergySystem(
     timestep=timedelta(hours=1),
     number_of_steps=4,
     scenarios=Scenario(
-        flexible_load_base_profiles={"flex_load": [80, 80, 80, 80]},
-        market_prices={"market": [20, 20, 20, 20]},
+        profiles=(
+            LoadProfile(load=flexible_load, values=[80, 80, 80, 80]),
+            PriceProfile(market=market, values=[20, 20, 20, 20]),
+        ),
     ),
 )
 
@@ -150,7 +161,7 @@ results = system.optimize()
 You can mix both types in the same portfolio:
 
 ```python
-from odys import AssetPortfolio, FixedLoad, FlexibleLoad
+from odys import AssetPortfolio, LoadProfile, FixedLoad, FlexibleLoad, Scenario
 
 fixed_load = FixedLoad(name="critical_demand")
 flexible_load = FlexibleLoad(
@@ -163,11 +174,13 @@ flexible_load = FlexibleLoad(
 portfolio = AssetPortfolio([fixed_load, flexible_load])
 
 scenario = Scenario(
-    fixed_load_profiles={"critical_demand": [100, 100, 100, 100]},
-    flexible_load_base_profiles={"adjustable_demand": [50, 50, 50, 50]},
+    profiles=(
+        LoadProfile(load=fixed_load, values=[100, 100, 100, 100]),
+        LoadProfile(load=flexible_load, values=[50, 50, 50, 50]),
+    ),
 )
 ```
 
 ## Next steps
 
-Ready to add time-shifting to your portfolio? See [StandaloneStorage](storage.md) to model batteries, or [ElectricVehicle](electric_vehicle.md) for mobile storage with trip schedules.
+Ready to add time-shifting to your portfolio? See [StationaryStorage](storage.md) to model batteries, or [ElectricVehicle](electric_vehicle.md) for mobile storage with trip schedules.

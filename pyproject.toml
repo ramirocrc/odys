@@ -32,7 +32,7 @@ classifiers = [
 
 dependencies = [
   "highspy>=1.14.0",
-  "linopy>=0.7.0",
+  "linopy>=0.10",
   "numpy>=2.4.1",
   "pandas>=2.3.3",
   "pydantic>=2.12.5",
@@ -54,15 +54,16 @@ scip = ["pyscipopt>=6.1.0"]
 [dependency-groups]
 dev = [
   "basedpyright>=1.39.9",
+  "complexipy>=7.0.1",
   "deptry>=0.25.1",
-  "nox>=2026.7.11",
+  "import-linter>=2.15",
+  "nox>=2026.8.17",
   "prek>=0.4.10",
   "pyrefly>=1.1.1",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   "pytest-xdist>=3.8.0",
   "radon>=6.0.1",
-  "rich>=15.0.0",
   "ruff>=0.15.22",
   "ty>=0.0.61",
   "vulture>=2.16",
@@ -73,7 +74,7 @@ docs = [
   "plotly>=6.0.0",
   "zensical>=0.0.45",
 ]
-vulnerability-fixes = []
+vulnerability-fixes = ["virtualenv>=21.7.12"]
 
 [build-system]
 requires = ["uv_build<0.13"]
@@ -82,7 +83,19 @@ build-backend = "uv_build"
 [tool.basedpyright]
 include = ["src/"]
 pythonVersion = "3.11"
-typeCheckingMode = "standard"
+typeCheckingMode = "strict"
+# xarray/pandas/linopy are only partially typed; "Unknown" reports would force casts everywhere.
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+reportUnknownLambdaType = "none"
+reportMissingTypeStubs = "none"
+
+[tool.complexipy]
+paths = ["src"]
+max-complexity-allowed = 15
+quiet = true
 
 [tool.coverage.report]
 skip_empty = true
@@ -94,10 +107,77 @@ source = ["src"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["highspy", "cplex", "gurobipy", "pyscipopt"]
-DEP004 = ["rich"]
+
+[tool.importlinter]
+root_package = "odys"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain uses no numerical or modeling libraries"
+type = "forbidden"
+source_modules = ["odys.domain"]
+forbidden_modules = ["linopy", "xarray", "numpy", "pandas"]
+
+[[tool.importlinter.contracts]]
+name = "Parameters do not use the modeling library"
+type = "forbidden"
+source_modules = ["odys.parameters"]
+forbidden_modules = ["linopy"]
+
+[[tool.importlinter.contracts]]
+name = "Packages import only lower layers (formulations build results; results read the solve outcome)"
+type = "layers"
+containers = ["odys"]
+layers = [
+  "energy_system",
+  "optimization",
+  "results",
+  "solvers",
+  "parameters",
+  "domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Optimization does not depend on solving"
+type = "forbidden"
+source_modules = ["odys.optimization"]
+forbidden_modules = ["odys.solvers"]
+
+[[tool.importlinter.contracts]]
+name = "Results do not use the modeling library"
+type = "forbidden"
+source_modules = ["odys.results"]
+forbidden_modules = ["linopy"]
+
+[[tool.importlinter.contracts]]
+name = "Solvers depend on no model layer"
+type = "forbidden"
+source_modules = ["odys.solvers"]
+forbidden_modules = ["odys.parameters"]
+
+[[tool.importlinter.contracts]]
+name = "Formulations are independent of each other (charging may use electric vehicles)"
+type = "independence"
+modules = [
+  "odys.optimization.formulations.charging",
+  "odys.optimization.formulations.electric_vehicle",
+  "odys.optimization.formulations.energy_market",
+  "odys.optimization.formulations.fixed_load",
+  "odys.optimization.formulations.flexible_load",
+  "odys.optimization.formulations.generator",
+  "odys.optimization.formulations.stationary_storage",
+]
+ignore_imports = [
+  "odys.optimization.formulations.charging -> odys.optimization.formulations.electric_vehicle",
+]
 
 [tool.pyrefly]
 infer-with-first-use = false
+
+[tool.pytest.ini_options]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+filterwarnings = ["error"]
+xfail_strict = true
 
 [tool.ruff]
 line-length = 120
@@ -115,7 +195,6 @@ ignore = [
   "INP001",  # Checks for packages that are missing an __init__.py
   "S101",  # Use of 'assert' detected
   "D",  # Check for missing docstrings
-  "F811",  # Redefinition of unsuded variables
 ]
 "__init__.py" = [
   "F401",
@@ -124,7 +203,6 @@ ignore = [
   "INP001",  # Checks for packages that are missing an __init__.py
   "S101",  # Use of 'assert' detected
   "D",  # Check for missing docstrings
-  "F811",  # Redefinition of unsuded variables
 ]
 "docs/generate_example_plots.py" = [
   "INP001",  # No __init__.py in docs/
@@ -132,10 +210,22 @@ ignore = [
   "C408",  # plotly API uses dict() extensively
   "T201",  # print() for CLI output is intentional
 ]
+".claude/hooks/**" = [
+  "INP001",  # Standalone hook scripts, not a package
+  "S603",  # subprocess calls with fixed, trusted argument lists
+  "S607",  # uv resolved from PATH
+]
 "src/odys/results/dispatch.py" = [
   "TC002",  # pandas used at runtime for type-checking
   "TC003",  # Iterator used in runtime for type hints
 ]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typing.Optional".msg = "Use `X | None`."
+"typing.Union".msg = "Use `X | Y`."
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -152,3 +242,4 @@ paths = ["src/"]
 
 [tool.zuban]
 strict = true
+files = ["src", "tests"]

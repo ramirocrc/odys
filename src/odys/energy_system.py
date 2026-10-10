@@ -7,30 +7,23 @@ on initialization and provides an optimize() method for solving.
 
 from collections.abc import Sequence
 from datetime import timedelta
+from functools import cached_property
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from odys.domain.entities.base import EnergyEntity
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.objective import Objective, ProfitTerm
-from odys.domain.scenarios import (
-    Scenario,
-    StochasticScenario,
-    validate_sequence_of_stochastic_scenarios,
-)
+from odys.domain.horizon import Horizon
+from odys.domain.objective import Objective
+from odys.domain.scenario import Scenario, ScenarioSet
 from odys.domain.validation import validate_energy_system_inputs
+from odys.optimization.formulations import validate_entities_supported
 from odys.optimization.model.model_builder import build_model
-from odys.optimization.parameters.charger_parameters import ChargerParameters
-from odys.optimization.parameters.electric_vehicle_parameters import ElectricVehicleParameters
-from odys.optimization.parameters.flexible_load_parameters import FlexibleLoadParameters
-from odys.optimization.parameters.generator_parameters import GeneratorParameters
-from odys.optimization.parameters.market_parameters import MarketParameters
-from odys.optimization.parameters.parameters import EnergySystemParameters
-from odys.optimization.parameters.scenario_parameters import ScenarioParameters
-from odys.optimization.parameters.standalone_storage_parameters import StandaloneStorageParameters
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.solvers.solver import optimize_algebraic_model
+from odys.optimization.problem import OptimizationProblem
+from odys.results.optimization_results import OptimalDispatchResults
+from odys.solvers.solver import solve
 from odys.solvers.solver_config import SolverConfig
 
 
@@ -43,25 +36,26 @@ class EnergySystem(BaseModel):
     for solving the optimization problem.
 
     Validation includes:
-    - Validating that scenario probabilities sum to 1
-    - Ensuring unique scenario names
-    - Validating load profiles match portfolio loads
-    - Validating market prices match configured markets
-    - Checking capacity profile lengths match time steps
-    - Verifying available capacity profiles are only for generators
-    - Ensuring maximum available power can meet peak demand
+    - Validating that the timestep is positive and there is at least one step
+    - Validating that scenario probabilities sum to 1 and names are unique
+    - Checking that each profile references an asset or market of the system
+    - Checking that every load and market has a profile in every scenario
+    - Checking that every profile has one value per timestep
+    - Checking that electric vehicle trips fit the horizon
+    - Ensuring maximum supply can meet minimum demand at every timestep
 
     Raises:
         OdysValidationError: If the system configuration is invalid or infeasible.
 
     Example:
         >>> gen = Generator(name="gen1", nominal_power=100, variable_cost=20)
-        >>> portfolio = AssetPortfolio(assets=[gen])
+        >>> load = FixedLoad(name="load1")
+        >>> portfolio = AssetPortfolio(assets=[gen, load])
         >>> system = EnergySystem(
         ...     portfolio=portfolio,
         ...     timestep=timedelta(hours=1),
-        ...     number_of_steps=24,
-        ...     scenarios=[Scenario()],
+        ...     number_of_steps=3,
+        ...     scenarios=Scenario(profiles=(LoadProfile(load=load, values=[50, 80, 60]),)),
         ... )
         >>> results = system.optimize()
     """
@@ -71,87 +65,52 @@ class EnergySystem(BaseModel):
     portfolio: AssetPortfolio
     timestep: timedelta
     number_of_steps: int
-    objective: Objective | None = None
+    objective: Objective = Field(default_factory=Objective)
     markets: EnergyMarket | Sequence[EnergyMarket] | None = Field(default=None, init_var=True)
-    scenarios: Scenario | Sequence[StochasticScenario] = Field(init_var=True)
-
-    @field_validator("scenarios", mode="after")
-    @staticmethod
-    def _validate_scenarios(value: Scenario | list[StochasticScenario]) -> Scenario | list[StochasticScenario]:
-        if isinstance(value, list):
-            validate_sequence_of_stochastic_scenarios(value)
-        return value
+    scenarios: Scenario | Sequence[Scenario] = Field(init_var=True)
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:
+        validate_entities_supported(self._entities)
         validate_energy_system_inputs(
             portfolio=self.portfolio,
-            scenarios=self.collection_of_scenarios,
+            scenario_set=self.scenario_set,
             markets=self.collection_of_markets,
-            number_of_steps=self.number_of_steps,
-            timestep=self.timestep,
+            horizon=self.horizon,
         )
         return self
 
     @property
-    def collection_of_scenarios(self) -> tuple[StochasticScenario, ...]:
-        """Return scenarios as a normalized tuple.
+    def horizon(self) -> Horizon:
+        """Return the time grid of the optimization."""
+        return Horizon(timestep=self.timestep, number_of_steps=self.number_of_steps)
 
-        If a single deterministic Scenario is provided, it is wrapped in a
-        StochasticScenario with probability 1.0.
-        """
+    @cached_property
+    def scenario_set(self) -> ScenarioSet:
+        """Return the scenarios as a `ScenarioSet`; a single `Scenario` becomes a one-element set."""
         if isinstance(self.scenarios, Scenario):
-            return (
-                StochasticScenario(
-                    name="deterministic_scenario",
-                    probability=1.0,
-                    available_capacity_profiles=self.scenarios.available_capacity_profiles,
-                    fixed_load_profiles=self.scenarios.fixed_load_profiles,
-                    flexible_load_base_profiles=self.scenarios.flexible_load_base_profiles,
-                    market_prices=self.scenarios.market_prices,
-                ),
-            )
-        return tuple(self.scenarios)
+            return ScenarioSet(scenarios=(self.scenarios,))
+        return ScenarioSet(scenarios=tuple(self.scenarios))
 
-    @property
+    @cached_property
     def collection_of_markets(self) -> tuple[EnergyMarket, ...]:
         """Return markets as a normalized tuple."""
-        if not self.markets:
+        if self.markets is None:
             return ()
         if isinstance(self.markets, EnergyMarket):
             return (self.markets,)
         return tuple(self.markets)
 
-    def build_parameters(self) -> EnergySystemParameters:
-        """Build parameters from this energy system for the optimization model."""
-        generator_params = GeneratorParameters(self.portfolio.generators)
-        standalone_storage_params = StandaloneStorageParameters(self.portfolio.standalone_storages)
-        flexible_load_params = FlexibleLoadParameters(self.portfolio.flexible_loads)
-        market_params = MarketParameters(self.collection_of_markets)
-        charger_params = ChargerParameters(self.portfolio.chargers)
-        ev_params = ElectricVehicleParameters(self.number_of_steps, self.portfolio.electric_vehicles)
-        scenario_params = ScenarioParameters(
-            number_of_timesteps=self.number_of_steps,
-            scenarios=self.collection_of_scenarios,
-            generators_index=generator_params.index,
-            standalone_storages_index=standalone_storage_params.index,
-            flexible_loads_index=flexible_load_params.index,
-            markets_index=market_params.index,
-        )
+    @property
+    def _entities(self) -> tuple[EnergyEntity, ...]:
+        """Return every asset of the portfolio, then every market."""
+        return (*self.portfolio.assets.values(), *self.collection_of_markets)
 
-        return EnergySystemParameters(
-            timestep=self.timestep,
-            generators=generator_params,
-            standalone_storages=standalone_storage_params,
-            flexible_loads=flexible_load_params,
-            markets=market_params,
-            scenarios=scenario_params,
-            chargers=charger_params,
-            electric_vehicles=ev_params,
-            objective=self.objective if self.objective is not None else Objective(profit=ProfitTerm(weight=1.0)),
-        )
+    def build_problem(self) -> OptimizationProblem:
+        """Build the optimization problem of this energy system: one formulation per entity type and objective term."""
+        return OptimizationProblem.assemble(self._entities, self.horizon, self.scenario_set, self.objective)
 
-    def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDisptachResults:
+    def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDispatchResults:
         """Optimize the energy system.
 
         This method builds and solves the optimization model using the configured solver.
@@ -163,9 +122,6 @@ class EnergySystem(BaseModel):
             OptimizationResults containing the solution and metadata.
 
         """
-        params = self.build_parameters()
-        milp_model = build_model(params)
-        return optimize_algebraic_model(
-            milp_model=milp_model,
-            solver_config=solver_config,
-        )
+        problem = self.build_problem()
+        outcome = solve(build_model(problem), solver_config or SolverConfig())
+        return OptimalDispatchResults(outcome, problem.dispatches)

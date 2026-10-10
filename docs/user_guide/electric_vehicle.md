@@ -4,24 +4,26 @@ icon: fontawesome/solid/car
 
 # ElectricVehicle
 
-An `ElectricVehicle` is a storage asset with trip schedules. It inherits all battery physics from storage and adds constraints that make the vehicle unavailable for charging while driving and consume energy during trips.
+An `ElectricVehicle` is an electric vehicle: it has a `Battery` and a trip schedule. Trips make the vehicle unavailable for charging while driving and consume energy from the battery.
 
-Unlike a stationary [StandaloneStorage](storage.md), EVs must connect through a [Charger](charger.md) to charge or discharge. With more EVs than chargers, the optimizer assigns vehicles to chargers dynamically.
+Unlike a stationary [StationaryStorage](storage.md), EVs must connect through a [Charger](charger.md) to charge or discharge. With more EVs than chargers, the optimizer assigns vehicles to chargers dynamically.
 
 See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
 
 ## Basic usage
 
 ```python
-from odys import ElectricVehicle, Trip
+from odys import Battery, ElectricVehicle, Trip
 
 ev = ElectricVehicle(
     name="ev_1",
-    capacity=0.100,  # 100 kWh
-    max_charge_power=0.022,  # 22 kW
-    max_discharge_power=0.011,  # 11 kW V2G
-    soc_start=0.8,
-    soc_end=0.3,
+    battery=Battery(
+        capacity=0.100,  # 100 kWh
+        max_charge_power=0.022,  # 22 kW
+        max_discharge_power=0.011,  # 11 kW V2G
+        soc_start=0.8,
+        soc_end=0.3,
+    ),
     trips=(
         Trip(
             name="morning_delivery",
@@ -34,27 +36,15 @@ ev = ElectricVehicle(
 )
 ```
 
-`max_discharge_power` is what enables V2G. Without it (or with value `0`), the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip.
+The battery's `max_discharge_power` is what enables V2G. Without it (or with value `0`), the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip.
 
 ## Fields
 
-`ElectricVehicle` inherits all fields from storage and adds trips:
-
-| Field                    | Type               | Required | Default | Description                                                    |
-| ------------------------ | ------------------ | -------- | ------- | -------------------------------------------------------------- |
-| `name`                   | `str`              | Yes      | -       | Unique identifier for the EV                                   |
-| `capacity`               | `float`            | Yes      | -       | Battery capacity (MWh)                                         |
-| `max_charge_power`       | `float`            | Yes      | -       | Maximum charging power (MW)                                    |
-| `max_discharge_power`    | `float`            | Yes      | -       | Maximum discharging power (MW). Use `0` for charge-only        |
-| `efficiency_charging`    | `float`            | No       | `1.0`   | Charging efficiency (0-1)                                      |
-| `efficiency_discharging` | `float`            | No       | `1.0`   | Discharging efficiency (0-1)                                   |
-| `soc_start`              | `float`            | Yes      | -       | Initial state of charge (0-1)                                  |
-| `soc_end`                | `float`            | No       | `None`  | Required final state of charge (0-1)                           |
-| `soc_min`                | `float`            | No       | `0.0`   | Minimum allowed state of charge (0-1)                          |
-| `soc_max`                | `float`            | No       | `1.0`   | Maximum allowed state of charge (0-1)                          |
-| `degradation_cost`       | `float`            | No       | `0.0`   | Cost per MWh cycled                                            |
-| `self_discharge_rate`    | `float`            | No       | `0.0`   | Fractional self-discharge per hour                             |
-| `trips`                  | `tuple[Trip, ...]` | Yes      | -       | Trip schedule. Can be empty if the EV stays at the depot       |
+| Field     | Type               | Required | Default | Description                                                                      |
+| --------- | ------------------ | -------- | ------- | -------------------------------------------------------------------------------- |
+| `name`    | `str`              | Yes      | -       | Unique identifier for the EV                                                     |
+| `battery` | `Battery`          | Yes      | -       | The vehicle's battery; see the `Battery` fields in [StationaryStorage](storage.md#fields) |
+| `trips`   | `tuple[Trip, ...]` | Yes      | -       | Trip schedule. Can be empty if the EV stays at the depot                         |
 
 ## Trips
 
@@ -69,6 +59,8 @@ A `Trip` defines when the vehicle is driving, how much energy it consumes, and t
 | `min_soc_at_departure` | `float` | No     | `0.0`   | Minimum SoC required at departure, before trip energy is consumed   |
 
 While a trip is active, the EV cannot charge, discharge, or be assigned to a charger. Trip energy is subtracted from the battery SoC during the trip window.
+
+Building an `ElectricVehicle` raises an `OdysValidationError` if two of its trips overlap, or if a trip departing at `start_time=0` cannot be served from the starting charge: it needs a higher `min_soc_at_departure` than the battery's `soc_start`, or more energy than the battery holds above `soc_min` at the start (`(soc_start − soc_min) × capacity`). There is no earlier step to charge in, and the vehicle cannot charge while driving. Creating the `EnergySystem` also checks that every trip ends within `number_of_steps`.
 
 ```python
 Trip(

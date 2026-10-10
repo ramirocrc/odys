@@ -6,10 +6,11 @@ in energy system optimization problems.
 
 from pydantic import Field
 
-from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.base import Asset
+from odys.domain.horizon import OperatingConditions
 
 
-class Generator(EnergyEntity):
+class Generator(Asset):
     """Represents a power generator in the energy system.
 
     This class models generators with various operational constraints
@@ -67,12 +68,18 @@ class Generator(EnergyEntity):
         default=0.0,
         strict=True,
         ge=0,
-        description="Startup cost of the generator, in currency per MWh.",
+        description="Startup cost of the generator, in currency per startup.",
     )
 
     shutdown_cost: float = Field(
         default=0.0,
         strict=True,
         ge=0,
-        description="Shutdown cost of the generator, in currency per MWh",
+        description="Shutdown cost of the generator, in currency per shutdown.",
     )
+
+    def max_supply(self, conditions: OperatingConditions) -> tuple[float, ...]:
+        """Return the available capacity profile if the scenario has one, else the nominal power, in MW."""
+        if conditions.profile_values is not None:
+            return conditions.profile_values
+        return (self.nominal_power,) * conditions.horizon.number_of_steps

@@ -6,16 +6,20 @@ import numpy as np
 import pytest
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
+    AvailableCapacityProfile,
+    Battery,
     Charger,
     ElectricVehicle,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
     Generator,
+    LoadProfile,
+    PriceProfile,
     Scenario,
-    StandaloneStorage,
-    TradeDirection,
+    StationaryStorage,
     Trip,
 )
 
@@ -27,6 +31,12 @@ STORAGE_CAPACITY = 100.0
 GENERATOR_POWER = 200.0
 MIN_SOC_AT_DEPARTURE = 0.3
 MIN_FINAL_SOC = 0.2
+SELF_CONSUMPTION_SOC_START = 0.2
+EARLY_TRIP_SOC_START = 0.5
+EARLY_TRIP_ENERGY = 5.0
+SELF_CONSUMPTION_SOC_END = 0.8
+SELF_CONSUMPTION_BACKUP_OUTPUT = [30.0, 0.0, 0.0, 0.0, 30.0]
+TOLERANCE = 1e-6
 
 
 def _create_ev(  # noqa: PLR0913
@@ -39,10 +49,12 @@ def _create_ev(  # noqa: PLR0913
 ) -> ElectricVehicle:
     return ElectricVehicle(
         name=name,
-        capacity=capacity,
-        max_charge_power=max_charge_power,
-        max_discharge_power=max_discharge_power,
-        soc_start=soc_start,
+        battery=Battery(
+            capacity=capacity,
+            max_charge_power=max_charge_power,
+            max_discharge_power=max_discharge_power,
+            soc_start=soc_start,
+        ),
         trips=trips,
     )
 
@@ -64,7 +76,7 @@ class TestSingleEvSingleCharger:
             portfolio=portfolio,
             number_of_steps=len(load_profile),
             timestep=timedelta(hours=1),
-            scenarios=Scenario(fixed_load_profiles={"load1": load_profile}),
+            scenarios=Scenario(profiles=(LoadProfile(load=load, values=load_profile),)),
         )
         result = system.optimize()
 
@@ -92,7 +104,7 @@ class TestSingleEvSingleCharger:
             portfolio=portfolio,
             number_of_steps=len(load_profile),
             timestep=timedelta(hours=1),
-            scenarios=Scenario(fixed_load_profiles={"load1": load_profile}),
+            scenarios=Scenario(profiles=(LoadProfile(load=load, values=load_profile),)),
         )
         result = system.optimize()
 
@@ -120,7 +132,7 @@ class TestMultipleEvsMultipleChargers:
             portfolio=portfolio,
             number_of_steps=len(load_profile),
             timestep=timedelta(hours=1),
-            scenarios=Scenario(fixed_load_profiles={"load1": load_profile}),
+            scenarios=Scenario(profiles=(LoadProfile(load=load, values=load_profile),)),
         )
         result = system.optimize()
 
@@ -136,15 +148,12 @@ class TestMultipleEvsMultipleChargers:
 
 
 class TestMixedFleet:
-    def test_standalone_storage_independent_of_chargers(self) -> None:
+    def test_stationary_storage_independent_of_chargers(self) -> None:
         ev = _create_ev("ev1")
         charger = _create_charger("charger1")
-        storage = StandaloneStorage(
+        storage = StationaryStorage(
             name="battery",
-            capacity=STORAGE_CAPACITY,
-            max_charge_power=50.0,
-            max_discharge_power=50.0,
-            soc_start=0.5,
+            battery=Battery(capacity=STORAGE_CAPACITY, max_charge_power=50.0, max_discharge_power=50.0, soc_start=0.5),
         )
         gen = Generator(name="gen1", nominal_power=GENERATOR_POWER, variable_cost=20.0)
         load = FixedLoad(name="load1")
@@ -155,13 +164,13 @@ class TestMixedFleet:
             portfolio=portfolio,
             number_of_steps=len(load_profile),
             timestep=timedelta(hours=1),
-            scenarios=Scenario(fixed_load_profiles={"load1": load_profile}),
+            scenarios=Scenario(profiles=(LoadProfile(load=load, values=load_profile),)),
         )
         result = system.optimize()
 
         assert result.solver_status == "ok"
 
-        storage_soc = result.standalone_storages.soc.unstack()
+        storage_soc = result.stationary_storages.soc.unstack()
         assert (storage_soc >= 0).all().all()
         assert (storage_soc <= 1).all().all()
 
@@ -178,21 +187,23 @@ class TestEvFleetWithMarket:
         load = FixedLoad(name="load1")
         market = EnergyMarket(
             name="grid",
-            trade_direction=TradeDirection.BUY_AND_SELL,
+            allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
             max_trading_volume_per_step=100.0,
         )
         load_profile = [50.0, 50.0, 50.0, 50.0, 50.0]
-        market_prices = {"grid": [20.0, 20.0, 50.0, 50.0, 20.0]}
+        market_prices = [20.0, 20.0, 50.0, 50.0, 20.0]
 
-        portfolio = AssetPortfolio(assets=[ev, charger, gen, load, market])
+        portfolio = AssetPortfolio(assets=[ev, charger, gen, load])
         system = EnergySystem(
             portfolio=portfolio,
             markets=[market],
             number_of_steps=len(load_profile),
             timestep=timedelta(hours=1),
             scenarios=Scenario(
-                fixed_load_profiles={"load1": load_profile},
-                market_prices=market_prices,
+                profiles=(
+                    LoadProfile(load=load, values=load_profile),
+                    PriceProfile(market=market, values=market_prices),
+                ),
             ),
         )
         result = system.optimize()
@@ -208,18 +219,18 @@ class TestEvFleetWithMarket:
         charger = _create_charger("charger1")
         market = EnergyMarket(
             name="grid",
-            trade_direction=TradeDirection.BUY_AND_SELL,
+            allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
             max_trading_volume_per_step=100.0,
         )
-        market_prices = {"grid": [5.0, 5.0, 200.0, 200.0, 5.0]}
+        market_prices = [5.0, 5.0, 200.0, 200.0, 5.0]
 
-        portfolio = AssetPortfolio(assets=[ev, charger, market])
+        portfolio = AssetPortfolio(assets=[ev, charger])
         system = EnergySystem(
             portfolio=portfolio,
             markets=[market],
             number_of_steps=5,
             timestep=timedelta(hours=1),
-            scenarios=Scenario(market_prices=market_prices),
+            scenarios=Scenario(profiles=(PriceProfile(market=market, values=market_prices),)),
         )
         result = system.optimize()
 
@@ -235,13 +246,30 @@ class TestEvFleetWithMarket:
 
 class TestEvFleetWithSolar:
     def test_maximize_self_consumption(self) -> None:
-        ev = _create_ev("ev1", soc_start=0.2)
+        """The EV must charge (soc_end), and does so from surplus solar rather than the costly backup.
+
+        Without a charging requirement the optimum is degenerate: charging from free
+        surplus solar neither costs nor earns anything, so the final SOC depended on
+        the solver's tie-break. The backup output below is the unique optimum: the EV
+        needs 30 MWh, and solar surplus while it can charge (20 + 22 + 20 MWh) covers it.
+        """
+        ev = ElectricVehicle(
+            name="ev1",
+            battery=Battery(
+                capacity=EV_CAPACITY,
+                max_charge_power=EV_MAX_CHARGE_POWER,
+                max_discharge_power=0.0,
+                soc_start=SELF_CONSUMPTION_SOC_START,
+                soc_end=SELF_CONSUMPTION_SOC_END,
+            ),
+            trips=(),
+        )
         charger = _create_charger("charger1")
         solar = Generator(name="solar", nominal_power=100.0, variable_cost=0.0)
         gen = Generator(name="gen_backup", nominal_power=GENERATOR_POWER, variable_cost=40.0)
         load = FixedLoad(name="load1")
         load_profile = [30.0, 30.0, 30.0, 30.0, 30.0]
-        solar_profile = {"solar": [0.0, 50.0, 100.0, 50.0, 0.0]}
+        solar_profile = [0.0, 50.0, 100.0, 50.0, 0.0]
 
         portfolio = AssetPortfolio(assets=[ev, charger, solar, gen, load])
         system = EnergySystem(
@@ -249,8 +277,10 @@ class TestEvFleetWithSolar:
             number_of_steps=len(load_profile),
             timestep=timedelta(hours=1),
             scenarios=Scenario(
-                fixed_load_profiles={"load1": load_profile},
-                available_capacity_profiles=solar_profile,
+                profiles=(
+                    LoadProfile(load=load, values=load_profile),
+                    AvailableCapacityProfile(generator=solar, values=solar_profile),
+                ),
             ),
         )
         result = system.optimize()
@@ -260,3 +290,36 @@ class TestEvFleetWithSolar:
         ev_soc = result.electric_vehicles.soc.unstack()
         final_soc: float = ev_soc.iloc[-1, 0]  # type: ignore[assignment]
         assert final_soc > MIN_FINAL_SOC
+        assert final_soc == pytest.approx(SELF_CONSUMPTION_SOC_END)
+        backup_output = result.generators["gen_backup"].power.to_numpy()
+        np.testing.assert_allclose(backup_output, SELF_CONSUMPTION_BACKUP_OUTPUT, atol=TOLERANCE)
+
+
+class TestEvTripAtFirstStep:
+    def test_trip_departing_at_t0_draws_energy_from_the_battery(self) -> None:
+        """A trip at t=0 lowers the SOC in the first step, like a trip at any later step.
+
+        The driving constraint forbids charging during the trip, so the SOC at t=0 is fixed.
+        """
+        trip = Trip(name="early", start_time=0, end_time=1, energy_consumption=EARLY_TRIP_ENERGY)
+        ev = _create_ev("ev1", soc_start=EARLY_TRIP_SOC_START, trips=(trip,))
+        load = FixedLoad(name="load1")
+        system = EnergySystem(
+            portfolio=AssetPortfolio(
+                assets=[
+                    ev,
+                    _create_charger("charger1"),
+                    Generator(name="gen", nominal_power=GENERATOR_POWER, variable_cost=10.0),
+                    load,
+                ],
+            ),
+            number_of_steps=3,
+            timestep=timedelta(hours=1),
+            scenarios=Scenario(profiles=(LoadProfile(load=load, values=[10.0, 10.0, 10.0]),)),
+        )
+
+        result = system.optimize()
+
+        assert result.solver_status == "ok"
+        soc_after_first_step = result.electric_vehicles.soc.unstack().iloc[0, 0]
+        assert soc_after_first_step == pytest.approx(EARLY_TRIP_SOC_START - EARLY_TRIP_ENERGY / EV_CAPACITY)

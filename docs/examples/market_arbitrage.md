@@ -34,7 +34,18 @@ The generator gives us a local source of electricity, and the market gives us an
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, FixedLoad, Generator, Scenario, TradeDirection
+from odys import (
+    AllowedTradeDirection,
+    AssetPortfolio,
+    AvailableCapacityProfile,
+    LoadProfile,
+    EnergyMarket,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    PriceProfile,
+    Scenario,
+)
 
 generator_1 = Generator(name="ccgt", nominal_power=100, variable_cost=50)
 load = FixedLoad(name="load")
@@ -42,7 +53,7 @@ load = FixedLoad(name="load")
 market = EnergyMarket(
     name="market",
     max_trading_volume_per_step=100,
-    trade_direction=TradeDirection.BUY_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
 )
 portfolio = AssetPortfolio(assets=[generator_1, load])
 ```
@@ -53,9 +64,11 @@ The buy-only restriction is important. It keeps the example focused on procureme
 
 ```python
 scenario = Scenario(
-    available_capacity_profiles={"ccgt": 24 * [100]},
-    fixed_load_profiles={"load": 24 * [70]},
-    market_prices={"market": [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]},
+    profiles=(
+        AvailableCapacityProfile(generator=generator_1, values=24 * [100]),
+        LoadProfile(load=load, values=24 * [70]),
+        PriceProfile(market=market, values=[80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]),
+    ),
 )
 ```
 

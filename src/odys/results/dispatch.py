@@ -1,460 +1,190 @@
 """Typed dispatch results for assets and markets."""
 
-from __future__ import annotations
-
 from collections.abc import Iterator
+from typing import ClassVar, Self
 
 import pandas as pd
 import xarray as xr
 
-from odys.optimization.model.sets import ModelDimension
 
+class Dispatch:
+    """Dispatch results of every entity of one type, indexed along that type's dimension.
 
-class GeneratorDispatch:
-    """Dispatch results for generators in the portfolio."""
+    Wraps one dataset holding the type's series. `dispatch[name]` selects one entity,
+    iterating yields one dispatch per entity, and subclasses expose each series as a
+    typed property.
+    """
 
-    __slots__ = (
-        "_generator_names",
-        "_power",
-        "_shutdown",
-        "_startup",
-        "_status",
-    )
+    __slots__ = ("_data", "_dimension")
 
-    def __init__(
-        self,
-        power: xr.DataArray,
-        status: xr.DataArray,
-        startup: xr.DataArray,
-        shutdown: xr.DataArray,
-    ) -> None:
-        """Initialize generator dispatch results."""
-        self._power = power
-        self._status = status
-        self._startup = startup
-        self._shutdown = shutdown
-        self._generator_names = power.coords[ModelDimension.Generators]
+    label: ClassVar[str]
 
-    def __getitem__(self, key: str) -> GeneratorDispatch:
-        """Return new instance for a specific generator."""
-        return GeneratorDispatch(
-            power=self._power.sel(generator=key),
-            status=self._status.sel(generator=key),
-            startup=self._startup.sel(generator=key),
-            shutdown=self._shutdown.sel(generator=key),
-        )
+    def __init__(self, data: xr.Dataset, dimension: str) -> None:
+        """Initialize from the series of the entities and the dimension they are indexed along.
 
-    def __iter__(self) -> Iterator[GeneratorDispatch]:
-        """Iterate over dispatch instances."""
-        for name in self._generator_names:
-            yield self[name]
+        Args:
+            data: One data variable per series, indexed along `dimension`.
+            dimension: The entity axis, such as "generator".
+        """
+        self._data = data
+        self._dimension = dimension
+
+    @property
+    def dimension(self) -> str:
+        """Return the dimension the entities are indexed along."""
+        return self._dimension
+
+    @property
+    def _names(self) -> xr.DataArray:
+        return self._data.coords[self._dimension]
+
+    def __getitem__(self, key: str) -> Self:
+        """Return the dispatch of one entity."""
+        return type(self)(self._data.sel({self._dimension: key}), self._dimension)
+
+    def __iter__(self) -> Iterator[Self]:
+        """Iterate over the dispatch of each entity."""
+        for name in self._names.to_numpy():
+            yield self[str(name)]
 
     def __len__(self) -> int:
-        """Number of generators."""
-        return len(self._generator_names)
+        """Return the number of entities."""
+        return len(self._names)
 
     def __contains__(self, key: str) -> bool:
-        """Check if generator exists by name."""
-        return key in self._generator_names
+        """Check whether an entity exists by name."""
+        return key in self._names
+
+    def _series(self, name: str) -> pd.Series:
+        return self._data[name].to_series()
+
+    def to_dataset(self) -> xr.Dataset:
+        """Return the dispatch results as an xarray Dataset (a copy, so editing it leaves the results unchanged)."""
+        data: xr.Dataset = self._data.copy(deep=True)
+        return data
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Return the dispatch results as a pandas DataFrame."""
+        return self._data.to_dataframe()
+
+    def __repr__(self) -> str:
+        """Return the type and the entity names."""
+        return f"{type(self).__name__}(names={self._names!r})"
+
+
+class GeneratorDispatch(Dispatch):
+    """Dispatch results for generators in the portfolio."""
+
+    __slots__ = ()
+    label = "generator"
 
     @property
     def power(self) -> pd.Series:
-        """Power output (MWh)."""
-        return self._power.to_series()
+        """Power output (MW)."""
+        return self._series("power")
 
     @property
     def status(self) -> pd.Series:
         """Binary on/off status."""
-        return self._status.to_series()
+        return self._series("status")
 
     @property
     def startup(self) -> pd.Series:
         """Binary startup event."""
-        return self._startup.to_series()
+        return self._series("startup")
 
     @property
     def shutdown(self) -> pd.Series:
         """Binary shutdown event."""
-        return self._shutdown.to_series()
-
-    def to_dataset(self) -> xr.Dataset:
-        """Return dispatch results as an xarray Dataset."""
-        return xr.Dataset(
-            data_vars={
-                "power": self._power,
-                "status": self._status,
-                "startup": self._startup,
-                "shutdown": self._shutdown,
-            },
-        )
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Return dispatch results as a pandas DataFrame."""
-        return self.to_dataset().to_dataframe()
-
-    def __repr__(self) -> str:
-        """String representation."""
-        return f"GeneratorDispatch(names={self._generator_names!r})"
+        return self._series("shutdown")
 
 
-class StandaloneStorageDispatch:
-    """Dispatch results for standalone storages in the portfolio."""
+class BatteryDispatch(Dispatch):
+    """Dispatch results of battery-bearing entities: net power, state of charge and charge mode."""
 
-    __slots__ = (
-        "_charge_mode",
-        "_net_power",
-        "_soc",
-        "_standalone_storage_names",
-    )
-
-    def __init__(
-        self,
-        net_power: xr.DataArray,
-        soc: xr.DataArray,
-        charge_mode: xr.DataArray,
-    ) -> None:
-        """Initialize standalone storage dispatch results."""
-        self._net_power = net_power
-        self._soc = soc
-        self._charge_mode = charge_mode
-        self._standalone_storage_names = net_power.coords[ModelDimension.StandaloneStorages]
-
-    def __getitem__(self, key: str) -> StandaloneStorageDispatch:
-        """Return new instance for a specific standalone storage."""
-        return StandaloneStorageDispatch(
-            net_power=self._net_power.sel(standalone_storage=key),
-            soc=self._soc.sel(standalone_storage=key),
-            charge_mode=self._charge_mode.sel(standalone_storage=key),
-        )
-
-    def __iter__(self) -> Iterator[StandaloneStorageDispatch]:
-        """Iterate over dispatch instances."""
-        for name in self._standalone_storage_names:
-            yield self[name]
-
-    def __len__(self) -> int:
-        """Number of standalone storages."""
-        return len(self._standalone_storage_names)
-
-    def __contains__(self, key: str) -> bool:
-        """Check if standalone storage exists by name."""
-        return key in self._standalone_storage_names
+    __slots__ = ()
 
     @property
     def net_power(self) -> pd.Series:
         """Net power (discharging - charging)."""
-        return self._net_power.to_series()
+        return self._series("net_power")
 
     @property
     def soc(self) -> pd.Series:
         """State of charge (MWh)."""
-        return self._soc.to_series()
+        return self._series("soc")
 
     @property
     def charge_mode(self) -> pd.Series:
         """Binary charge mode (1=charging, 0=discharging)."""
-        return self._charge_mode.to_series()
-
-    def to_dataset(self) -> xr.Dataset:
-        """Return dispatch results as an xarray Dataset."""
-        return xr.Dataset(
-            data_vars={
-                "net_power": self._net_power,
-                "soc": self._soc,
-                "charge_mode": self._charge_mode,
-            },
-        )
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Return dispatch results as a pandas DataFrame."""
-        return self.to_dataset().to_dataframe()
-
-    def __repr__(self) -> str:
-        """String representation."""
-        return f"StandaloneStorageDispatch(names={self._standalone_storage_names!r})"
+        return self._series("charge_mode")
 
 
-class ElectricVehicleDispatch:
+class StationaryStorageDispatch(BatteryDispatch):
+    """Dispatch results for stationary storages in the portfolio."""
+
+    __slots__ = ()
+    label = "stationary storage"
+
+
+class ElectricVehicleDispatch(BatteryDispatch):
     """Dispatch results for electric vehicles in the portfolio."""
 
-    __slots__ = (
-        "_charge_mode",
-        "_ev_names",
-        "_net_power",
-        "_soc",
-    )
-
-    def __init__(
-        self,
-        net_power: xr.DataArray,
-        soc: xr.DataArray,
-        charge_mode: xr.DataArray,
-    ) -> None:
-        """Initialize electric vehicle dispatch results."""
-        self._net_power = net_power
-        self._soc = soc
-        self._charge_mode = charge_mode
-        self._ev_names = net_power.coords[ModelDimension.EVs]
-
-    def __getitem__(self, key: str) -> ElectricVehicleDispatch:
-        """Return new instance for a specific electric vehicle."""
-        return ElectricVehicleDispatch(
-            net_power=self._net_power.sel(ev=key),
-            soc=self._soc.sel(ev=key),
-            charge_mode=self._charge_mode.sel(ev=key),
-        )
-
-    def __iter__(self) -> Iterator[ElectricVehicleDispatch]:
-        """Iterate over dispatch instances."""
-        for name in self._ev_names:
-            yield self[name]
-
-    def __len__(self) -> int:
-        """Number of electric vehicles."""
-        return len(self._ev_names)
-
-    def __contains__(self, key: str) -> bool:
-        """Check if electric vehicle exists by name."""
-        return key in self._ev_names
-
-    @property
-    def net_power(self) -> pd.Series:
-        """Net power (discharging - charging)."""
-        return self._net_power.to_series()
-
-    @property
-    def soc(self) -> pd.Series:
-        """State of charge (MWh)."""
-        return self._soc.to_series()
-
-    @property
-    def charge_mode(self) -> pd.Series:
-        """Binary charge mode (1=charging, 0=discharging)."""
-        return self._charge_mode.to_series()
-
-    def to_dataset(self) -> xr.Dataset:
-        """Return dispatch results as an xarray Dataset."""
-        return xr.Dataset(
-            data_vars={
-                "net_power": self._net_power,
-                "soc": self._soc,
-                "charge_mode": self._charge_mode,
-            },
-        )
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Return dispatch results as a pandas DataFrame."""
-        return self.to_dataset().to_dataframe()
-
-    def __repr__(self) -> str:
-        """String representation."""
-        return f"ElectricVehicleDispatch(names={self._ev_names!r})"
+    __slots__ = ()
+    label = "electric vehicle"
 
 
-class ChargerDispatch:
+class ChargerDispatch(Dispatch):
     """Dispatch results for chargers in the portfolio."""
 
-    __slots__ = (
-        "_assignment",
-        "_charger_names",
-        "_ev_names",
-        "_power_in",
-    )
-
-    def __init__(
-        self,
-        assignment: xr.DataArray,
-        power_in: xr.DataArray,
-    ) -> None:
-        """Initialize charger dispatch results."""
-        self._assignment = assignment
-        self._power_in = power_in
-        self._charger_names = assignment.coords[ModelDimension.Chargers]
-        self._ev_names = assignment.coords[ModelDimension.EVs]
-
-    def __getitem__(self, key: str) -> ChargerDispatch:
-        """Return new instance for a specific charger."""
-        return ChargerDispatch(
-            assignment=self._assignment.sel(charger=key),
-            power_in=self._power_in.sel(ev=self._ev_names),
-        )
-
-    def __iter__(self) -> Iterator[ChargerDispatch]:
-        """Iterate over dispatch instances."""
-        for name in self._charger_names:
-            yield self[name]
-
-    def __len__(self) -> int:
-        """Number of chargers."""
-        return len(self._charger_names)
-
-    def __contains__(self, key: str) -> bool:
-        """Check if charger exists by name."""
-        return key in self._charger_names
+    __slots__ = ()
+    label = "charger"
 
     @property
     def assignment(self) -> pd.Series:
-        """Binary assignment (1=connected)."""
-        return self._assignment.to_series()
+        """Binary assignment of each electric vehicle (1=connected)."""
+        return self._series("assignment")
 
     @property
     def power(self) -> pd.Series:
-        """Power delivered by each charger (MWh)."""
-        return (self._assignment * self._power_in).sum(ModelDimension.EVs.value).to_series()
-
-    def to_dataset(self) -> xr.Dataset:
-        """Return dispatch results as an xarray Dataset."""
-        return xr.Dataset(
-            data_vars={
-                "assignment": self._assignment,
-                "power": (self._assignment * self._power_in).sum(ModelDimension.EVs.value),
-            },
-        )
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Return dispatch results as a pandas DataFrame."""
-        return self.to_dataset().to_dataframe()
-
-    def __repr__(self) -> str:
-        """String representation."""
-        return f"ChargerDispatch(names={self._charger_names!r})"
+        """Power delivered by each charger (MW)."""
+        return self._series("power")
 
 
-class MarketDispatch:
+class MarketDispatch(Dispatch):
     """Dispatch results for markets in the portfolio."""
 
-    __slots__ = (
-        "_buy_volume",
-        "_market_names",
-        "_sell_volume",
-    )
-
-    def __init__(
-        self,
-        sell_volume: xr.DataArray,
-        buy_volume: xr.DataArray,
-    ) -> None:
-        """Initialize market dispatch results."""
-        self._sell_volume = sell_volume
-        self._buy_volume = buy_volume
-        self._market_names = sell_volume.coords[ModelDimension.Markets]
-
-    def __getitem__(self, key: str) -> MarketDispatch:
-        """Return new instance for a specific market."""
-        return MarketDispatch(
-            sell_volume=self._sell_volume.sel(market=key),
-            buy_volume=self._buy_volume.sel(market=key),
-        )
-
-    def __iter__(self) -> Iterator[MarketDispatch]:
-        """Iterate over dispatch instances."""
-        for name in self._market_names:
-            yield self[name]
-
-    def __len__(self) -> int:
-        """Number of markets."""
-        return len(self._market_names)
-
-    def __contains__(self, key: str) -> bool:
-        """Check if market exists by name."""
-        return key in self._market_names
+    __slots__ = ()
+    label = "market"
 
     @property
     def sell_volume(self) -> pd.Series:
-        """Sell volume (MWh)."""
-        return self._sell_volume.to_series()
+        """Sell volume (MW)."""
+        return self._series("sell_volume")
 
     @property
     def buy_volume(self) -> pd.Series:
-        """Buy volume (MWh)."""
-        return self._buy_volume.to_series()
+        """Buy volume (MW)."""
+        return self._series("buy_volume")
 
     @property
-    def net_volume(self) -> xr.DataArray:
+    def net_volume(self) -> pd.Series:
         """Net volume (sell - buy)."""
-        return self._sell_volume - self._buy_volume
-
-    def to_dataset(self) -> xr.Dataset:
-        """Return dispatch results as an xarray Dataset."""
-        return xr.Dataset(
-            data_vars={
-                "sell_volume": self._sell_volume,
-                "buy_volume": self._buy_volume,
-                "net_volume": self.net_volume,
-            },
-        )
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Return dispatch results as a pandas DataFrame."""
-        return self.to_dataset().to_dataframe()
-
-    def __repr__(self) -> str:
-        """String representation."""
-        return f"MarketDispatch(names={self._market_names!r})"
+        return self._series("net_volume")
 
 
-class FlexibleLoadDispatch:
+class FlexibleLoadDispatch(Dispatch):
     """Dispatch results for flexible loads in the portfolio."""
 
-    __slots__ = (
-        "_base_profiles",
-        "_flexible_load_names",
-        "_load_adjustment",
-    )
-
-    def __init__(
-        self,
-        load_adjustment: xr.DataArray,
-        base_profiles: xr.DataArray,
-    ) -> None:
-        """Initialize flexible load dispatch results."""
-        self._load_adjustment = load_adjustment
-        self._base_profiles = base_profiles
-        self._flexible_load_names = load_adjustment.coords[ModelDimension.FlexibleLoads]
-
-    def __getitem__(self, key: str) -> FlexibleLoadDispatch:
-        """Return new instance for a specific flexible load."""
-        return FlexibleLoadDispatch(
-            load_adjustment=self._load_adjustment.sel(flexible_load=key),
-            base_profiles=self._base_profiles.sel(flexible_load=key),
-        )
-
-    def __iter__(self) -> Iterator[FlexibleLoadDispatch]:
-        """Iterate over dispatch instances."""
-        for name in self._flexible_load_names:
-            yield self[name]
-
-    def __len__(self) -> int:
-        """Number of flexible loads."""
-        return len(self._flexible_load_names)
-
-    def __contains__(self, key: str) -> bool:
-        """Check if flexible load exists by name."""
-        return key in self._flexible_load_names
+    __slots__ = ()
+    label = "flexible load"
 
     @property
     def load_adjustment(self) -> pd.Series:
         """Load adjustment from base profile (MW)."""
-        return self._load_adjustment.to_series()
+        return self._series("load_adjustment")
 
     @property
     def actual_load(self) -> pd.Series:
         """Actual consumption = base profile + adjustment (MW)."""
-        return (self._base_profiles + self._load_adjustment).to_series()
-
-    def to_dataset(self) -> xr.Dataset:
-        """Return dispatch results as an xarray Dataset."""
-        return xr.Dataset(
-            data_vars={
-                "load_adjustment": self._load_adjustment,
-                "actual_load": self._base_profiles + self._load_adjustment,
-            },
-        )
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Return dispatch results as a pandas DataFrame."""
-        return self.to_dataset().to_dataframe()
-
-    def __repr__(self) -> str:
-        """String representation."""
-        return f"FlexibleLoadDispatch(names={self._flexible_load_names!r})"
+        return self._series("actual_load")
