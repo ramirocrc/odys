@@ -31,14 +31,16 @@ from datetime import timedelta
 
 from odys import (
     AssetPortfolio,
+    AvailableCapacityProfile,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
     Generator,
     Objective,
+    PriceProfile,
     ProfitTerm,
-    StochasticScenario,
-    TradeDirection,
+    Scenario,
+    AllowedTradeDirection,
 )
 
 ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=20.0)
@@ -48,13 +50,13 @@ sdac = EnergyMarket(
     name="sdac",
     max_trading_volume_per_step=150,
     stage_fixed=True,
-    trade_direction=TradeDirection.SELL_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
 sidc = EnergyMarket(
     name="sidc",
     stage_fixed=False,
     max_trading_volume_per_step=100,
-    trade_direction=TradeDirection.SELL_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
 ```
 
@@ -74,23 +76,32 @@ That spread is what creates the risk tradeoff. `sdac` has modest price variation
 
 ```python
 scenarios = [
-    StochasticScenario(
+    Scenario(
         name="high",
         probability=1 / 3,
-        available_capacity_profiles={"ccgt": [100]},
-        market_prices={"sdac": [190], "sidc": [280]},
+        profiles=(
+            AvailableCapacityProfile(generator=ccgt, values=[100]),
+            PriceProfile(market=sdac, values=[190]),
+            PriceProfile(market=sidc, values=[280]),
+        ),
     ),
-    StochasticScenario(
+    Scenario(
         name="mid",
         probability=1 / 3,
-        available_capacity_profiles={"ccgt": [100]},
-        market_prices={"sdac": [200], "sidc": [200]},
+        profiles=(
+            AvailableCapacityProfile(generator=ccgt, values=[100]),
+            PriceProfile(market=sdac, values=[200]),
+            PriceProfile(market=sidc, values=[200]),
+        ),
     ),
-    StochasticScenario(
+    Scenario(
         name="low",
         probability=1 / 3,
-        available_capacity_profiles={"ccgt": [100]},
-        market_prices={"sdac": [210], "sidc": [140]},
+        profiles=(
+            AvailableCapacityProfile(generator=ccgt, values=[100]),
+            PriceProfile(market=sdac, values=[210]),
+            PriceProfile(market=sidc, values=[140]),
+        ),
     ),
 ]
 ```
@@ -110,7 +121,7 @@ energy_system = EnergySystem(
     scenarios=scenarios,
     number_of_steps=1,
     timestep=timedelta(hours=24),
-    objective=Objective(profit=ProfitTerm(weight=1)),
+    objective=Objective(terms=(ProfitTerm(weight=1),)),
 )
 
 result_profit = energy_system.optimize()
@@ -130,8 +141,10 @@ energy_system = EnergySystem(
     number_of_steps=1,
     timestep=timedelta(hours=24),
     objective=Objective(
-        profit=ProfitTerm(weight=1),
-        cvar=CVaRTerm(weight=1, confidence_level=0.6),
+        terms=(
+            ProfitTerm(weight=1),
+            CVaRTerm(weight=1, confidence_level=0.6),
+        ),
     ),
 )
 

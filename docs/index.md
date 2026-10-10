@@ -83,7 +83,7 @@ Let's walk through this. First, we create a generator with a variable cost and a
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario
+from odys import AssetPortfolio, LoadProfile, EnergySystem, FixedLoad, Generator, Scenario
 
 generator = Generator(name="gen", nominal_power=100.0, variable_cost=50.0)
 load = FixedLoad(name="demand")
@@ -96,7 +96,7 @@ portfolio = AssetPortfolio([generator, load])
 
 energy_system = EnergySystem(
     portfolio=portfolio,
-    scenarios=Scenario(fixed_load_profiles={"demand": [60, 90, 40, 70]}),
+    scenarios=Scenario(profiles=(LoadProfile(load=load, values=[60, 90, 40, 70]),)),
     timestep=timedelta(hours=1),
     number_of_steps=4,
 )
@@ -117,7 +117,7 @@ time  generator
 1     gen          90.0
 2     gen          40.0
 3     gen          70.0
-Name: generator_power, dtype: float64
+Name: power, dtype: float64
 ```
 
 Notice how the generator output matches demand exactly at every timestep. There's only one source of power, so the optimizer has no choice but to dispatch it to cover the load. Add a second generator with a different cost, and the story gets a lot more interesting -- the solver will use the cheaper one first and only call on the expensive one when necessary.

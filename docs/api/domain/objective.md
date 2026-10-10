@@ -6,7 +6,7 @@ icon: lucide/target
 
 Objective configuration for energy system optimization.
 
-Odys currently builds the objective as a weighted sum of the configured terms:
+Odys builds the objective as a weighted sum of the terms in `Objective.terms`:
 
 $$
 \max \sum_i w_i\,T_i(model)
@@ -23,6 +23,6 @@ $$
 
 where $\xi_s \ge \eta - \Pi_s$. If no CVaR term is configured, the implementation builds only the expected-profit term.
 
-See also [optimization.model.objectives](../optimization/model/objectives.md) for the implementation-side construction.
+See also [optimization.objective_terms](../optimization/objective_terms/index.md) for the implementation-side construction.
 
 ::: odys.domain.objective

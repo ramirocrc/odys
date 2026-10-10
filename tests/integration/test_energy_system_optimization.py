@@ -5,13 +5,15 @@ from datetime import timedelta
 import pandas as pd
 import pytest
 
-from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.base import Asset
+from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.standalone_storage import StandaloneStorage
-from odys.domain.scenarios import Scenario
+from odys.domain.entities.stationary_storage import StationaryStorage
+from odys.domain.profiles import LoadProfile, PriceProfile
+from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 
 STANDARD_GENERATOR_POWER = 100.0
@@ -73,22 +75,24 @@ def expensive_generator() -> Generator:
 
 
 @pytest.fixture
-def perfect_battery() -> StandaloneStorage:
+def perfect_battery() -> StationaryStorage:
     """Battery with perfect efficiency fixture."""
-    return StandaloneStorage(
+    return StationaryStorage(
         name="energy_storage",
-        capacity=STANDARD_STORAGE_CAPACITY,
-        max_charge_power=STANDARD_GENERATOR_POWER,
-        max_discharge_power=STANDARD_GENERATOR_POWER,
-        efficiency_charging=PERFECT_EFFICIENCY,
-        efficiency_discharging=PERFECT_EFFICIENCY,
-        soc_start=0.0,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=STANDARD_STORAGE_CAPACITY,
+            max_charge_power=STANDARD_GENERATOR_POWER,
+            max_discharge_power=STANDARD_GENERATOR_POWER,
+            efficiency_charging=PERFECT_EFFICIENCY,
+            efficiency_discharging=PERFECT_EFFICIENCY,
+            soc_start=0.0,
+            soc_end=0.5,
+        ),
     )
 
 
 @dataclass
-class LoadProfile:
+class LoadProfileCase:
     """Container for load profile data with metadata."""
 
     values: list[float]
@@ -126,11 +130,11 @@ def _create_expected_dataframe(
 
 
 def _create_energy_system(
-    assets: list[EnergyEntity],
+    assets: list[Asset],
     load_profile: list[float],
     load: FixedLoad,
     markets: list[EnergyMarket] | None = None,
-    market_prices: dict[str, list[float]] | None = None,
+    prices: tuple[PriceProfile, ...] = (),
 ) -> EnergySystem:
     """Create energy system with common setup logic."""
     portfolio = AssetPortfolio([*assets, load])
@@ -140,11 +144,7 @@ def _create_energy_system(
         markets=markets,
         timestep=timedelta(hours=1),
         number_of_steps=len(load_profile),
-        scenarios=Scenario(
-            available_capacity_profiles={},
-            fixed_load_profiles={load.name: load_profile},
-            market_prices=market_prices,
-        ),
+        scenarios=Scenario(profiles=(LoadProfile(load=load, values=load_profile), *prices)),
     )
 
 
@@ -233,15 +233,17 @@ def _create_generator_and_battery_system() -> SystemTestCase:
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=MEDIUM_COST,
     )
-    battery = StandaloneStorage(
+    battery = StationaryStorage(
         name="energy_storage",
-        capacity=STANDARD_STORAGE_CAPACITY,
-        max_charge_power=STANDARD_GENERATOR_POWER,
-        max_discharge_power=STANDARD_GENERATOR_POWER,
-        efficiency_charging=PERFECT_EFFICIENCY,
-        efficiency_discharging=PERFECT_EFFICIENCY,
-        soc_start=0.0,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=STANDARD_STORAGE_CAPACITY,
+            max_charge_power=STANDARD_GENERATOR_POWER,
+            max_discharge_power=STANDARD_GENERATOR_POWER,
+            efficiency_charging=PERFECT_EFFICIENCY,
+            efficiency_discharging=PERFECT_EFFICIENCY,
+            soc_start=0.0,
+            soc_end=0.5,
+        ),
     )
 
     load = FixedLoad(name="load1")
@@ -256,7 +258,7 @@ def _create_generator_and_battery_system() -> SystemTestCase:
     expected_storage_results = _create_expected_dataframe(
         {battery.name: [0.5, 1.0, 0.5, 0.0, 0.5]},
         len(STORAGE_TEST_PROFILE),
-        "standalone_storage",
+        "stationary_storage",
     )
 
     return SystemTestCase(
@@ -278,15 +280,17 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
         nominal_power=STANDARD_GENERATOR_POWER,
         variable_cost=MEDIUM_COST,
     )
-    battery = StandaloneStorage(
+    battery = StationaryStorage(
         name="battery",
-        capacity=STANDARD_STORAGE_CAPACITY,
-        max_charge_power=STANDARD_GENERATOR_POWER,
-        max_discharge_power=STANDARD_GENERATOR_POWER,
-        efficiency_charging=HALF_EFFICIENCY,
-        efficiency_discharging=HALF_EFFICIENCY,
-        soc_start=0.0,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=STANDARD_STORAGE_CAPACITY,
+            max_charge_power=STANDARD_GENERATOR_POWER,
+            max_discharge_power=STANDARD_GENERATOR_POWER,
+            efficiency_charging=HALF_EFFICIENCY,
+            efficiency_discharging=HALF_EFFICIENCY,
+            soc_start=0.0,
+            soc_end=0.5,
+        ),
     )
 
     load = FixedLoad(name="load1")
@@ -301,7 +305,7 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
     expected_storage_results = _create_expected_dataframe(
         {battery.name: [0.25, 0.5, 0.5]},
         len(SHORT_STORAGE_PROFILE),
-        "standalone_storage",
+        "stationary_storage",
     )
 
     return SystemTestCase(
@@ -337,7 +341,7 @@ def _create_generator_load_and_market_system() -> SystemTestCase:
         load_profile,
         load,
         markets=[market],
-        market_prices={"energy_market": MARKET_HIGH_PRICES},
+        prices=(PriceProfile(market=market, values=MARKET_HIGH_PRICES),),
     )
 
     expected_generator_results = _create_expected_dataframe(
@@ -382,10 +386,10 @@ def _create_generator_and_two_markets_system() -> SystemTestCase:
         load_profile,
         load,
         markets=[cheap_market, expensive_market],
-        market_prices={
-            "cheap_market": MARKET_LOW_PRICES,
-            "expensive_market": MARKET_HIGH_PRICES,
-        },
+        prices=(
+            PriceProfile(market=cheap_market, values=MARKET_LOW_PRICES),
+            PriceProfile(market=expensive_market, values=MARKET_HIGH_PRICES),
+        ),
     )
 
     expected_generator_results = _create_expected_dataframe(
@@ -420,7 +424,7 @@ def _create_market_only_system() -> SystemTestCase:
         load_profile,
         load,
         markets=[market],
-        market_prices={"energy_market": MARKET_LOW_PRICES},
+        prices=(PriceProfile(market=market, values=MARKET_LOW_PRICES),),
     )
 
     return SystemTestCase(
@@ -481,7 +485,7 @@ def test_energy_system_optimization(test_id: str, system_factory: Callable[[], S
         assert arr.size > 0
 
     if test_system.expected_storage_results is not None:
-        stor_dispatch = next(iter(result.standalone_storages))
+        stor_dispatch = next(iter(result.stationary_storages))
         assert stor_dispatch.soc is not None
         arr = stor_dispatch.soc.to_numpy()
         assert arr.size > 0

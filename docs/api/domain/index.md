@@ -16,5 +16,6 @@ Use it when you need to define or inspect the core objects that an energy system
 - `entities`
 - `exceptions`
 - `objective`
-- `scenarios`
+- `profiles`
+- `scenario`
 - `validation`

@@ -5,9 +5,10 @@ from enum import StrEnum
 from pydantic import Field
 
 from odys.domain.entities.base import EnergyEntity
+from odys.domain.horizon import OperatingConditions
 
 
-class TradeDirection(StrEnum):
+class AllowedTradeDirection(StrEnum):
     """Allowed trading direction for an energy market.
 
     Determines whether a market permits buying energy, selling energy,
@@ -36,19 +37,24 @@ class EnergyMarket(EnergyEntity):
     ``stage_fixed`` ``False`` can react to each scenario independently.
 
     Attributes:
-        name: Unique name of the energy market. Must match the corresponding
-            key in the scenario's ``market_prices`` mapping.
-        max_trading_volume_per_step: Maximum energy (in MW) that can be traded
-            in a single optimization timestep.
-        trade_direction: Allowed trading direction for the market.
+        name: Unique name of the energy market. Each scenario gives its prices
+            in a ``PriceProfile`` that references the market.
+        max_trading_volume_per_step: Maximum power (in MW) that can be traded
+            in a single optimization timestep. The traded energy is this power
+            times the timestep length.
+        allowed_trade_direction: Allowed trading direction for the market.
         stage_fixed: If ``True``, trading volumes are fixed across all stochastic
             scenarios (non-anticipativity constraint).
     """
 
     name: str
     max_trading_volume_per_step: float = Field(gt=0)
-    trade_direction: TradeDirection = TradeDirection.BUY_AND_SELL
+    allowed_trade_direction: AllowedTradeDirection = AllowedTradeDirection.BUY_AND_SELL
     stage_fixed: bool = Field(
         default=False,
         description="If true, the associated variables are fixed across scenarios.",
     )
+
+    def max_supply(self, conditions: OperatingConditions) -> tuple[float, ...]:
+        """Return the maximum trading volume at each timestep, in MW."""
+        return (self.max_trading_volume_per_step,) * conditions.horizon.number_of_steps

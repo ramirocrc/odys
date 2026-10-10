@@ -1,7 +1,22 @@
+import pandas as pd
 import pytest
 import xarray as xr
 
-from odys.results.dispatch import FlexibleLoadDispatch, GeneratorDispatch, MarketDispatch, StandaloneStorageDispatch
+from odys.results.dispatch import (
+    ChargerDispatch,
+    ElectricVehicleDispatch,
+    FlexibleLoadDispatch,
+    GeneratorDispatch,
+    MarketDispatch,
+    StationaryStorageDispatch,
+)
+
+STORAGE_DIMENSION = "stationary_storage"
+EV_DIMENSION = "ev"
+CHARGER_DIMENSION = "charger"
+MARKET_DIMENSION = "market"
+GENERATOR_DIMENSION = "generator"
+FLEXIBLE_LOAD_DIMENSION = "flexible_load"
 
 EXPECTED_GENERATOR_COUNT = 2
 EXPECTED_STORAGE_COUNT = 2
@@ -11,78 +26,77 @@ EXPECTED_SERIES_LENGTH = EXPECTED_STORAGE_COUNT * EXPECTED_TIMESTEP_COUNT
 
 
 @pytest.fixture
-def storage_dispatch() -> StandaloneStorageDispatch:
+def storage_dispatch() -> StationaryStorageDispatch:
     storage_names = ["storage_1", "storage_2"]
     timesteps = [0, 1]
 
     net_power = xr.DataArray(
         [[10.0, 20.0], [30.0, 40.0]],
-        dims=["standalone_storage", "time"],
-        coords={"standalone_storage": storage_names, "time": timesteps},
+        dims=["stationary_storage", "time"],
+        coords={"stationary_storage": storage_names, "time": timesteps},
     )
 
     soc = xr.DataArray(
         [[50.0, 60.0], [70.0, 80.0]],
-        dims=["standalone_storage", "time"],
-        coords={"standalone_storage": storage_names, "time": timesteps},
+        dims=["stationary_storage", "time"],
+        coords={"stationary_storage": storage_names, "time": timesteps},
     )
 
     charge_mode = xr.DataArray(
         [[1, 0], [0, 1]],
-        dims=["standalone_storage", "time"],
-        coords={"standalone_storage": storage_names, "time": timesteps},
+        dims=["stationary_storage", "time"],
+        coords={"stationary_storage": storage_names, "time": timesteps},
     )
 
-    return StandaloneStorageDispatch(
-        net_power=net_power,
-        soc=soc,
-        charge_mode=charge_mode,
+    return StationaryStorageDispatch(
+        xr.Dataset({"net_power": net_power, "soc": soc, "charge_mode": charge_mode}),
+        STORAGE_DIMENSION,
     )
 
 
-def test_getitem(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_getitem(storage_dispatch: StationaryStorageDispatch) -> None:
     storage = storage_dispatch["storage_1"]
 
-    assert isinstance(storage, StandaloneStorageDispatch)
+    assert isinstance(storage, StationaryStorageDispatch)
     assert len(storage.net_power) == EXPECTED_TIMESTEP_COUNT
 
 
-def test_iter(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_iter(storage_dispatch: StationaryStorageDispatch) -> None:
     items = list(storage_dispatch)
 
     assert len(items) == EXPECTED_STORAGE_COUNT
-    assert all(isinstance(item, StandaloneStorageDispatch) for item in items)
+    assert all(isinstance(item, StationaryStorageDispatch) for item in items)
 
 
-def test_len(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_len(storage_dispatch: StationaryStorageDispatch) -> None:
     assert len(storage_dispatch) == EXPECTED_STORAGE_COUNT
 
 
-def test_contains(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_contains(storage_dispatch: StationaryStorageDispatch) -> None:
     assert "storage_1" in storage_dispatch
     assert "storage_2" in storage_dispatch
     assert "storage_3" not in storage_dispatch
 
 
-def test_net_power(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_net_power(storage_dispatch: StationaryStorageDispatch) -> None:
     net_power = storage_dispatch.net_power
 
     assert len(net_power) == EXPECTED_SERIES_LENGTH
 
 
-def test_soc(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_soc(storage_dispatch: StationaryStorageDispatch) -> None:
     soc = storage_dispatch.soc
 
     assert len(soc) == EXPECTED_SERIES_LENGTH
 
 
-def test_charge_mode(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_charge_mode(storage_dispatch: StationaryStorageDispatch) -> None:
     charge_mode = storage_dispatch.charge_mode
 
     assert len(charge_mode) == EXPECTED_SERIES_LENGTH
 
 
-def test_to_dataset(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_to_dataset(storage_dispatch: StationaryStorageDispatch) -> None:
     dataset = storage_dispatch.to_dataset()
 
     assert isinstance(dataset, xr.Dataset)
@@ -91,7 +105,16 @@ def test_to_dataset(storage_dispatch: StandaloneStorageDispatch) -> None:
     assert "charge_mode" in dataset.data_vars
 
 
-def test_to_dataframe(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_storage_to_dataset_returns_a_copy(storage_dispatch: StationaryStorageDispatch) -> None:
+    original_net_power = list(storage_dispatch.net_power)
+    dataset = storage_dispatch.to_dataset()
+
+    dataset["net_power"][:] = 0.0
+
+    assert list(storage_dispatch.net_power) == pytest.approx(original_net_power)
+
+
+def test_storage_to_dataframe(storage_dispatch: StationaryStorageDispatch) -> None:
     dataframe = storage_dispatch.to_dataframe()
 
     assert not dataframe.empty
@@ -100,10 +123,10 @@ def test_to_dataframe(storage_dispatch: StandaloneStorageDispatch) -> None:
     assert "charge_mode" in dataframe.columns
 
 
-def test_repr(storage_dispatch: StandaloneStorageDispatch) -> None:
+def test_repr(storage_dispatch: StationaryStorageDispatch) -> None:
     representation = repr(storage_dispatch)
 
-    assert "StandaloneStorageDispatch" in representation
+    assert "StationaryStorageDispatch" in representation
 
 
 @pytest.fixture
@@ -124,8 +147,8 @@ def market_dispatch() -> MarketDispatch:
     )
 
     return MarketDispatch(
-        sell_volume=sell_volume,
-        buy_volume=buy_volume,
+        xr.Dataset({"sell_volume": sell_volume, "buy_volume": buy_volume, "net_volume": sell_volume - buy_volume}),
+        MARKET_DIMENSION,
     )
 
 
@@ -165,10 +188,15 @@ def test_market_buy_volume(market_dispatch: MarketDispatch) -> None:
     assert len(buy_volume) == EXPECTED_SERIES_LENGTH
 
 
-def test_market_net_volume(market_dispatch: MarketDispatch) -> None:
+def test_market_net_volume_is_series_of_sell_minus_buy(market_dispatch: MarketDispatch) -> None:
     net_volume = market_dispatch.net_volume
 
-    assert isinstance(net_volume, xr.DataArray)
+    assert isinstance(net_volume, pd.Series)
+    pd.testing.assert_series_equal(
+        net_volume,
+        market_dispatch.sell_volume - market_dispatch.buy_volume,
+        check_names=False,
+    )
 
 
 def test_market_to_dataset(market_dispatch: MarketDispatch) -> None:
@@ -223,10 +251,8 @@ def generator_dispatch() -> GeneratorDispatch:
     )
 
     return GeneratorDispatch(
-        power=power,
-        status=status,
-        startup=startup,
-        shutdown=shutdown,
+        xr.Dataset({"power": power, "status": status, "startup": startup, "shutdown": shutdown}),
+        GENERATOR_DIMENSION,
     )
 
 
@@ -254,31 +280,31 @@ def test_shutdown_property(generator_dispatch: GeneratorDispatch) -> None:
     assert list(result.values) == [0, 0, 0, 1]
 
 
-def test_getitem(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_getitem(generator_dispatch: GeneratorDispatch) -> None:
     result = generator_dispatch["generator_1"]
 
     assert isinstance(result, GeneratorDispatch)
     assert list(result.power.values) == [10.0, 20.0]
 
 
-def test_iter(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_iter(generator_dispatch: GeneratorDispatch) -> None:
     items = list(generator_dispatch)
 
     assert len(items) == EXPECTED_GENERATOR_COUNT
     assert all(isinstance(item, GeneratorDispatch) for item in items)
 
 
-def test_len(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_len(generator_dispatch: GeneratorDispatch) -> None:
     assert len(generator_dispatch) == EXPECTED_GENERATOR_COUNT
 
 
-def test_contains(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_contains(generator_dispatch: GeneratorDispatch) -> None:
     assert "generator_1" in generator_dispatch
     assert "generator_2" in generator_dispatch
     assert "generator_3" not in generator_dispatch
 
 
-def test_to_dataset(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_to_dataset(generator_dispatch: GeneratorDispatch) -> None:
     dataset = generator_dispatch.to_dataset()
 
     assert isinstance(dataset, xr.Dataset)
@@ -288,7 +314,7 @@ def test_to_dataset(generator_dispatch: GeneratorDispatch) -> None:
     assert "shutdown" in dataset.data_vars
 
 
-def test_to_dataframe(generator_dispatch: GeneratorDispatch) -> None:
+def test_generator_to_dataframe(generator_dispatch: GeneratorDispatch) -> None:
     dataframe = generator_dispatch.to_dataframe()
 
     assert not dataframe.empty
@@ -317,8 +343,8 @@ def flexible_load_dispatch() -> FlexibleLoadDispatch:
     )
 
     return FlexibleLoadDispatch(
-        load_adjustment=load_adjustment,
-        base_profiles=base_profiles,
+        xr.Dataset({"load_adjustment": load_adjustment, "actual_load": base_profiles + load_adjustment}),
+        FLEXIBLE_LOAD_DIMENSION,
     )
 
 
@@ -380,3 +406,95 @@ def test_flexible_load_repr(flexible_load_dispatch: FlexibleLoadDispatch) -> Non
     representation = repr(flexible_load_dispatch)
 
     assert "FlexibleLoadDispatch" in representation
+
+
+EXPECTED_EV_COUNT = 2
+
+
+@pytest.fixture
+def electric_vehicle_dispatch() -> ElectricVehicleDispatch:
+    ev_names = ["ev_1", "ev_2"]
+    timesteps = [0, 1]
+    coords = {EV_DIMENSION: ev_names, "time": timesteps}
+    dims = [EV_DIMENSION, "time"]
+
+    return ElectricVehicleDispatch(
+        xr.Dataset(
+            {
+                "net_power": xr.DataArray([[5.0, -5.0], [0.0, 10.0]], dims=dims, coords=coords),
+                "soc": xr.DataArray([[20.0, 15.0], [30.0, 20.0]], dims=dims, coords=coords),
+                "charge_mode": xr.DataArray([[0, 1], [1, 0]], dims=dims, coords=coords),
+            },
+        ),
+        EV_DIMENSION,
+    )
+
+
+def test_electric_vehicle_getitem(electric_vehicle_dispatch: ElectricVehicleDispatch) -> None:
+    vehicle = electric_vehicle_dispatch["ev_2"]
+
+    assert isinstance(vehicle, ElectricVehicleDispatch)
+    assert list(vehicle.soc.values) == [30.0, 20.0]
+
+
+def test_electric_vehicle_iter_len_and_contains(electric_vehicle_dispatch: ElectricVehicleDispatch) -> None:
+    assert len(list(electric_vehicle_dispatch)) == EXPECTED_EV_COUNT
+    assert len(electric_vehicle_dispatch) == EXPECTED_EV_COUNT
+    assert "ev_1" in electric_vehicle_dispatch
+    assert "ev_3" not in electric_vehicle_dispatch
+
+
+def test_electric_vehicle_series(electric_vehicle_dispatch: ElectricVehicleDispatch) -> None:
+    assert list(electric_vehicle_dispatch.net_power.values) == [5.0, -5.0, 0.0, 10.0]
+    assert list(electric_vehicle_dispatch.charge_mode.values) == [0, 1, 1, 0]
+
+
+EXPECTED_CHARGER_COUNT = 2
+CHARGER_1_POWER = [11.0, 0.0]
+
+
+@pytest.fixture
+def charger_dispatch() -> ChargerDispatch:
+    charger_names = ["charger_1", "charger_2"]
+    timesteps = [0, 1]
+    assignment = xr.DataArray(
+        [[[1, 0], [0, 0]], [[0, 0], [0, 1]]],
+        dims=[CHARGER_DIMENSION, EV_DIMENSION, "time"],
+        coords={CHARGER_DIMENSION: charger_names, EV_DIMENSION: ["ev_1", "ev_2"], "time": timesteps},
+    )
+    power = xr.DataArray(
+        [CHARGER_1_POWER, [0.0, 22.0]],
+        dims=[CHARGER_DIMENSION, "time"],
+        coords={CHARGER_DIMENSION: charger_names, "time": timesteps},
+    )
+
+    return ChargerDispatch(xr.Dataset({"assignment": assignment, "power": power}), CHARGER_DIMENSION)
+
+
+def test_charger_getitem_keeps_the_assignment_to_every_vehicle(charger_dispatch: ChargerDispatch) -> None:
+    charger = charger_dispatch["charger_1"]
+
+    assert isinstance(charger, ChargerDispatch)
+    assert list(charger.power.values) == CHARGER_1_POWER
+    assert list(charger.assignment.values) == [1, 0, 0, 0]
+
+
+def test_charger_len_and_contains(charger_dispatch: ChargerDispatch) -> None:
+    assert len(charger_dispatch) == EXPECTED_CHARGER_COUNT
+    assert "charger_2" in charger_dispatch
+    assert "charger_3" not in charger_dispatch
+
+
+def test_charger_to_dataframe(charger_dispatch: ChargerDispatch) -> None:
+    dataframe = charger_dispatch.to_dataframe()
+
+    assert "assignment" in dataframe.columns
+    assert "power" in dataframe.columns
+
+
+def test_dispatch_repr_names_the_type_and_the_entities(generator_dispatch: GeneratorDispatch) -> None:
+    representation = repr(generator_dispatch)
+
+    assert representation.startswith("GeneratorDispatch(names=")
+    assert "generator_1" in representation
+    assert "generator_2" in representation

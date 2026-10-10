@@ -22,52 +22,40 @@ $$
 \max \sum_s \pi_s \Pi_s
 $$
 
-## StochasticScenario
+## Scenarios with probabilities
 
-Each scenario extends the base `Scenario` with a name and a probability:
+Each scenario gets a unique name and a probability. Its profiles reference the assets they describe:
 
 ```python
-from odys import StochasticScenario
+from odys import AvailableCapacityProfile, LoadProfile, FixedLoad, Generator, Scenario
 
-low_wind = StochasticScenario(
+wind_farm = Generator(name="wind_farm", nominal_power=150.0, variable_cost=0.0)
+load = FixedLoad(name="load")
+
+low_wind = Scenario(
     name="low_wind",
     probability=0.3,
-    available_capacity_profiles={
-        "wind_farm": [30, 20, 40, 25, 35, 30, 20],
-    },
-    fixed_load_profiles={
-        "load": [180, 180, 150, 50, 80, 90, 100],
-    },
+    profiles=(
+        AvailableCapacityProfile(generator=wind_farm, values=[30, 20, 40, 25, 35, 30, 20]),
+        LoadProfile(load=load, values=[180, 180, 150, 50, 80, 90, 100]),
+    ),
 )
 
-high_wind = StochasticScenario(
+high_wind = Scenario(
     name="high_wind",
     probability=0.7,
-    available_capacity_profiles={
-        "wind_farm": [120, 140, 100, 130, 110, 150, 140],
-    },
-    fixed_load_profiles={
-        "load": [180, 180, 150, 50, 80, 90, 100],
-    },
+    profiles=(
+        AvailableCapacityProfile(generator=wind_farm, values=[120, 140, 100, 130, 110, 150, 140]),
+        LoadProfile(load=load, values=[180, 180, 150, 50, 80, 90, 100]),
+    ),
 )
 ```
 
-### Available fields
-
-Each `StochasticScenario` has:
-
-| Field                         | Type                     | Required | Description                                                  |
-| ----------------------------- | ------------------------ | -------- | ------------------------------------------------------------ |
-| `name`                        | `str`                    | Yes      | Unique name for the scenario                                 |
-| `probability`                 | `float`                  | Yes      | Probability (0-1) of this scenario occurring                 |
-| `fixed_load_profiles`         | `dict[str, list[float]]` | No       | Load values per timestep, keyed by load name                 |
-| `flexible_load_base_profiles` | `dict[str, list[float]]` | No       | Base load values per timestep, keyed by flexible load name   |
-| `available_capacity_profiles` | `dict[str, list[float]]` | No       | Max available capacity per timestep, keyed by generator name |
-| `market_prices`               | `dict[str, list[float]]` | No       | Market prices per timestep, keyed by market name             |
-
 !!! warning
 
-    Probabilities across all scenarios must sum to exactly 1.0 and scenario names must be unique. Odys validates both.
+    Probabilities across all scenarios must sum to 1.0 (within floating-point tolerance) and scenario names must be unique. Odys validates both.
+
+See [Scenario](scenario.md) for every field and profile type.
 
 ## Using stochastic scenarios
 
@@ -92,23 +80,22 @@ Everything else works the same -- the optimizer just considers multiple futures 
 
 ## What varies across scenarios
 
-You can vary any combination of:
+You can vary any profile between scenarios:
 
-- **`available_capacity_profiles`** -- model different wind/solar outputs
-- **`fixed_load_profiles`** -- model demand uncertainty
-- **`flexible_load_base_profiles`** -- model flexible demand uncertainty
-- **`market_prices`** -- model price volatility
+- **`AvailableCapacityProfile`** -- model different wind/solar outputs
+- **`LoadProfile`** of a fixed load -- model demand uncertainty
+- **`LoadProfile`** of a flexible load -- model flexible demand uncertainty
+- **`PriceProfile`** -- model price volatility
 
-Anything you don't include in a scenario stays unconstrained (e.g., if you don't specify `available_capacity_profiles`, generators can produce up to their `nominal_power` in that scenario).
+A generator without an `AvailableCapacityProfile` in a scenario can produce up to its `nominal_power` in that scenario.
 
-## Scenario vs StochasticScenario
+## One scenario or several
 
-|             | `Scenario`             | `StochasticScenario`        |
-| ----------- | ---------------------- | --------------------------- |
-| Number      | Exactly one            | Two or more in a list       |
-| Probability | Implicit 1.0           | Explicit, must sum to 1.0   |
-| Name        | Not needed             | Required, must be unique    |
-| Use case    | Deterministic dispatch | Decisions under uncertainty |
+|             | One `Scenario`             | A list of scenarios            |
+| ----------- | -------------------------- | ------------------------------ |
+| Probability | Defaults to 1.0            | Explicit, must sum to 1.0      |
+| Name        | Defaults to `"base"`       | Required, must be unique       |
+| Use case    | Deterministic dispatch     | Decisions under uncertainty    |
 
 ## Stage-fixed decisions
 
@@ -142,7 +129,7 @@ See the [CVaR Market Risk example](../examples/cvar_market_risk.md) for a full w
 
 ## Results with multiple scenarios
 
-When you have multiple scenarios, the results DataFrames include a scenario dimension:
+When you have multiple scenarios, every results series includes a scenario level:
 
 ```python
 result = energy_system.optimize()
@@ -159,4 +146,4 @@ For deterministic (single scenario) runs, the scenario level is dropped automati
 
 ## Next steps
 
-For a deeper dive into the `StochasticScenario` class and its validation rules, see [StochasticScenario](stochastic_scenario.md).
+For the rules that scenarios must follow, see [Scenario](scenario.md#multiple-scenarios).

@@ -1,0 +1,177 @@
+"""Unit tests for the electric vehicle arrays."""
+
+from datetime import timedelta
+
+import pytest
+
+from odys.domain.entities.battery import Battery
+from odys.domain.entities.electric_vehicle import ElectricVehicle
+from odys.domain.entities.trip import Trip
+from odys.domain.exceptions import OdysError
+from odys.domain.horizon import Horizon
+from odys.domain.scenario import Scenario, ScenarioSet
+from odys.parameters.context import ModelContext
+from odys.parameters.coordinates import Coordinates
+from odys.parameters.dimensions import ModelDimension
+from odys.parameters.entity_arrays import ElectricVehicleArrays, electric_vehicle_arrays
+
+EV_DIMENSION = "ev"
+
+NUM_EVS = 2
+TRIP1_ENERGY_PER_HOUR = 5.0
+TRIP2_ENERGY_PER_HOUR = 7.5
+TRIP1_MIN_SOC_AT_DEPARTURE = 0.3
+TRIP2_MIN_SOC_AT_DEPARTURE = 0.4
+NUMBER_OF_STEPS = 24
+TIME = ModelContext(
+    horizon=Horizon(timestep=timedelta(hours=1), number_of_steps=NUMBER_OF_STEPS),
+    scenario_set=ScenarioSet(scenarios=(Scenario(),)),
+).time
+
+
+@pytest.fixture
+def trip1() -> Trip:
+    return Trip(
+        name="trip1",
+        start_time=8,
+        end_time=10,
+        energy_consumption=10.0,
+        min_soc_at_departure=TRIP1_MIN_SOC_AT_DEPARTURE,
+    )
+
+
+@pytest.fixture
+def trip2() -> Trip:
+    return Trip(
+        name="trip2",
+        start_time=17,
+        end_time=19,
+        energy_consumption=15.0,
+        min_soc_at_departure=TRIP2_MIN_SOC_AT_DEPARTURE,
+    )
+
+
+@pytest.fixture
+def ev1(trip1: Trip, trip2: Trip) -> ElectricVehicle:
+    return ElectricVehicle(
+        name="ev1",
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.8),
+        trips=(trip1, trip2),
+    )
+
+
+@pytest.fixture
+def ev2() -> ElectricVehicle:
+    return ElectricVehicle(
+        name="ev2",
+        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=25.0, soc_start=0.5),
+        trips=(),
+    )
+
+
+@pytest.fixture
+def ev_arrays(ev1: ElectricVehicle, ev2: ElectricVehicle) -> ElectricVehicleArrays:
+    return electric_vehicle_arrays([ev1, ev2], Coordinates.of_entities(EV_DIMENSION, [ev1, ev2]), TIME)
+
+
+def test_ev_arrays_creation(ev_arrays: ElectricVehicleArrays) -> None:
+    """Test that the arrays can be built for EVs."""
+    assert ev_arrays.battery.capacity is not None
+    assert ev_arrays.trips.is_driving is not None
+
+
+def test_ev_arrays_empty_raises_error() -> None:
+    """Vectorizing no EVs is an internal error: the EV block is absent instead."""
+    with pytest.raises(OdysError, match="BatteryArrays requires at least one model"):
+        electric_vehicle_arrays([], Coordinates.of_entities(EV_DIMENSION, []), TIME)
+
+
+def test_ev_arrays_is_driving(ev_arrays: ElectricVehicleArrays) -> None:
+    """Test that is_driving array is correctly built."""
+    is_driving = ev_arrays.trips.is_driving
+    assert is_driving.dims == (EV_DIMENSION, ModelDimension.Time.value)
+    assert is_driving.shape == (2, 24)
+
+    # ev1 is driving during trip1 (8-10) and trip2 (17-19)
+    assert is_driving.sel(ev="ev1", time="8").values == 1
+    assert is_driving.sel(ev="ev1", time="9").values == 1
+    assert is_driving.sel(ev="ev1", time="10").values == 0
+    assert is_driving.sel(ev="ev1", time="17").values == 1
+    assert is_driving.sel(ev="ev1", time="18").values == 1
+    assert is_driving.sel(ev="ev1", time="5").values == 0
+
+    # ev2 has no trips, so never driving
+    assert is_driving.sel(ev="ev2", time="8").values == 0
+    assert is_driving.sel(ev="ev2", time="17").values == 0
+
+
+def test_ev_arrays_trip_energy(ev_arrays: ElectricVehicleArrays) -> None:
+    """Test that trip_energy array is correctly built."""
+    trip_energy = ev_arrays.trips.trip_energy
+    assert trip_energy.dims == (EV_DIMENSION, ModelDimension.Time.value)
+    assert trip_energy.shape == (2, 24)
+
+    # ev1 trip1: 10 MWh over 2 hours = 5 MWh/hour at t=8,9
+    assert trip_energy.sel(ev="ev1", time="8").values == TRIP1_ENERGY_PER_HOUR
+    assert trip_energy.sel(ev="ev1", time="9").values == TRIP1_ENERGY_PER_HOUR
+    assert trip_energy.sel(ev="ev1", time="10").values == 0.0
+
+    # ev1 trip2: 15 MWh over 2 hours = 7.5 MWh/hour at t=17,18
+    assert trip_energy.sel(ev="ev1", time="17").values == TRIP2_ENERGY_PER_HOUR
+    assert trip_energy.sel(ev="ev1", time="18").values == TRIP2_ENERGY_PER_HOUR
+
+    # ev2 has no trips
+    assert trip_energy.sel(ev="ev2", time="8").values == 0.0
+
+
+def test_ev_arrays_min_soc_at_departure(ev_arrays: ElectricVehicleArrays) -> None:
+    """Test that min_soc_at_departure array is correctly built."""
+    min_soc = ev_arrays.trips.min_soc_at_departure
+    assert min_soc.dims == (EV_DIMENSION, ModelDimension.Time.value)
+    assert min_soc.shape == (2, 24)
+
+    # ev1 trip1: min_soc_at_departure=0.3 at t=8
+    assert min_soc.sel(ev="ev1", time="8").values == TRIP1_MIN_SOC_AT_DEPARTURE
+    # ev1 trip2: min_soc_at_departure=0.4 at t=17
+    assert min_soc.sel(ev="ev1", time="17").values == TRIP2_MIN_SOC_AT_DEPARTURE
+    # Other times should be 0
+    assert min_soc.sel(ev="ev1", time="5").values == 0.0
+    assert min_soc.sel(ev="ev1", time="10").values == 0.0
+
+    # ev2 has no trips
+    assert min_soc.sel(ev="ev2", time="8").values == 0.0
+
+
+def test_ev_arrays_trip_arrays_use_model_time_coords(ev_arrays: ElectricVehicleArrays) -> None:
+    """Trip arrays must use string time coords so they align with the model variables.
+
+    With mismatching coordinate types (e.g. int vs str), xarray alignment finds no
+    common labels and linopy silently masks every trip constraint entry.
+    """
+    expected_time_coords = [str(time_step) for time_step in range(24)]
+    trip_arrays = (
+        ev_arrays.trips.is_driving,
+        ev_arrays.trips.trip_energy,
+        ev_arrays.trips.min_soc_at_departure,
+    )
+    for trip_array in trip_arrays:
+        assert list(trip_array.coords[ModelDimension.Time.value].values) == expected_time_coords
+
+
+def test_ev_arrays_empty_trips() -> None:
+    """EVs without trips get all-zero trip arrays."""
+    ev = ElectricVehicle(
+        name="ev_no_trips",
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.8),
+        trips=(),
+    )
+    params = electric_vehicle_arrays([ev], Coordinates.of_entities(EV_DIMENSION, [ev]), TIME)
+
+    assert params.trips.is_driving.shape == (1, 24)
+    assert params.trips.trip_energy.shape == (1, 24)
+    assert params.trips.min_soc_at_departure.shape == (1, 24)
+
+    # All zeros since no trips
+    assert params.trips.is_driving.sel(ev="ev_no_trips", time="8").values == 0
+    assert params.trips.trip_energy.sel(ev="ev_no_trips", time="8").values == 0.0
+    assert params.trips.min_soc_at_departure.sel(ev="ev_no_trips", time="8").values == 0.0

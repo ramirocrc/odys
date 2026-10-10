@@ -149,20 +149,23 @@ $$
 
 ## Available capacity profiles
 
-In a `Scenario`, you can limit the generator's available capacity per timestep using `available_capacity_profiles`. This is useful for modeling things like planned maintenance or variable renewable output:
+In a `Scenario`, you can limit the generator's available capacity per timestep with an `AvailableCapacityProfile`. This is useful for modeling things like planned maintenance or variable renewable output:
 
 ```python
-from odys import Scenario
+from odys import AvailableCapacityProfile, LoadProfile, FixedLoad, Generator, Scenario
+
+gen = Generator(name="gas_turbine", nominal_power=100.0, variable_cost=50.0)
+load = FixedLoad(name="load")
 
 scenario = Scenario(
-    available_capacity_profiles={
-        "gas_turbine": [100, 100, 50, 50, 100, 100, 100],
-    },
-    fixed_load_profiles={"load": [80, 90, 70, 60, 85, 95, 80]},
+    profiles=(
+        AvailableCapacityProfile(generator=gen, values=[100, 100, 50, 50, 100, 100, 100]),
+        LoadProfile(load=load, values=[80, 90, 70, 60, 85, 95, 80]),
+    ),
 )
 ```
 
-The key in the dict must match the generator's `name`.
+The profile references the generator object, and each value must lie between 0 and its `nominal_power`; otherwise building the profile raises an `OdysValidationError`.
 
 The implemented constraint is:
 
@@ -183,8 +186,8 @@ result.generators.startup  # startup events
 result.generators.shutdown  # shutdown events
 ```
 
-Each of these is a `pandas.DataFrame`.
+Each of these is a `pandas.Series` indexed by generator and time (and scenario, when there is more than one).
 
 ## Next steps
 
-Next, see how [Load](load.md) defines the demand your system must serve, or jump to [StandaloneStorage](storage.md) to add batteries.
+Next, see how [Load](load.md) defines the demand your system must serve, or jump to [StationaryStorage](storage.md) to add batteries.

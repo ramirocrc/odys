@@ -2,11 +2,11 @@
 icon: fontawesome/solid/battery-three-quarters
 ---
 
-# StandaloneStorage
+# StationaryStorage
 
-A `StandaloneStorage` models a stationary energy storage system in your portfolio. The optimizer decides when to charge and discharge it to minimize costs (or maximize revenue).
+A `StationaryStorage` models a stationary energy storage system in your portfolio. The optimizer decides when to charge and discharge it to minimize costs (or maximize revenue).
 
-`Storage` is the abstract base class shared by stationary batteries and electric vehicles. You instantiate `StandaloneStorage` for fixed batteries. For mobile batteries with trip schedules, see [ElectricVehicle](electric_vehicle.md).
+A storage asset *has* a `Battery`: the asset is the site you own, and the battery describes its physics (capacity, power limits, efficiencies, state of charge). An [ElectricVehicle](electric_vehicle.md) uses the same `Battery`, so everything on this page about batteries applies to EVs too.
 
 See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
 
@@ -15,24 +15,34 @@ See [Mathematical notation](mathematical_notation.md) for the full list of symbo
 Let's add a battery to the portfolio.
 
 ```python
-from odys import StandaloneStorage
+from odys import Battery, StationaryStorage
 
-storage = StandaloneStorage(
+storage = StationaryStorage(
     name="bess",
-    capacity=100.0,  # MWh of storage
-    max_charge_power=50.0,  # MW charge limit
-    max_discharge_power=50.0,  # MW discharge limit
-    efficiency_charging=0.95,
-    efficiency_discharging=0.95,
-    soc_start=0.5,  # starts at 50%
+    battery=Battery(
+        capacity=100.0,  # MWh of storage
+        max_charge_power=50.0,  # MW charge limit
+        max_discharge_power=50.0,  # MW discharge limit
+        efficiency_charging=0.95,
+        efficiency_discharging=0.95,
+        soc_start=0.5,  # starts at 50%
+    ),
 )
 ```
 
 ## Fields
 
+`StationaryStorage` has two fields:
+
+| Field     | Type      | Required | Default | Description                       |
+| --------- | --------- | -------- | ------- | --------------------------------- |
+| `name`    | `str`     | Yes      | -       | Unique identifier for the storage |
+| `battery` | `Battery` | Yes      | -       | The battery's physics (see below) |
+
+`Battery` fields:
+
 | Field                    | Type    | Required | Default | Description                                                                      |
 | ------------------------ | ------- | -------- | ------- | -------------------------------------------------------------------------------- |
-| `name`                   | `str`   | Yes      | -       | Unique identifier for the storage                                                |
 | `capacity`               | `float` | Yes      | -       | Total energy capacity (MWh)                                                      |
 | `max_charge_power`       | `float` | Yes      | -       | Maximum charging power (MW)                                                      |
 | `max_discharge_power`    | `float` | Yes      | -       | Maximum discharging power (MW). Use `0` for charge-only assets                   |
@@ -54,17 +64,19 @@ The SOC fields control how the storage's energy level behaves:
 - `soc_min` and `soc_max` set the operating range. For example, if you don't want to go below 20% or above 90%:
 
 ```python
-storage = StandaloneStorage(
+storage = StationaryStorage(
     name="bess",
-    capacity=100.0,
-    max_charge_power=50.0,
-    max_discharge_power=50.0,
-    efficiency_charging=0.90,
-    efficiency_discharging=0.85,
-    soc_start=0.5,
-    soc_end=0.5,
-    soc_min=0.2,
-    soc_max=0.9,
+    battery=Battery(
+        capacity=100.0,
+        max_charge_power=50.0,
+        max_discharge_power=50.0,
+        efficiency_charging=0.90,
+        efficiency_discharging=0.85,
+        soc_start=0.5,
+        soc_end=0.5,
+        soc_min=0.2,
+        soc_max=0.9,
+    ),
 )
 ```
 
@@ -130,22 +142,24 @@ $$
 
 ## Degradation cost
 
-`StandaloneStorage` accepts a `degradation_cost` field modeling battery wear, in currency per MWh cycled. It's applied to total energy throughput; both charging and discharging count toward cycling, and included in the objective as:
+`Battery` accepts a `degradation_cost` field modeling battery wear, in currency per MWh cycled. It's applied to total energy throughput; both charging and discharging count toward cycling, and included in the objective as:
 
 $$
 C^{degradation}_{b,t} = c^{deg}_b \, \Delta t \, (p^{ch}_{b,t} + p^{dis}_{b,t})
 $$
 
 ```python
-storage = StandaloneStorage(
+storage = StationaryStorage(
     name="bess",
-    capacity=100.0,
-    max_charge_power=50.0,
-    max_discharge_power=50.0,
-    efficiency_charging=0.95,
-    efficiency_discharging=0.95,
-    soc_start=0.5,
-    degradation_cost=5.0,  # 5 currency units per MWh cycled
+    battery=Battery(
+        capacity=100.0,
+        max_charge_power=50.0,
+        max_discharge_power=50.0,
+        efficiency_charging=0.95,
+        efficiency_discharging=0.95,
+        soc_start=0.5,
+        degradation_cost=5.0,  # 5 currency units per MWh cycled
+    ),
 )
 ```
 
@@ -153,14 +167,14 @@ This makes the optimizer weigh the value of cycling the battery against the wear
 
 ## Results
 
-After optimization, access storage results through `result.standalone_storages`:
+After optimization, access storage results through `result.stationary_storages`:
 
 ```python
 result = energy_system.optimize()
 
-result.standalone_storages.net_power  # charge/discharge per timestep
-result.standalone_storages.soc  # SOC at each timestep (fraction of capacity)
-result.standalone_storages.charge_mode  # binary charging mode
+result.stationary_storages.net_power  # charge/discharge per timestep
+result.stationary_storages.soc  # SOC at each timestep (fraction of capacity)
+result.stationary_storages.charge_mode  # binary charging mode
 ```
 
 The implementation defines `net_power` as:

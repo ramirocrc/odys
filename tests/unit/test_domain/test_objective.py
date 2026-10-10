@@ -3,11 +3,16 @@
 import pytest
 from pydantic import ValidationError
 
-from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
+from odys.domain.exceptions import OdysValidationError
+from odys.domain.objective import CVaRTerm, Objective, ObjectiveTerm, ProfitTerm
 
 PROFIT_WEIGHT = 0.7
 CVAR_WEIGHT = 0.3
 CVAR_CONFIDENCE_LEVEL = 0.95
+
+
+class _WeightedProfitTerm(ProfitTerm):
+    """A profit term subclass, to check that duplicates are counted by type, subclasses included."""
 
 
 class TestProfitTerm:
@@ -86,23 +91,17 @@ class TestCVaRTerm:
 
 
 class TestObjective:
-    def test_requires_profit(self) -> None:
-        with pytest.raises(ValidationError, match="Field required"):
-            Objective.model_validate({})
-
-    def test_profit_only_defaults_cvar_to_none(self) -> None:
-        objective = Objective(profit=ProfitTerm(weight=1.0))
-        assert objective.cvar is None
+    def test_defaults_to_expected_profit_with_unit_weight(self) -> None:
+        objective = Objective()
+        assert objective.terms == (ProfitTerm(weight=1.0),)
+        assert objective.term_of(CVaRTerm) is None
 
     def test_accepts_profit_and_cvar(self) -> None:
-        objective = Objective(
-            profit=ProfitTerm(weight=PROFIT_WEIGHT),
-            cvar=CVaRTerm(weight=CVAR_WEIGHT, confidence_level=CVAR_CONFIDENCE_LEVEL),
-        )
-        assert objective.profit.weight == PROFIT_WEIGHT
-        assert objective.cvar is not None
-        assert objective.cvar.weight == CVAR_WEIGHT
-        assert objective.cvar.confidence_level == CVAR_CONFIDENCE_LEVEL
+        profit = ProfitTerm(weight=PROFIT_WEIGHT)
+        cvar = CVaRTerm(weight=CVAR_WEIGHT, confidence_level=CVAR_CONFIDENCE_LEVEL)
+        objective = Objective(terms=(profit, cvar))
+        assert objective.term_of(ProfitTerm) == profit
+        assert objective.term_of(CVaRTerm) == cvar
 
     @pytest.mark.parametrize(
         ("profit_weight", "cvar_weight"),
@@ -114,9 +113,78 @@ class TestObjective:
     )
     def test_accepts_custom_weights_for_both_terms(self, profit_weight: float, cvar_weight: float) -> None:
         objective = Objective(
-            profit=ProfitTerm(weight=profit_weight),
-            cvar=CVaRTerm(weight=cvar_weight, confidence_level=CVAR_CONFIDENCE_LEVEL),
+            terms=(
+                ProfitTerm(weight=profit_weight),
+                CVaRTerm(weight=cvar_weight, confidence_level=CVAR_CONFIDENCE_LEVEL),
+            ),
         )
-        assert objective.profit.weight == profit_weight
-        assert objective.cvar is not None
-        assert objective.cvar.weight == cvar_weight
+        profit = objective.term_of(ProfitTerm)
+        cvar = objective.term_of(CVaRTerm)
+        assert profit is not None
+        assert profit.weight == profit_weight
+        assert cvar is not None
+        assert cvar.weight == cvar_weight
+
+    def test_accepts_terms_in_any_order(self) -> None:
+        cvar = CVaRTerm(weight=CVAR_WEIGHT, confidence_level=CVAR_CONFIDENCE_LEVEL)
+        objective = Objective(terms=(cvar, ProfitTerm(weight=PROFIT_WEIGHT)))
+        assert objective.term_of(CVaRTerm) == cvar
+
+    def test_requires_a_profit_term(self) -> None:
+        with pytest.raises(OdysValidationError, match="Objective must include a ProfitTerm"):
+            Objective(terms=(CVaRTerm(weight=CVAR_WEIGHT, confidence_level=CVAR_CONFIDENCE_LEVEL),))
+
+    def test_rejects_empty_terms(self) -> None:
+        with pytest.raises(OdysValidationError, match="Objective must include a ProfitTerm"):
+            Objective(terms=())
+
+    @pytest.mark.parametrize(
+        ("terms", "duplicated"),
+        [
+            ((ProfitTerm(weight=1.0), ProfitTerm(weight=PROFIT_WEIGHT)), "ProfitTerm"),
+            (
+                (
+                    ProfitTerm(weight=1.0),
+                    CVaRTerm(weight=CVAR_WEIGHT, confidence_level=CVAR_CONFIDENCE_LEVEL),
+                    CVaRTerm(weight=CVAR_WEIGHT, confidence_level=0.5),
+                ),
+                "CVaRTerm",
+            ),
+        ],
+        ids=["profit", "cvar"],
+    )
+    def test_rejects_more_than_one_term_of_a_type(
+        self,
+        terms: tuple[ProfitTerm | CVaRTerm, ...],
+        duplicated: str,
+    ) -> None:
+        with pytest.raises(OdysValidationError, match=rf"more than one term of type: \['{duplicated}'\]"):
+            Objective(terms=terms)
+
+    def test_rejects_term_with_unknown_field(self) -> None:
+        with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+            Objective.model_validate({"terms": ({"weight": 1.0, "bogus_field": 1},)})
+
+    def test_rejects_a_bare_objective_term(self) -> None:
+        with pytest.raises(ValidationError, match="terms"):
+            Objective.model_validate({"terms": (ObjectiveTerm(weight=1.0),)})
+
+    def test_rejects_a_subclass_alongside_its_base_term(self) -> None:
+        with pytest.raises(OdysValidationError, match=r"more than one term of type: \['ProfitTerm'\]"):
+            Objective(terms=(ProfitTerm(weight=1.0), _WeightedProfitTerm(weight=PROFIT_WEIGHT)))
+
+    def test_is_frozen(self) -> None:
+        objective = Objective()
+        frozen_field = "terms"
+        with pytest.raises(ValidationError, match="Instance is frozen"):
+            setattr(objective, frozen_field, ())
+
+    def test_rejects_unknown_field(self) -> None:
+        with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+            Objective.model_validate({"profit": {"weight": 1.0}})
+
+    def test_round_trips_through_model_dump(self) -> None:
+        objective = Objective(
+            terms=(ProfitTerm(weight=PROFIT_WEIGHT), CVaRTerm(weight=CVAR_WEIGHT, confidence_level=0.5)),
+        )
+        assert Objective.model_validate(objective.model_dump()) == objective

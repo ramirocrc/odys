@@ -74,3 +74,17 @@ def test_solver_all_options(case: SolverTestCase) -> None:
     config = COMMON_OPTS.model_copy(update={"solver_name": case.solver_name})
     result = translate_solver_config(config)
     assert result == case.expected_output
+
+
+RAW_TIME_LIMIT = 30.0
+RAW_ONLY_OPTION = {"mip_feasibility_tolerance": 1e-7}
+
+
+def test_solver_options_override_translated_options_and_add_raw_ones() -> None:
+    config = COMMON_OPTS.model_copy(
+        update={"solver_options": {"time_limit": RAW_TIME_LIMIT, **RAW_ONLY_OPTION}},
+    )
+    result = translate_solver_config(config)
+    assert result["time_limit"] == RAW_TIME_LIMIT
+    assert result["mip_feasibility_tolerance"] == RAW_ONLY_OPTION["mip_feasibility_tolerance"]
+    assert result["threads"] == COMMON_OPTS.threads

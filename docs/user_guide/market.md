@@ -45,7 +45,7 @@ $$
 | ----------------------------- | ---------------- | -------- | -------- | ----------------------------------------------------------- |
 | `name`                        | `str`            | Yes      | -        | Unique identifier for the market                            |
 | `max_trading_volume_per_step` | `float`          | Yes      | -        | Maximum volume that can be traded per timestep (MW)         |
-| `trade_direction`             | `TradeDirection` | No       | `BUY_AND_SELL` | Allowed directions: `BUY_ONLY`, `SELL_ONLY`, or `BUY_AND_SELL` |
+| `allowed_trade_direction`             | `AllowedTradeDirection` | No       | `BUY_AND_SELL` | Allowed directions: `BUY_ONLY`, `SELL_ONLY`, or `BUY_AND_SELL` |
 | `stage_fixed`                 | `bool`           | No       | `False`  | If `True`, trading decisions are fixed across all scenarios |
 
 ## Trade direction
@@ -53,20 +53,20 @@ $$
 You can restrict which way the market trades. Use `BUY_ONLY` for procurement markets, `SELL_ONLY` for feed-in tariffs, or leave the default `BUY_AND_SELL` for markets that allow two-way trading.
 
 ```python
-from odys import EnergyMarket, TradeDirection
+from odys import EnergyMarket, AllowedTradeDirection
 
 # Can only sell into this market
 sell_only = EnergyMarket(
     name="feed_in",
     max_trading_volume_per_step=100.0,
-    trade_direction=TradeDirection.SELL_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
 
 # Can only buy from this market
 buy_only = EnergyMarket(
     name="backup_supply",
     max_trading_volume_per_step=50.0,
-    trade_direction=TradeDirection.BUY_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
 )
 ```
 
@@ -98,20 +98,22 @@ $$
 
 ## Market prices
 
-Prices are provided through the `Scenario` (or `StochasticScenario`), not on the market object itself:
+Prices are provided as `PriceProfile` objects in each `Scenario`, not on the market object itself:
 
 ```python
-from odys import Scenario
+from odys import LoadProfile, FixedLoad, PriceProfile, Scenario
+
+load = FixedLoad(name="load")
 
 scenario = Scenario(
-    market_prices={
-        "day_ahead": [50, 55, 45, 60, 70, 65, 50],
-    },
-    fixed_load_profiles={"load": [100, 120, 80, 90, 110, 100, 95]},
+    profiles=(
+        PriceProfile(market=day_ahead, values=[50, 55, 45, 60, 70, 65, 50]),
+        LoadProfile(load=load, values=[100, 120, 80, 90, 110, 100, 95]),
+    ),
 )
 ```
 
-The key must match the market's `name`.
+Every market passed to the `EnergySystem` needs a `PriceProfile` in every scenario.
 
 Revenue and cost enter the objective as:
 
@@ -148,9 +150,10 @@ result = energy_system.optimize()
 
 result.markets.sell_volume  # energy sold per market per timestep
 result.markets.buy_volume  # energy bought per market per timestep
+result.markets.net_volume  # sell minus buy
 ```
 
-Each of these is a `pandas.DataFrame`.
+Each of these is a `pandas.Series` indexed by market and time (and scenario, when there is more than one).
 
 ## Next steps
 

@@ -36,18 +36,24 @@ The battery is the new ingredient. It does not create energy on its own, but it 
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario, StandaloneStorage
+from odys import (
+    AssetPortfolio,
+    AvailableCapacityProfile,
+    Battery,
+    LoadProfile,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    Scenario,
+    StationaryStorage,
+)
 
 generator_1 = Generator(name="ccgt", nominal_power=100, variable_cost=50)
 generator_2 = Generator(name="solar_pv", nominal_power=150, variable_cost=0)
 load = FixedLoad(name="load")
-battery = StandaloneStorage(
+battery = StationaryStorage(
     name="battery",
-    capacity=300,
-    max_charge_power=200,
-    max_discharge_power=200,
-    soc_start=0,
-    soc_end=0,
+    battery=Battery(capacity=300, max_charge_power=200, max_discharge_power=200, soc_start=0, soc_end=0),
 )
 portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
 ```
@@ -66,11 +72,14 @@ and solar profile: it can store surplus energy and use it later.
 
 ```python
 scenario = Scenario(
-    available_capacity_profiles={
-        "ccgt": 24 * [100],
-        "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
-    },
-    fixed_load_profiles={"load": 24 * [70]},
+    profiles=(
+        AvailableCapacityProfile(generator=generator_1, values=24 * [100]),
+        AvailableCapacityProfile(
+            generator=generator_2,
+            values=[0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
+        ),
+        LoadProfile(load=load, values=24 * [70]),
+    ),
 )
 ```
 
