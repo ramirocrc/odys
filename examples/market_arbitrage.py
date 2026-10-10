@@ -42,17 +42,27 @@ keeps the example focused on a single question: when should you generate, and
 when should you simply buy?
 """
 
+import logging
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, FixedLoad, Generator, Scenario, TradeDirection
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
+from odys import (
+    AllowedTradeDirection,
+    AssetPortfolio,
+    AvailableCapacityProfile,
+    EnergyMarket,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    LoadProfile,
+    OptimalDispatchResults,
+    PriceProfile,
+    Scenario,
+)
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def run_market_arbitrage() -> OptimalDisptachResults:
+def run_market_arbitrage() -> OptimalDispatchResults:
     """Run the market arbitrage example and return the optimization results."""
     generator_1 = Generator(
         name="ccgt",
@@ -66,21 +76,20 @@ def run_market_arbitrage() -> OptimalDisptachResults:
     market = EnergyMarket(
         name="market",
         max_trading_volume_per_step=100,
-        trade_direction=TradeDirection.BUY_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
     )
 
     portfolio = AssetPortfolio(assets=[generator_1, load])
 
     scenario = Scenario(
-        available_capacity_profiles={
-            "ccgt": 24 * [100],
-        },
-        fixed_load_profiles={
-            "load": 24 * [70],
-        },
-        market_prices={
-            "market": [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
-        },
+        profiles=(
+            AvailableCapacityProfile(generator=generator_1, values=24 * [100]),
+            LoadProfile(load=load, values=24 * [70]),
+            PriceProfile(
+                market=market,
+                values=[80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
+            ),
+        ),
     )
     energy_system = EnergySystem(
         portfolio=portfolio,
@@ -94,5 +103,7 @@ def run_market_arbitrage() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_market_arbitrage()
     logger.info(result.generators.to_dataframe())

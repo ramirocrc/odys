@@ -44,17 +44,26 @@ gas.
 
 """
 
+import logging
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario, StandaloneStorage
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
+from odys import (
+    AssetPortfolio,
+    AvailableCapacityProfile,
+    Battery,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    LoadProfile,
+    OptimalDispatchResults,
+    Scenario,
+    StationaryStorage,
+)
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def run_battery_dispatch() -> OptimalDisptachResults:
+def run_battery_dispatch() -> OptimalDispatchResults:
     """Run the battery dispatch example and return the optimization results."""
     generator_1 = Generator(
         name="ccgt",
@@ -70,24 +79,21 @@ def run_battery_dispatch() -> OptimalDisptachResults:
         name="load",
     )
 
-    battery = StandaloneStorage(
+    battery = StationaryStorage(
         name="battery",
-        capacity=300,
-        max_charge_power=200,
-        max_discharge_power=200,
-        soc_start=0,
-        soc_end=0,
+        battery=Battery(capacity=300, max_charge_power=200, max_discharge_power=200, soc_start=0, soc_end=0),
     )
     portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
 
     scenario = Scenario(
-        available_capacity_profiles={
-            "ccgt": 24 * [100],
-            "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
-        },
-        fixed_load_profiles={
-            "load": 24 * [70],
-        },
+        profiles=(
+            AvailableCapacityProfile(generator=generator_1, values=24 * [100]),
+            AvailableCapacityProfile(
+                generator=generator_2,
+                values=[0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
+            ),
+            LoadProfile(load=load, values=24 * [70]),
+        ),
     )
     energy_system = EnergySystem(
         portfolio=portfolio,
@@ -100,9 +106,11 @@ def run_battery_dispatch() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_battery_dispatch()
     logger.info("generators power")
     logger.info(result.generators.power)
 
     logger.info("battery net power")
-    logger.info(result.standalone_storages.net_power)
+    logger.info(result.stationary_storages.net_power)

@@ -32,15 +32,17 @@ The profit term is:
 $$
 \begin{aligned}
 \Pi_s =
-& \sum_{t,m} \lambda_{m,t,s}\left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right) \\
-& - \sum_{t,g}\left(c_g p_{g,t,s} + C^{start}_g y^{start}_{g,t,s} + C^{shutdown}_g y^{shutdown}_{g,t,s}\right) \\
-& + \sum_{t,l} \Delta d_{l,t,s} \cdot v_l \\
+& \sum_{t,m} \lambda_{m,t,s} \, \Delta t \left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right) \\
+& - \sum_{t,g}\left(c_g \, \Delta t \, p_{g,t,s} + C^{start}_g y^{start}_{g,t,s} + C^{shutdown}_g y^{shutdown}_{g,t,s}\right) \\
+& + \sum_{t,l} \Delta d_{l,t,s} \, \Delta t \cdot v_l \\
 & - \sum_{t,b} c^{deg}_b \, \Delta t \, (p^{ch}_{b,t,s} + p^{dis}_{b,t,s}) \\
 & - \sum_{t,e} c^{deg}_e \, \Delta t \, (p^{ch}_{e,t,s} + p^{dis}_{e,t,s})
 \end{aligned}
 $$
 
 The current implementation includes market revenue/cost when market prices are provided, generator variable/startup/shutdown cost, flexible load value of consumption, and storage/EV degradation cost.
+
+Prices and costs are per MWh, while volumes and powers are in MW, so every energy term is multiplied by the timestep length $\Delta t$ in hours. Startup and shutdown costs are charged per event, so they are not scaled.
 
 The risk term penalizes low-profit scenarios through CVaR. By default, that term is ignored, so the model behaves as risk-neutral. Use CVaR when you want to protect against bad outcomes, not just maximize expected profit.
 
@@ -54,10 +56,14 @@ Configure weights with `Objective`, `ProfitTerm`, and `CVaRTerm`:
 from odys import CVaRTerm, Objective, ProfitTerm
 
 objective = Objective(
-    profit=ProfitTerm(weight=1.0),
-    cvar=CVaRTerm(weight=0.5, confidence_level=0.95),
+    terms=(
+        ProfitTerm(weight=1.0),
+        CVaRTerm(weight=0.5, confidence_level=0.95),
+    ),
 )
 ```
+
+An `Objective` holds a tuple of terms: a `ProfitTerm` is required, a `CVaRTerm` is optional, and each type appears at most once (otherwise building it raises an `OdysValidationError`). `Objective()` is the default, `Objective(terms=(ProfitTerm(weight=1.0),))`, which maximizes expected profit. Read a term back with `objective.term_of(CVaRTerm)`.
 
 If you enable CVaR, the shortfall variables satisfy:
 
@@ -149,7 +155,7 @@ $$
 
 ### Storage and EV constraints
 
-Standalone storage and electric vehicles share the same battery physics. For each storage-like asset $b$:
+Stationary storage and electric vehicles share the same battery physics. For each storage-like asset $b$:
 
 $$
 0 \le p^{ch}_{b,t,s}, \qquad 0 \le p^{dis}_{b,t,s}, \qquad 0 \le SOC_{b,t,s}, \qquad z_{b,t,s} \in \{0,1\}
@@ -233,7 +239,7 @@ The adjustment variable $\Delta d_{l,t,s}$ is bounded by the maximum decrease an
 
 ## Reading results
 
-The `optimize()` call returns an `OptimalDisptachResults` object:
+The `optimize()` call returns an `OptimalDispatchResults` object:
 
 ```python
 result = energy_system.optimize()
@@ -242,7 +248,7 @@ result = energy_system.optimize()
 ### Solver status
 
 ```python
-result.solver_status  # "ok" if the solver found a solution
+result.solver_status  # SolveStatus.OK ("ok") if the solver found a solution
 result.termination_condition  # "optimal" if it's the best possible solution
 result.objective_value  # objective value of the solved model
 ```
@@ -258,10 +264,10 @@ result.generators.status  # on/off (1/0)
 result.generators.startup  # startup events
 result.generators.shutdown  # shutdown events
 
-# Standalone storages
-result.standalone_storages.net_power  # positive = charging, negative = discharging
-result.standalone_storages.soc  # state of charge (fraction of capacity)
-result.standalone_storages.charge_mode  # binary charging mode
+# Stationary storages
+result.stationary_storages.net_power  # positive = charging, negative = discharging
+result.stationary_storages.soc  # state of charge (fraction of capacity)
+result.stationary_storages.charge_mode  # binary charging mode
 
 # Electric vehicles
 result.electric_vehicles.net_power  # positive = charging, negative = discharging
@@ -285,7 +291,7 @@ All of these properties are `pandas.Series` objects. Each dispatch container als
 
 ```python
 result.generators.to_dataframe()
-result.standalone_storages.to_dataset()
+result.stationary_storages.to_dataset()
 ```
 
 For the full raw solution as an xarray Dataset:

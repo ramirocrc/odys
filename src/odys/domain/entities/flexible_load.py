@@ -6,10 +6,11 @@ in energy system optimization problems.
 
 from pydantic import Field
 
-from odys.domain.entities.base import EnergyEntity
+from odys.domain.entities.base import Asset
+from odys.domain.horizon import OperatingConditions
 
 
-class FlexibleLoad(EnergyEntity):
+class FlexibleLoad(Asset):
     """Represents a flexible load asset in the energy system.
 
     A flexible load is an energy asset that can adjust its consumption within
@@ -46,3 +47,9 @@ class FlexibleLoad(EnergyEntity):
         ge=0,
         description="Economic value of consuming electricity in currency per MWh.",
     )
+
+    def min_demand(self, conditions: OperatingConditions) -> tuple[float, ...]:
+        """Return the base profile reduced by `max_decrease` (never below zero), in MW."""
+        if conditions.profile_values is None:
+            return super().min_demand(conditions)
+        return tuple(max(0.0, base - self.max_decrease) for base in conditions.profile_values)

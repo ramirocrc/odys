@@ -1,77 +1,73 @@
-"""Frozen snapshot of solved model data for result extraction."""
+"""Dispatch results of one solve."""
+
+from collections.abc import Callable, Sequence
+from typing import TypeVar
 
 import xarray as xr
-from linopy.constants import SolverStatus, TerminationCondition
 
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
-from odys.optimization.model.sets import ModelDimension
-from odys.optimization.model.variables import ModelVariable
-from odys.optimization.parameters.parameters import EnergySystemParameters
+from odys.parameters.dimensions import ModelDimension
 from odys.results.dispatch import (
     ChargerDispatch,
+    Dispatch,
     ElectricVehicleDispatch,
     FlexibleLoadDispatch,
     GeneratorDispatch,
     MarketDispatch,
-    StandaloneStorageDispatch,
+    StationaryStorageDispatch,
 )
+from odys.solvers.outcome import SolveOutcome, SolveStatus
+
+DispatchT = TypeVar("DispatchT", bound=Dispatch)
 
 
-class OptimalDisptachResults:
-    """Frozen snapshot of data extracted from a solved EnergyMILPModel.
-
-    Captures only what OptimizationResults needs, allowing the full
-    linopy model to be garbage-collected after solving.
-    """
+class OptimalDispatchResults:
+    """Dispatch results of one solve: the solver status, the objective value and one dispatch per entity type."""
 
     __slots__ = (
-        "_has_chargers",
-        "_has_electric_vehicles",
-        "_has_flexible_loads",
-        "_has_generators",
-        "_has_markets",
-        "_has_standalone_storages",
+        "_dispatches",
+        "_has_solution",
         "_objective_value",
-        "_parameters",
         "_solution",
         "_solver_status",
         "_termination_condition",
-        "_variable_names",
     )
 
     def __init__(
         self,
-        solver_status: SolverStatus,
-        termination_condition: TerminationCondition,
-        solution: xr.Dataset,
-        objective_value: float | None,
-        parameters: EnergySystemParameters,
+        outcome: SolveOutcome,
+        build_dispatches: Callable[[xr.Dataset], Sequence[Dispatch]],
     ) -> None:
-        """Initialize OptimalDisptachResults."""
-        self._solver_status = solver_status
-        self._termination_condition = termination_condition
-        if ModelDimension.Scenarios in solution.coords and len(solution.coords[ModelDimension.Scenarios]) == 1:
-            solution = solution.squeeze(ModelDimension.Scenarios, drop=True)
-        self._solution = solution
-        self._objective_value = objective_value
-        self._variable_names = set(solution.variables.keys())
-        self._has_generators = ModelDimension.Generators in solution.dims
-        self._has_standalone_storages = ModelDimension.StandaloneStorages in solution.dims
-        self._has_electric_vehicles = ModelDimension.EVs in solution.dims
-        self._has_chargers = ModelDimension.Chargers in solution.dims
-        self._has_markets = ModelDimension.Markets in solution.dims
-        self._has_flexible_loads = ModelDimension.FlexibleLoads in solution.dims
-        self._parameters = parameters
+        """Initialize from the solve outcome and the function that reads the dispatches from its solution.
+
+        Args:
+            outcome: What the solver returned.
+            build_dispatches: Returns one dispatch per entity type from the solution
+                (`OptimizationProblem.dispatches`); called only when the outcome has a solution.
+                It gets the solution with its scenario dimension, and each dispatch is squeezed
+                afterwards: derived series such as the flexible-load actual load add scenario-indexed
+                parameters, which would broadcast the dimension back if the solution were squeezed first.
+        """
+        self._solver_status = outcome.status
+        self._termination_condition = outcome.termination_condition
+        self._has_solution = outcome.has_solution
+        self._objective_value = outcome.objective_value
+        self._solution = _without_single_scenario(outcome.solution)
+        dispatches = build_dispatches(outcome.solution) if outcome.has_solution else ()
+        self._dispatches: dict[type[Dispatch], Dispatch] = {
+            type(dispatch): type(dispatch)(_without_single_scenario(dispatch.to_dataset()), dispatch.dimension)
+            for dispatch in dispatches
+        }
 
     @property
-    def solver_status(self) -> str:
+    def solver_status(self) -> SolveStatus:
         """Get the solver status."""
-        return self._solver_status.value
+        return self._solver_status
 
     @property
     def termination_condition(self) -> str:
         """Get the termination condition."""
-        return self._termination_condition.value
+        return self._termination_condition
 
     def to_dataset(self) -> xr.Dataset:
         """Get the raw solution dataset."""
@@ -79,102 +75,59 @@ class OptimalDisptachResults:
         return self._solution
 
     def _validate_terminated_successfully(self) -> None:
-        if self._solver_status != SolverStatus.ok:
+        if not self._has_solution:
             msg = f"No solution available. Optimization Termination Condition: {self._termination_condition}."
             raise OdysSolverError(msg)
+
+    def _dispatch_of(self, kind: type[DispatchT]) -> DispatchT:
+        self._validate_terminated_successfully()
+        dispatch = self._dispatches.get(kind)
+        if not isinstance(dispatch, kind):
+            msg = f"This model does not contain {kind.label} results"
+            raise OdysNoResultsError(msg)
+        return dispatch
 
     @property
     def generators(self) -> GeneratorDispatch:
         """Get generator dispatch results."""
-        self._validate_terminated_successfully()
-        if not self._has_generators:
-            msg = "This model does not contain generator results"
-            raise OdysNoResultsError(msg)
-
-        return GeneratorDispatch(
-            power=self._solution[ModelVariable.GENERATOR_POWER.var_name],
-            status=self._solution[ModelVariable.GENERATOR_STATUS.var_name],
-            startup=self._solution[ModelVariable.GENERATOR_STARTUP.var_name],
-            shutdown=self._solution[ModelVariable.GENERATOR_SHUTDOWN.var_name],
-        )
+        return self._dispatch_of(GeneratorDispatch)
 
     @property
-    def standalone_storages(self) -> StandaloneStorageDispatch:
-        """Get standalone storage dispatch results."""
-        self._validate_terminated_successfully()
-        if not self._has_standalone_storages:
-            msg = "This model does not contain standalone storage results"
-            raise OdysNoResultsError(msg)
-
-        return StandaloneStorageDispatch(
-            net_power=self._solution[ModelVariable.STANDALONE_STORAGE_POWER_NET.var_name],
-            soc=self._solution[ModelVariable.STANDALONE_STORAGE_SOC.var_name],
-            charge_mode=self._solution[ModelVariable.STANDALONE_STORAGE_CHARGE_MODE.var_name],
-        )
+    def stationary_storages(self) -> StationaryStorageDispatch:
+        """Get stationary storage dispatch results."""
+        return self._dispatch_of(StationaryStorageDispatch)
 
     @property
     def electric_vehicles(self) -> ElectricVehicleDispatch:
         """Get electric vehicle dispatch results."""
-        self._validate_terminated_successfully()
-        if not self._has_electric_vehicles:
-            msg = "This model does not contain electric vehicle results"
-            raise OdysNoResultsError(msg)
-
-        return ElectricVehicleDispatch(
-            net_power=self._solution[ModelVariable.EV_POWER_NET.var_name],
-            soc=self._solution[ModelVariable.EV_SOC.var_name],
-            charge_mode=self._solution[ModelVariable.EV_CHARGE_MODE.var_name],
-        )
+        return self._dispatch_of(ElectricVehicleDispatch)
 
     @property
     def chargers(self) -> ChargerDispatch:
         """Get charger dispatch results."""
-        self._validate_terminated_successfully()
-        if not self._has_chargers:
-            msg = "This model does not contain charger results"
-            raise OdysNoResultsError(msg)
-
-        return ChargerDispatch(
-            assignment=self._solution[ModelVariable.CHARGER_EV_ASSIGNMENT.var_name],
-            power_in=self._solution[ModelVariable.EV_POWER_IN.var_name],
-        )
+        return self._dispatch_of(ChargerDispatch)
 
     @property
     def markets(self) -> MarketDispatch:
         """Get market dispatch results."""
-        self._validate_terminated_successfully()
-        if not self._has_markets:
-            msg = "This model does not contain market results"
-            raise OdysNoResultsError(msg)
-
-        return MarketDispatch(
-            sell_volume=self._solution[ModelVariable.MARKET_SELL.var_name],
-            buy_volume=self._solution[ModelVariable.MARKET_BUY.var_name],
-        )
+        return self._dispatch_of(MarketDispatch)
 
     @property
     def flexible_loads(self) -> FlexibleLoadDispatch:
         """Get flexible load dispatch results."""
-        self._validate_terminated_successfully()
-        if not self._has_flexible_loads:
-            msg = "This model does not contain flexible load results"
-            raise OdysNoResultsError(msg)
-
-        base_profiles = self._parameters.scenarios.flexible_load_base_profiles
-        if base_profiles is None:
-            msg = "Flexible loads exist but base profiles are missing"
-            raise OdysNoResultsError(msg)
-
-        if ModelDimension.Scenarios in base_profiles.dims and len(base_profiles.coords[ModelDimension.Scenarios]) == 1:
-            base_profiles = base_profiles.squeeze(ModelDimension.Scenarios, drop=True)
-
-        return FlexibleLoadDispatch(
-            load_adjustment=self._solution[ModelVariable.LOAD_ADJUSTMENT.var_name],
-            base_profiles=base_profiles,
-        )
+        return self._dispatch_of(FlexibleLoadDispatch)
 
     @property
     def objective_value(self) -> float | None:
         """Objective value from optimization."""
         self._validate_terminated_successfully()
         return self._objective_value
+
+
+def _without_single_scenario(data: xr.Dataset) -> xr.Dataset:
+    """Drop the scenario dimension of a single-scenario run, so results read like a deterministic run."""
+    scenarios = ModelDimension.Scenarios
+    if scenarios in data.dims and data.sizes[scenarios] == 1:
+        squeezed: xr.Dataset = data.squeeze(scenarios, drop=True)
+        return squeezed
+    return data

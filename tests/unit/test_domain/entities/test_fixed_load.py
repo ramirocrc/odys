@@ -11,4 +11,4 @@ def test_fixed_load_creation() -> None:
 
 def test_fixed_load_requires_name() -> None:
     with pytest.raises(ValidationError, match="name"):
-        FixedLoad()  # ty: ignore [missing-argument] # pyrefly: ignore [missing-argument]
+        FixedLoad.model_validate({})

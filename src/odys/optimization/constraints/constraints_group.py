@@ -1,9 +1,9 @@
 """Constraint group base class with auto-registration of constraint methods."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from typing import Any, ClassVar
 
-from linopy import Model
+import linopy
 
 from odys.optimization.constraints.model_constraint import ModelConstraint
 
@@ -32,7 +32,7 @@ class ConstraintGroup:
         """Register @constraint-decorated methods defined on this subclass."""
         super().__init_subclass__(**kwargs)
         cls._constraint_methods = tuple(
-            name for name, attr in cls.__dict__.items() if _constraint_registry.get(attr, False)
+            name for name, attr in cls.__dict__.items() if isinstance(attr, Hashable) and attr in _constraint_registry
         )
 
     def collect_constraints(self) -> list[ModelConstraint]:
@@ -46,7 +46,7 @@ class ConstraintGroup:
                 results.append(result)
         return results
 
-    def add_to_model(self, linopy_model: Model) -> None:
+    def add_to_model(self, linopy_model: linopy.Model) -> None:
         """Collect all constraints and add them to the linopy model."""
         for c in self.collect_constraints():
             linopy_model.add_constraints(c.constraint, name=c.name)

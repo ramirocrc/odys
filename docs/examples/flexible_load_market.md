@@ -37,12 +37,12 @@ The [market](../user_guide/market.md) gives us an external source of electricity
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergyMarket, EnergySystem, FlexibleLoad, Scenario, TradeDirection
+from odys import AllowedTradeDirection, AssetPortfolio, LoadProfile, EnergyMarket, EnergySystem, FlexibleLoad, PriceProfile, Scenario
 
 market = EnergyMarket(
     name="market",
     max_trading_volume_per_step=80,
-    trade_direction=TradeDirection.BUY_ONLY,
+    allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
 )
 
 industrial_process = FlexibleLoad(
@@ -63,12 +63,10 @@ The base load profile is the nominal consumption before any flexibility is appli
 
 ```python
 scenario = Scenario(
-    flexible_load_base_profiles={
-        "industrial_process": 24 * [60],
-    },
-    market_prices={
-        "market": [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
-    },
+    profiles=(
+        LoadProfile(load=industrial_process, values=24 * [60]),
+        PriceProfile(market=market, values=[80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]),
+    ),
 )
 ```
 

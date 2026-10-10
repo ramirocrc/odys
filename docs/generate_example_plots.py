@@ -30,9 +30,8 @@ from examples.ev_fleet_optimization import (  # pyrefly: ignore
 )
 from examples.flexible_load_market import run_flexible_load_market  # pyrefly: ignore
 from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
-from odys import Charger
-from odys.optimization.model.sets import ModelDimension
-from odys.results.optimization_results import OptimalDisptachResults
+from odys import Charger, OptimalDispatchResults
+from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 
 OUTPUT_DIR = Path(__file__).parent / "assets" / "examples"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -126,7 +125,7 @@ def generate_battery_dispatch() -> None:
     """Two-panel chart: generator dispatch with battery + battery SOC."""
     result = run_battery_dispatch()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
-    battery_df = result.standalone_storages.to_dataframe().droplevel("standalone_storage")
+    battery_df = result.stationary_storages.to_dataframe().droplevel("stationary_storage")
     steps = list(range(1, len(gen_df) + 1))
 
     fig = make_subplots(
@@ -587,7 +586,7 @@ def _add_trip_vrects(fig: go.Figure, row: int) -> None:
             )
 
 
-def _active_charger_segments(result: OptimalDisptachResults) -> list[tuple[str, str, int, int]]:
+def _active_charger_segments(result: OptimalDispatchResults) -> list[tuple[str, str, int, int]]:
     """Return (charger, ev, start, end) hours where an EV is both assigned and exchanging power.
 
     The assignment variable is degenerate while an EV draws no power, so raw
@@ -611,7 +610,7 @@ def _active_charger_segments(result: OptimalDisptachResults) -> list[tuple[str, 
     return segments
 
 
-def _extract_ev_state_intervals(result: OptimalDisptachResults) -> list[tuple[str, str, int, int]]:
+def _extract_ev_state_intervals(result: OptimalDispatchResults) -> list[tuple[str, str, int, int]]:
     """Return (ev_name, state, start, end) tuples for trip, charging, and discharging intervals.
 
     States are mutually exclusive per timestep:
@@ -714,7 +713,7 @@ def generate_ev_fleet_setup() -> None:
     _save_figure(fig, "ev_fleet_setup")
 
 
-def generate_ev_fleet_dispatch_combined(result: OptimalDisptachResults) -> None:
+def generate_ev_fleet_dispatch_combined(result: OptimalDispatchResults) -> None:
     """Combined dispatch figure: price, vehicle states, SoC, and charger occupancy with aligned x-axes."""
     fig = make_subplots(
         rows=4,
@@ -775,7 +774,7 @@ def generate_ev_fleet_dispatch_combined(result: OptimalDisptachResults) -> None:
 
     ev_dataset = result.electric_vehicles.to_dataset()
     for ev in EVS:
-        soc_values = [ev.soc_start, *ev_dataset.sel(ev=ev.name).soc.values]
+        soc_values = [ev.battery.soc_start, *ev_dataset.sel(ev=ev.name).soc.values]
         fig.add_trace(
             go.Scatter(
                 x=HOUR_EDGES,
@@ -868,7 +867,7 @@ def generate_ev_fleet_dispatch_combined(result: OptimalDisptachResults) -> None:
     _save_figure(fig, "ev_fleet_dispatch_combined")
 
 
-def _constraint_check_rows(result: OptimalDisptachResults) -> list[tuple[str, str, str, bool]]:
+def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, str, str, bool]]:
     """Compute every trip, SoC, and charger constraint check from the solved result."""
     tolerance = 1e-6
     ev_dataset = result.electric_vehicles.to_dataset()
@@ -878,7 +877,7 @@ def _constraint_check_rows(result: OptimalDisptachResults) -> list[tuple[str, st
     for ev in EVS:
         soc_values = ev_dataset.sel(ev=ev.name).soc.values
         for trip in ev.trips:
-            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else ev.soc_start
+            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else ev.battery.soc_start
             rows.append((
                 f"{_ev_display_name(ev.name)} SoC before {trip.name} (t{trip.start_time})",
                 f"≥ {trip.min_soc_at_departure:.2f}",
@@ -887,14 +886,14 @@ def _constraint_check_rows(result: OptimalDisptachResults) -> list[tuple[str, st
             ))
 
     for ev in EVS:
-        if ev.soc_end is None:
+        if ev.battery.soc_end is None:
             continue
         actual = float(ev_dataset.sel(ev=ev.name).soc.values[-1])
         rows.append((
             f"{_ev_display_name(ev.name)} end-of-day SoC",
-            f"= {ev.soc_end:.2f}",
+            f"= {ev.battery.soc_end:.2f}",
             f"{actual:.3f}",
-            abs(actual - ev.soc_end) <= tolerance,
+            abs(actual - ev.battery.soc_end) <= tolerance,
         ))
 
     worst_trip_power_kw = 0.0
@@ -913,7 +912,7 @@ def _constraint_check_rows(result: OptimalDisptachResults) -> list[tuple[str, st
     net_power_kw_by_ev = {ev.name: np.abs(ev_dataset.sel(ev=ev.name).net_power.values) * 1000 for ev in EVS}
     for charger in CHARGERS:
         connected = assignment.sel(charger=charger.name)
-        most_evs = float(connected.sum(ModelDimension.EVs.value).max())
+        most_evs = float(connected.sum(ElectricVehicleFormulation.dimension).max())
         rows.append((
             f"Most EVs on {_charger_display_name(charger)} in any hour",
             "≤ 1",
@@ -933,7 +932,7 @@ def _constraint_check_rows(result: OptimalDisptachResults) -> list[tuple[str, st
     return rows
 
 
-def generate_ev_fleet_verification(result: OptimalDisptachResults) -> None:
+def generate_ev_fleet_verification(result: OptimalDispatchResults) -> None:
     """Constraint verification table computed from the solved result, not asserted by hand."""
     rows = _constraint_check_rows(result)
     checks = [row[0] for row in rows]
@@ -980,7 +979,7 @@ def generate_ev_fleet_verification(result: OptimalDisptachResults) -> None:
     _save_figure(fig, "ev_fleet_verification")
 
 
-def generate_ev_fleet_economics(result: OptimalDisptachResults) -> None:
+def generate_ev_fleet_economics(result: OptimalDispatchResults) -> None:
     """Market flows showing grid purchases and V2G sales."""
     buy_mwh = np.asarray(result.markets.buy_volume.xs("grid_market", level="market").values, dtype=float)
     sell_mwh = np.asarray(result.markets.sell_volume.xs("grid_market", level="market").values, dtype=float)

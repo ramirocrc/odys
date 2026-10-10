@@ -71,3 +71,6 @@ ignored/
 AGENTS.md
 CLAUDE.md
 DOCS_GUIDELINES.md
+
+# Claude Code (local only)
+.claude/

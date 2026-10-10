@@ -2,20 +2,25 @@
 
 from datetime import timedelta
 
+import pytest
+
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
+    AvailableCapacityProfile,
+    Battery,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
     Generator,
+    LoadProfile,
     Objective,
+    PriceProfile,
     ProfitTerm,
     Scenario,
-    StandaloneStorage,
-    StochasticScenario,
-    TradeDirection,
+    StationaryStorage,
 )
 
 MAX_DECREASE = 30.0
@@ -56,8 +61,10 @@ def test_flexible_load_optimization_decrease() -> None:
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
-            flexible_load_base_profiles={"flex_load": [100.0, 100.0, 100.0]},
-            market_prices={"market1": [80.0, 80.0, 80.0]},
+            profiles=(
+                LoadProfile(load=flexible_load, values=[100.0, 100.0, 100.0]),
+                PriceProfile(market=market, values=[80.0, 80.0, 80.0]),
+            ),
         ),
     )
 
@@ -114,8 +121,10 @@ def test_flexible_load_optimization_increase() -> None:
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
-            flexible_load_base_profiles={"flex_load": [100.0, 100.0, 100.0]},
-            market_prices={"market1": [20.0, 20.0, 20.0]},
+            profiles=(
+                LoadProfile(load=flexible_load, values=[100.0, 100.0, 100.0]),
+                PriceProfile(market=market, values=[20.0, 20.0, 20.0]),
+            ),
         ),
     )
 
@@ -170,9 +179,11 @@ def test_flexible_load_with_fixed_load() -> None:
         timestep=timedelta(hours=1),
         number_of_steps=2,
         scenarios=Scenario(
-            fixed_load_profiles={"fixed_load": [100.0, 100.0]},
-            flexible_load_base_profiles={"flex_load": [80.0, 80.0]},
-            market_prices={"market1": [20.0, 20.0]},
+            profiles=(
+                LoadProfile(load=fixed_load, values=[100.0, 100.0]),
+                LoadProfile(load=flexible_load, values=[80.0, 80.0]),
+                PriceProfile(market=market, values=[20.0, 20.0]),
+            ),
         ),
     )
 
@@ -241,9 +252,11 @@ def test_flexible_load_with_generator_capacity_constraint() -> None:
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
-            available_capacity_profiles={"gen1": [150.0, 80.0, 150.0]},
-            fixed_load_profiles={"fixed_load": [60.0, 60.0, 60.0]},
-            flexible_load_base_profiles={"flex_load": [50.0, 50.0, 50.0]},
+            profiles=(
+                AvailableCapacityProfile(generator=generator, values=[150.0, 80.0, 150.0]),
+                LoadProfile(load=fixed_load, values=[60.0, 60.0, 60.0]),
+                LoadProfile(load=flexible_load, values=[50.0, 50.0, 50.0]),
+            ),
         ),
     )
 
@@ -301,11 +314,11 @@ def test_multiple_flexible_loads() -> None:
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
-            flexible_load_base_profiles={
-                "flex_load_1": [100.0, 100.0, 100.0],
-                "flex_load_2": [80.0, 80.0, 80.0],
-            },
-            market_prices={"market1": [50.0, 50.0, 50.0]},
+            profiles=(
+                LoadProfile(load=flex_load_1, values=[100.0, 100.0, 100.0]),
+                LoadProfile(load=flex_load_2, values=[80.0, 80.0, 80.0]),
+                PriceProfile(market=market, values=[50.0, 50.0, 50.0]),
+            ),
         ),
     )
 
@@ -329,15 +342,17 @@ def test_flexible_load_with_storage() -> None:
         nominal_power=150.0,
         variable_cost=50.0,
     )
-    battery = StandaloneStorage(
+    battery = StationaryStorage(
         name="battery",
-        capacity=100.0,
-        max_charge_power=50.0,
-        max_discharge_power=50.0,
-        efficiency_charging=0.9,
-        efficiency_discharging=0.9,
-        soc_start=0.5,
-        soc_end=0.5,
+        battery=Battery(
+            capacity=100.0,
+            max_charge_power=50.0,
+            max_discharge_power=50.0,
+            efficiency_charging=0.9,
+            efficiency_discharging=0.9,
+            soc_start=0.5,
+            soc_end=0.5,
+        ),
     )
     flexible_load = FlexibleLoad(
         name="flex_load",
@@ -355,8 +370,10 @@ def test_flexible_load_with_storage() -> None:
         timestep=timedelta(hours=1),
         number_of_steps=4,
         scenarios=Scenario(
-            flexible_load_base_profiles={"flex_load": [100.0, 100.0, 100.0, 100.0]},
-            market_prices={"market1": [60.0, 60.0, 60.0, 60.0]},
+            profiles=(
+                LoadProfile(load=flexible_load, values=[100.0, 100.0, 100.0, 100.0]),
+                PriceProfile(market=market, values=[60.0, 60.0, 60.0, 60.0]),
+            ),
         ),
     )
 
@@ -365,13 +382,13 @@ def test_flexible_load_with_storage() -> None:
     flex_dispatch = results.flexible_loads
     assert flex_dispatch.load_adjustment.sum().item() > 0
 
-    storage_dispatch = results.standalone_storages
+    storage_dispatch = results.stationary_storages
     assert len(storage_dispatch.soc) > 0
 
     solution = results.to_dataset()
     gen_power = solution["generator_power"]
-    storage_out = solution["standalone_storage_power_out"]
-    storage_in = solution["standalone_storage_power_in"]
+    storage_out = solution["stationary_storage_power_out"]
+    storage_in = solution["stationary_storage_power_in"]
     market_buy = solution["market_buy_volume"]
     market_sell = solution["market_sell_volume"]
 
@@ -390,7 +407,7 @@ def test_flexible_load_with_storage() -> None:
 
 
 def test_flexible_load_stochastic_scenarios() -> None:
-    """Test flexible loads with two StochasticScenarios having different base profiles."""
+    """Test flexible loads with two scenarios having different base profiles."""
     generator = Generator(
         name="gen1",
         nominal_power=200.0,
@@ -407,17 +424,21 @@ def test_flexible_load_stochastic_scenarios() -> None:
     portfolio = AssetPortfolio([generator, flexible_load])
 
     scenarios = [
-        StochasticScenario(
+        Scenario(
             name="high_demand",
             probability=0.6,
-            flexible_load_base_profiles={"flex_load": [120.0, 120.0, 120.0]},
-            market_prices={"market1": [40.0, 40.0, 40.0]},
+            profiles=(
+                LoadProfile(load=flexible_load, values=[120.0, 120.0, 120.0]),
+                PriceProfile(market=market, values=[40.0, 40.0, 40.0]),
+            ),
         ),
-        StochasticScenario(
+        Scenario(
             name="low_demand",
             probability=0.4,
-            flexible_load_base_profiles={"flex_load": [80.0, 80.0, 80.0]},
-            market_prices={"market1": [40.0, 40.0, 40.0]},
+            profiles=(
+                LoadProfile(load=flexible_load, values=[80.0, 80.0, 80.0]),
+                PriceProfile(market=market, values=[40.0, 40.0, 40.0]),
+            ),
         ),
     ]
 
@@ -455,28 +476,25 @@ def _build_cvar_flexible_load_system(objective: Objective) -> EnergySystem:
         name="market1",
         max_trading_volume_per_step=50.0,
         stage_fixed=True,
-        trade_direction=TradeDirection.SELL_ONLY,
+        allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
     )
     portfolio = AssetPortfolio([generator, flexible_load])
 
     scenarios = [
-        StochasticScenario(
+        Scenario(
             name="high",
             probability=1 / 3,
-            flexible_load_base_profiles={"flex_load": [50.0]},
-            market_prices={"market1": [100.0]},
+            profiles=(LoadProfile(load=flexible_load, values=[50.0]), PriceProfile(market=market, values=[100.0])),
         ),
-        StochasticScenario(
+        Scenario(
             name="mid",
             probability=1 / 3,
-            flexible_load_base_profiles={"flex_load": [50.0]},
-            market_prices={"market1": [100.0]},
+            profiles=(LoadProfile(load=flexible_load, values=[50.0]), PriceProfile(market=market, values=[100.0])),
         ),
-        StochasticScenario(
+        Scenario(
             name="low",
             probability=1 / 3,
-            flexible_load_base_profiles={"flex_load": [50.0]},
-            market_prices={"market1": [-50.0]},
+            profiles=(LoadProfile(load=flexible_load, values=[50.0]), PriceProfile(market=market, values=[-50.0])),
         ),
     ]
 
@@ -511,7 +529,7 @@ def test_flexible_load_with_cvar_objective() -> None:
     less-than instead of an exact value, to avoid asserting a specific point
     in a mathematically non-unique optimum.
     """
-    profit_only_system = _build_cvar_flexible_load_system(Objective(profit=ProfitTerm(weight=1)))
+    profit_only_system = _build_cvar_flexible_load_system(Objective(terms=(ProfitTerm(weight=1),)))
     profit_only_results = profit_only_system.optimize()
 
     assert profit_only_results.solver_status == "ok"
@@ -526,7 +544,7 @@ def test_flexible_load_with_cvar_objective() -> None:
         assert abs(value - 50.0) < TOLERANCE
 
     cvar_system = _build_cvar_flexible_load_system(
-        Objective(profit=ProfitTerm(weight=1), cvar=CVaRTerm(weight=1, confidence_level=0.8)),
+        Objective(terms=(ProfitTerm(weight=1), CVaRTerm(weight=1, confidence_level=0.8))),
     )
     cvar_results = cvar_system.optimize()
 
@@ -541,6 +559,19 @@ def test_flexible_load_with_cvar_objective() -> None:
 
     for value in cvar_market_sell:
         assert value <= 10.0 + TOLERANCE
+
+
+def test_cvar_objective_does_not_depend_on_term_order() -> None:
+    """Listing the CVaR term before the profit term gives the same optimum."""
+    profit = ProfitTerm(weight=1)
+    cvar = CVaRTerm(weight=1, confidence_level=0.8)
+
+    profit_first = _build_cvar_flexible_load_system(Objective(terms=(profit, cvar))).optimize()
+    cvar_first = _build_cvar_flexible_load_system(Objective(terms=(cvar, profit))).optimize()
+
+    assert profit_first.termination_condition == "optimal"
+    assert cvar_first.termination_condition == "optimal"
+    assert cvar_first.objective_value == pytest.approx(profit_first.objective_value, abs=TOLERANCE)
 
 
 def test_multiple_flexible_loads_different_value_of_consumption() -> None:
@@ -578,13 +609,11 @@ def test_multiple_flexible_loads_different_value_of_consumption() -> None:
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
-            flexible_load_base_profiles={
-                "flex_load_high": [100.0, 100.0, 100.0],
-                "flex_load_low": [100.0, 100.0, 100.0],
-            },
-            market_prices={
-                "market1": [60.0, 60.0, 60.0],
-            },
+            profiles=(
+                LoadProfile(load=flex_load_high, values=[100.0, 100.0, 100.0]),
+                LoadProfile(load=flex_load_low, values=[100.0, 100.0, 100.0]),
+                PriceProfile(market=market, values=[60.0, 60.0, 60.0]),
+            ),
         ),
     )
 

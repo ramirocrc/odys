@@ -46,31 +46,28 @@ Next: see the CVaR Market Risk example to add risk-aware optimization, or the
 Stochastic Optimization guide to model uncertain trip schedules.
 """
 
+import logging
 from datetime import timedelta
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
+    Battery,
     Charger,
     ElectricVehicle,
     EnergyMarket,
     EnergySystem,
+    OptimalDispatchResults,
+    PriceProfile,
     Scenario,
-    TradeDirection,
     Trip,
 )
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 ev_1 = ElectricVehicle(
     name="ev_1",
-    capacity=0.100,
-    max_charge_power=0.022,
-    max_discharge_power=0.011,
-    soc_start=0.8,
-    soc_end=0.3,
+    battery=Battery(capacity=0.100, max_charge_power=0.022, max_discharge_power=0.011, soc_start=0.8, soc_end=0.3),
     trips=(
         Trip(
             name="morning_delivery",
@@ -98,11 +95,7 @@ ev_1 = ElectricVehicle(
 
 ev_2 = ElectricVehicle(
     name="ev_2",
-    capacity=0.060,
-    max_charge_power=0.022,
-    max_discharge_power=0.0,
-    soc_start=0.5,
-    soc_end=0.6,
+    battery=Battery(capacity=0.060, max_charge_power=0.022, max_discharge_power=0.0, soc_start=0.5, soc_end=0.6),
     trips=(
         Trip(
             name="morning_route",
@@ -130,11 +123,7 @@ ev_2 = ElectricVehicle(
 
 ev_3 = ElectricVehicle(
     name="ev_3",
-    capacity=0.040,
-    max_charge_power=0.007,
-    max_discharge_power=0.0,
-    soc_start=0.5,
-    soc_end=0.5,
+    battery=Battery(capacity=0.040, max_charge_power=0.007, max_discharge_power=0.0, soc_start=0.5, soc_end=0.5),
     trips=(
         Trip(
             name="delivery_1",
@@ -188,19 +177,17 @@ MARKET_PRICES: list[float] = [
 ]
 
 
-def run_ev_fleet_optimization() -> OptimalDisptachResults:
+def run_ev_fleet_optimization() -> OptimalDispatchResults:
     """Run the EV fleet optimization example and return the optimization results."""
     market = EnergyMarket(
         name="grid_market",
         max_trading_volume_per_step=0.100,
-        trade_direction=TradeDirection.BUY_AND_SELL,
+        allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
     )
 
     portfolio = AssetPortfolio(assets=[*EVS, *CHARGERS])
 
-    scenario = Scenario(
-        market_prices={"grid_market": MARKET_PRICES},
-    )
+    scenario = Scenario(profiles=(PriceProfile(market=market, values=MARKET_PRICES),))
 
     energy_system = EnergySystem(
         portfolio=portfolio,
@@ -214,6 +201,8 @@ def run_ev_fleet_optimization() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_ev_fleet_optimization()
 
     logger.info("EV charging/discharging schedules and SoC")

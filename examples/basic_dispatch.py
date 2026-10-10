@@ -39,17 +39,24 @@ available capacity profile is what actually determines how much solar can be
 used at each step.
 """
 
+import logging
 from datetime import timedelta
 
-from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, Scenario
-from odys.results.optimization_results import OptimalDisptachResults
-from odys.utils.logging import get_logger, setup_rich_logging
+from odys import (
+    AssetPortfolio,
+    AvailableCapacityProfile,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    LoadProfile,
+    OptimalDispatchResults,
+    Scenario,
+)
 
-setup_rich_logging()
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def run_basic_dispatch() -> OptimalDisptachResults:
+def run_basic_dispatch() -> OptimalDispatchResults:
     """Run the basic dispatch example and return the optimization results."""
     ccgt = Generator(
         name="ccgt",
@@ -67,13 +74,14 @@ def run_basic_dispatch() -> OptimalDisptachResults:
     portfolio = AssetPortfolio([ccgt, solar_pv, load])
 
     scenario = Scenario(
-        available_capacity_profiles={
-            "ccgt": 24 * [100],
-            "solar_pv": [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
-        },
-        fixed_load_profiles={
-            "load": 24 * [70],
-        },
+        profiles=(
+            AvailableCapacityProfile(generator=ccgt, values=24 * [100]),
+            AvailableCapacityProfile(
+                generator=solar_pv,
+                values=[0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
+            ),
+            LoadProfile(load=load, values=24 * [70]),
+        ),
     )
     energy_system = EnergySystem(
         portfolio=portfolio,
@@ -86,6 +94,8 @@ def run_basic_dispatch() -> OptimalDisptachResults:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_basic_dispatch()
     logger.info("Generators optimal dispatch")
     for gen_dispatch in result.generators:

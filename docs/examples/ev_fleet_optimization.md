@@ -49,23 +49,27 @@ Each EV is an [ElectricVehicle](../api/domain/entities/electric_vehicle.md) with
 from datetime import timedelta
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
+    Battery,
     Charger,
     ElectricVehicle,
     EnergyMarket,
     EnergySystem,
+    PriceProfile,
     Scenario,
-    TradeDirection,
     Trip,
 )
 
 ev_1 = ElectricVehicle(
     name="ev_1",
-    capacity=0.100,  # 100 kWh
-    max_charge_power=0.022,  # 22 kW
-    max_discharge_power=0.011,  # 11 kW V2G
-    soc_start=0.8,
-    soc_end=0.3,
+    battery=Battery(
+        capacity=0.100,  # 100 kWh
+        max_charge_power=0.022,  # 22 kW
+        max_discharge_power=0.011,  # 11 kW V2G
+        soc_start=0.8,
+        soc_end=0.3,
+    ),
     trips=(
         Trip(
             name="morning_delivery",
@@ -99,7 +103,7 @@ charger_dc = Charger(name="charger_dc", max_power=0.050)  # 50 kW
 charger_ac = Charger(name="charger_ac", max_power=0.022)  # 22 kW
 ```
 
-Unlike [StandaloneStorage](../user_guide/storage.md), EVs must be assigned to chargers, and each charger serves at most one EV at a time. With 2 chargers and 3 EVs, there is charger competition.
+Unlike [StationaryStorage](../user_guide/storage.md), EVs must be assigned to chargers, and each charger serves at most one EV at a time. With 2 chargers and 3 EVs, there is charger competition.
 
 ev_2 (60 kWh, charge-only, 3 trips) and ev_3 (40 kWh, charge-only, 2 trips) follow the same pattern. See the [full source](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py).
 
@@ -109,7 +113,7 @@ ev_2 (60 kWh, charge-only, 3 trips) and ev_3 (40 kWh, charge-only, 2 trips) foll
 market = EnergyMarket(
     name="grid_market",
     max_trading_volume_per_step=0.100,  # 100 kW
-    trade_direction=TradeDirection.BUY_AND_SELL,
+    allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
 )
 
 portfolio = AssetPortfolio(
@@ -133,7 +137,7 @@ market_prices = [
 ]
 
 scenario = Scenario(
-    market_prices={"grid_market": market_prices},
+    profiles=(PriceProfile(market=market, values=market_prices),),
 )
 ```
 
