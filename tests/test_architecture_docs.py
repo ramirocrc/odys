@@ -1,7 +1,7 @@
 """Tests that the hand-written diagrams in the docs stay true to the code in src/odys.
 
-Covers the class diagrams and the sequence diagram of docs/architecture/model.md, and the
-composition flowchart of docs/user_guide/energy_system.md.
+Covers the class diagrams of docs/developer/data_model.md, the sequence diagram of
+docs/developer/sequences.md, and the composition flowchart of docs/user_guide/energy_system.md.
 """
 
 import ast
@@ -18,7 +18,8 @@ import odys
 
 REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_ROOT = REPOSITORY_ROOT / "src" / "odys"
-ARCHITECTURE_PAGE = REPOSITORY_ROOT / "docs" / "architecture" / "model.md"
+DATA_MODEL_PAGE = REPOSITORY_ROOT / "docs" / "developer" / "data_model.md"
+SEQUENCES_PAGE = REPOSITORY_ROOT / "docs" / "developer" / "sequences.md"
 USER_GUIDE_PAGE = REPOSITORY_ROOT / "docs" / "user_guide" / "energy_system.md"
 
 EXTENSION_POINT_BASES = (
@@ -293,7 +294,7 @@ def parse_class_diagrams(markdown: str) -> ClassDiagrams:
 
 @cache
 def _page_diagrams() -> ClassDiagrams:
-    return parse_class_diagrams(ARCHITECTURE_PAGE.read_text(encoding="utf-8"))
+    return parse_class_diagrams(DATA_MODEL_PAGE.read_text(encoding="utf-8"))
 
 
 def _mermaid_blocks(markdown: str, kind: str) -> Iterator[list[str]]:
@@ -365,7 +366,7 @@ def parse_flowcharts(markdown: str) -> Flowcharts:
 
 @cache
 def _page_sequence_diagrams() -> SequenceDiagrams:
-    return parse_sequence_diagrams(ARCHITECTURE_PAGE.read_text(encoding="utf-8"))
+    return parse_sequence_diagrams(SEQUENCES_PAGE.read_text(encoding="utf-8"))
 
 
 @cache
@@ -404,7 +405,7 @@ def test_diagrams_use_only_syntax_the_check_understands() -> None:
 def test_diagrams_show_every_public_and_core_model_class() -> None:
     missing = sorted(_required_classes() - _page_diagrams().classes)
 
-    assert not missing, f"Add these classes to a classDiagram in {ARCHITECTURE_PAGE.name}: {missing}"
+    assert not missing, f"Add these classes to a classDiagram in {DATA_MODEL_PAGE.name}: {missing}"
 
 
 def test_diagrams_name_only_classes_defined_in_the_code() -> None:
