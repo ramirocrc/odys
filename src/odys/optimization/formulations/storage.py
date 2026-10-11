@@ -10,7 +10,7 @@ from odys.optimization.formulations.base import time_shifted
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
 from odys.parameters.dimensions import ModelDimension
-from odys.parameters.entity_arrays import BatteryArrays
+from odys.parameters.entity_arrays import BatteryArrays, BatteryStateArrays
 
 TIME = ModelDimension.Time
 
@@ -41,6 +41,7 @@ class StorageFormulation:
         self,
         coordinates: Coordinates,
         battery: BatteryArrays,
+        states: BatteryStateArrays,
         context: ModelContext,
         soc_drop: xr.DataArray | None = None,
     ) -> None:
@@ -49,11 +50,13 @@ class StorageFormulation:
         Args:
             coordinates: The labels of the batteries along their dimension, which also names them.
             battery: The battery parameters, vectorized along that dimension.
+            states: The initial and final state of charge of the batteries, from the run's conditions.
             context: The shared indexing of the problem.
             soc_drop: SOC lost at each step outside charging (EV trips), if any.
         """
         self.coordinates = coordinates
         self.battery = battery
+        self.states = states
         self.context = context
         self.soc_drop = soc_drop
 
@@ -116,7 +119,7 @@ class StorageFormulation:
         first_step = {TIME: variables.soc.coords[TIME.value].values[0]}
         expression = (
             variables.soc.sel(first_step)
-            - battery.soc_start
+            - self.states.soc_start
             - battery.efficiency_charging * variables.power_in.sel(first_step) * dt / battery.capacity
             + 1 / battery.efficiency_discharging * variables.power_out.sel(first_step) * dt / battery.capacity
         )
@@ -129,12 +132,12 @@ class StorageFormulation:
 
     def soc_end_constraint(self, variables: StorageVariables) -> list[ModelConstraint]:
         """The SOC at the last step equals `soc_end`, for the batteries that set one."""
-        has_soc_end = self.battery.soc_end.notnull()
+        has_soc_end = self.states.soc_end.notnull()
         if not has_soc_end.any():
             return []
         last_step = {TIME: variables.soc.coords[TIME.value].values[-1]}
         with_soc_end = {self.dimension: has_soc_end}
-        expression = variables.soc.sel(last_step).sel(with_soc_end) - self.battery.soc_end.sel(with_soc_end)
+        expression = variables.soc.sel(last_step).sel(with_soc_end) - self.states.soc_end.sel(with_soc_end)
         return [
             ModelConstraint(
                 constraint=expression.to_constraint("=", 0),
