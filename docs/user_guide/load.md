@@ -64,9 +64,13 @@ flexible_load = FlexibleLoad(
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `name` | `str` | Yes | Unique identifier for the load |
-| `max_increase` | `float` | Yes | Maximum MW the load can increase above the base profile (must be > 0) |
-| `max_decrease` | `float` | Yes | Maximum MW the load can decrease below the base profile (must be > 0) |
+| `max_increase` | `float \| None` | No* | Maximum MW the load can increase above the base profile (must be > 0) |
+| `max_decrease` | `float \| None` | No* | Maximum MW the load can decrease below the base profile (must be > 0) |
+| `min_load` | `float \| None` | No* | Absolute minimum consumption in MW (must be >= 0). Overrides `max_decrease` when set |
+| `max_load` | `float \| None` | No* | Absolute maximum consumption in MW (must be > 0). Overrides `max_increase` when set |
 | `value_of_consumption` | `float` | Yes | Economic value of consuming electricity in currency per MWh (must be >= 0) |
+
+\* Each side needs at least one bound: `max_decrease` or `min_load` for the lower side, `max_increase` or `max_load` for the upper side. If both are set on a side, the absolute bound wins. `min_load` must not exceed `max_load`.
 
 ### Flexible load base profiles
 
@@ -78,7 +82,10 @@ scenario = Scenario(
 )
 ```
 
-Every base value must be at least the load's `max_decrease`, so the adjusted load can never go negative. Otherwise building the `LoadProfile` raises an `OdysValidationError`.
+Every base value must lie within the load's bounds, otherwise building the `LoadProfile` raises an `OdysValidationError`:
+
+- at least `min_load` and at most `max_load`, for whichever of them is set;
+- at least `max_decrease` when `min_load` is not set, so the adjusted load can never go negative.
 
 ### How flexible loads work
 
@@ -94,6 +101,12 @@ The adjustment is bounded:
 -max_decrease <= load_adjustment <= max_increase
 ```
 
+When absolute bounds are set, they replace the relative bound on that side at every timestep:
+
+```
+min_load <= base_profile + load_adjustment <= max_load
+```
+
 The optimizer decides whether to increase or decrease load based on economics. The profit contribution is:
 
 ```
@@ -107,6 +120,19 @@ The procurement cost of adjusting load is captured implicitly through the power 
 **Decision logic:**
 - When `value_of_consumption` exceeds the marginal supply cost, increasing load is profitable
 - When the marginal supply cost exceeds `value_of_consumption`, decreasing load saves money
+
+### Absolute bounds
+
+Use `min_load` and `max_load` when the process has hard physical limits that don't depend on the base profile, for example a compressor that can run between 20 and 100 MW:
+
+```python
+compressor = FlexibleLoad(
+    name="compressor",
+    min_load=20.0,
+    max_load=100.0,
+    value_of_consumption=40.0,
+)
+```
 
 ### Example: flexible load with market
 

@@ -120,6 +120,44 @@ class TestFlexibleLoadProfileCoversMaxDecrease:
         assert LoadProfile(load=fixed_load, values=[0.0]).values == (0.0,)
 
 
+class TestFlexibleLoadProfileWithinAbsoluteBounds:
+    @pytest.fixture
+    def bounded_load(self) -> FlexibleLoad:
+        return FlexibleLoad(name="flex1", min_load=10.0, max_load=30.0, value_of_consumption=50.0)
+
+    def test_accepts_base_on_the_bounds(self, bounded_load: FlexibleLoad) -> None:
+        assert LoadProfile(load=bounded_load, values=VALUES).values == tuple(VALUES)
+
+    def test_rejects_base_below_min_load(self, bounded_load: FlexibleLoad) -> None:
+        with pytest.raises(
+            OdysValidationError,
+            match=r"Flexible load 'flex1' has base profile value \(9.0\) below min_load \(10.0\) at time index 1",
+        ):
+            LoadProfile(load=bounded_load, values=[10.0, 9.0])
+
+    def test_rejects_base_above_max_load(self, bounded_load: FlexibleLoad) -> None:
+        with pytest.raises(
+            OdysValidationError,
+            match=r"Flexible load 'flex1' has base profile value \(31.0\) above max_load \(30.0\) at time index 2",
+        ):
+            LoadProfile(load=bounded_load, values=[10.0, 20.0, 31.0])
+
+    def test_min_load_replaces_the_max_decrease_check(self) -> None:
+        # max_decrease (5) exceeds the base value (4), but min_load overrides max_decrease
+        load = FlexibleLoad(
+            name="flex1",
+            max_increase=10.0,
+            max_decrease=MAX_DECREASE,
+            min_load=2.0,
+            value_of_consumption=50.0,
+        )
+        assert LoadProfile(load=load, values=[4.0]).values == (4.0,)
+
+    def test_unset_max_load_puts_no_upper_limit_on_the_base(self) -> None:
+        load = FlexibleLoad(name="flex1", min_load=1.0, max_increase=10.0, value_of_consumption=50.0)
+        assert LoadProfile(load=load, values=[1.0, 1000.0]).values == (1.0, 1000.0)
+
+
 def test_profile_types_apply_to_disjoint_entity_types() -> None:
     entity_types = [entity_type for profile_type in PROFILE_TYPES for entity_type in profile_type.entity_types]
 

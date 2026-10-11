@@ -66,17 +66,19 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
 
     @constraint
     def _get_adjustment_lower_bound_constraint(self) -> ModelConstraint:
-        """The load cannot decrease by more than `max_decrease`."""
+        """The load stays at or above `min_load`, or when unset, decreases by at most `max_decrease`."""
+        lower_bound = (self.arrays.min_load - self.base_profiles).fillna(-self.arrays.max_decrease)
         return ModelConstraint(
-            constraint=self.variables.load_adjustment >= -self.arrays.max_decrease,
+            constraint=self.variables.load_adjustment >= lower_bound,
             name="flexible_load_adjustment_lower_bound_constraint",
         )
 
     @constraint
     def _get_adjustment_upper_bound_constraint(self) -> ModelConstraint:
-        """The load cannot increase by more than `max_increase`."""
+        """The load stays at or below `max_load`, or when unset, increases by at most `max_increase`."""
+        upper_bound = (self.arrays.max_load - self.base_profiles).fillna(self.arrays.max_increase)
         return ModelConstraint(
-            constraint=self.variables.load_adjustment <= self.arrays.max_increase,
+            constraint=self.variables.load_adjustment <= upper_bound,
             name="flexible_load_adjustment_upper_bound_constraint",
         )
 
