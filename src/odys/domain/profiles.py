@@ -60,13 +60,27 @@ class LoadProfile(Profile):
     load: FixedLoad | FlexibleLoad
 
     @model_validator(mode="after")
-    def _validate_max_decrease_within_base_profile(self) -> Self:
+    def _validate_flexible_load_bounds_against_base_profile(self) -> Self:
         if not isinstance(self.load, FlexibleLoad):
             return self
+        load = self.load
         for t, base_t in enumerate(self.values):
-            if self.load.max_decrease > base_t:
+            if load.min_load is not None and base_t < load.min_load:
                 msg = (
-                    f"Flexible load '{self.load.name}' has max_decrease ({self.load.max_decrease}) "
+                    f"Flexible load '{load.name}' has base profile value ({base_t}) "
+                    f"below min_load ({load.min_load}) at time index {t}."
+                )
+                raise OdysValidationError(msg)
+            if load.max_load is not None and base_t > load.max_load:
+                msg = (
+                    f"Flexible load '{load.name}' has base profile value ({base_t}) "
+                    f"above max_load ({load.max_load}) at time index {t}."
+                )
+                raise OdysValidationError(msg)
+            # min_load overrides max_decrease, so max_decrease only bounds the load when min_load is unset
+            if load.min_load is None and load.max_decrease is not None and load.max_decrease > base_t:
+                msg = (
+                    f"Flexible load '{load.name}' has max_decrease ({load.max_decrease}) "
                     f"greater than the base profile value ({base_t}) at time index {t}. "
                     "This would allow actual load to go negative."
                 )
