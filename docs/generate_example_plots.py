@@ -20,7 +20,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from examples.basic_dispatch import run_basic_dispatch  # pyrefly: ignore
-from examples.battery_dispatch import run_battery_dispatch  # pyrefly: ignore
+from examples.battery_dispatch import LOAD_PROFILE, run_battery_dispatch  # pyrefly: ignore
 from examples.cvar_market_risk import run_cvar_market_risk  # pyrefly: ignore
 from examples.ev_fleet_optimization import (  # pyrefly: ignore
     CHARGERS,
@@ -137,21 +137,18 @@ def generate_battery_dispatch() -> None:
     )
 
     # Split battery into discharge (positive) and charge (negative)
-    battery_power = -battery_df["net_power"].values  # Invert so discharge is positive
-    battery_discharge = [max(0, v) for v in battery_power]
-    battery_charge = [min(0, v) for v in battery_power]
+    battery_power = -battery_df["net_power"].to_numpy()  # Invert so discharge is positive
+    battery_discharge = np.maximum(battery_power, 0)
+    battery_charge = np.minimum(battery_power, 0)
 
-    # Calculate bases for stacking
-    solar = gen_df["solar_pv"].values
-    ccgt = gen_df["ccgt"].values
-    solar_base = battery_discharge
-    ccgt_base = [b + s for b, s in zip(battery_discharge, solar, strict=True)]
+    solar = gen_df["solar_pv"].to_numpy()
+    ccgt = gen_df["ccgt"].to_numpy()
+    np.testing.assert_allclose(solar + ccgt + battery_power, LOAD_PROFILE, atol=1e-6)
 
     fig.add_trace(
         go.Bar(
             x=steps,
             y=battery_discharge,
-            base=0,
             name="Battery Discharge",
             marker=dict(color=BATTERY_SOC_COLOR),
             legendgroup="gen",
@@ -164,7 +161,6 @@ def generate_battery_dispatch() -> None:
         go.Bar(
             x=steps,
             y=solar,
-            base=solar_base,
             name="Solar PV",
             marker=dict(color=SOLAR_COLOR),
             legendgroup="gen",
@@ -177,7 +173,6 @@ def generate_battery_dispatch() -> None:
         go.Bar(
             x=steps,
             y=ccgt,
-            base=ccgt_base,
             name="CCGT",
             marker=dict(color=CCGT_COLOR),
             legendgroup="gen",
@@ -190,7 +185,6 @@ def generate_battery_dispatch() -> None:
         go.Bar(
             x=steps,
             y=battery_charge,
-            base=0,
             name="Battery Charge",
             marker=dict(color=BATTERY_SOC_COLOR),
             legendgroup="gen",
@@ -202,9 +196,9 @@ def generate_battery_dispatch() -> None:
     fig.add_trace(
         go.Scatter(
             x=steps,
-            y=[70] * len(steps),
+            y=LOAD_PROFILE,
             mode="lines",
-            name="Load (70 MW)",
+            name="Load",
             line=dict(color=LOAD_COLOR, width=2, dash="dash"),
             legendgroup="gen",
         ),
@@ -212,14 +206,14 @@ def generate_battery_dispatch() -> None:
         col=1,
     )
 
-    soc = battery_df["soc"].values
+    soc_percent = battery_df["soc"].to_numpy() * 100
 
     fig.add_trace(
         go.Scatter(
             x=steps,
-            y=soc,
+            y=soc_percent,
             mode="lines+markers",
-            name="State of Charge (MWh)",
+            name="State of Charge (%)",
             line=dict(color=BATTERY_SOC_COLOR, width=2),
             marker=dict(size=6),
         ),
@@ -228,7 +222,7 @@ def generate_battery_dispatch() -> None:
     )
 
     fig.update_layout(
-        barmode="stack",
+        barmode="relative",
         hovermode="x unified",
         legend=dict(x=0.01, y=0.99),
         margin=dict(l=40, r=20, t=40, b=40),
@@ -237,7 +231,7 @@ def generate_battery_dispatch() -> None:
     fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
     fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
     fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[-80, 200])
-    fig.update_yaxes(title="Energy (MWh)", row=2, col=1, range=[0, 1])
+    fig.update_yaxes(title="State of Charge (%)", row=2, col=1, range=[0, 100])
 
     _save_figure(fig, "battery_dispatch")
 
@@ -1038,9 +1032,44 @@ def generate_ev_fleet_economics(result: OptimalDispatchResults) -> None:
     _save_figure(fig, "ev_fleet_economics")
 
 
+def _check_ev_fleet_claims(result: OptimalDispatchResults) -> None:
+    """Fail the docs build if the solve no longer matches what ev_fleet_optimization.md says.
+
+    Only claims that hold in every optimal solution are checked. Hours with the same price
+    are interchangeable, so which of them the solver uses is not checked.
+    """
+    ev_dataset = result.electric_vehicles.to_dataset()
+    prices = np.array(MARKET_PRICES)
+    cheapest = prices == prices.min()
+
+    end_soc = {ev.name: float(ev_dataset.sel(ev=ev.name).soc.values[-1]) for ev in EVS}
+    np.testing.assert_allclose(list(end_soc.values()), [0.3, 0.6, 0.5], atol=1e-6, err_msg=str(end_soc))
+
+    ev_1_power = ev_dataset.sel(ev="ev_1").net_power.values
+    ev_1_discharge_hours = np.flatnonzero(ev_1_power < -ACTIVE_POWER_TOLERANCE).tolist()
+    np.testing.assert_array_equal(ev_1_discharge_hours, [6, 9, 16, 17, 18, 19, 20])
+    np.testing.assert_allclose(
+        ev_dataset.sel(ev="ev_1").soc.values[20],
+        0,
+        atol=1e-6,
+        err_msg="ev_1 should be empty after the evening peak",
+    )
+
+    for name in ("ev_2", "ev_3"):
+        charging = ev_dataset.sel(ev=name).net_power.values > ACTIVE_POWER_TOLERANCE
+        np.testing.assert_array_equal(
+            np.flatnonzero(charging & ~cheapest),
+            [],
+            err_msg=f"{name} charges outside the cheapest hours",
+        )
+    ev_2_energy_kwh = float(ev_dataset.sel(ev="ev_2").net_power.values.sum()) * 1000
+    np.testing.assert_allclose(ev_2_energy_kwh, 27, atol=1e-6)
+
+
 def generate_ev_fleet_optimization() -> None:
     """Solve the EV fleet example once and generate all figures."""
     result = run_ev_fleet_optimization()
+    _check_ev_fleet_claims(result)
     generate_ev_fleet_setup()
     generate_ev_fleet_dispatch_combined(result)
     generate_ev_fleet_verification(result)
