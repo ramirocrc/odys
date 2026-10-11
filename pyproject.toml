@@ -74,7 +74,7 @@ docs = [
   "plotly>=6.0.0",
   "zensical>=0.0.45",
 ]
-vulnerability-fixes = ["virtualenv>=21.7.12"]
+vulnerability-fixes = ["virtualenv>=21.7.13"]
 
 [build-system]
 requires = ["uv_build<0.13"]
