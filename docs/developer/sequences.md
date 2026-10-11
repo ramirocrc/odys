@@ -21,7 +21,7 @@ sequenceDiagram
     participant S as solve
     participant R as OptimalDispatchResults
     User->>ES: optimize(solver_config)
-    ES->>OP: assemble(entities, horizon, scenario_set, objective)
+    ES->>OP: assemble(entities, horizon, scenario_set, condition_set, objective)
     OP-->>ES: problem (context, formulations, objective terms)
     ES->>MB: build_model(problem)
     MB-->>ES: linopy.Model

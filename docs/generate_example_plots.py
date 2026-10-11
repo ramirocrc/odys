@@ -24,6 +24,8 @@ from examples.battery_dispatch import LOAD_PROFILE, run_battery_dispatch  # pyre
 from examples.cvar_market_risk import run_cvar_market_risk  # pyrefly: ignore
 from examples.ev_fleet_optimization import (  # pyrefly: ignore
     CHARGERS,
+    EV_FINAL_STATES,
+    EV_INITIAL_STATES,
     EVS,
     MARKET_PRICES,
     run_ev_fleet_optimization,
@@ -498,6 +500,8 @@ def generate_cvar_market_risk() -> None:
 
 
 EV_COLORS = {"ev_1": EV_1_COLOR, "ev_2": EV_2_COLOR, "ev_3": EV_3_COLOR}
+SOC_START = {state.vehicle.name: state.soc for state in EV_INITIAL_STATES}
+SOC_END = {state.vehicle.name: state.soc for state in EV_FINAL_STATES}
 EV_V2G_COLOR = "#2980B9"
 PRICE_STEP_COLOR = "#5D6D7E"
 CUMULATIVE_PROFIT_COLOR = "#1E8449"
@@ -768,7 +772,7 @@ def generate_ev_fleet_dispatch_combined(result: OptimalDispatchResults) -> None:
 
     ev_dataset = result.electric_vehicles.to_dataset()
     for ev in EVS:
-        soc_values = [ev.battery.soc_start, *ev_dataset.sel(ev=ev.name).soc.values]
+        soc_values = [SOC_START[ev.name], *ev_dataset.sel(ev=ev.name).soc.values]
         fig.add_trace(
             go.Scatter(
                 x=HOUR_EDGES,
@@ -871,7 +875,7 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
     for ev in EVS:
         soc_values = ev_dataset.sel(ev=ev.name).soc.values
         for trip in ev.trips:
-            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else ev.battery.soc_start
+            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else SOC_START[ev.name]
             rows.append((
                 f"{_ev_display_name(ev.name)} SoC before {trip.name} (t{trip.start_time})",
                 f"≥ {trip.min_soc_at_departure:.2f}",
@@ -880,14 +884,14 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
             ))
 
     for ev in EVS:
-        if ev.battery.soc_end is None:
+        if ev.name not in SOC_END:
             continue
         actual = float(ev_dataset.sel(ev=ev.name).soc.values[-1])
         rows.append((
             f"{_ev_display_name(ev.name)} end-of-day SoC",
-            f"= {ev.battery.soc_end:.2f}",
+            f"= {SOC_END[ev.name]:.2f}",
             f"{actual:.3f}",
-            abs(actual - ev.battery.soc_end) <= tolerance,
+            abs(actual - SOC_END[ev.name]) <= tolerance,
         ))
 
     worst_trip_power_kw = 0.0

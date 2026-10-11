@@ -1,12 +1,13 @@
 """The shared indexing of one optimization problem."""
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import cached_property
 
 import xarray as xr
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from odys.domain.entities.base import EnergyEntity
+from odys.domain.conditions import ConditionSet, ConditionT
+from odys.domain.entities.base import Asset, EnergyEntity
 from odys.domain.exceptions import OdysError
 from odys.domain.horizon import Horizon
 from odys.domain.profiles import Profile
@@ -19,7 +20,8 @@ class ModelContext(BaseModel):
     """Shared indexing of one optimization problem.
 
     Holds the time and scenario coordinates, the step length and the scenario
-    probabilities, and turns scenario profiles into arrays. Entity coordinates
+    probabilities, and turns scenario profiles and the run's initial and final
+    conditions into arrays. Entity coordinates
     belong to each entity type's formulation. It is the only producer of time labels,
     which are strings ("0", "1", ...): arrays with integer time coordinates
     would align with nothing and silently mask every constraint using them.
@@ -29,6 +31,7 @@ class ModelContext(BaseModel):
 
     horizon: Horizon
     scenario_set: ScenarioSet
+    condition_set: ConditionSet = Field(default_factory=ConditionSet)
 
     @cached_property
     def time(self) -> Coordinates:
@@ -106,6 +109,50 @@ class ModelContext(BaseModel):
                 | self.time.dimension_coordinates_map
             ),
         )
+
+    def conditions(
+        self,
+        kind: type[ConditionT],
+        entities: Sequence[Asset],
+        coordinates: Coordinates,
+        value: Callable[[ConditionT], float],
+        *,
+        default: float | None = None,
+    ) -> xr.DataArray:
+        """Return one value of each entity's condition of the given kind, along the entity dimension.
+
+        Args:
+            kind: The condition type to read, such as `GeneratorInitialState`.
+            entities: The entities, in the order of their coordinates.
+            coordinates: The entities' coordinates, which name their dimension.
+            value: Reads the value from a condition, such as its power.
+            default: The value for an entity without a condition of this kind. None makes the condition required;
+                pass NaN to mark a missing optional condition.
+
+        Returns:
+            An array along the entity dimension.
+
+        Raises:
+            OdysError: If an entity has no condition of this kind and there is no default.
+
+        """
+        data = [self._condition_value(kind, entity, value, default) for entity in entities]
+        return xr.DataArray(data, dims=coordinates.dimension, coords=coordinates.dimension_coordinates_map)
+
+    def _condition_value(
+        self,
+        kind: type[ConditionT],
+        entity: Asset,
+        value: Callable[[ConditionT], float],
+        default: float | None,
+    ) -> float:
+        condition = self.condition_set.get(kind, entity)
+        if condition is not None:
+            return value(condition)
+        if default is None:
+            msg = f"There is no {kind.__name__} for '{entity.name}'."
+            raise OdysError(msg)
+        return default
 
     def _profile_values(
         self,

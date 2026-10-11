@@ -13,6 +13,7 @@ Use it when you need to define or inspect the core objects that an energy system
 
 ## Subpackages and modules
 
+- `conditions`
 - `entities`
 - `exceptions`
 - `objective`

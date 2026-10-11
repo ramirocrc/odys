@@ -34,7 +34,6 @@ def _battery() -> Battery:
         capacity=BATTERY_CAPACITY,
         max_charge_power=MAX_DISCHARGE_POWER,
         max_discharge_power=MAX_DISCHARGE_POWER,
-        soc_start=0.5,
     )
 
 

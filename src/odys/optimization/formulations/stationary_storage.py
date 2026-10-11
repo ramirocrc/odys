@@ -12,7 +12,7 @@ from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
 from odys.optimization.formulations.storage import StorageFormulation, StorageVariables
 from odys.parameters.context import ModelContext
-from odys.parameters.entity_arrays import BatteryArrays
+from odys.parameters.entity_arrays import BatteryArrays, stationary_storage_state_arrays
 from odys.parameters.vectorize import vectorize
 from odys.results.dispatch import StationaryStorageDispatch
 
@@ -37,7 +37,8 @@ class StationaryStorageFormulation(VariableFormulation[StorageVariables]):
         """
         super().__init__(storages, context)
         battery = vectorize(BatteryArrays, [storage.battery for storage in storages], self.coordinates)
-        self.storage = StorageFormulation(self.coordinates, battery, context)
+        states = stationary_storage_state_arrays(storages, self.coordinates, context)
+        self.storage = StorageFormulation(self.coordinates, battery, states, context)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
@@ -66,12 +67,12 @@ class StationaryStorageFormulation(VariableFormulation[StorageVariables]):
 
     @constraint
     def _get_stationary_storage_soc_start_constraint(self) -> ModelConstraint:
-        """The SOC after the first step starts from `soc_start`."""
+        """The SOC after the first step starts from the storage's initial state of charge."""
         return self.storage.soc_start_constraint(self.variables)
 
     @constraint
     def _get_stationary_storage_soc_end_constraint(self) -> list[ModelConstraint]:
-        """The SOC at the last step equals `soc_end`, where set."""
+        """The SOC at the last step equals the storage's final state of charge, where set."""
         return self.storage.soc_end_constraint(self.variables)
 
     @constraint
