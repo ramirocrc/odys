@@ -1,4 +1,8 @@
-"""Tests that the class diagrams in docs/architecture/model.md stay true to the code in src/odys."""
+"""Tests that the hand-written diagrams in the docs stay true to the code in src/odys.
+
+Covers the class diagrams and the sequence diagram of docs/architecture/model.md, and the
+composition flowchart of docs/user_guide/energy_system.md.
+"""
 
 import ast
 import re
@@ -15,6 +19,7 @@ import odys
 REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_ROOT = REPOSITORY_ROOT / "src" / "odys"
 ARCHITECTURE_PAGE = REPOSITORY_ROOT / "docs" / "architecture" / "model.md"
+USER_GUIDE_PAGE = REPOSITORY_ROOT / "docs" / "user_guide" / "energy_system.md"
 
 EXTENSION_POINT_BASES = (
     "EnergyEntity",
@@ -51,12 +56,25 @@ RELATION = re.compile(
 MEMBER = re.compile(r"^\+(\w+)")
 IGNORED_LINE = re.compile(r"^(?:<<.*>>|%%.*|direction\s+\w+)?$")
 
+PARTICIPANT = re.compile(r"^participant\s+(\w+)(?:\s+as\s+(\w+))?$")
+ACTOR = re.compile(r"^actor\s+(\w+)$")
+CALL = re.compile(r"^(\w+)\s*->>\s*(\w+)\s*:\s*(\w+)\(([^)]*)\)")
+IGNORED_SEQUENCE_LINE = re.compile(r"^(?:\w+\s*-->>\s*\w+\s*:.*|Note\s.*|%%.*)?$")
+
+FLOWCHART_NODE = re.compile(r'^(\w+)\["([^"]*)"\]$')
+SUBGRAPH = re.compile(r"^subgraph\s+(\w+)")
+IGNORED_FLOWCHART_LINE = re.compile(
+    r"^(?:\w+\s*(?:-->|-\.->|<-->)\s*\w+|end|direction\s+\w+|style\s.*|%%.*)?$",
+)
+HTML_TAG = re.compile(r"<[^>]+>")
+
 
 class SourceClass(NamedTuple):
     """A class defined in src/odys: the names of its bases and of its own members."""
 
     bases: tuple[str, ...]
     members: frozenset[str]
+    methods: Mapping[str, tuple[str, ...]]
 
 
 class Inheritance(NamedTuple):
@@ -83,6 +101,42 @@ def _base_name(base: ast.expr) -> str:
     return ast.unparse(base)
 
 
+class Call(NamedTuple):
+    """A `Caller->>Target: name(args)` message of a sequence diagram, its target resolved to the code name."""
+
+    target: str
+    name: str
+    arguments: tuple[str, ...]
+
+
+class SequenceDiagrams(NamedTuple):
+    """What the sequence diagrams of the page state about the code."""
+
+    participants: frozenset[str]
+    calls: tuple[Call, ...]
+    unparsed: tuple[str, ...]
+
+
+class FlowchartNode(NamedTuple):
+    """A `Id["label"]` node of a flowchart: its label without markup or `(s)`, and its enclosing subgraph."""
+
+    label: str
+    subgraph: str | None
+
+
+class Flowcharts(NamedTuple):
+    """The labelled nodes of the flowcharts of a page."""
+
+    nodes: tuple[FlowchartNode, ...]
+    unparsed: tuple[str, ...]
+
+
+def _parameter_names(function: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[str, ...]:
+    arguments = function.args
+    names = (argument.arg for argument in (*arguments.posonlyargs, *arguments.args, *arguments.kwonlyargs))
+    return tuple(name for name in names if name not in {"self", "cls"})
+
+
 def _member_names(statement: ast.stmt) -> Iterator[str]:
     if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
         yield statement.target.id
@@ -100,6 +154,11 @@ def _source_class_definitions() -> tuple[tuple[str, SourceClass], ...]:
             SourceClass(
                 bases=tuple(_base_name(base) for base in node.bases),
                 members=frozenset(name for statement in node.body for name in _member_names(statement)),
+                methods={
+                    statement.name: _parameter_names(statement)
+                    for statement in node.body
+                    if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef)
+                },
             ),
         )
         for path in sorted(SOURCE_ROOT.rglob("*.py"))
@@ -113,12 +172,42 @@ def _source_classes() -> Mapping[str, SourceClass]:
     return dict(_source_class_definitions())
 
 
+@cache
+def _source_function_definitions() -> tuple[tuple[str, tuple[str, ...]], ...]:
+    return tuple(
+        (node.name, _parameter_names(node))
+        for path in sorted(SOURCE_ROOT.rglob("*.py"))
+        for node in ast.parse(path.read_text(encoding="utf-8")).body
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
+    )
+
+
+@cache
+def _source_functions() -> Mapping[str, tuple[str, ...]]:
+    return dict(_source_function_definitions())
+
+
 def _ancestors(name: str) -> frozenset[str]:
     classes = _source_classes()
     if name not in classes:
         return frozenset()
     bases = tuple(base for base in classes[name].bases if base != name)
     return frozenset(bases).union(*(_ancestors(base) for base in bases))
+
+
+def _lineage(name: str) -> Iterator[str]:
+    """Yield the class and then its bases depth first, in declaration order, as far as src/odys defines them."""
+    classes = _source_classes()
+    if name in classes:
+        yield name
+        for base in classes[name].bases:
+            if base != name:
+                yield from _lineage(base)
+
+
+def _method_parameters(owner: str, method: str) -> tuple[str, ...] | None:
+    classes = _source_classes()
+    return next((classes[cls].methods[method] for cls in _lineage(owner) if method in classes[cls].methods), None)
 
 
 def _members_with_inherited(name: str) -> frozenset[str]:
@@ -207,6 +296,97 @@ def _page_diagrams() -> ClassDiagrams:
     return parse_class_diagrams(ARCHITECTURE_PAGE.read_text(encoding="utf-8"))
 
 
+def _mermaid_blocks(markdown: str, kind: str) -> Iterator[list[str]]:
+    """Yield the stripped lines after the header of every Mermaid block whose header starts with `kind`."""
+    for block in MERMAID_BLOCK.findall(markdown):
+        lines = [line.strip() for line in block.splitlines()]
+        lines = [line for line in lines if not line.startswith("%%{")]
+        if lines and lines[0].split()[0] == kind:
+            yield lines[1:]
+
+
+def parse_sequence_diagrams(markdown: str) -> SequenceDiagrams:
+    """Collect the participants and the `name(args)` calls of every sequenceDiagram block.
+
+    `participant Id as Name` resolves `Id` to the code name `Name`; `actor` declares an outside caller that is not
+    checked. Replies (`-->>`), notes and `%%` comments are prose. Text after a call's closing parenthesis is prose
+    too. Any other line is returned in `unparsed`, so syntax the check does not understand fails the test.
+    """
+    participants: set[str] = set()
+    calls: list[Call] = []
+    unparsed: list[str] = []
+    for lines in _mermaid_blocks(markdown, "sequenceDiagram"):
+        names: dict[str, str] = {}
+        actors: set[str] = set()
+        for line in lines:
+            if participant := PARTICIPANT.match(line):
+                identifier, name = participant.groups()
+                names[identifier] = name or identifier
+            elif actor := ACTOR.match(line):
+                actors.add(actor.group(1))
+            elif call := CALL.match(line):
+                _, target, name, arguments = call.groups()
+                if target not in actors:
+                    calls.append(
+                        Call(
+                            target=names.get(target, target),
+                            name=name,
+                            arguments=tuple(argument.strip() for argument in arguments.split(",") if argument.strip()),
+                        ),
+                    )
+            elif not IGNORED_SEQUENCE_LINE.match(line):
+                unparsed.append(line)
+        participants.update(names.values())
+    return SequenceDiagrams(participants=frozenset(participants), calls=tuple(calls), unparsed=tuple(unparsed))
+
+
+def parse_flowcharts(markdown: str) -> Flowcharts:
+    """Collect the `Id["label"]` nodes of every flowchart block with their enclosing subgraph.
+
+    Labels lose their HTML tags and a trailing `(s)`, so `<b>EnergyMarket(s)</b>` reads `EnergyMarket`. Edges
+    between ids, `style`, `direction` and `%%` lines are ignored; any other line is returned in `unparsed`.
+    """
+    nodes: list[FlowchartNode] = []
+    unparsed: list[str] = []
+    for lines in _mermaid_blocks(markdown, "flowchart"):
+        subgraph: str | None = None
+        for line in lines:
+            if node := FLOWCHART_NODE.match(line):
+                label = HTML_TAG.sub("", node.group(2)).strip().removesuffix("(s)")
+                nodes.append(FlowchartNode(label=label, subgraph=subgraph))
+            elif opened := SUBGRAPH.match(line):
+                subgraph = opened.group(1)
+            elif line == "end":
+                subgraph = None
+            elif not IGNORED_FLOWCHART_LINE.match(line):
+                unparsed.append(line)
+    return Flowcharts(nodes=tuple(nodes), unparsed=tuple(unparsed))
+
+
+@cache
+def _page_sequence_diagrams() -> SequenceDiagrams:
+    return parse_sequence_diagrams(ARCHITECTURE_PAGE.read_text(encoding="utf-8"))
+
+
+@cache
+def _user_guide_flowcharts() -> Flowcharts:
+    return parse_flowcharts(USER_GUIDE_PAGE.read_text(encoding="utf-8"))
+
+
+def _call_parameters(call: Call) -> tuple[str, ...] | None:
+    if call.target in _source_classes():
+        return _method_parameters(call.target, "__init__" if call.name == call.target else call.name)
+    if call.name == call.target:
+        return _source_functions().get(call.target)
+    return None
+
+
+def _concrete_assets() -> frozenset[str]:
+    descendants = {name for name in _source_classes() if "Asset" in _ancestors(name)}
+    bases = {base for name in descendants for base in _source_classes()[name].bases}
+    return frozenset(descendants - bases)
+
+
 def test_source_class_names_are_unique() -> None:
     duplicates = sorted(
         name for name, count in Counter(name for name, _ in _source_class_definitions()).items() if count > 1
@@ -290,3 +470,129 @@ def test_diagram_members_exist_on_their_class() -> None:
 )
 def test_parse_class_diagrams_reads_classes_members_and_inheritance(markdown: str, expected: ClassDiagrams) -> None:
     assert parse_class_diagrams(markdown) == expected
+
+
+def test_source_function_names_are_unique() -> None:
+    duplicates = sorted(
+        name for name, count in Counter(name for name, _ in _source_function_definitions()).items() if count > 1
+    )
+
+    assert not duplicates, (
+        f"The diagram check resolves functions by name; these are defined more than once: {duplicates}"
+    )
+
+
+def test_sequence_diagrams_use_only_syntax_the_check_understands() -> None:
+    unparsed = _page_sequence_diagrams().unparsed
+
+    assert not unparsed, f"Rewrite these sequence diagram lines in a form the drift check parses: {list(unparsed)}"
+
+
+def test_sequence_participants_are_defined_in_the_code() -> None:
+    defined = _source_classes().keys() | _source_functions().keys()
+    unknown = sorted(_page_sequence_diagrams().participants - defined)
+
+    assert not unknown, f"These participants are not classes or functions in src/odys (renamed or removed?): {unknown}"
+
+
+def test_sequence_calls_exist_on_their_target() -> None:
+    wrong = [call for call in _page_sequence_diagrams().calls if _call_parameters(call) is None]
+
+    assert not wrong, f"These calls are not a method, constructor or the function of their participant: {wrong}"
+
+
+def test_sequence_call_arguments_are_parameters() -> None:
+    wrong = {
+        (f"{call.target}.{call.name}" if call.target != call.name else call.name): sorted(unknown)
+        for call in _page_sequence_diagrams().calls
+        if (parameters := _call_parameters(call)) is not None
+        and (unknown := {argument for argument in call.arguments if argument.isidentifier()} - set(parameters))
+    }
+
+    assert not wrong, f"These call arguments are not parameters of the callee: {wrong}"
+
+
+def test_user_guide_diagram_uses_only_syntax_the_check_understands() -> None:
+    unparsed = _user_guide_flowcharts().unparsed
+
+    assert not unparsed, (
+        f"Rewrite these lines of the {USER_GUIDE_PAGE.name} diagram in a form the check parses: {list(unparsed)}"
+    )
+
+
+def test_user_guide_diagram_names_public_classes() -> None:
+    unknown = sorted({node.label for node in _user_guide_flowcharts().nodes} - set(odys.__all__))
+
+    assert not unknown, f"These {USER_GUIDE_PAGE.name} diagram nodes are not public odys classes: {unknown}"
+
+
+def test_user_guide_diagram_shows_every_asset_type() -> None:
+    drawn = {node.label for node in _user_guide_flowcharts().nodes if node.subgraph == "Assets"}
+
+    assert drawn == _concrete_assets(), (
+        f"The Assets subgraph of {USER_GUIDE_PAGE.name} must list every asset type: "
+        f"missing {sorted(_concrete_assets() - drawn)}, unexpected {sorted(drawn - _concrete_assets())}"
+    )
+
+
+@pytest.mark.parametrize(
+    ("markdown", "expected"),
+    [
+        (
+            "```mermaid\nsequenceDiagram\n    actor User\n    participant ES as EnergySystem\n"
+            "    User->>ES: optimize(solver_config)\n    ES-->>User: results\n```\n",
+            SequenceDiagrams(frozenset({"EnergySystem"}), (Call("EnergySystem", "optimize", ("solver_config",)),), ()),
+        ),
+        (
+            "```mermaid\nsequenceDiagram\n    participant A\n    participant B\n"
+            "    A->>B: run(x, y.z), only when ready\n    A->>B: run()\n```\n",
+            SequenceDiagrams(
+                frozenset({"A", "B"}),
+                (Call("B", "run", ("x", "y.z")), Call("B", "run", ())),
+                (),
+            ),
+        ),
+        (
+            "```mermaid\nsequenceDiagram\n    participant A\n    A->>A: no parentheses\n    loop every step\n```\n",
+            SequenceDiagrams(frozenset({"A"}), (), ("A->>A: no parentheses", "loop every step")),
+        ),
+        (
+            "```mermaid\nclassDiagram\n    participant Ignored\n```\n",
+            SequenceDiagrams(frozenset(), (), ()),
+        ),
+    ],
+    ids=["actor-alias-and-reply", "arguments-and-trailing-prose", "unknown-syntax-reported", "other-diagram-ignored"],
+)
+def test_parse_sequence_diagrams_reads_participants_and_calls(markdown: str, expected: SequenceDiagrams) -> None:
+    assert parse_sequence_diagrams(markdown) == expected
+
+
+@pytest.mark.parametrize(
+    ("markdown", "expected"),
+    [
+        (
+            '```mermaid\n%%{init: {"theme": "base"}}%%\nflowchart TD\n    ES["<b>EnergySystem</b>"]\n'
+            '    subgraph Assets [ ]\n        direction LR\n        GEN["Generator(s)"]\n    end\n'
+            '    MKT["<b>EnergyMarket(s)</b>"]\n    ES --> MKT\n    ES --> Assets\n```\n',
+            Flowcharts(
+                (
+                    FlowchartNode("EnergySystem", None),
+                    FlowchartNode("Generator", "Assets"),
+                    FlowchartNode("EnergyMarket", None),
+                ),
+                (),
+            ),
+        ),
+        (
+            '```mermaid\nflowchart LR\n    A(["rounded"]) --> B\n```\n',
+            Flowcharts((), ('A(["rounded"]) --> B',)),
+        ),
+        (
+            '```mermaid\nsequenceDiagram\n    ES["Ignored"]\n```\n',
+            Flowcharts((), ()),
+        ),
+    ],
+    ids=["labels-subgraphs-and-init", "unknown-syntax-reported", "other-diagram-ignored"],
+)
+def test_parse_flowcharts_reads_labelled_nodes(markdown: str, expected: Flowcharts) -> None:
+    assert parse_flowcharts(markdown) == expected
