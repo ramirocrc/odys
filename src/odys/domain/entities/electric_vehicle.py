@@ -4,7 +4,6 @@ This module provides the ElectricVehicle class for modeling electric vehicles
 in energy system optimization problems.
 """
 
-import math
 from itertools import pairwise
 from typing import Self
 
@@ -26,10 +25,9 @@ class ElectricVehicle(Asset):
     V2G capability is implicit: if `battery.max_discharge_power > 0`, the EV
     can discharge through a V2G-capable charger.
 
-    Trips must not overlap. A trip departing at t=0 must not require more state
-    of charge than `battery.soc_start`, and its energy must fit in the starting
-    charge above `soc_min`, since the vehicle cannot charge before or during it.
-    These are checked at construction.
+    Trips must not overlap, which is checked at construction. Whether a trip
+    departing at t=0 fits the starting charge is checked by the vehicle's
+    `ElectricVehicleInitialState`.
     """
 
     battery: Battery
@@ -41,37 +39,6 @@ class ElectricVehicle(Asset):
         for trip, next_trip in pairwise(sorted_trips):
             if trip.end_time > next_trip.start_time:
                 msg = f"Trips '{trip.name}' and '{next_trip.name}' overlap for vehicle '{self.name}'"
-                raise OdysValidationError(msg)
-        return self
-
-    @model_validator(mode="after")
-    def _validate_min_soc_at_departure_feasible(self) -> Self:
-        for trip in self.trips:
-            if trip.start_time == 0 and trip.min_soc_at_departure > self.battery.soc_start:
-                msg = (
-                    f"Trip '{trip.name}' for vehicle '{self.name}' departs at t=0 with "
-                    f"min_soc_at_departure={trip.min_soc_at_departure} > soc_start={self.battery.soc_start}"
-                )
-                raise OdysValidationError(msg)
-        return self
-
-    @model_validator(mode="after")
-    def _validate_starting_charge_covers_trip_at_t0(self) -> Self:
-        battery = self.battery
-        available_energy = (battery.soc_start - battery.soc_min) * battery.capacity
-        for trip in self.trips:
-            if trip.start_time != 0:
-                continue
-            if trip.energy_consumption > available_energy and not math.isclose(
-                trip.energy_consumption,
-                available_energy,
-            ):
-                msg = (
-                    f"Trip '{trip.name}' for vehicle '{self.name}' departs at t=0 and consumes "
-                    f"{trip.energy_consumption:.6g} MWh, but the battery holds only {available_energy:.6g} MWh "
-                    f"above soc_min at the start (soc_start={battery.soc_start}, soc_min={battery.soc_min}, "
-                    f"capacity={battery.capacity} MWh); it cannot charge before or during the trip."
-                )
                 raise OdysValidationError(msg)
         return self
 

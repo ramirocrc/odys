@@ -46,6 +46,8 @@ from odys import (
     Generator,
     Scenario,
     StationaryStorage,
+    StorageFinalState,
+    StorageInitialState,
 )
 
 generator_1 = Generator(name="ccgt", nominal_power=100, variable_cost=50)
@@ -53,12 +55,14 @@ generator_2 = Generator(name="solar_pv", nominal_power=150, variable_cost=0)
 load = FixedLoad(name="load")
 battery = StationaryStorage(
     name="battery",
-    battery=Battery(capacity=300, max_charge_power=200, max_discharge_power=200, soc_start=0, soc_end=0),
+    battery=Battery(capacity=300, max_charge_power=200, max_discharge_power=200),
 )
 portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
+starts_empty = StorageInitialState(storage=battery, soc=0.0)
+ends_empty = StorageFinalState(storage=battery, soc=0.0)
 ```
 
-The battery is what turns this into a scheduling problem. A generator can only produce when it is needed, but a battery can move energy across time.
+The battery starts and ends the day empty. These are [initial and final conditions](../user_guide/initial_and_final_conditions.md) of the run, passed to the energy system below. The battery is what turns this into a scheduling problem. A generator can only produce when it is needed, but a battery can move energy across time.
 
 ### 2. Describe the scenario
 
@@ -88,7 +92,14 @@ This is where the battery becomes useful. When solar is above 70 MW, there is sp
 ### 3. Solve and inspect both generators and storage
 
 ```python
-energy_system = EnergySystem(portfolio=portfolio, timestep=timedelta(hours=1), number_of_steps=24, scenarios=scenario)
+energy_system = EnergySystem(
+    portfolio=portfolio,
+    timestep=timedelta(hours=1),
+    number_of_steps=24,
+    scenarios=scenario,
+    initial_conditions=(starts_empty,),
+    final_conditions=(ends_empty,),
+)
 
 result = energy_system.optimize()
 ```

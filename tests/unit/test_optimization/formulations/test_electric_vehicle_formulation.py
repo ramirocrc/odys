@@ -7,6 +7,7 @@ import pytest
 
 from odys import (
     Battery,
+    ElectricVehicleInitialState,
     LoadProfile,
     Scenario,
 )
@@ -21,6 +22,9 @@ from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormu
 from odys.optimization.problem import OptimizationProblem
 from odys.parameters.dimensions import ModelDimension
 
+EV_WITH_TRIPS_SOC_START = 0.5
+EV_NO_TRIPS_SOC_START = 0.8
+
 
 @pytest.fixture
 def ev_with_trips() -> ElectricVehicle:
@@ -32,7 +36,6 @@ def ev_with_trips() -> ElectricVehicle:
             max_discharge_power=11.0,
             efficiency_charging=0.9,
             efficiency_discharging=0.85,
-            soc_start=0.5,
         ),
         trips=(Trip(name="trip1", start_time=1, end_time=2, energy_consumption=5.0, min_soc_at_departure=0.3),),
     )
@@ -42,7 +45,7 @@ def ev_with_trips() -> ElectricVehicle:
 def ev_no_trips() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev2",
-        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=0.0, soc_start=0.8),
+        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=0.0),
         trips=(),
     )
 
@@ -69,12 +72,18 @@ def energy_system_with_evs(
     asset_portfolio_with_evs: AssetPortfolio,
     demand_profile_sample: list[float],
     load1: FixedLoad,
+    ev_with_trips: ElectricVehicle,
+    ev_no_trips: ElectricVehicle,
 ) -> EnergySystem:
     return EnergySystem(
         portfolio=asset_portfolio_with_evs,
         number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),
         scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile_sample),)),
+        initial_conditions=(
+            ElectricVehicleInitialState(vehicle=ev_with_trips, soc=EV_WITH_TRIPS_SOC_START),
+            ElectricVehicleInitialState(vehicle=ev_no_trips, soc=EV_NO_TRIPS_SOC_START),
+        ),
     )
 
 
@@ -140,6 +149,6 @@ class TestElectricVehicleFormulationConstraints:
     ) -> None:
         actual_constraint = self.linopy_model.constraints["ev_soc_start_constraint"]
         assert isinstance(actual_constraint, linopy.Constraint)
-        for ev in (ev_with_trips, ev_no_trips):
+        for ev, soc_start in ((ev_with_trips, EV_WITH_TRIPS_SOC_START), (ev_no_trips, EV_NO_TRIPS_SOC_START)):
             rhs = actual_constraint.rhs.sel(scenario="base", ev=ev.name)
-            assert float(rhs) == pytest.approx(ev.battery.soc_start)
+            assert float(rhs) == pytest.approx(soc_start)
