@@ -91,6 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A solve that ends without a solution (for example an infeasible model, or a time limit reached before the first feasible solution) now returns results whose `solver_status` and `termination_condition` report it, and whose solution accessors raise `OdysSolverError`; before, `optimize()` crashed with an `AttributeError` from linopy.
 - Unit descriptions: `EnergyMarket.max_trading_volume_per_step` is a power in MW, and generator startup/shutdown costs are per event.
 - Documentation: result properties are documented as `pandas.Series` (were "DataFrame"), the available-capacity snippet in the generator guide no longer exceeds its generator's nominal power, the portfolio guide no longer lists a `Battery` as an asset, the README output shows the new series name, and the `odys.parameters` API pages moved out of `odys.optimization` to their own section.
+- Documentation: the battery dispatch figure's hover now shows each asset's own power; before, it showed the top of each stacked bar, so values at a timestep did not add up to the load. The state of charge is labelled as a percentage (was "MWh").
+- Documentation: the EV fleet example no longer names the exact hour ev_2 and ev_3 charge, since any 5 $/MWh hour is equally optimal and the solver's choice changed (t21 → t23). Example figures are no longer committed; they are generated on every docs build, which also checks the facts the battery and EV example pages state.
 
 ### Known issues
 

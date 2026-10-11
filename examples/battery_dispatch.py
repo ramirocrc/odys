@@ -62,6 +62,9 @@ from odys import (
 
 logger = logging.getLogger(__name__)
 
+SOLAR_PROFILE: list[float] = [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0]
+LOAD_PROFILE: list[float] = 24 * [70.0]
+
 
 def run_battery_dispatch() -> OptimalDispatchResults:
     """Run the battery dispatch example and return the optimization results."""
@@ -88,11 +91,8 @@ def run_battery_dispatch() -> OptimalDispatchResults:
     scenario = Scenario(
         profiles=(
             AvailableCapacityProfile(generator=generator_1, values=24 * [100]),
-            AvailableCapacityProfile(
-                generator=generator_2,
-                values=[0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
-            ),
-            LoadProfile(load=load, values=24 * [70]),
+            AvailableCapacityProfile(generator=generator_2, values=SOLAR_PROFILE),
+            LoadProfile(load=load, values=LOAD_PROFILE),
         ),
     )
     energy_system = EnergySystem(
