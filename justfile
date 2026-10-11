@@ -53,7 +53,7 @@ publish:
 
 build-and-publish: build publish
 
-docs:
+docs: generate-plots
     @echo "🚀 Serving docs"
     uv run --locked zensical serve
 
