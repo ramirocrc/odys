@@ -43,7 +43,7 @@ The dashed lines show all possible charger-to-EV connections. The optimizer dyna
 
 ### 1. Define the EV fleet and chargers
 
-Each EV is an [ElectricVehicle](../api/domain/entities/electric_vehicle.md) with trip schedules and optional V2G capability. Trips consume energy and make the vehicle unavailable for charging during the trip window. The key fields for ev_1:
+Each EV is an [ElectricVehicle](../developer/api/domain/entities/electric_vehicle.md) with trip schedules and optional V2G capability. Trips consume energy and make the vehicle unavailable for charging during the trip window. The key fields for ev_1:
 
 ```python
 from datetime import timedelta
@@ -96,7 +96,7 @@ ev_1 = ElectricVehicle(
 )
 ```
 
-`max_discharge_power` is what enables V2G. Without it, the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip. The [Charger](../api/domain/entities/charger.md) objects are plain power limits:
+`max_discharge_power` is what enables V2G. Without it, the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip. The [Charger](../developer/api/domain/entities/charger.md) objects are plain power limits:
 
 ```python
 charger_dc = Charger(name="charger_dc", max_power=0.050)  # 50 kW
