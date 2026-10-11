@@ -1,14 +1,14 @@
 ---
-icon: lucide/network
+icon: lucide/boxes
 ---
 
-# Architecture model
+# Data model
 
-This page describes how odys is put together: the package layers, the `optimize()` pipeline, and the classes of each layer. It is meant for contributors; users only need the [user guide](../user_guide/energy_system.md).
+The classes of each layer and how they relate. Each section links to the API reference of its packages; the [overview](index.md) shows how the layers depend on each other, and [sequence diagrams](sequences.md) shows how they interact during `optimize()`.
 
 ## Domain
 
-The user-facing layer: pydantic models validated at construction. It imports nothing else from `odys` and no numerical library.
+The user-facing layer: pydantic models validated at construction. It imports nothing else from `odys` and no numerical library. API reference: [`odys.domain`](api/domain/index.md).
 
 ```mermaid
 classDiagram
@@ -222,51 +222,9 @@ classDiagram
     Objective *-- "1..*" ObjectiveTerm
 ```
 
-## Package layers
-
-Packages import only lower layers. import-linter enforces this (`[tool.importlinter]` in `pyproject.toml`, part of `just check`), together with the forbidden imports drawn as dashed lines.
-
-```mermaid
-flowchart TD
-    ES["energy_system<br/>(composition root)"] --> OPT["optimization<br/>(formulations, objective terms, model builder)"]
-    OPT --> RES["results<br/>(Dispatch views, OptimalDispatchResults)"]
-    RES --> SOL["solvers<br/>(SolverConfig, solve, SolveOutcome)"]
-    SOL --> PAR["parameters<br/>(ModelContext, Coordinates, EntityArrays)"]
-    PAR --> DOM["domain<br/>(entities, profiles, scenarios, objective)"]
-    OPT -. "never imports" .-> SOL
-    RES -. "never imports" .-> LP["linopy"]
-    SOL -. "never imports" .-> PAR
-    DOM -. "never imports" .-> NUM["linopy, xarray, numpy, pandas"]
-```
-
-## Pipeline
-
-`EnergySystem.optimize()` is three calls: build the problem, build and solve the model, wrap the outcome.
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant ES as EnergySystem
-    participant OP as OptimizationProblem
-    participant MB as build_model
-    participant S as solve
-    participant R as OptimalDispatchResults
-    User->>ES: optimize(solver_config)
-    ES->>OP: assemble(entities, horizon, scenario_set, condition_set, objective)
-    OP-->>ES: problem (context, formulations, objective terms)
-    ES->>MB: build_model(problem)
-    MB-->>ES: linopy.Model
-    ES->>S: solve(model, solver_config)
-    S-->>ES: SolveOutcome
-    ES->>R: OptimalDispatchResults(outcome, problem.dispatches)
-    R->>OP: dispatches(solution), only when outcome.has_solution
-    OP-->>R: one Dispatch per formulation
-    R-->>User: results
-```
-
 ## Parameters and optimization
 
-`OptimizationProblem.assemble` builds one `ModelContext` and every formulation whose entity type is present (`FORMULATIONS` order), then every objective term the objective holds (`OBJECTIVE_TERM_FORMULATIONS`). Each formulation vectorizes its entities into its `EntityArrays` subclass with `vectorize`, reads scenario profiles (`context.profiles`) and the run's initial and final conditions (`context.conditions`) through the context, owns its variables, constraints, power injection, profit and results view, and names its own entity axis. `build_model` adds variables, every `ConstraintGroup`'s constraints and `PowerBalance`, and maximizes the sum of the objective-term expressions.
+`OptimizationProblem.assemble` builds one `ModelContext` and every formulation whose entity type is present (`FORMULATIONS` order), then every objective term the objective holds (`OBJECTIVE_TERM_FORMULATIONS`). Each formulation vectorizes its entities into its `EntityArrays` subclass with `vectorize`, reads scenario profiles (`context.profiles`) and the run's initial and final conditions (`context.conditions`) through the context, owns its variables, constraints, power injection, profit and results view, and names its own entity axis. `build_model` adds variables, every `ConstraintGroup`'s constraints and `PowerBalance`, and maximizes the sum of the objective-term expressions. API reference: [`odys.parameters`](api/parameters/index.md), [`odys.optimization`](api/optimization/index.md).
 
 ```mermaid
 classDiagram
@@ -391,7 +349,7 @@ classDiagram
 
 ## Solving and results
 
-`solve` takes a `linopy.Model` and returns a `SolveOutcome` with an odys-owned status. Whether a solution exists is `has_solution`, not the status: linopy reports `ok` for a time limit reached before the first feasible solution. `OptimalDispatchResults` builds the dispatches from the outcome only when there is a solution, squeezes a single scenario once, and serves one typed property per entity type.
+`solve` takes a `linopy.Model` and returns a `SolveOutcome` with an odys-owned status. Whether a solution exists is `has_solution`, not the status: linopy reports `ok` for a time limit reached before the first feasible solution. `OptimalDispatchResults` builds the dispatches from the outcome only when there is a solution, squeezes a single scenario once, and serves one typed property per entity type. API reference: [`odys.solvers`](api/solvers/index.md), [`odys.results`](api/results/index.md), [`odys.energy_system`](api/energy_system.md).
 
 ```mermaid
 classDiagram
@@ -495,22 +453,3 @@ classDiagram
     Dispatch <|-- MarketDispatch
     Dispatch <|-- FlexibleLoadDispatch
 ```
-
-## Keeping this page current
-
-`tests/test_architecture_docs.py` compares the diagrams on this page, and the diagram in the [user guide](../user_guide/energy_system.md), with the code in `src/odys`, so `just test` fails when they drift apart. For the class diagrams it checks that:
-
-- every **public** class (`odys.__all__`) and every **core model** class appears in a diagram. Core classes are the extension-point bases (`EnergyEntity`, `Profile`, `ObjectiveTerm`, `Formulation`, `ObjectiveTermFormulation`, `Dispatch`) with every class derived from them, plus the pipeline classes listed in the test (`ModelContext`, `OptimizationProblem`, `SolveOutcome`, …). Exceptions, typed variables objects, concrete `*Arrays` classes and solver option translators are left out;
-- every class a diagram names is defined in `src/odys`;
-- every `Base <|-- Subclass` edge is real inheritance;
-- every `+member` listed in a class body exists on that class or one of its bases.
-
-For the pipeline sequence diagram it checks that:
-
-- every `participant` is a class or a module-level function in `src/odys` (`actor` marks an outside caller, such as `User`, that is not checked);
-- every `A->>B: name(args)` call is a method of `B`, its constructor (`name` is the class name) or, when `B` is a function, the function itself;
-- every argument written as a plain name is a parameter of the callee. Expressions such as `problem.dispatches` and replies (`-->>`) are prose.
-
-For the user-guide diagram it checks that every node names a public class, and that the `Assets` subgraph lists every concrete `Asset` subclass, so a new asset type must be added there.
-
-When the test fails, update the diagram, not the test: add the new class (a new asset type adds its entity, formulation and dispatch), or rename or remove the stale one. Keep members to the names a reader needs; instance attributes set in `__init__` are not visible to the check, so list them in the prose instead.
