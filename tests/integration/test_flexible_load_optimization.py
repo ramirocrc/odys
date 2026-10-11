@@ -238,10 +238,12 @@ def test_flexible_load_with_generator_capacity_constraint() -> None:
     )
 
     fixed_load = FixedLoad(name="fixed_load")
+    max_increase = 30.0
+    max_decrease = 40.0
     flexible_load = FlexibleLoad(
         name="flex_load",
-        max_increase=30.0,
-        max_decrease=40.0,
+        max_increase=max_increase,
+        max_decrease=max_decrease,
         value_of_consumption=100.0,
     )
 
@@ -270,8 +272,8 @@ def test_flexible_load_with_generator_capacity_constraint() -> None:
     for t, expected in enumerate(expected_adjustment):
         assert abs(load_adjustment.iloc[t] - expected) < TOLERANCE, f"Unexpected load_adjustment at time {t}"
 
-    assert load_adjustment.min() >= -flexible_load.max_decrease
-    assert load_adjustment.max() <= flexible_load.max_increase
+    assert load_adjustment.min() >= -max_decrease
+    assert load_adjustment.max() <= max_increase
 
     solution = results.to_dataset()
     gen_power = solution["generator_power"]
@@ -624,3 +626,64 @@ def test_multiple_flexible_loads_different_value_of_consumption() -> None:
 
     assert high_adj.sum().item() > 0
     assert low_adj.sum().item() < 0
+
+
+def test_flexible_load_absolute_bounds_with_varying_base_profile() -> None:
+    """Test that min_load/max_load bound actual consumption regardless of the base profile."""
+    min_load = 20.0
+    max_load = 100.0
+    generator = Generator(name="gen1", nominal_power=200.0, variable_cost=50.0)
+    # Absolute bounds only, e.g. a compressor that runs between 20 and 100 MW
+    flexible_load = FlexibleLoad(name="compressor", min_load=min_load, max_load=max_load, value_of_consumption=40.0)
+    market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
+
+    # Price 10 < voc 40: buying to consume more is profitable -> run at max_load
+    # Price 90 > voc 40: freed energy is worth more sold -> run at min_load
+    system = EnergySystem(
+        portfolio=AssetPortfolio([generator, flexible_load]),
+        markets=market,
+        timestep=timedelta(hours=1),
+        number_of_steps=3,
+        scenarios=Scenario(
+            profiles=(
+                LoadProfile(load=flexible_load, values=[50.0, 70.0, 40.0]),
+                PriceProfile(market=market, values=[10.0, 90.0, 10.0]),
+            ),
+        ),
+    )
+
+    results = system.optimize()
+
+    actual_load = results.flexible_loads.actual_load.to_numpy()
+    assert actual_load == pytest.approx([max_load, min_load, max_load], abs=TOLERANCE)
+
+
+def test_flexible_load_absolute_bound_overrides_relative_bound() -> None:
+    """Test that min_load takes precedence over max_decrease when both are set."""
+    generator = Generator(name="gen1", nominal_power=200.0, variable_cost=50.0)
+    # base - max_decrease would be 70, but min_load = 90 must win
+    flexible_load = FlexibleLoad(
+        name="flex_load",
+        max_increase=MAX_INCREASE,
+        max_decrease=MAX_DECREASE,
+        min_load=90.0,
+        value_of_consumption=30.0,
+    )
+    market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
+
+    system = EnergySystem(
+        portfolio=AssetPortfolio([generator, flexible_load]),
+        markets=market,
+        timestep=timedelta(hours=1),
+        number_of_steps=3,
+        scenarios=Scenario(
+            profiles=(
+                LoadProfile(load=flexible_load, values=[100.0, 100.0, 100.0]),
+                PriceProfile(market=market, values=[80.0, 80.0, 80.0]),
+            ),
+        ),
+    )
+
+    results = system.optimize()
+
+    assert results.flexible_loads.actual_load.to_numpy() == pytest.approx([90.0] * 3, abs=TOLERANCE)
