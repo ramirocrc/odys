@@ -12,6 +12,8 @@ from odys import (
     Battery,
     LoadProfile,
     Scenario,
+    StorageFinalState,
+    StorageInitialState,
 )
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
@@ -24,6 +26,9 @@ from odys.optimization.problem import OptimizationProblem
 
 logger = logging.getLogger(__name__)
 
+SOC_START = 0.25
+SOC_END = 0.5
+
 
 @pytest.fixture
 def storage1() -> StationaryStorage:
@@ -35,12 +40,20 @@ def storage1() -> StationaryStorage:
             capacity=100.0,
             efficiency_charging=0.9,
             efficiency_discharging=0.8,
-            soc_start=0.25,
-            soc_end=0.5,
             soc_min=0.1,
             soc_max=0.9,
         ),
     )
+
+
+@pytest.fixture
+def storage1_initial_state(storage1: StationaryStorage) -> StorageInitialState:
+    return StorageInitialState(storage=storage1, soc=SOC_START)
+
+
+@pytest.fixture
+def storage1_final_state(storage1: StationaryStorage) -> StorageFinalState:
+    return StorageFinalState(storage=storage1, soc=SOC_END)
 
 
 @pytest.fixture
@@ -58,12 +71,16 @@ def energy_system_sample(
     asset_portfolio_sample: AssetPortfolio,
     demand_profile_sample: list[float],
     load1: FixedLoad,
+    storage1_initial_state: StorageInitialState,
+    storage1_final_state: StorageFinalState,
 ) -> EnergySystem:
     return EnergySystem(
         portfolio=asset_portfolio_sample,
         number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),
         scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile_sample),)),
+        initial_conditions=(storage1_initial_state,),
+        final_conditions=(storage1_final_state,),
     )
 
 
@@ -140,7 +157,7 @@ class TestStationaryStorageFormulationConstraints:
 
         storage_soc = self.linopy_model.variables["stationary_storage_soc"]
         soc_end = storage_soc.sel(time=str(self.time_index[-1]))
-        expected_expr = soc_end == self.storage1.battery.soc_end
+        expected_expr = soc_end == SOC_END
 
         assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
 
@@ -160,7 +177,7 @@ class TestStationaryStorageFormulationConstraints:
         storage_discharge_t = storage_discharge.sel(time=str(t0))
 
         storage_soc_start_array = xr.DataArray(
-            [[self.storage1.battery.soc_start]],  # [scenarios, storages]
+            [[SOC_START]],  # [scenarios, storages]
             coords={
                 "scenario": ["base"],
                 "stationary_storage": [self.storage1.name],
@@ -215,12 +232,14 @@ class TestStationaryStorageConstraintsSubHourlyTimestep:
         asset_portfolio_sample: AssetPortfolio,
         demand_profile_sample: list[float],
         load1: FixedLoad,
+        storage1_initial_state: StorageInitialState,
     ) -> EnergySystem:
         return EnergySystem(
             portfolio=asset_portfolio_sample,
             number_of_steps=len(demand_profile_sample),
             timestep=timedelta(minutes=15),
             scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile_sample),)),
+            initial_conditions=(storage1_initial_state,),
         )
 
     @pytest.fixture
@@ -291,7 +310,7 @@ class TestStationaryStorageConstraintsSubHourlyTimestep:
         discharge_t0 = storage_discharge.sel(time=str(t0))
 
         soc_start_array = xr.DataArray(
-            [[storage1.battery.soc_start]],
+            [[SOC_START]],
             coords={
                 "scenario": ["base"],
                 "stationary_storage": [storage1.name],
@@ -308,18 +327,19 @@ class TestStationaryStorageConstraintsSubHourlyTimestep:
 
 
 class TestStorageSocEndOptional:
-    """Verify the soc_end constraint only covers storages that define a final SOC target."""
+    """Verify the soc_end constraint only covers storages that have a final state of charge."""
 
     @pytest.fixture
     def storage_without_soc_end(self) -> StationaryStorage:
         return StationaryStorage(
             name="batt_free_end",
-            battery=Battery(max_charge_power=200.0, max_discharge_power=200.0, capacity=100.0, soc_start=0.5),
+            battery=Battery(max_charge_power=200.0, max_discharge_power=200.0, capacity=100.0),
         )
 
     def _build_linopy_model(
         self,
         storages: list[StationaryStorage],
+        final_states: tuple[StorageFinalState, ...],
         generator1: Generator,
         load1: FixedLoad,
         demand_profile_sample: list[float],
@@ -329,6 +349,8 @@ class TestStorageSocEndOptional:
             number_of_steps=len(demand_profile_sample),
             timestep=timedelta(hours=1),
             scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile_sample),)),
+            initial_conditions=tuple(StorageInitialState(storage=storage, soc=SOC_START) for storage in storages),
+            final_conditions=final_states,
         )
         return build_model(energy_system.build_problem())
 
@@ -342,6 +364,7 @@ class TestStorageSocEndOptional:
     ) -> None:
         linopy_model = self._build_linopy_model(
             [storage1, storage_without_soc_end],
+            (StorageFinalState(storage=storage1, soc=SOC_END),),
             generator1,
             load1,
             demand_profile_sample,
@@ -356,7 +379,7 @@ class TestStorageSocEndOptional:
             time=last_time,
             stationary_storage=[storage1.name],
         )
-        expected_expr = soc_last == storage1.battery.soc_end
+        expected_expr = soc_last == SOC_END
 
         assert_conequal(expected_expr, actual_constraint.lhs == actual_constraint.rhs)
 
@@ -369,6 +392,7 @@ class TestStorageSocEndOptional:
     ) -> None:
         linopy_model = self._build_linopy_model(
             [storage_without_soc_end],
+            (),
             generator1,
             load1,
             demand_profile_sample,

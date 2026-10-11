@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
+from odys.domain.conditions import ConditionSet, GeneratorInitialState
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.exceptions import OdysError
@@ -25,6 +26,7 @@ FIRST_LOAD = (10.0, 20.0, 30.0)
 SECOND_LOAD = (1.0, 2.0, 3.0)
 CAPACITY = (40.0, 50.0, 60.0)
 NOMINAL_POWER = 100.0
+INITIAL_POWER = 40.0
 
 FIRST = FixedLoad(name="load_a")
 SECOND = FixedLoad(name="load_b")
@@ -73,8 +75,8 @@ def test_context_probabilities(context: ModelContext) -> None:
     xr.testing.assert_allclose(context.probabilities, expected)
 
 
-def test_context_indexes_only_scenario_and_time() -> None:
-    assert set(ModelContext.model_fields) == {"horizon", "scenario_set"}
+def test_context_holds_only_the_horizon_scenarios_and_conditions() -> None:
+    assert set(ModelContext.model_fields) == {"horizon", "scenario_set", "condition_set"}
 
 
 def test_context_profiles_follow_entity_order_not_profile_order(context: ModelContext) -> None:
@@ -122,3 +124,44 @@ def test_context_variable_coords_are_scenario_time_then_entity_dimensions(contex
     assert list(coords) == ["scenario", "time", "generator"]
     assert coords["generator"] == ["gen"]
     assert coords["time"] == ["0", "1", "2"]
+
+
+def _context_with_conditions(condition_set: ConditionSet) -> ModelContext:
+    return ModelContext(
+        horizon=Horizon(timestep=HALF_HOUR, number_of_steps=NUMBER_OF_STEPS),
+        scenario_set=ScenarioSet(scenarios=(Scenario(),)),
+        condition_set=condition_set,
+    )
+
+
+def test_context_conditions_default_to_an_empty_condition_set() -> None:
+    assert _context(Scenario()).condition_set == ConditionSet()
+
+
+def test_context_conditions_read_each_entity_value_or_the_default() -> None:
+    other = GENERATOR.model_copy(update={"name": "other"})
+    context = _context_with_conditions(
+        ConditionSet(initial=(GeneratorInitialState(generator=GENERATOR, power=INITIAL_POWER),)),
+    )
+
+    values = context.conditions(
+        GeneratorInitialState,
+        [other, GENERATOR],
+        Coordinates.of_entities(GENERATOR_DIMENSION, [other, GENERATOR]),
+        lambda state: state.power,
+        default=np.nan,
+    )
+
+    assert values.dims == (GENERATOR_DIMENSION,)
+    assert bool(values.sel(generator="other").isnull())
+    assert values.sel(generator="gen").item() == pytest.approx(INITIAL_POWER)
+
+
+def test_context_conditions_without_default_raise_for_missing_condition() -> None:
+    with pytest.raises(OdysError, match="There is no GeneratorInitialState for 'gen'"):
+        _context_with_conditions(ConditionSet()).conditions(
+            GeneratorInitialState,
+            [GENERATOR],
+            GENERATOR_COORDINATES,
+            lambda state: state.power,
+        )

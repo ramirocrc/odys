@@ -7,6 +7,7 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal
 
+from odys.domain.conditions import StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
@@ -21,21 +22,23 @@ from odys.optimization.model.model_builder import build_model
 
 logger = logging.getLogger(__name__)
 
+BATTERY1 = StationaryStorage(
+    name="batt1",
+    battery=Battery(
+        max_charge_power=200.0,
+        max_discharge_power=200.0,
+        capacity=100.0,
+        efficiency_charging=0.9,
+        efficiency_discharging=0.8,
+    ),
+)
+BATTERY1_INITIAL_STATE = StorageInitialState(storage=BATTERY1, soc=0.25)
+BATTERY1_FINAL_STATE = StorageFinalState(storage=BATTERY1, soc=0.5)
+
 
 @pytest.fixture
 def battery1() -> StationaryStorage:
-    return StationaryStorage(
-        name="batt1",
-        battery=Battery(
-            max_charge_power=200.0,
-            max_discharge_power=200.0,
-            capacity=100.0,
-            efficiency_charging=0.9,
-            efficiency_discharging=0.8,
-            soc_start=0.25,
-            soc_end=0.5,
-        ),
-    )
+    return BATTERY1
 
 
 @pytest.fixture
@@ -65,6 +68,8 @@ def energy_system_sample(
                 LoadProfile(load=load1, values=demand_profile_sample),
             ),
         ),
+        initial_conditions=(BATTERY1_INITIAL_STATE,),
+        final_conditions=(BATTERY1_FINAL_STATE,),
     )
 
 
@@ -108,6 +113,8 @@ def energy_system_with_multiple_scenarios(
         number_of_steps=len(demand_profile_sample),
         scenarios=scenarios,
         markets=(stage_fixed_market, other_market),
+        initial_conditions=(BATTERY1_INITIAL_STATE,),
+        final_conditions=(BATTERY1_FINAL_STATE,),
     )
 
 

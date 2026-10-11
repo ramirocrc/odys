@@ -4,6 +4,7 @@ import linopy
 import pytest
 import xarray as xr
 
+from odys.domain.conditions import StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
@@ -43,8 +44,6 @@ def energy_system_sample() -> EnergySystem:
             capacity=100.0,
             efficiency_charging=1,
             efficiency_discharging=1,
-            soc_start=1.0,
-            soc_end=0.5,
         ),
     )
     load_1 = FixedLoad(name="load_1")
@@ -56,6 +55,8 @@ def energy_system_sample() -> EnergySystem:
         number_of_steps=len(demand_profile),
         timestep=timedelta(minutes=30),
         scenarios=Scenario(profiles=(LoadProfile(load=load_1, values=demand_profile),)),
+        initial_conditions=(StorageInitialState(storage=battery_1, soc=1.0),),
+        final_conditions=(StorageFinalState(storage=battery_1, soc=0.5),),
     )
 
 
