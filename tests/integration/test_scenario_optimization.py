@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.conditions import ConditionSet, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
@@ -40,9 +41,15 @@ def battery() -> StationaryStorage:
             max_discharge_power=80.0,
             efficiency_charging=0.9,
             efficiency_discharging=0.9,
-            soc_start=0.5,
-            soc_end=0.5,
         ),
+    )
+
+
+@pytest.fixture
+def battery_conditions(battery: StationaryStorage) -> ConditionSet:
+    return ConditionSet(
+        initial=(StorageInitialState(storage=battery, soc=0.5),),
+        final=(StorageFinalState(storage=battery, soc=0.5),),
     )
 
 
@@ -103,12 +110,15 @@ def test_two_scenario_optimization_with_anticipativity(
     portfolio_with_battery: AssetPortfolio,
     scenarios: list[Scenario],
     demand_profile: list[float],
+    battery_conditions: ConditionSet,
 ) -> None:
     energy_system_anticipative = EnergySystem(
         portfolio=portfolio_with_battery,
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile),
         scenarios=scenarios,
+        initial_conditions=battery_conditions.initial,
+        final_conditions=battery_conditions.final,
     )
 
     result_anticipative = energy_system_anticipative.optimize()
@@ -121,12 +131,15 @@ def test_two_scenario_optimization_with_non_anticipativity(
     portfolio_with_battery: AssetPortfolio,
     scenarios: list[Scenario],
     demand_profile: list[float],
+    battery_conditions: ConditionSet,
 ) -> None:
     energy_system_non_anticipative = EnergySystem(
         portfolio=portfolio_with_battery,
         timestep=timedelta(hours=1),
         number_of_steps=len(demand_profile),
         scenarios=scenarios,
+        initial_conditions=battery_conditions.initial,
+        final_conditions=battery_conditions.final,
     )
 
     result_non_anticipative = energy_system_non_anticipative.optimize()

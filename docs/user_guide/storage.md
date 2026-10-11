@@ -6,7 +6,9 @@ icon: fontawesome/solid/battery-three-quarters
 
 A `StationaryStorage` models a stationary energy storage system in your portfolio. The optimizer decides when to charge and discharge it to minimize costs (or maximize revenue).
 
-A storage asset *has* a `Battery`: the asset is the site you own, and the battery describes its physics (capacity, power limits, efficiencies, state of charge). An [ElectricVehicle](electric_vehicle.md) uses the same `Battery`, so everything on this page about batteries applies to EVs too.
+A storage asset *has* a `Battery`: the asset is the site you own, and the battery describes its physics (capacity, power limits, efficiencies, state of charge limits). An [ElectricVehicle](electric_vehicle.md) uses the same `Battery`, so everything on this page about batteries applies to EVs too.
+
+Where the storage starts and ends is not part of the battery: it belongs to the run, so you pass it to the `EnergySystem` as a `StorageInitialState` and, optionally, a `StorageFinalState`.
 
 See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
 
@@ -15,7 +17,7 @@ See [Mathematical notation](mathematical_notation.md) for the full list of symbo
 Let's add a battery to the portfolio.
 
 ```python
-from odys import Battery, StationaryStorage
+from odys import Battery, StationaryStorage, StorageInitialState
 
 storage = StationaryStorage(
     name="bess",
@@ -25,10 +27,12 @@ storage = StationaryStorage(
         max_discharge_power=50.0,  # MW discharge limit
         efficiency_charging=0.95,
         efficiency_discharging=0.95,
-        soc_start=0.5,  # starts at 50%
     ),
 )
+starts_half_full = StorageInitialState(storage=storage, soc=0.5)
 ```
+
+Pass `starts_half_full` to the energy system with `EnergySystem(..., initial_conditions=(starts_half_full,))`. Every storage needs an initial state: its state of charge carries over from one step to the next, so odys never guesses where it starts.
 
 ## Fields
 
@@ -48,8 +52,6 @@ storage = StationaryStorage(
 | `max_discharge_power`    | `float` | Yes      | -       | Maximum discharging power (MW). Use `0` for charge-only assets                   |
 | `efficiency_charging`    | `float` | No       | `1.0`   | Charging efficiency, between 0 and 1                                             |
 | `efficiency_discharging` | `float` | No       | `1.0`   | Discharging efficiency, between 0 and 1                                          |
-| `soc_start`              | `float` | Yes      | -       | Initial state of charge, as a fraction of capacity (0-1)                         |
-| `soc_end`                | `float` | No       | `None`  | Required final state of charge (0-1). If `None`, the optimizer is free to choose |
 | `soc_min`                | `float` | No       | `0.0`   | Minimum allowed state of charge (0-1)                                            |
 | `soc_max`                | `float` | No       | `1.0`   | Maximum allowed state of charge (0-1)                                            |
 | `degradation_cost`       | `float` | No       | `0.0`   | Cost per MWh cycled (charged or discharged), included in the objective          |
@@ -57,13 +59,15 @@ storage = StationaryStorage(
 
 ## State of charge (SOC)
 
-The SOC fields control how the storage's energy level behaves:
+Four values control how the storage's energy level behaves:
 
-- `soc_start` is where the storage begins. A value of `0.5` means it starts at 50% of its capacity.
-- `soc_end` constrains where the storage must end up. This is useful when you want to ensure the storage isn't fully drained at the end of the optimization horizon.
-- `soc_min` and `soc_max` set the operating range. For example, if you don't want to go below 20% or above 90%:
+- The `StorageInitialState` sets where the storage begins. `soc=0.5` means it starts at 50% of its capacity.
+- An optional `StorageFinalState` sets where the storage must end up. This is useful when you don't want the storage drained at the end of the horizon, so the next run can use it. Without one, the optimizer is free to choose.
+- The battery's `soc_min` and `soc_max` set the operating range. For example, if you don't want to go below 20% or above 90%:
 
 ```python
+from odys import StorageFinalState
+
 storage = StationaryStorage(
     name="bess",
     battery=Battery(
@@ -72,17 +76,17 @@ storage = StationaryStorage(
         max_discharge_power=50.0,
         efficiency_charging=0.90,
         efficiency_discharging=0.85,
-        soc_start=0.5,
-        soc_end=0.5,
         soc_min=0.2,
         soc_max=0.9,
     ),
 )
+initial_conditions = (StorageInitialState(storage=storage, soc=0.5),)
+final_conditions = (StorageFinalState(storage=storage, soc=0.5),)
 ```
 
 !!! note
 
-    `soc_start` and `soc_end` must fall within the `[soc_min, soc_max]` range. Pydantic validation will catch this if you get it wrong.
+    The initial and final state of charge must fall within the battery's `[soc_min, soc_max]` range. Creating the state raises an `OdysValidationError` if it doesn't.
 
 The SOC evolution is:
 
@@ -96,12 +100,18 @@ SOC_{b,t} = SOC_{b,t-1} (1 - \delta_b \Delta t)
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,t}
 $$
 
-for $t > 0$, where $\delta_b$ is the self-discharge rate. At the first timestep, the implementation applies:
+for $t > 0$, where $\delta_b$ is the self-discharge rate. At the first timestep, the implementation starts from the initial state of charge $SOC^{start}_b$:
 
 $$
 SOC_{b,0} = SOC^{start}_b
 + \eta^{ch}_b \frac{\Delta t}{E_b} p^{ch}_{b,0}
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,0}
+$$
+
+When the storage has a final state, its state of charge at the last step is fixed:
+
+$$
+SOC_{b,T-1} = SOC^{end}_b
 $$
 
 with bounds:
@@ -157,7 +167,6 @@ storage = StationaryStorage(
         max_discharge_power=50.0,
         efficiency_charging=0.95,
         efficiency_discharging=0.95,
-        soc_start=0.5,
         degradation_cost=5.0,  # 5 currency units per MWh cycled
     ),
 )

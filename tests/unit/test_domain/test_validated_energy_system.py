@@ -10,6 +10,7 @@ from datetime import timedelta
 import pytest
 from pydantic import ValidationError
 
+from odys.domain.conditions import GeneratorFinalState, GeneratorInitialState, StorageFinalState, StorageInitialState
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
@@ -24,6 +25,20 @@ from odys.energy_system import EnergySystem
 
 OVERWEIGHTED_SCENARIO_PROBABILITY = 0.7
 HALF_PROBABILITY = 0.5
+SOC_START = 0.5
+SOC_END = 0.4
+
+TESTING_BATTERY = StationaryStorage(
+    name="test_battery",
+    battery=Battery(
+        capacity=50.0,
+        max_charge_power=25.0,
+        max_discharge_power=25.0,
+        efficiency_charging=0.9,
+        efficiency_discharging=0.9,
+    ),
+)
+TESTING_BATTERY_STATE = StorageInitialState(storage=TESTING_BATTERY, soc=SOC_START)
 
 
 @pytest.fixture
@@ -37,17 +52,7 @@ def testing_generator() -> Generator:
 
 @pytest.fixture
 def testing_battery() -> StationaryStorage:
-    return StationaryStorage(
-        name="test_battery",
-        battery=Battery(
-            capacity=50.0,
-            max_charge_power=25.0,
-            max_discharge_power=25.0,
-            efficiency_charging=0.9,
-            efficiency_discharging=0.9,
-            soc_start=0.5,
-        ),
-    )
+    return TESTING_BATTERY
 
 
 @pytest.fixture
@@ -83,6 +88,7 @@ def test_energy_system_creation_with_valid_inputs(
     """Test that EnergySystem can be created with valid inputs."""
     EnergySystem(
         portfolio=testing_portfolio,
+        initial_conditions=(TESTING_BATTERY_STATE,),
         number_of_steps=len(valid_demand_profile),
         timestep=valid_timestep,
         scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=valid_demand_profile),)),
@@ -102,6 +108,7 @@ def test_validation_of_capacity_profile_lengths(
 
     energy_system = EnergySystem(
         portfolio=testing_portfolio,
+        initial_conditions=(TESTING_BATTERY_STATE,),
         number_of_steps=len(valid_demand_profile),
         timestep=valid_timestep,
         scenarios=Scenario(profiles=(valid_capacity, demand)),
@@ -117,6 +124,7 @@ def test_validation_of_capacity_profile_lengths(
     ):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=len(valid_demand_profile),
             timestep=valid_timestep,
             scenarios=Scenario(profiles=(invalid_capacity, demand)),
@@ -139,6 +147,7 @@ def test_validation_that_capacity_profiles_only_for_generators(
     ):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=len(valid_demand_profile),
             timestep=timedelta(hours=1),
             scenarios=Scenario(
@@ -162,6 +171,7 @@ def test_validation_that_system_can_meet_power_demand(
     with pytest.raises(OdysValidationError, match="Infeasible problem"):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=len(excessive_demand),
             timestep=valid_timestep,
             scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=excessive_demand),)),
@@ -190,7 +200,6 @@ def portfolio_without_generators() -> AssetPortfolio:
                     max_discharge_power=25.0,
                     efficiency_charging=0.9,
                     efficiency_discharging=0.9,
-                    soc_start=0.5,
                 ),
             ),
             FixedLoad(name="load"),
@@ -211,6 +220,7 @@ def test_load_validation_missing_load_profiles(testing_portfolio: AssetPortfolio
     ):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=4,
             timestep=timedelta(hours=1),
             scenarios=Scenario(),
@@ -240,6 +250,7 @@ def test_load_validation_extra_load_profiles(testing_portfolio: AssetPortfolio, 
     ):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=4,
             timestep=timedelta(hours=1),
             scenarios=Scenario(
@@ -276,6 +287,7 @@ def test_market_validation_missing_market_prices(
     with pytest.raises(OdysValidationError, match=r"Scenario 'base' is missing a PriceProfile for: \['"):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=4,
             timestep=timedelta(hours=1),
             markets=testing_market,
@@ -293,6 +305,7 @@ def test_market_validation_missing_specific_market_prices(
     with pytest.raises(OdysValidationError, match=r"Scenario.*is missing a PriceProfile for: \['other_market'\]"):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=4,
             timestep=timedelta(hours=1),
             markets=[testing_market, other_market],
@@ -317,6 +330,7 @@ def test_market_validation_extra_market_prices(
     ):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=4,
             timestep=timedelta(hours=1),
             markets=testing_market,
@@ -358,6 +372,7 @@ def test_load_profile_length_validation(testing_portfolio: AssetPortfolio, testi
     ):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=4,
             timestep=timedelta(hours=1),
             scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=[80.0, 120.0]),)),
@@ -373,6 +388,7 @@ def test_capacity_profile_value_validation(
     with pytest.raises(OdysValidationError, match=r"Available capacity value.*is invalid"):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=4,
             timestep=timedelta(hours=1),
             scenarios=Scenario(
@@ -413,6 +429,7 @@ def test_stochastic_scenarios_not_summing_to_one_raise_for_any_sequence_type(
     with pytest.raises(OdysValidationError, match="Scenarios should add up to 1"):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=len(valid_demand_profile),
             timestep=timedelta(hours=1),
             scenarios=scenarios,
@@ -437,6 +454,7 @@ def test_stochastic_scenarios_with_duplicate_names_raise_for_any_sequence_type(
     with pytest.raises(OdysValidationError, match="must have a unique name"):
         EnergySystem(
             portfolio=testing_portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=len(valid_demand_profile),
             timestep=timedelta(hours=1),
             scenarios=scenarios,
@@ -462,6 +480,7 @@ def test_energy_system_rejects_asset_types_the_optimizer_cannot_model(
     with pytest.raises(OdysValidationError, match=rf"not supported.*'{unsupported_asset.name}'"):
         EnergySystem(
             portfolio=portfolio,
+            initial_conditions=(TESTING_BATTERY_STATE,),
             number_of_steps=len(valid_demand_profile),
             timestep=timedelta(hours=1),
             scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=valid_demand_profile),)),
@@ -482,6 +501,7 @@ def test_single_scenario_is_normalized_to_a_one_element_scenario_set(
     )
     energy_system = EnergySystem(
         portfolio=testing_portfolio,
+        initial_conditions=(TESTING_BATTERY_STATE,),
         number_of_steps=len(valid_demand_profile),
         timestep=timedelta(hours=1),
         markets=testing_market,
@@ -505,6 +525,7 @@ def test_scenario_sequence_is_normalized_to_a_scenario_set_in_order(
     ]
     energy_system = EnergySystem(
         portfolio=testing_portfolio,
+        initial_conditions=(TESTING_BATTERY_STATE,),
         number_of_steps=len(valid_demand_profile),
         timestep=timedelta(hours=1),
         scenarios=scenarios,
@@ -534,4 +555,108 @@ def test_energy_system_rejects_an_invalid_horizon(
             number_of_steps=number_of_steps,
             timestep=timestep,
             scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=[1.0, 1.0]),)),
+        )
+
+
+def test_energy_system_holds_its_conditions_as_a_condition_set(
+    testing_portfolio: AssetPortfolio,
+    testing_generator: Generator,
+    valid_demand_profile: list[float],
+    testing_load: FixedLoad,
+) -> None:
+    generator_state = GeneratorInitialState(generator=testing_generator, power=50.0)
+    final_states = (
+        StorageFinalState(storage=TESTING_BATTERY, soc=SOC_END),
+        GeneratorFinalState(generator=testing_generator, power=0.0),
+    )
+
+    energy_system = EnergySystem(
+        portfolio=testing_portfolio,
+        number_of_steps=len(valid_demand_profile),
+        timestep=timedelta(hours=1),
+        scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=valid_demand_profile),)),
+        initial_conditions=[TESTING_BATTERY_STATE, generator_state],
+        final_conditions=final_states,
+    )
+
+    assert energy_system.condition_set.initial == (TESTING_BATTERY_STATE, generator_state)
+    assert energy_system.condition_set.final == final_states
+
+
+def test_energy_system_rejects_a_storage_without_initial_state(
+    testing_portfolio: AssetPortfolio,
+    valid_demand_profile: list[float],
+    testing_load: FixedLoad,
+) -> None:
+    with pytest.raises(OdysValidationError, match="StationaryStorage 'test_battery' needs a StorageInitialState"):
+        EnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=len(valid_demand_profile),
+            timestep=timedelta(hours=1),
+            scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=valid_demand_profile),)),
+        )
+
+
+def test_energy_system_rejects_a_min_up_time_that_is_not_a_whole_number_of_steps(
+    testing_generator: Generator,
+    valid_demand_profile: list[float],
+    testing_load: FixedLoad,
+) -> None:
+    generator = testing_generator.model_copy(update={"min_up_time": timedelta(minutes=90)})
+
+    with pytest.raises(OdysValidationError, match="has min_up_time=1:30:00, which is not a whole number of timesteps"):
+        EnergySystem(
+            portfolio=AssetPortfolio(assets=[generator, testing_load]),
+            number_of_steps=len(valid_demand_profile),
+            timestep=timedelta(hours=1),
+            scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=valid_demand_profile),)),
+            initial_conditions=(GeneratorInitialState(generator=generator, power=0.0),),
+        )
+
+
+def test_energy_system_rejects_a_condition_for_an_asset_not_in_the_portfolio(
+    testing_portfolio: AssetPortfolio,
+    valid_demand_profile: list[float],
+    testing_load: FixedLoad,
+) -> None:
+    other_generator = Generator(name="other", nominal_power=100.0, variable_cost=50.0)
+
+    with pytest.raises(
+        OdysValidationError,
+        match="The GeneratorInitialState for 'other' references an asset that is not in the energy system",
+    ):
+        EnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=len(valid_demand_profile),
+            timestep=timedelta(hours=1),
+            scenarios=Scenario(profiles=(LoadProfile(load=testing_load, values=valid_demand_profile),)),
+            initial_conditions=(TESTING_BATTERY_STATE, GeneratorInitialState(generator=other_generator, power=0.0)),
+        )
+
+
+def test_energy_system_rejects_a_final_power_above_the_last_available_capacity(
+    testing_portfolio: AssetPortfolio,
+    testing_generator: Generator,
+    valid_demand_profile: list[float],
+    testing_load: FixedLoad,
+) -> None:
+    capacity = [100.0, 100.0, 100.0, 40.0]
+
+    with pytest.raises(
+        OdysValidationError,
+        match=r"Scenario 'base': GeneratorFinalState for generator 'test_generator' has power=50.0, "
+        r"above its available capacity \(40.0\) at the last timestep",
+    ):
+        EnergySystem(
+            portfolio=testing_portfolio,
+            number_of_steps=len(valid_demand_profile),
+            timestep=timedelta(hours=1),
+            scenarios=Scenario(
+                profiles=(
+                    LoadProfile(load=testing_load, values=valid_demand_profile),
+                    AvailableCapacityProfile(generator=testing_generator, values=capacity),
+                ),
+            ),
+            initial_conditions=(TESTING_BATTERY_STATE,),
+            final_conditions=(GeneratorFinalState(generator=testing_generator, power=50.0),),
         )

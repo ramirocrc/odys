@@ -48,7 +48,6 @@ def sample_battery() -> StationaryStorage:
             max_discharge_power=50.0,
             efficiency_charging=0.9,
             efficiency_discharging=0.85,
-            soc_start=0.5,
         ),
     )
 
@@ -126,12 +125,12 @@ def test_empty_portfolio_is_allowed() -> None:
 def test_assets_of_electric_vehicle_returns_only_electric_vehicles() -> None:
     ev1 = ElectricVehicle(
         name="ev1",
-        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.5),
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0),
         trips=(),
     )
     ev2 = ElectricVehicle(
         name="ev2",
-        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=11.0, soc_start=0.8),
+        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=11.0),
         trips=(),
     )
     gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
@@ -150,7 +149,7 @@ def test_assets_of_charger_returns_only_chargers() -> None:
     gen = Generator(name="gen1", nominal_power=100.0, variable_cost=20.0)
     ev = ElectricVehicle(
         name="ev1",
-        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.5),
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0),
         trips=(),
     )
     portfolio = AssetPortfolio(assets=[charger1, charger2, gen, ev])
@@ -195,7 +194,7 @@ def test_portfolio_keeps_all_assets_from_a_one_shot_iterable(
 def _electric_vehicle() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev1",
-        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.5),
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0),
         trips=(),
     )
 

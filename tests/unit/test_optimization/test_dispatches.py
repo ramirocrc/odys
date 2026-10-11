@@ -11,6 +11,8 @@ from odys import (
     Battery,
     Charger,
     ElectricVehicle,
+    ElectricVehicleFinalState,
+    ElectricVehicleInitialState,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
@@ -20,6 +22,7 @@ from odys import (
     PriceProfile,
     Scenario,
     StationaryStorage,
+    StorageInitialState,
 )
 from odys.optimization.formulations.charging import ChargingFormulation
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
@@ -46,6 +49,7 @@ PRICES = [30.0, 80.0, 50.0]
 EV_CAPACITY = 50.0
 EV_SOC_START = 0.5
 EV_SOC_END = 0.7
+STORAGE_SOC_START = 0.5
 EV_DEGRADATION_COST = 100.0
 EXPECTED_EV_CHARGED_ENERGY = (EV_SOC_END - EV_SOC_START) * EV_CAPACITY
 FLEXIBLE_ADJUSTMENT_LIMIT = 5.0
@@ -72,25 +76,25 @@ EXPECTED_SERIES: dict[type[Dispatch], tuple[str, ...]] = {
 
 @pytest.fixture(scope="module")
 def solved_problem() -> tuple[OptimizationProblem, xr.Dataset]:
+    storage = StationaryStorage(
+        name="storage",
+        battery=Battery(capacity=20.0, max_charge_power=10.0, max_discharge_power=10.0),
+    )
+    electric_vehicle = ElectricVehicle(
+        name="ev",
+        battery=Battery(
+            capacity=EV_CAPACITY,
+            max_charge_power=11.0,
+            max_discharge_power=11.0,
+            degradation_cost=EV_DEGRADATION_COST,
+        ),
+        trips=(),
+    )
     portfolio = AssetPortfolio(
         [
             Generator(name="gen", nominal_power=100.0, variable_cost=20.0),
-            StationaryStorage(
-                name="storage",
-                battery=Battery(capacity=20.0, max_charge_power=10.0, max_discharge_power=10.0, soc_start=0.5),
-            ),
-            ElectricVehicle(
-                name="ev",
-                battery=Battery(
-                    capacity=EV_CAPACITY,
-                    max_charge_power=11.0,
-                    max_discharge_power=11.0,
-                    soc_start=EV_SOC_START,
-                    soc_end=EV_SOC_END,
-                    degradation_cost=EV_DEGRADATION_COST,
-                ),
-                trips=(),
-            ),
+            storage,
+            electric_vehicle,
             Charger(name="charger", max_power=11.0),
             FIXED_LOAD,
             FLEXIBLE_LOAD,
@@ -108,6 +112,11 @@ def solved_problem() -> tuple[OptimizationProblem, xr.Dataset]:
                 PriceProfile(market=MARKET, values=PRICES),
             ),
         ),
+        initial_conditions=(
+            StorageInitialState(storage=storage, soc=STORAGE_SOC_START),
+            ElectricVehicleInitialState(vehicle=electric_vehicle, soc=EV_SOC_START),
+        ),
+        final_conditions=(ElectricVehicleFinalState(vehicle=electric_vehicle, soc=EV_SOC_END),),
     )
     problem = system.build_problem()
     outcome = solve(build_model(problem), SolverConfig())

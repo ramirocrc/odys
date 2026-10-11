@@ -41,11 +41,12 @@ class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
             context: The shared indexing of the problem.
         """
         super().__init__(electric_vehicles, context)
-        arrays = electric_vehicle_arrays(electric_vehicles, self.coordinates, context.time)
+        arrays = electric_vehicle_arrays(electric_vehicles, self.coordinates, context)
         self.trips: ElectricVehicleTripArrays = arrays.trips
         self.storage = StorageFormulation(
             self.coordinates,
             arrays.battery,
+            arrays.states,
             context,
             soc_drop=arrays.trips.trip_energy / arrays.battery.capacity,
         )
@@ -77,12 +78,12 @@ class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
 
     @constraint
     def _get_ev_soc_start_constraint(self) -> ModelConstraint:
-        """The SOC after the first step starts from `soc_start`, less the energy of a trip departing at t=0."""
+        """The SOC after the first step starts from the initial state of charge, less a trip departing at t=0."""
         return self.storage.soc_start_constraint(self.variables)
 
     @constraint
     def _get_ev_soc_end_constraint(self) -> list[ModelConstraint]:
-        """The SOC at the last step equals `soc_end`, where set."""
+        """The SOC at the last step equals the vehicle's final state of charge, where set."""
         return self.storage.soc_end_constraint(self.variables)
 
     @constraint

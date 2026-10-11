@@ -7,6 +7,7 @@ import pytest
 
 from odys import (
     Battery,
+    ElectricVehicleInitialState,
     LoadProfile,
     Scenario,
 )
@@ -21,12 +22,15 @@ from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormu
 from odys.optimization.problem import OptimizationProblem
 from odys.parameters.dimensions import ModelDimension
 
+EV1_SOC_START = 0.5
+EV2_SOC_START = 0.8
+
 
 @pytest.fixture
 def ev1() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev1",
-        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=11.0, soc_start=0.5),
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=11.0),
         trips=(),
     )
 
@@ -35,7 +39,7 @@ def ev1() -> ElectricVehicle:
 def ev2() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev2",
-        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=0.0, soc_start=0.8),
+        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=0.0),
         trips=(),
     )
 
@@ -68,12 +72,18 @@ def energy_system_with_chargers(
     asset_portfolio_with_chargers: AssetPortfolio,
     demand_profile_sample: list[float],
     load1: FixedLoad,
+    ev1: ElectricVehicle,
+    ev2: ElectricVehicle,
 ) -> EnergySystem:
     return EnergySystem(
         portfolio=asset_portfolio_with_chargers,
         number_of_steps=len(demand_profile_sample),
         timestep=timedelta(hours=1),
         scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile_sample),)),
+        initial_conditions=(
+            ElectricVehicleInitialState(vehicle=ev1, soc=EV1_SOC_START),
+            ElectricVehicleInitialState(vehicle=ev2, soc=EV2_SOC_START),
+        ),
     )
 
 

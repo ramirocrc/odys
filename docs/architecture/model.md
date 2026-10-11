@@ -41,8 +41,6 @@ classDiagram
         +max_discharge_power
         +efficiency_charging
         +efficiency_discharging
-        +soc_start
-        +soc_end
         +soc_min
         +soc_max
         +degradation_cost
@@ -89,6 +87,8 @@ classDiagram
         +timestep: timedelta
         +number_of_steps: int
         +hours_per_step: float
+        +is_whole_steps(duration) bool
+        +steps_in(duration) int
     }
     class OperatingConditions {
         <<value object>>
@@ -121,6 +121,50 @@ classDiagram
     class ScenarioSet {
         +scenarios: tuple~Scenario~
         +names
+    }
+    class Condition {
+        <<abstract>>
+        +entity_types: ClassVar
+        +entity: Asset
+    }
+    class InitialCondition {
+        <<abstract>>
+        +required_for(entity) str or None
+    }
+    class FinalCondition {
+        <<abstract>>
+    }
+    class GeneratorInitialState {
+        +generator: Generator
+        +power: float
+        +time_in_state: timedelta or None
+        +is_on: bool
+    }
+    class GeneratorFinalState {
+        +generator: Generator
+        +power: float
+    }
+    class StorageInitialState {
+        +storage: StationaryStorage
+        +soc: float
+    }
+    class StorageFinalState {
+        +storage: StationaryStorage
+        +soc: float
+    }
+    class ElectricVehicleInitialState {
+        +vehicle: ElectricVehicle
+        +soc: float
+    }
+    class ElectricVehicleFinalState {
+        +vehicle: ElectricVehicle
+        +soc: float
+    }
+    class ConditionSet {
+        +initial: tuple~InitialCondition~
+        +final: tuple~FinalCondition~
+        +conditions
+        +get(kind, entity)
     }
     class ObjectiveTerm {
         <<abstract>>
@@ -158,6 +202,21 @@ classDiagram
     Scenario *-- "0..*" Profile
     ScenarioSet *-- "1..*" Scenario
     OperatingConditions --> Horizon
+    Condition <|-- InitialCondition
+    Condition <|-- FinalCondition
+    InitialCondition <|-- GeneratorInitialState
+    InitialCondition <|-- StorageInitialState
+    InitialCondition <|-- ElectricVehicleInitialState
+    FinalCondition <|-- GeneratorFinalState
+    FinalCondition <|-- StorageFinalState
+    FinalCondition <|-- ElectricVehicleFinalState
+    GeneratorInitialState --> Generator
+    GeneratorFinalState --> Generator
+    StorageInitialState --> StationaryStorage
+    StorageFinalState --> StationaryStorage
+    ElectricVehicleInitialState --> ElectricVehicle
+    ElectricVehicleFinalState --> ElectricVehicle
+    ConditionSet *-- "0..*" Condition
     ObjectiveTerm <|-- ProfitTerm
     ObjectiveTerm <|-- CVaRTerm
     Objective *-- "1..*" ObjectiveTerm
@@ -193,7 +252,7 @@ sequenceDiagram
     participant S as solve
     participant R as OptimalDispatchResults
     User->>ES: optimize(solver_config)
-    ES->>OP: assemble(entities, horizon, scenario_set, objective)
+    ES->>OP: assemble(entities, horizon, scenario_set, condition_set, objective)
     OP-->>ES: problem (context, formulations, objective terms)
     ES->>MB: build_model(problem)
     MB-->>ES: linopy.Model
@@ -207,19 +266,21 @@ sequenceDiagram
 
 ## Parameters and optimization
 
-`OptimizationProblem.assemble` builds one `ModelContext` and every formulation whose entity type is present (`FORMULATIONS` order), then every objective term the objective holds (`OBJECTIVE_TERM_FORMULATIONS`). Each formulation vectorizes its entities into its `EntityArrays` subclass with `vectorize`, owns its variables, constraints, power injection, profit and results view, and names its own entity axis. `build_model` adds variables, every `ConstraintGroup`'s constraints and `PowerBalance`, and maximizes the sum of the objective-term expressions.
+`OptimizationProblem.assemble` builds one `ModelContext` and every formulation whose entity type is present (`FORMULATIONS` order), then every objective term the objective holds (`OBJECTIVE_TERM_FORMULATIONS`). Each formulation vectorizes its entities into its `EntityArrays` subclass with `vectorize`, reads scenario profiles (`context.profiles`) and the run's initial and final conditions (`context.conditions`) through the context, owns its variables, constraints, power injection, profit and results view, and names its own entity axis. `build_model` adds variables, every `ConstraintGroup`'s constraints and `PowerBalance`, and maximizes the sum of the objective-term expressions.
 
 ```mermaid
 classDiagram
     class ModelContext {
         +horizon: Horizon
         +scenario_set: ScenarioSet
+        +condition_set: ConditionSet
         +time: Coordinates
         +scenarios: Coordinates
         +timestep_hours: float
         +probabilities
         +variable_coords(coordinates)
         +profiles(kind, entities, coordinates)
+        +conditions(kind, entities, coordinates, value)
     }
     class Coordinates {
         +dimension: str
@@ -293,7 +354,7 @@ classDiagram
         +context: ModelContext
         +formulations: tuple~Formulation~
         +objective_terms: tuple~ObjectiveTermFormulation~
-        +assemble(entities, horizon, scenario_set, objective)
+        +assemble(entities, horizon, scenario_set, condition_set, objective)
         +formulation_of(formulation_type)
         +dispatches(solution)
     }
@@ -338,7 +399,10 @@ classDiagram
         +portfolio: AssetPortfolio
         +markets
         +scenarios
+        +initial_conditions
+        +final_conditions
         +objective: Objective
+        +condition_set: ConditionSet
         +build_problem() OptimizationProblem
         +optimize(solver_config) OptimalDispatchResults
     }

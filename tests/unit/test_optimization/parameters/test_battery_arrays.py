@@ -1,11 +1,18 @@
-"""Unit tests for the battery arrays of stationary storages."""
+"""Unit tests for the battery and state of charge arrays of stationary storages."""
+
+from datetime import timedelta
 
 import pytest
 
+from odys.domain.conditions import ConditionSet, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.stationary_storage import StationaryStorage
+from odys.domain.exceptions import OdysError
+from odys.domain.horizon import Horizon
+from odys.domain.scenario import Scenario, ScenarioSet
+from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
-from odys.parameters.entity_arrays import BatteryArrays
+from odys.parameters.entity_arrays import BatteryArrays, stationary_storage_state_arrays
 from odys.parameters.vectorize import vectorize
 
 STORAGE_DIMENSION = "stationary_storage"
@@ -31,7 +38,6 @@ def storage_with_degradation_cost() -> StationaryStorage:
             capacity=STANDARD_CAPACITY,
             max_charge_power=STANDARD_MAX_CHARGE_POWER,
             max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
-            soc_start=STANDARD_SOC_START,
             degradation_cost=EXPLICIT_DEGRADATION_COST,
         ),
     )
@@ -45,7 +51,6 @@ def storage_without_degradation_cost() -> StationaryStorage:
             capacity=STANDARD_CAPACITY,
             max_charge_power=STANDARD_MAX_CHARGE_POWER,
             max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
-            soc_start=STANDARD_SOC_START,
         ),
     )
 
@@ -66,15 +71,43 @@ def test_degradation_cost_defaults_to_zero_when_not_set(storage_without_degradat
     assert value == 0.0
 
 
-def test_unset_soc_end_becomes_nan_in_a_float_array(
+def _context(condition_set: ConditionSet) -> ModelContext:
+    return ModelContext(
+        horizon=Horizon(timestep=timedelta(hours=1), number_of_steps=1),
+        scenario_set=ScenarioSet(scenarios=(Scenario(),)),
+        condition_set=condition_set,
+    )
+
+
+def test_state_arrays_read_soc_start_and_leave_unset_soc_end_nan(
     storage_with_degradation_cost: StationaryStorage,
     storage_without_degradation_cost: StationaryStorage,
 ) -> None:
-    with_soc_end = storage_with_degradation_cost.model_copy(
-        update={"battery": storage_with_degradation_cost.battery.model_copy(update={"soc_end": EXPLICIT_SOC_END})},
+    storages = [storage_with_degradation_cost, storage_without_degradation_cost]
+    condition_set = ConditionSet(
+        initial=tuple(StorageInitialState(storage=storage, soc=STANDARD_SOC_START) for storage in storages),
+        final=(StorageFinalState(storage=storage_with_degradation_cost, soc=EXPLICIT_SOC_END),),
     )
-    params = _battery_arrays([with_soc_end, storage_without_degradation_cost])
 
-    assert params.soc_end.dtype.kind == "f"
-    assert params.soc_end.sel(stationary_storage="storage_with_degradation_cost").item() == EXPLICIT_SOC_END
-    assert bool(params.soc_end.sel(stationary_storage="storage_without_degradation_cost").isnull())
+    states = stationary_storage_state_arrays(
+        storages,
+        Coordinates.of_entities(STORAGE_DIMENSION, storages),
+        _context(condition_set),
+    )
+
+    assert states.soc_start.values.tolist() == pytest.approx([STANDARD_SOC_START, STANDARD_SOC_START])
+    assert states.soc_end.dtype.kind == "f"
+    assert states.soc_end.sel(stationary_storage="storage_with_degradation_cost").item() == EXPLICIT_SOC_END
+    assert bool(states.soc_end.sel(stationary_storage="storage_without_degradation_cost").isnull())
+
+
+def test_state_arrays_without_initial_state_raise(storage_without_degradation_cost: StationaryStorage) -> None:
+    """Validation requires an initial state for every storage, so a missing one is an internal error."""
+    storages = [storage_without_degradation_cost]
+
+    with pytest.raises(OdysError, match="There is no StorageInitialState for 'storage_without_degradation_cost'"):
+        stationary_storage_state_arrays(
+            storages,
+            Coordinates.of_entities(STORAGE_DIMENSION, storages),
+            _context(ConditionSet()),
+        )
