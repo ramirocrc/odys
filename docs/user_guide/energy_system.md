@@ -231,7 +231,7 @@ When you call `.optimize()`, odys:
 2. Solves it with the HiGHS solver (or the solver you configure)
 3. Wraps the solution in an `OptimalDispatchResults` object
 
-You don't need to interact with any of these internals -- but if you're curious, the [API Reference](../api/energy_system.md) has the full details.
+You don't need to interact with any of these internals -- but if you're curious, the [Developer Reference](../developer/index.md) has the full details.
 
 ## Next steps
 
