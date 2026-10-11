@@ -143,7 +143,7 @@ scenario = Scenario(
 
 The chart below shows the price signal with trip schedules shaded, so you can see which vehicles are on the road and unavailable for charging at each timestep.
 
-<iframe src="../assets/examples/ev_fleet_setup.html" style="width:100%; height:520px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/ev_fleet_setup.html" style="width:100%; height:520px; border:none;" loading="lazy"></iframe>
 
 ### 4. Solve and inspect the results
 
@@ -165,7 +165,7 @@ The [objective](../user_guide/optimization.md) maximizes expected profit, so `re
 
 One shared time axis, four views: the price signal, every charge/discharge decision, its consequence on each battery, and the physical charger that delivered it.
 
-<iframe src="../assets/examples/ev_fleet_dispatch_combined.html" style="width:100%; height:1200px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/ev_fleet_dispatch_combined.html" style="width:100%; height:1200px; border:none;" loading="lazy"></iframe>
 
 Notice how the optimizer responds to the price signal:
 
@@ -175,7 +175,7 @@ Notice how the optimizer responds to the price signal:
 
 The economics chart below shows the market transactions that drive the profit.
 
-<iframe src="../assets/examples/ev_fleet_economics.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/ev_fleet_economics.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 ## Discussion
 

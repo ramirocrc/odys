@@ -160,7 +160,7 @@ profit-only and CVaR-penalized runs. With profit alone, the optimizer sends
 capacity to the riskier sidc market. Adding CVaR shifts most capacity to sdac,
 with a small position in sidc to capture upside.
 
-<iframe src="../assets/examples/cvar_market_risk.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/cvar_market_risk.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 Profit-only result:
 

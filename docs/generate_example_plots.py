@@ -4,7 +4,7 @@ Usage:
     uv run --locked python docs/generate_example_plots.py
 
 Output:
-    Writes standalone Plotly HTML files to docs/assets/examples/
+    Writes standalone Plotly HTML files to docs/assets/plots/ (git-ignored build output)
     for embedding in zensical via <iframe>.
 """
 
@@ -33,7 +33,7 @@ from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
 from odys import Charger, OptimalDispatchResults
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 
-OUTPUT_DIR = Path(__file__).parent / "assets" / "examples"
+OUTPUT_DIR = Path(__file__).parent / "assets" / "plots"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 SOLAR_COLOR = "#2ECC71"
