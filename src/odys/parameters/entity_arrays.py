@@ -50,6 +50,8 @@ class FlexibleLoadArrays(EntityArrays):
 
     max_increase: xr.DataArray
     max_decrease: xr.DataArray
+    min_load: xr.DataArray
+    max_load: xr.DataArray
     value_of_consumption: xr.DataArray
 
 
