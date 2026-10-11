@@ -1314,7 +1314,7 @@ docs = [
     { name = "plotly", specifier = ">=6.0.0" },
     { name = "zensical", specifier = ">=0.0.45" },
 ]
-vulnerability-fixes = [{ name = "virtualenv", specifier = ">=21.7.12" }]
+vulnerability-fixes = [{ name = "virtualenv", specifier = ">=21.7.13" }]
 
 [[package]]
 name = "packaging"
