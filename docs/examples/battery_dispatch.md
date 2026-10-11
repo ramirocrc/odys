@@ -105,7 +105,7 @@ The output should show several distinct behaviors:
 
 - during the early morning (timesteps 0–5), solar is zero and the battery starts empty, so CCGT meets the full load
 - as solar ramps up (timesteps 6–8), it covers part of the load and CCGT output falls
-- during peak solar hours (timesteps 9–15), solar exceeds the load and the battery charges with the surplus (positive bars on the chart, up to 55 MW at timestep 12)
+- during peak solar hours (timesteps 9–15), solar exceeds the load and the battery charges with the surplus (negative bars on the chart, up to 55 MW at timestep 13)
 - as solar declines (timesteps 16–18), the battery discharges to supplement the remaining solar output
 - in the evening (timesteps 19–23), solar drops to zero and the battery discharges to meet the load, almost entirely replacing CCGT
 

@@ -170,7 +170,7 @@ One shared time axis, four views: the price signal, every charge/discharge decis
 Notice how the optimizer responds to the price signal:
 
 - **ev_1 discharges during every peak it can access.** It sells into the morning ramp at 20 $/MWh (t6), the morning peak at 80 $/MWh (t9), the evening ramp at 25 $/MWh (t16), and across the full evening peak at 100 $/MWh (t17–t20). That is V2G arbitrage: buy at 5 $/MWh overnight, sell at 20–100 $/MWh during peaks.
-- **ev_2 and ev_3 charge at the cheapest hours.** ev_2 charges 22 kW at t0 and 5 kW at t21 (both at 5 $/MWh) to reach its 60% end-of-day target. ev_3 charges minimally at t21–t22 (5 $/MWh) to meet its 50% target.
+- **ev_2 and ev_3 charge only at the cheapest hours.** Every kWh they take is bought at 5 $/MWh, overnight (t0–t5) or in the late evening (t21–t23). ev_2 needs 27 kWh in total to cover its trips and reach its 60% end-of-day target; ev_3 tops up just enough to meet its 50% target. Because all these hours cost the same, the solver is free to choose which of them to use, and that choice can change between solver versions without changing the cost.
 - **The optimal solution requires switching EVs to different chargers during the day.** This is not practical in real operations, and can be avoided by setting constraints (to be implemented soon).
 
 The economics chart below shows the market transactions that drive the profit.
