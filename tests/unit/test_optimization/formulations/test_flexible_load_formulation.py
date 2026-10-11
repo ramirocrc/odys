@@ -190,3 +190,63 @@ class TestFlexibleLoadFormulation:
 
         expected = (load_adjustment * HOURS_PER_STEP * value_of_consumption).sum(["time", "flexible_load"])
         assert_linequal(formulation.profit(), expected)
+
+
+class TestFlexibleLoadAbsoluteBoundConstraints:
+    """Absolute bounds against a time-varying base profile, alongside a relative-only load."""
+
+    BASE_PROFILE = (100.0, 110.0, 90.0)
+    MIN_LOAD = 80.0
+    MAX_LOAD = 130.0
+
+    @pytest.fixture(autouse=True)
+    def setup(self, generator1: Generator, market1: EnergyMarket, flexible_load1: FlexibleLoad) -> None:
+        # max_increase/max_decrease are set too, so the absolute bounds must override them
+        absolute_load = FlexibleLoad(
+            name="abs_load",
+            max_increase=MAX_INCREASE,
+            max_decrease=MAX_DECREASE,
+            min_load=self.MIN_LOAD,
+            max_load=self.MAX_LOAD,
+            value_of_consumption=VALUE_OF_CONSUMPTION,
+        )
+        system = EnergySystem(
+            portfolio=AssetPortfolio(assets=[generator1, flexible_load1, absolute_load]),
+            markets=market1,
+            number_of_steps=len(self.BASE_PROFILE),
+            timestep=timedelta(hours=1),
+            scenarios=Scenario(
+                profiles=(
+                    LoadProfile(load=flexible_load1, values=[100.0, 100.0, 100.0]),
+                    LoadProfile(load=absolute_load, values=self.BASE_PROFILE),
+                    PriceProfile(market=market1, values=[50.0, 50.0, 50.0]),
+                ),
+            ),
+        )
+        self.linopy_model = build_model(system.build_problem())
+
+    def _expected_bound(self, absolute_bound: float, relative_bound: float) -> xr.DataArray:
+        return xr.DataArray(
+            [[[relative_bound, absolute_bound - base] for base in self.BASE_PROFILE]],
+            coords={
+                "scenario": ["base"],
+                "time": [str(t) for t in range(len(self.BASE_PROFILE))],
+                "flexible_load": ["flex_load1", "abs_load"],
+            },
+        )
+
+    def test_lower_bound_uses_min_load(self) -> None:
+        actual_constraint = self.linopy_model.constraints["flexible_load_adjustment_lower_bound_constraint"]
+        load_adjustment = self.linopy_model.variables["load_adjustment"]
+
+        expected_expr = load_adjustment >= self._expected_bound(self.MIN_LOAD, -MAX_DECREASE)
+        assert_conequal(expected_expr, actual_constraint.lhs >= actual_constraint.rhs)
+        assert bool((actual_constraint.labels != -1).all())
+
+    def test_upper_bound_uses_max_load(self) -> None:
+        actual_constraint = self.linopy_model.constraints["flexible_load_adjustment_upper_bound_constraint"]
+        load_adjustment = self.linopy_model.variables["load_adjustment"]
+
+        expected_expr = load_adjustment <= self._expected_bound(self.MAX_LOAD, MAX_INCREASE)
+        assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
+        assert bool((actual_constraint.labels != -1).all())

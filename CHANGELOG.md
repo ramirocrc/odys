@@ -18,9 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `EnergySystem` rejects a non-positive `timestep` and fewer than one step (a pydantic `ValidationError` naming the field).
 - A `PriceProfile` must have one value per timestep, like every other profile.
 - `SolveStatus`, the solver status of a run (`ok`, `warning`, `error`, `aborted`, `unknown`), exported from `odys`.
+- `FlexibleLoad.min_load` and `FlexibleLoad.max_load`: optional absolute consumption bounds in MW that override `max_decrease` / `max_increase` when set (#80). A flexible load's `LoadProfile` must stay within them.
 
 ### Changed
 
+- `FlexibleLoad.max_increase` and `max_decrease` are now optional; each side needs a relative or an absolute bound. Leaving out both bounds of a side raises `OdysValidationError` (before, omitting `max_increase` or `max_decrease` raised a pydantic `ValidationError`).
 - Requires linopy 0.10 or later (was 0.7). Constraints that look at the previous or next timestep now state explicitly that the step outside the horizon counts as zero, so the model is the same under linopy's legacy and upcoming v1 semantics.
 - **Breaking:** `AssetPortfolio` accepts only `Asset` instances and raises `OdysValidationError` for anything else, such as an `EnergyMarket` (before, a market in the portfolio was silently ignored).
 - `EnergySystem` raises `OdysValidationError` for an asset type the optimizer cannot model (a bare `Asset` or a custom `Asset` subclass) instead of silently leaving it out of the model.
