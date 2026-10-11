@@ -92,7 +92,7 @@ Notice how the solver decides at each timestep whether to increase, decrease, or
 
 The chart below shows how the optimizer shifts consumption toward low-price hours. The upper panel displays the base load profile (dashed gray line at 60 MW) and the actual consumption after adjustment (solid blue line). The lower panel shows market prices alongside the value of consumption threshold (70 $/MWh), which drives the decision logic.
 
-<iframe src="../assets/examples/flexible_load_market.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/flexible_load_market.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
 
 Notice how the optimizer responds to the price signal:
 
