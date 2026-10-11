@@ -21,7 +21,8 @@ flowchart TD
         STO["StationaryStorage(s)"]
         EV["ElectricVehicle(s)"]
         CHG["Charger(s)"]
-        LD["Load(s)"]
+        FL["FixedLoad(s)"]
+        FX["FlexibleLoad(s)"]
     end
     MKT["<b>EnergyMarket(s)</b>"]
     SC["<b>Scenario(s)</b>"]

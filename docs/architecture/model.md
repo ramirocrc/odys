@@ -186,7 +186,7 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant User
+    actor User
     participant ES as EnergySystem
     participant OP as OptimizationProblem
     participant MB as build_model
@@ -434,11 +434,19 @@ classDiagram
 
 ## Keeping this page current
 
-`tests/test_architecture_docs.py` compares the class diagrams on this page with the classes defined in `src/odys`, so `just test` fails when they drift apart. It checks that:
+`tests/test_architecture_docs.py` compares the diagrams on this page, and the diagram in the [user guide](../user_guide/energy_system.md), with the code in `src/odys`, so `just test` fails when they drift apart. For the class diagrams it checks that:
 
 - every **public** class (`odys.__all__`) and every **core model** class appears in a diagram. Core classes are the extension-point bases (`EnergyEntity`, `Profile`, `ObjectiveTerm`, `Formulation`, `ObjectiveTermFormulation`, `Dispatch`) with every class derived from them, plus the pipeline classes listed in the test (`ModelContext`, `OptimizationProblem`, `SolveOutcome`, …). Exceptions, typed variables objects, concrete `*Arrays` classes and solver option translators are left out;
 - every class a diagram names is defined in `src/odys`;
 - every `Base <|-- Subclass` edge is real inheritance;
 - every `+member` listed in a class body exists on that class or one of its bases.
+
+For the pipeline sequence diagram it checks that:
+
+- every `participant` is a class or a module-level function in `src/odys` (`actor` marks an outside caller, such as `User`, that is not checked);
+- every `A->>B: name(args)` call is a method of `B`, its constructor (`name` is the class name) or, when `B` is a function, the function itself;
+- every argument written as a plain name is a parameter of the callee. Expressions such as `problem.dispatches` and replies (`-->>`) are prose.
+
+For the user-guide diagram it checks that every node names a public class, and that the `Assets` subgraph lists every concrete `Asset` subclass, so a new asset type must be added there.
 
 When the test fails, update the diagram, not the test: add the new class (a new asset type adds its entity, formulation and dispatch), or rename or remove the stale one. Keep members to the names a reader needs; instance attributes set in `__init__` are not visible to the check, so list them in the prose instead.
