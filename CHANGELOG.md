@@ -19,8 +19,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `PriceProfile` must have one value per timestep, like every other profile.
 - `SolveStatus`, the solver status of a run (`ok`, `warning`, `error`, `aborted`, `unknown`), exported from `odys`.
 - `FlexibleLoad.min_load` and `FlexibleLoad.max_load`: optional absolute consumption bounds in MW that override `max_decrease` / `max_increase` when set (#80). A flexible load's `LoadProfile` must stay within them.
+- Initial and final conditions of a run, passed as `EnergySystem(initial_conditions=..., final_conditions=...)` and shared by all scenarios: `GeneratorInitialState(generator=..., power=..., time_in_state=...)`, `GeneratorFinalState(generator=..., power=...)`, `StorageInitialState` / `StorageFinalState(storage=..., soc=...)` and `ElectricVehicleInitialState` / `ElectricVehicleFinalState(vehicle=..., soc=...)`. A generator's status follows its power (0 is off).
+    - A generator starting on pays no startup cost at t=0, ramp limits apply from its initial power at t=0, and its minimum up or down time carries over from `time_in_state`.
+    - `GeneratorFinalState` fixes the output at the last step; 0 turns the generator off. It must fit the generator's available capacity at the last step.
+    - Every storage and electric vehicle needs an initial state, and so does every generator with `ramp_up`, `ramp_down`, `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost`. `time_in_state` is required when the matching minimum time is set. Missing or inconsistent conditions raise `OdysValidationError`.
 
 ### Changed
+
+- **Breaking:** `Battery.soc_start` and `Battery.soc_end` are removed; the state of charge at the start and end of a run is an initial or final condition of the `EnergySystem`:
+
+    ```python
+    # Before
+    bess = StationaryStorage(name="bess", battery=Battery(capacity=50.0, ..., soc_start=0.5, soc_end=0.5))
+    EnergySystem(portfolio=..., ...)
+
+    # After
+    bess = StationaryStorage(name="bess", battery=Battery(capacity=50.0, ...))
+    EnergySystem(
+        portfolio=...,
+        ...,
+        initial_conditions=(StorageInitialState(storage=bess, soc=0.5),),
+        final_conditions=(StorageFinalState(storage=bess, soc=0.5),),
+    )
+    ```
+
+    Electric vehicles use `ElectricVehicleInitialState` and `ElectricVehicleFinalState`. The checks that a trip departing at t=0 fits the starting charge move from `ElectricVehicle` to `ElectricVehicleInitialState`.
+- **Breaking:** `Generator.min_up_time` and `Generator.min_down_time` are `timedelta | None` (default `None`, no minimum) instead of a number of timesteps (default 1). They must be a whole number of timesteps. Write `min_up_time=timedelta(hours=4)` for 4 hourly steps.
+- **Breaking:** a generator with ramp limits, minimum up or down times, or startup or shutdown costs needs a `GeneratorInitialState`. Before, it was assumed off at 0 MW before the horizon, but its ramp limits did not apply at t=0. Ramp limits now apply at t=0 from the initial power.
 
 - `FlexibleLoad.max_increase` and `max_decrease` are now optional; each side needs a relative or an absolute bound. Leaving out both bounds of a side raises `OdysValidationError` (before, omitting `max_increase` or `max_decrease` raised a pydantic `ValidationError`).
 - Requires linopy 0.10 or later (was 0.7). Constraints that look at the previous or next timestep now state explicitly that the step outside the horizon counts as zero, so the model is the same under linopy's legacy and upcoming v1 semantics.
@@ -44,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     A profile for the wrong kind of entity (such as available capacity for a battery) is now rejected when the profile is built.
 - **Breaking (results):** a single deterministic scenario keeps its own name, so the `scenario` level of results is `"base"` by default (was `"deterministic_scenario"`).
 - Validation errors are raised when the offending object is built, not when `EnergySystem` is created:
-    - `ElectricVehicle` rejects overlapping trips, a trip departing at t=0 that needs more state of charge than `soc_start`, and a trip departing at t=0 that consumes more energy than the battery holds above `soc_min` at the start (it cannot charge before or during that trip). **Breaking:** the public methods `validate_no_overlapping_trips`, `validate_min_soc_at_departure_feasible` and `validate_trips_within_horizon` are removed; the horizon check is now `validate_horizon(horizon)`.
+    - `ElectricVehicle` rejects overlapping trips. `ElectricVehicleInitialState` rejects a trip departing at t=0 that needs more state of charge than the initial `soc`, and one that consumes more energy than the battery holds above `soc_min` at the start (it cannot charge before or during that trip). **Breaking:** the public methods `validate_no_overlapping_trips`, `validate_min_soc_at_departure_feasible` and `validate_trips_within_horizon` are removed; the horizon check is now `validate_horizon(horizon)`.
     - `AssetPortfolio` rejects electric vehicles without chargers and chargers without electric vehicles.
     - `AvailableCapacityProfile` rejects values outside 0 to the generator's nominal power, and a flexible-load `LoadProfile` rejects base values below the load's `max_decrease`.
 - System validation is generic: it reaches entities through internal capability queries (maximum supply, minimum demand, maximum energy, horizon check) instead of listing asset kinds.

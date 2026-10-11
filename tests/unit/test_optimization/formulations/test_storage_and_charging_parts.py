@@ -7,6 +7,7 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_linequal
 
+from odys.domain.conditions import ElectricVehicleInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
@@ -31,6 +32,7 @@ TRIP_ENERGY = 5.0
 TRIP_SOC_DROP = TRIP_ENERGY / EV_CAPACITY
 DEGRADATION_COST = 2.0
 DEMAND = [10.0, 10.0, 10.0]
+SOC_START = 0.5
 
 EV = ElectricVehicle(
     name="ev1",
@@ -38,19 +40,20 @@ EV = ElectricVehicle(
         capacity=EV_CAPACITY,
         max_charge_power=22.0,
         max_discharge_power=11.0,
-        soc_start=0.5,
         degradation_cost=DEGRADATION_COST,
     ),
     trips=(Trip(name="trip1", start_time=1, end_time=2, energy_consumption=TRIP_ENERGY),),
 )
 EV_LEAVING_AT_T0 = ElectricVehicle(
     name="ev_early",
-    battery=Battery(capacity=EV_CAPACITY, max_charge_power=22.0, max_discharge_power=11.0, soc_start=0.5),
+    battery=Battery(capacity=EV_CAPACITY, max_charge_power=22.0, max_discharge_power=11.0),
     trips=(Trip(name="early", start_time=0, end_time=1, energy_consumption=TRIP_ENERGY),),
 )
 CHARGER = Charger(name="charger1", max_power=22.0)
 GENERATOR = Generator(name="gen", nominal_power=100.0, variable_cost=10.0)
 LOAD = FixedLoad(name="load")
+EV_STATE = ElectricVehicleInitialState(vehicle=EV, soc=SOC_START)
+EV_LEAVING_AT_T0_STATE = ElectricVehicleInitialState(vehicle=EV_LEAVING_AT_T0, soc=SOC_START)
 
 
 @pytest.fixture
@@ -60,6 +63,7 @@ def optimization_problem() -> OptimizationProblem:
         timestep=timedelta(hours=HOURS_PER_STEP),
         number_of_steps=NUMBER_OF_STEPS,
         scenarios=Scenario(profiles=(LoadProfile(load=LOAD, values=DEMAND),)),
+        initial_conditions=(EV_STATE,),
     ).build_problem()
 
 
@@ -164,11 +168,12 @@ def test_soc_start_draws_the_energy_of_a_trip_departing_at_t0() -> None:
             timestep=timedelta(hours=HOURS_PER_STEP),
             number_of_steps=NUMBER_OF_STEPS,
             scenarios=Scenario(profiles=(LoadProfile(load=LOAD, values=DEMAND),)),
+            initial_conditions=(EV_STATE, EV_LEAVING_AT_T0_STATE),
         ).build_problem(),
     )
     soc_start = model.constraints["ev_soc_start_constraint"]
 
     leaving_at_t0 = soc_start.rhs.sel(scenario="base", ev=EV_LEAVING_AT_T0.name)
     no_trip_at_t0 = soc_start.rhs.sel(scenario="base", ev=EV.name)
-    assert float(leaving_at_t0) == pytest.approx(EV_LEAVING_AT_T0.battery.soc_start - TRIP_SOC_DROP)
-    assert float(no_trip_at_t0) == pytest.approx(EV.battery.soc_start)
+    assert float(leaving_at_t0) == pytest.approx(EV_LEAVING_AT_T0_STATE.soc - TRIP_SOC_DROP)
+    assert float(no_trip_at_t0) == pytest.approx(EV_STATE.soc)
