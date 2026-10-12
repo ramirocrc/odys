@@ -210,6 +210,17 @@ ignore = [
   "C408",  # plotly API uses dict() extensively
   "T201",  # print() for CLI output is intentional
 ]
+"docs/generate_brand.py" = [
+  "INP001",  # No __init__.py in docs/
+  "T201",  # print() for CLI output is intentional
+]
+"docs/generate_landing_data.py" = [
+  "INP001",  # No __init__.py in docs/
+  "T201",  # print() for CLI output is intentional
+]
+"docs/landing/snippets/**" = [
+  "INP001",  # Standalone scripts shown on the landing page, not a package
+]
 ".claude/hooks/**" = [
   "INP001",  # Standalone hook scripts, not a package
   "S603",  # subprocess calls with fixed, trusted argument lists
