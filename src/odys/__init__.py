@@ -7,6 +7,14 @@ storages, and other energy assets using mathematical optimization techniques.
 
 from importlib.metadata import version
 
+from odys.domain.conditions import (
+    ElectricVehicleFinalState,
+    ElectricVehicleInitialState,
+    GeneratorFinalState,
+    GeneratorInitialState,
+    StorageFinalState,
+    StorageInitialState,
+)
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
@@ -37,11 +45,15 @@ __all__ = [
     "CVaRTerm",
     "Charger",
     "ElectricVehicle",
+    "ElectricVehicleFinalState",
+    "ElectricVehicleInitialState",
     "EnergyMarket",
     "EnergySystem",
     "FixedLoad",
     "FlexibleLoad",
     "Generator",
+    "GeneratorFinalState",
+    "GeneratorInitialState",
     "LoadProfile",
     "Objective",
     "OptimalDispatchResults",
@@ -52,5 +64,7 @@ __all__ = [
     "SolverConfig",
     "SolverName",
     "StationaryStorage",
+    "StorageFinalState",
+    "StorageInitialState",
     "Trip",
 ]

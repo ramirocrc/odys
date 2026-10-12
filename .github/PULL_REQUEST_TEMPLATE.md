@@ -49,6 +49,7 @@ Describe the tests you added or updated:
 - [ ] Documentation updated (if needed)
 - [ ] No new warnings introduced
 - [ ] Linked to related issue above
+- [ ] If a coding agent helped, I reviewed every line of the diff and ran `just check` and `just test` myself
 
 ## Screenshots / Examples
 

@@ -6,6 +6,7 @@ from typing import Self, TypeVar
 import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
+from odys.domain.conditions import ConditionSet
 from odys.domain.entities.base import EnergyEntity
 from odys.domain.horizon import Horizon
 from odys.domain.objective import Objective
@@ -42,6 +43,7 @@ class OptimizationProblem(BaseModel):
         entities: Sequence[EnergyEntity],
         horizon: Horizon,
         scenario_set: ScenarioSet,
+        condition_set: ConditionSet,
         objective: Objective,
     ) -> Self:
         """Build the shared indexing and the formulations of the entity types present and of the objective's terms.
@@ -53,12 +55,13 @@ class OptimizationProblem(BaseModel):
             entities: Every asset and market of the system.
             horizon: The time grid of the optimization.
             scenario_set: The scenarios of the problem.
+            condition_set: The initial and final conditions of the run.
             objective: The objective to maximize.
 
         Returns:
             The problem, ready for the model builder.
         """
-        context = ModelContext(horizon=horizon, scenario_set=scenario_set)
+        context = ModelContext(horizon=horizon, scenario_set=scenario_set, condition_set=condition_set)
         all_entities = tuple(entities)
         formulations: tuple[Formulation, ...] = ()
         for formulation_type in FORMULATIONS:

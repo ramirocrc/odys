@@ -118,21 +118,39 @@ class VariableFormulation(VariableOwner[VariablesT], Formulation):
     """An entity formulation with decision variables, held in a typed, frozen variables object (see `VariableOwner`)."""
 
 
-def time_shifted(variable: linopy.Variable, steps: int) -> linopy.LinearExpression:
-    """Return the variable moved `steps` timesteps along time, with 0 where the source step is outside the horizon.
+def time_shifted(
+    variable: linopy.Variable,
+    steps: int,
+    outside_value: float | xr.DataArray = 0,
+) -> linopy.LinearExpression:
+    """Return the variable moved `steps` timesteps along time, with a constant where the source step is outside.
 
-    `steps=1` gives each step the previous step's value (0 at the first step, as if everything was off or empty
-    before the horizon); `steps=-1` gives the next step's value (0 at the last step). The explicit zero keeps the
-    constraints the same under linopy's legacy and v1 semantics, where an absent slot would otherwise drop the term.
+    `steps=1` gives each step the previous step's value, and `outside_value` at the first step: the value just
+    before the horizon (0 by default, as if everything was off or empty). `steps=-1` gives the next step's value,
+    and `outside_value` at the last step. The explicit constant keeps the constraints the same under linopy's
+    legacy and v1 semantics, where an absent slot would otherwise drop the term. The constant is added aligned by
+    dimension name, so an array along an entity dimension lands on that dimension whatever the variable's order.
 
     Args:
         variable: The variable to shift; it must have the time dimension.
         steps: How many timesteps to move it; positive looks back, negative looks ahead.
+        outside_value: The value at the steps shifted in from outside the horizon, a scalar or an array along an
+            entity dimension of the variable.
 
     Returns:
-        A linear expression over the variable's coordinates, 0 at the steps shifted in from outside the horizon.
+        A linear expression over the variable's coordinates, `outside_value` at the steps shifted in from outside.
     """
-    shifted: linopy.LinearExpression = variable.to_linexpr().shift({ModelDimension.Time: steps}).fillna(0)
+    time = variable.coords[ModelDimension.Time]
+    shifted_in = xr.ones_like(time).shift({ModelDimension.Time: steps}).isnull()
+    shifted: linopy.LinearExpression = (
+        variable
+        .to_linexpr()
+        .shift({ModelDimension.Time: steps})
+        .fillna(
+            0,
+        )
+        + shifted_in * outside_value
+    )
     return shifted
 
 
