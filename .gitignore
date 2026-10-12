@@ -70,9 +70,7 @@ docs/assets/examples/*.html
 # === Other ===
 ignored/
 .opencode/
-AGENTS.md
 CLAUDE.md
-DOCS_GUIDELINES.md
 
 # Claude Code (local only)
 .claude/
