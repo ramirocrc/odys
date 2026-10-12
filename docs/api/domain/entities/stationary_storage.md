@@ -6,6 +6,6 @@ icon: fontawesome/solid/battery-three-quarters
 
 Stationary storage system. Represents fixed battery storage assets with charge/discharge capabilities, efficiency losses, and state-of-charge dynamics.
 
-See [StationaryStorage](../../../user_guide/storage.md) in the User Guide.
+See [StationaryStorage](../../../user_guide/assets/stationary_storage.md) in the User Guide.
 
 ::: odys.domain.entities.stationary_storage

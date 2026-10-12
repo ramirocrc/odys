@@ -103,7 +103,7 @@ charger_dc = Charger(name="charger_dc", max_power=0.050)  # 50 kW
 charger_ac = Charger(name="charger_ac", max_power=0.022)  # 22 kW
 ```
 
-Unlike [StationaryStorage](../user_guide/storage.md), EVs must be assigned to chargers, and each charger serves at most one EV at a time. With 2 chargers and 3 EVs, there is charger competition.
+Unlike [StationaryStorage](../user_guide/assets/stationary_storage.md), EVs must be assigned to chargers, and each charger serves at most one EV at a time. With 2 chargers and 3 EVs, there is charger competition.
 
 ev_2 (60 kWh, charge-only, 3 trips) and ev_3 (40 kWh, charge-only, 2 trips) follow the same pattern. See the [full source](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py).
 
@@ -121,7 +121,7 @@ portfolio = AssetPortfolio(
 )
 ```
 
-The [buy-and-sell market](../user_guide/market.md) is what enables V2G arbitrage. ev_1 can discharge back to the grid during expensive peak hours.
+The [buy-and-sell market](../user_guide/markets/energy_market.md) is what enables V2G arbitrage. ev_1 can discharge back to the grid during expensive peak hours.
 
 ### 3. Define the scenario with price signals
 
@@ -159,7 +159,7 @@ energy_system = EnergySystem(
 result = energy_system.optimize()
 ```
 
-The [objective](../user_guide/optimization.md) maximizes expected profit, so `result.objective_value` is the depot's profit over the day (positive = revenue).
+The [objective](../user_guide/optimization/objective.md) maximizes expected profit, so `result.objective_value` is the depot's profit over the day (positive = revenue).
 
 ## Results
 
@@ -187,4 +187,4 @@ Charger sharing is not vehicles waiting their turn. It is the optimizer reassign
 
 This example used deterministic prices and fixed trip schedules. In practice, both are uncertain: a delayed delivery changes when the vehicle is available to charge, and real-time prices deviate from day-ahead forecasts.
 
-See [Stochastic Optimization](../user_guide/stochastic.md) to model uncertain trip schedules, or [CVaR Market Risk](cvar_market_risk.md) to learn how to hedge against price uncertainty.
+See [Stochastic Optimization](../user_guide/optimization/stochastic.md) to model uncertain trip schedules, or [CVaR Market Risk](cvar_market_risk.md) to learn how to hedge against price uncertainty.

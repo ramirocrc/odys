@@ -6,6 +6,6 @@ icon: lucide/box
 
 Internal implementation detail. Most users do not need this page directly.
 
-See [Optimization](../../../user_guide/optimization.md) in the User Guide for the public API.
+See [Objective](../../../user_guide/optimization/objective.md) in the User Guide for the public API.
 
 ::: odys.optimization.constraints.model_constraint
