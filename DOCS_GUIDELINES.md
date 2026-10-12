@@ -316,7 +316,6 @@ docs/
 │   │   ├── initial_and_final_conditions.md
 │   │   └── power_balance.md  # The constraint that ties assets and markets together
 │   ├── assets/               # One page per asset, all with the same template
-│   │   ├── index.md          # Asset overview table
 │   │   ├── generator.md
 │   │   ├── fixed_load.md
 │   │   ├── flexible_load.md

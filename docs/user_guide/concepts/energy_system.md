@@ -210,4 +210,4 @@ You don't need to interact with any of these internals -- but if you're curious,
 
 ## Next steps
 
-Next, see [AssetPortfolio](asset_portfolio.md) to collect your assets, or jump to [Assets](../assets/index.md) for every asset type.
+Next, see [AssetPortfolio](asset_portfolio.md) to collect your assets, or jump to [Generator](../assets/generator.md) to start with the assets.
