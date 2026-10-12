@@ -1,7 +1,7 @@
 """Tests that the hand-written diagrams in the docs stay true to the code in src/odys.
 
 Covers the class diagrams of docs/developer/data_model.md, the sequence diagram of
-docs/developer/sequences.md, and the composition flowchart of docs/user_guide/energy_system.md.
+docs/developer/sequences.md, and the composition flowchart of docs/user_guide/index.md.
 """
 
 import ast
@@ -20,7 +20,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_ROOT = REPOSITORY_ROOT / "src" / "odys"
 DATA_MODEL_PAGE = REPOSITORY_ROOT / "docs" / "developer" / "data_model.md"
 SEQUENCES_PAGE = REPOSITORY_ROOT / "docs" / "developer" / "sequences.md"
-USER_GUIDE_PAGE = REPOSITORY_ROOT / "docs" / "user_guide" / "energy_system.md"
+USER_GUIDE_PAGE = REPOSITORY_ROOT / "docs" / "user_guide" / "index.md"
 
 EXTENSION_POINT_BASES = (
     "EnergyEntity",

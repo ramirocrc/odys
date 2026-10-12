@@ -134,4 +134,4 @@ This makes it safe to write code that tries multiple solvers or gracefully falls
 
 ## Next steps
 
-Ready to handle uncertainty? See [Stochastic Optimization](stochastic.md) to optimize across multiple possible futures.
+Ready to see Odys in action? Check out the [Examples](../../examples/index.md) for end-to-end worked scenarios.

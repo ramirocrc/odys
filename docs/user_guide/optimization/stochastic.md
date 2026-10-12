@@ -6,21 +6,11 @@ icon: lucide/trending-up
 
 Real-world energy systems deal with uncertainty -- wind output varies, demand fluctuates, prices change. Stochastic optimization lets you make decisions that account for multiple possible futures simultaneously.
 
-See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
-
 ## The idea
 
-Instead of optimizing for a single forecast, let's define multiple **scenarios**, each with a probability. The optimizer finds a dispatch plan that performs well across all scenarios, weighted by their likelihood:
+Instead of optimizing for a single forecast, let's define multiple **scenarios**, each with a probability. The optimizer finds a dispatch plan that performs well across all scenarios, weighted by their likelihood.
 
-$$
-\sum_s \pi_s = 1
-$$
-
-The risk-neutral objective becomes an expected value over those scenarios:
-
-$$
-\max \sum_s \pi_s \Pi_s
-$$
+See the [formulation](#mathematical-formulation).
 
 ## Scenarios with probabilities
 
@@ -55,7 +45,7 @@ high_wind = Scenario(
 
     Probabilities across all scenarios must sum to 1.0 (within floating-point tolerance) and scenario names must be unique. Odys validates both.
 
-See [Scenario](scenario.md) for every field and profile type.
+See [Scenarios & Profiles](../concepts/scenario.md) for every field and profile type.
 
 ## Using stochastic scenarios
 
@@ -101,14 +91,6 @@ A generator without an `AvailableCapacityProfile` in a scenario can produce up t
 
 When using stochastic optimization with markets, you can mark certain markets as `stage_fixed=True`. Use this when the optimizer must commit to the same trading volumes in that market across all scenarios -- modeling situations where you lock in a position before uncertainty resolves.
 
-Mathematically, each stage-fixed market variable is pinned to its first-scenario value:
-
-$$
-x_{m,t,s} = x_{m,t,s_0} \quad \forall s
-$$
-
-This is applied to market buy volume, sell volume, and trade mode.
-
 ```python
 from odys import EnergyMarket
 
@@ -125,7 +107,7 @@ intraday = EnergyMarket(
 )
 ```
 
-See the [CVaR Market Risk example](../examples/cvar_market_risk.md) for a full walkthrough.
+See [EnergyMarket](../markets/energy_market.md#math-stage-fixed) for the formulation, and the [CVaR Market Risk example](../../examples/cvar_market_risk.md) for a full walkthrough.
 
 ## Results with multiple scenarios
 
@@ -144,6 +126,24 @@ print(result.to_dataset())
 
 For deterministic (single scenario) runs, the scenario level is dropped automatically so you don't have to deal with it.
 
+## Mathematical formulation
+
+See [Mathematical notation](../mathematical_notation.md) for every symbol.
+
+Every variable and constraint is indexed by scenario $s$, and the scenario probabilities sum to 1:
+
+$$
+\sum_s \pi_s = 1
+$$
+
+The risk-neutral objective is the expected profit over the scenarios:
+
+$$
+\max \sum_s \pi_s \Pi_s
+$$
+
+To weigh bad outcomes more heavily, add a CVaR term; see [Objective](objective.md). Stage-fixed markets add [non-anticipativity constraints](../markets/energy_market.md#math-stage-fixed).
+
 ## Next steps
 
-For the rules that scenarios must follow, see [Scenario](scenario.md#multiple-scenarios).
+For the rules that scenarios must follow, see [Scenarios & Profiles](../concepts/scenario.md#multiple-scenarios). To read the per-scenario results, see [Results](results.md).

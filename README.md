@@ -30,7 +30,7 @@ The key features are:
 pip install odys
 ```
 
-Requires Python 3.11+. For commercial solvers (Gurobi, CPLEX, SCIP), see the [solver docs](https://ramirocrc.github.io/odys/user_guide/solvers/).
+Requires Python 3.11+. For commercial solvers (Gurobi, CPLEX, SCIP), see the [solver docs](https://ramirocrc.github.io/odys/user_guide/optimization/solvers/).
 
 ## Quick example
 
