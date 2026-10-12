@@ -136,10 +136,17 @@ from odys import (
 
 logger = logging.getLogger(__name__)
 
+CCGT_VARIABLE_COST = 20.0
+SCENARIO_PRICES: dict[str, dict[str, float]] = {
+    "high": {"sdac": 190, "sidc": 280},
+    "mid": {"sdac": 200, "sidc": 200},
+    "low": {"sdac": 210, "sidc": 140},
+}
+
 
 def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
     """Run the CVaR market risk example and return both optimization results."""
-    ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=20.0)
+    ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=CCGT_VARIABLE_COST)
 
     portfolio = AssetPortfolio(assets=[ccgt])
 
@@ -158,32 +165,15 @@ def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResul
 
     scenarios = [
         Scenario(
-            name="high",
-            probability=1 / 3,
+            name=name,
+            probability=1 / len(SCENARIO_PRICES),
             profiles=(
                 AvailableCapacityProfile(generator=ccgt, values=[100]),
-                PriceProfile(market=sdac, values=[190]),
-                PriceProfile(market=sidc, values=[280]),
+                PriceProfile(market=sdac, values=[prices["sdac"]]),
+                PriceProfile(market=sidc, values=[prices["sidc"]]),
             ),
-        ),
-        Scenario(
-            name="mid",
-            probability=1 / 3,
-            profiles=(
-                AvailableCapacityProfile(generator=ccgt, values=[100]),
-                PriceProfile(market=sdac, values=[200]),
-                PriceProfile(market=sidc, values=[200]),
-            ),
-        ),
-        Scenario(
-            name="low",
-            probability=1 / 3,
-            profiles=(
-                AvailableCapacityProfile(generator=ccgt, values=[100]),
-                PriceProfile(market=sdac, values=[210]),
-                PriceProfile(market=sidc, values=[140]),
-            ),
-        ),
+        )
+        for name, prices in SCENARIO_PRICES.items()
     ]
 
     energy_system_max_expected_profit = EnergySystem(

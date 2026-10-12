@@ -6,7 +6,7 @@ Principles for writing and improving the Odys documentation.
 
 This is the most important page. Someone should be able to install the package, copy 20-30 lines of code, see a useful result, and understand why it works -- within 5 minutes.
 
-The quickstart lives on `index.md` as the "Quick example" section. The "Get started" button links to `user_guide/energy_system.md`, which expands on the same workflow.
+The quickstart lives on `index.md` as the "Quick example" section. The "Get started" button links to `user_guide/concepts/energy_system.md`, which expands on the same workflow.
 
 The smallest example that makes someone think "now I get it" is not a toy. It is a realistic dispatch problem with a generator, a load, and a visible result:
 
@@ -36,11 +36,11 @@ print(result.generators.power)
 Follow the user's journey. Each page answers the next question a user naturally has:
 
 1. What is this and how do I install it? (`index.md`)
-2. How do I set up my first system? (`user_guide/energy_system.md`)
-3. What assets can I model? (`generator.md`, `storage.md`, `load.md`)
-4. How do I describe the data? (`scenario.md`)
-5. How do I read the results? (`optimization.md`)
-6. What if the future is uncertain? (`stochastic.md`)
+2. How do I set up my first system? (`user_guide/concepts/`)
+3. What assets can I model? (`user_guide/assets/`)
+4. Where can I buy and sell energy? (`user_guide/markets/`)
+5. What does the optimizer maximize, and how do I read the results? (`user_guide/optimization/`)
+6. What if the future is uncertain? (`user_guide/optimization/stochastic.md`)
 7. Can I see a full worked example? (`examples/`)
 
 Think in terms of "What is the user wondering now?" not "What feature should I describe?"
@@ -62,6 +62,8 @@ Someone can almost learn by scrolling.
 
 Odys is a mathematical library. Equations are a first-class part of the documentation, not something to hide. But every equation should be preceded by a short sentence that explains what it does and why it matters.
 
+On asset and market pages, every equation lives in the **Mathematical formulation** section at the end of the page, never in the feature sections. Each feature section links to its constraints instead (see the [page template](#page-template)). This keeps the math in one place per page and lets readers skip it until they need it. Each formulation is written once, on the page of the asset that owns it; other pages link to it.
+
 Instead of:
 
 > The following constraint can optionally be applied to limit the generator output...
@@ -78,13 +80,14 @@ People skim. Examples and equations beat paragraphs.
 
 Within a page, each `##` heading covers one idea. Across the site, each page has a clear focus.
 
-A page like `generator.md` covers:
+A page like `assets/generator.md` covers:
 
 - Basic usage (one concept)
-- Ramp constraints (one concept)
-- Minimum up time (one concept)
-- Startup cost (one concept)
+- Ramp limits (one concept)
+- Minimum up and down time (one concept)
+- Startup and shutdown cost (one concept)
 - Results (one concept)
+- Mathematical formulation (one concept)
 
 Each section is self-contained. A reader can jump to "Ramp constraints" without reading the rest.
 
@@ -201,7 +204,7 @@ This is the Diataxis framework applied to Odys:
 | User Guide    | Teach concepts and walk through the API | `user_guide/`                                       |
 | Examples      | Solve a specific problem end-to-end     | `examples/`                                         |
 | API Reference | Exact signatures, types, and defaults   | `developer/api/`                                    |
-| Explanation   | Why the library is designed this way    | `user_guide/` (mathematical_notation, optimization) |
+| Explanation   | Why the library is designed this way    | `user_guide/` (mathematical_notation, optimization/) |
 
 Don't mix them. A user guide page teaches. An API page documents. An example page solves.
 
@@ -257,23 +260,26 @@ Every page links forward. The reader never wonders where to go next.
 
 Examples:
 
-- End of `generator.md`: "Next, see how [Storage](storage.md) adds time-shifting to your portfolio."
-- End of `scenario.md`: "Ready for uncertainty? See [Stochastic Optimization](stochastic.md)."
+- End of `assets/generator.md`: "Next, see how [FixedLoad](fixed_load.md) defines the demand your system must serve."
+- End of `concepts/scenario.md`: "See [Initial and final conditions](initial_and_final_conditions.md) to set where each asset starts and ends a run."
 - End of an example: "This example used deterministic scenarios. The [CVaR Market Risk](../examples/cvar_market_risk.md) example adds risk-aware optimization."
 
 ## 16. Visual consistency
 
-Every page follows the same template:
+Every asset and market page follows the same template, in this order:
 
 1. Frontmatter with icon
 2. Title
-3. Short introduction (1-2 sentences)
-4. "See [Mathematical notation](mathematical_notation.md)" link (if math is involved)
-5. Basic usage (runnable code)
-6. Fields table (if applicable)
-7. Detailed sections (one concept each)
-8. Results section (how to read the output)
-9. Next step link
+3. Short introduction (1-2 paragraphs)
+4. Basic usage (runnable code)
+5. Fields table, always with the columns Field | Type | Required | Default | Description
+6. Feature sections, one concept each, with prose and code only. Each ends with a link to its constraints.
+7. Profiles (the `Scenario` time series the asset takes, if any)
+8. Results (how to read the output)
+9. Mathematical formulation, always last, with the same sub-sections: Variables, Constraints (one `####` heading per feature, with an explicit `{#math-...}` id), Objective contribution, Power balance contribution
+10. Next step link
+
+Concept and optimization pages use a lighter version: introduction, usage, details, formulation (if any), next steps. Skip a section only when it does not apply.
 
 Readers quickly learn the pattern.
 
@@ -281,9 +287,9 @@ Readers quickly learn the pattern.
 
 Pages are not read in isolation. Link to related pages wherever a concept is introduced:
 
-- "The key must match the `name` of a [Generator](generator.md) in your portfolio."
-- "See [Stochastic Optimization](stochastic.md) for more details."
-- "Market prices are specified in the [Scenario](scenario.md), not on the market object."
+- "The profile references a [Generator](../assets/generator.md) of your portfolio."
+- "See [Stochastic optimization](../optimization/stochastic.md) for more details."
+- "Market prices are specified in the [Scenario](../concepts/scenario.md), not on the market object."
 
 Internal links are the connective tissue of the documentation.
 
@@ -302,21 +308,29 @@ docs/
 ├── index.md                  # Landing page + quickstart
 │
 ├── user_guide/               # Tutorials and concept pages
-│   ├── energy_system.md      # Main entry point
-│   ├── generator.md          # Generator asset
-│   ├── load.md               # FixedLoad and FlexibleLoad
-│   ├── storage.md            # StationaryStorage
-│   ├── electric_vehicle.md   # EV asset + Trip
-│   ├── charger.md            # EV charger
-│   ├── market.md             # Energy markets
-│   ├── asset_portfolio.md    # Portfolio container
-│   ├── scenario.md           # Scenarios and profiles
-│   ├── initial_and_final_conditions.md
-│   ├── optimization.md       # Objective, constraints, results
-│   ├── solvers.md            # Solver choice and options
-│   ├── stochastic.md         # Stochastic optimization
-│   ├── mathematical_notation.md
-│   └── multi_stage.md        # Multi-stage optimization
+│   ├── index.md              # Overview: object diagram and reading order
+│   ├── concepts/
+│   │   ├── energy_system.md  # Main entry point
+│   │   ├── asset_portfolio.md
+│   │   ├── scenario.md       # Scenarios and profiles
+│   │   ├── initial_and_final_conditions.md
+│   │   └── power_balance.md  # The constraint that ties assets and markets together
+│   ├── assets/               # One page per asset, all with the same template
+│   │   ├── generator.md
+│   │   ├── fixed_load.md
+│   │   ├── flexible_load.md
+│   │   ├── battery.md        # Battery physics shared by storage and EVs
+│   │   ├── stationary_storage.md
+│   │   ├── electric_vehicle.md
+│   │   └── charger.md
+│   ├── markets/
+│   │   └── energy_market.md
+│   ├── optimization/
+│   │   ├── objective.md      # Profit and CVaR
+│   │   ├── stochastic.md     # Stochastic optimization
+│   │   ├── results.md        # Reading results
+│   │   └── solvers.md        # Solver choice and options
+│   └── mathematical_notation.md
 │
 ├── examples/                 # End-to-end worked examples
 │   ├── index.md
@@ -345,8 +359,6 @@ icon: lucide/zap
 
 One-sentence description of what this is and why it matters.
 
-See [Mathematical notation](mathematical_notation.md) for the full list of symbols used below.
-
 ## Basic usage
 
 \```python
@@ -363,9 +375,15 @@ One-sentence explanation of what this does.
 | Field | Type | Required | Default | Description |
 | ----- | ---- | -------- | ------- | ----------- |
 
-## Advanced usage
+## A feature
 
-Additional examples, one concept per section.
+One concept, with prose and a runnable example. No equations here.
+
+See the [formulation](#math-a-feature).
+
+## Profiles
+
+The `Scenario` profile the asset takes, if any.
 
 ## Results
 
@@ -373,6 +391,25 @@ Additional examples, one concept per section.
 result = energy_system.optimize()
 result.generators.power
 \```
+
+## Mathematical formulation
+
+See [Mathematical notation](../mathematical_notation.md) for every symbol.
+
+### Variables
+
+| Symbol | Result attribute | Domain | Meaning |
+| ------ | ---------------- | ------ | ------- |
+
+### Constraints
+
+#### A feature {#math-a-feature}
+
+One sentence on what the constraint does, then the equation.
+
+### Objective contribution
+
+### Power balance contribution
 
 ## Next steps
 
