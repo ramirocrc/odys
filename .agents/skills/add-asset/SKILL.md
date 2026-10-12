@@ -50,8 +50,8 @@ Mirror `formulations/flexible_load.py`. The asset needs no builder or power-bala
 
 ## 6. Docs and changelog
 
-- [ ] User guide page in `docs/user_guide/`, API pages in `docs/developer/api/` (entity and formulation), and nav entries in `zensical.toml` (read `DOCS_GUIDELINES.md` first).
-- [ ] The asset's variables and constraints in `docs/user_guide/mathematical_notation.md`, using the existing notation.
+- [ ] User guide page in `docs/user_guide/assets/` following the asset page template, with its math in the closing "Mathematical formulation" section; API pages in `docs/developer/api/` (entity and formulation); and nav entries in `zensical.toml` (read `DOCS_GUIDELINES.md` first).
+- [ ] The asset's symbols in `docs/user_guide/mathematical_notation.md`, using the existing notation, and its terms in `docs/user_guide/concepts/power_balance.md` and `docs/user_guide/optimization/objective.md`.
 - [ ] The entity, its formulation and its dispatch in the class diagrams of `docs/developer/data_model.md`, with their inheritance edges (`tests/test_architecture_docs.py` fails until they are there).
 - [ ] An example in `examples/` if the asset enables a new use case.
 - [ ] A `CHANGELOG.md` entry.

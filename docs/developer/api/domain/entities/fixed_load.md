@@ -6,6 +6,6 @@ icon: fontawesome/solid/plug
 
 Fixed load asset representing inelastic demand that must be met exactly.
 
-See [Load](../../../../user_guide/load.md) in the User Guide for a conceptual walkthrough.
+See [FixedLoad](../../../../user_guide/assets/fixed_load.md) in the User Guide for a conceptual walkthrough.
 
 ::: odys.domain.entities.fixed_load
