@@ -34,8 +34,8 @@ That's really all you need. The optimizer will figure out the dispatch (how much
 | `min_power`     | `float`         | No       | `0.0`   | Minimum power output when the generator is on           |
 | `ramp_up`       | `float \| None` | No       | `None`  | Max increase in power from one timestep to the next     |
 | `ramp_down`     | `float \| None` | No       | `None`  | Max decrease in power from one timestep to the next     |
-| `min_up_time`   | `int`           | No       | `1`     | Minimum number of timesteps the generator must stay on  |
-| `min_down_time` | `int`           | No       | `1`     | Minimum number of timesteps the generator must stay off |
+| `min_up_time`   | `timedelta \| None` | No   | `None`  | Minimum time the generator stays on once started        |
+| `min_down_time` | `timedelta \| None` | No   | `None`  | Minimum time the generator stays off once stopped       |
 | `startup_cost`  | `float`         | No       | `0.0`   | Cost incurred each time the generator starts up         |
 | `shutdown_cost` | `float`         | No       | `0.0`   | Cost incurred each time the generator shuts down        |
 
@@ -70,6 +70,10 @@ gen = Generator(
 
 When `ramp_up` or `ramp_down` is `None` (the default), there's no ramp constraint -- the generator can jump from 0 to full power in a single step. Use this for fast-responding assets or when ramp limits don't matter for your study.
 
+Ramp limits also apply at the first step, measured from the generator's [initial state](#initial-and-final-state), so a generator with ramp limits needs one.
+
+Odys has no separate startup or shutdown ramp rate. A generator whose `ramp_up` is below its `min_power` can never start, at the first step or later, because going from 0 MW to `min_power` breaks the ramp limit. Likewise, a generator whose `ramp_down` is below its output cannot shut down in one step.
+
 See the [formulation](#math-ramp-limits).
 
 ## Minimum up and down time
@@ -77,14 +81,20 @@ See the [formulation](#math-ramp-limits).
 `min_up_time` keeps a generator on for at least that many timesteps once it starts. `min_down_time` keeps it off for at least that many timesteps once it stops.
 
 ```python
+from datetime import timedelta
+
 gen = Generator(
     name="coal_plant",
     nominal_power=500.0,
     variable_cost=25.0,
-    min_up_time=4,  # once on, stays on for at least 4 steps
-    min_down_time=3,  # once off, stays off for at least 3 steps
+    min_up_time=timedelta(hours=4),  # once on, stays on for at least 4 hours
+    min_down_time=timedelta(hours=3),  # once off, stays off for at least 3 hours
 )
 ```
+
+Both must be a whole number of timesteps. With 15-minute steps, `timedelta(minutes=45)` works, but `timedelta(minutes=50)` raises an `OdysValidationError` when the `EnergySystem` is created.
+
+Time spent on or off before the horizon counts too: a generator that has been on for 1 hour with a 3-hour `min_up_time` must stay on for 2 more hours. That time comes from its [initial state](#initial-and-final-state).
 
 See the [formulation](#math-min-up-down-time).
 
@@ -104,7 +114,72 @@ gen = Generator(
 
 This makes the optimizer think twice before turning the generator on or off, which is realistic for many thermal plants. The optimizer weighs these costs against the benefit of running.
 
+Startups and shutdowns are counted from the generator's [initial state](#initial-and-final-state), so a generator that is already on pays no startup cost for running at the first step.
+
 See the [formulation](#math-startup-shutdown).
+
+## Initial and final state
+
+Most studies don't start from scratch: a plant that ran yesterday is still on this morning. Tell the optimizer where each generator starts with a `GeneratorInitialState`, and pass it to the [EnergySystem](../concepts/energy_system.md):
+
+```python
+from datetime import timedelta
+
+from odys import (
+    AssetPortfolio,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    GeneratorFinalState,
+    GeneratorInitialState,
+    LoadProfile,
+    Scenario,
+)
+
+ccgt = Generator(
+    name="ccgt",
+    nominal_power=400.0,
+    min_power=150.0,
+    variable_cost=45.0,
+    ramp_up=100.0,
+    min_up_time=timedelta(hours=4),
+)
+load = FixedLoad(name="demand")
+
+energy_system = EnergySystem(
+    portfolio=AssetPortfolio([ccgt, load]),
+    timestep=timedelta(hours=1),
+    number_of_steps=4,
+    scenarios=Scenario(profiles=(LoadProfile(load=load, values=[300, 350, 250, 200]),)),
+    initial_conditions=(GeneratorInitialState(generator=ccgt, power=250.0, time_in_state=timedelta(hours=2)),),
+    final_conditions=(GeneratorFinalState(generator=ccgt, power=200.0),),
+)
+```
+
+Here the CCGT has been producing 250 MW for 2 hours. That means:
+
+- it can ramp to at most 350 MW at the first step;
+- it must stay on for 2 more hours to complete its 4-hour minimum up time;
+- it pays no startup cost;
+- it must end at 200 MW.
+
+| Class                   | Field           | Type                | Description                                                                           |
+| ----------------------- | --------------- | ------------------- | ------------------------------------------------------------------------------------- |
+| `GeneratorInitialState` | `generator`     | `Generator`         | The generator this state belongs to                                                   |
+|                         | `power`         | `float`             | Output just before the first step: 0 (off) or between `min_power` and `nominal_power` |
+|                         | `time_in_state` | `timedelta \| None` | How long it has been on (`power > 0`) or off (`power = 0`)                            |
+| `GeneratorFinalState`   | `generator`     | `Generator`         | The generator this state belongs to                                                   |
+|                         | `power`         | `float`             | Output at the last step: 0 (off) or between `min_power` and `nominal_power`           |
+
+The status comes from the power: a generator at 0 MW is off, and any other output means it is on.
+
+A `GeneratorInitialState` is **required** when a generator's results depend on its starting state. That's the case when it has `ramp_up`, `ramp_down`, `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost` set; odys never guesses the starting state. A generator without these parameters needs no initial state and starts off.
+
+`time_in_state` is required when the matching minimum time is set: `min_up_time` for a generator that starts on, `min_down_time` for one that starts off. It must be a whole number of timesteps. Leave it out otherwise; the generator then counts as having been in its state long enough.
+
+The final output must fit the generator's available capacity at the last step in every scenario. An exact final output combined with ramp limits can make the problem infeasible, so give the generator enough steps to reach it.
+
+See [Initial and final conditions](../concepts/initial_and_final_conditions.md) for every asset type, and the [formulation](#math-initial-final-state).
 
 ## Profiles
 
@@ -168,13 +243,11 @@ where $\epsilon_g = 10^{-5} P^{\max}_g$ makes sure that $u_{g,t,s} = 1$ means th
 
 #### Ramp limits {#math-ramp-limits}
 
-For $t \ge 1$:
-
 $$
 p_{g,t,s} - p_{g,t-1,s} \le R^{up}_g, \qquad p_{g,t-1,s} - p_{g,t,s} \le R^{down}_g
 $$
 
-When a ramp limit is not set, it defaults to $P^{\max}_g$, which never binds.
+At the first step, the previous output is the initial output: $p_{g,-1,s} = p^0_g$. When a ramp limit is not set, it defaults to $P^{\max}_g$, which never binds.
 
 #### Startup and shutdown {#math-startup-shutdown}
 
@@ -190,19 +263,43 @@ y^{shutdown}_{g,t,s} \le u_{g,t-1,s}, \qquad
 y^{shutdown}_{g,t,s} + u_{g,t,s} \le 1
 $$
 
-Before the horizon, every generator is off: $u_{g,-1,s} = 0$.
+At the first step, the previous status is the initial status: $u_{g,-1,s} = u^0_g$, which is 1 when $p^0_g > 0$. A generator without an initial state starts off.
 
 #### Minimum up and down time {#math-min-up-down-time}
 
+$U_g$ and $D_g$ are the minimum up and down times in steps. Before each shutdown, the steps on in the rolling window of $U_g$ steps must cover the window; before each startup, the same holds for the steps off in a window of $D_g$ steps:
+
 $$
-\sum_{\tau=t-U_g+1}^{t} u_{g,\tau,s} \ge U_g \, y^{shutdown}_{g,t+1,s}
+\sum_{\tau=\max(0,\,t-U_g+1)}^{t} u_{g,\tau,s} + H^{up}_{g,t} \ge U_g \, y^{shutdown}_{g,t+1,s}
 $$
 
 $$
-\sum_{\tau=t-D_g+1}^{t} \left(1 - u_{g,\tau,s}\right) \ge D_g \, y^{start}_{g,t+1,s}
+\sum_{\tau=\max(0,\,t-D_g+1)}^{t} \left(1 - u_{g,\tau,s}\right) + H^{down}_{g,t} \ge D_g \, y^{start}_{g,t+1,s}
 $$
 
-A generator may only shut down at $t+1$ if it has been on for the last $U_g$ steps, and only start at $t+1$ if it has been off for the last $D_g$ steps. Both apply for windows that fit in the horizon.
+$H^{up}_{g,t}$ and $H^{down}_{g,t}$ count the window's steps before $t=0$ that the generator spent on (or off), from its initial state:
+
+$$
+H^{up}_{g,t} = u^0_g \min\big(T^0_g, \max(0, U_g - 1 - t)\big), \qquad
+H^{down}_{g,t} = (1 - u^0_g) \min\big(T^0_g, \max(0, D_g - 1 - t)\big)
+$$
+
+A generator that has been on for less than its minimum up time cannot shut down at the first step, and one that has been off for less than its minimum down time cannot start:
+
+$$
+y^{shutdown}_{g,0,s} = 0 \;\text{ if } u^0_g = 1 \text{ and } T^0_g < U_g, \qquad
+y^{start}_{g,0,s} = 0 \;\text{ if } u^0_g = 0 \text{ and } T^0_g < D_g
+$$
+
+Without `time_in_state`, $T^0_g$ is taken as longer than any window.
+
+#### Initial and final state {#math-initial-final-state}
+
+The initial state enters the constraints above through $p^0_g$, $u^0_g$ and $T^0_g$. A final state fixes the output at the last step:
+
+$$
+p_{g,T,s} = p^{end}_g
+$$
 
 #### Available capacity {#math-available-capacity}
 

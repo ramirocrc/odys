@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from linopy.testing import assert_linequal
 
+from odys.domain.conditions import GeneratorInitialState, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
@@ -75,8 +76,6 @@ def storage_with_degradation_cost() -> StationaryStorage:
             capacity=STANDARD_CAPACITY,
             max_charge_power=STANDARD_MAX_CHARGE_POWER,
             max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
-            soc_start=STANDARD_SOC_START,
-            soc_end=STANDARD_SOC_START,
             degradation_cost=STANDARD_DEGRADATION_COST,
         ),
     )
@@ -90,18 +89,28 @@ def storage_without_degradation_cost() -> StationaryStorage:
             capacity=STANDARD_CAPACITY,
             max_charge_power=STANDARD_MAX_CHARGE_POWER,
             max_discharge_power=STANDARD_MAX_DISCHARGE_POWER,
-            soc_start=STANDARD_SOC_START,
-            soc_end=STANDARD_SOC_START,
         ),
     )
 
 
 def _built_problem(assets: list[Generator | StationaryStorage], load: FixedLoad) -> OptimizationProblem:
+    """Build the problem with every generator starting off and every storage starting and ending half full."""
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(assets=[*assets, load]),
         number_of_steps=len(DEMAND_PROFILE),
         timestep=TIMESTEP,
         scenarios=Scenario(profiles=(LoadProfile(load=load, values=DEMAND_PROFILE),)),
+        initial_conditions=tuple(
+            GeneratorInitialState(generator=asset, power=0.0)
+            if isinstance(asset, Generator)
+            else StorageInitialState(storage=asset, soc=STANDARD_SOC_START)
+            for asset in assets
+        ),
+        final_conditions=tuple(
+            StorageFinalState(storage=asset, soc=STANDARD_SOC_START)
+            for asset in assets
+            if isinstance(asset, StationaryStorage)
+        ),
     )
     problem = energy_system.build_problem()
     build_model(problem)

@@ -10,7 +10,8 @@ can save extra solar for later.
   weather and time of day.
 - **ccgt**: 100 MW gas turbine, variable cost of 50 $/MWh.
 - **battery**: 300 MWh capacity, 200 MW max charge/discharge rate.
-  Starts and ends empty (soc_start=0, soc_end=0).
+  Starts and ends empty (a `StorageInitialState` and a `StorageFinalState`
+  with soc=0).
 
 ## Problem
 
@@ -58,6 +59,8 @@ from odys import (
     OptimalDispatchResults,
     Scenario,
     StationaryStorage,
+    StorageFinalState,
+    StorageInitialState,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,7 +87,7 @@ def run_battery_dispatch() -> OptimalDispatchResults:
 
     battery = StationaryStorage(
         name="battery",
-        battery=Battery(capacity=300, max_charge_power=200, max_discharge_power=200, soc_start=0, soc_end=0),
+        battery=Battery(capacity=300, max_charge_power=200, max_discharge_power=200),
     )
     portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
 
@@ -100,6 +103,8 @@ def run_battery_dispatch() -> OptimalDispatchResults:
         timestep=timedelta(hours=1),
         number_of_steps=24,
         scenarios=scenario,
+        initial_conditions=(StorageInitialState(storage=battery, soc=0.0),),
+        final_conditions=(StorageFinalState(storage=battery, soc=0.0),),
     )
 
     return energy_system.optimize()

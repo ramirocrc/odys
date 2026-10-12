@@ -8,6 +8,8 @@ Output:
     for embedding in zensical via <iframe>.
 """
 
+import json
+import re
 import sys
 from pathlib import Path
 
@@ -17,6 +19,7 @@ if _project_root not in sys.path:
 
 import numpy as np
 import plotly.graph_objects as go
+from plotly.offline import get_plotlyjs_version
 from plotly.subplots import make_subplots
 
 from examples.basic_dispatch import run_basic_dispatch  # pyrefly: ignore
@@ -24,6 +27,8 @@ from examples.battery_dispatch import LOAD_PROFILE, run_battery_dispatch  # pyre
 from examples.cvar_market_risk import run_cvar_market_risk  # pyrefly: ignore
 from examples.ev_fleet_optimization import (  # pyrefly: ignore
     CHARGERS,
+    EV_FINAL_STATES,
+    EV_INITIAL_STATES,
     EVS,
     MARKET_PRICES,
     run_ev_fleet_optimization,
@@ -36,27 +41,147 @@ from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormu
 OUTPUT_DIR = Path(__file__).parent / "assets" / "plots"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-SOLAR_COLOR = "#2ECC71"
-CCGT_COLOR = "#E67E22"
-LOAD_COLOR = "#7F8C8D"
-BATTERY_SOC_COLOR = "#3498DB"
-BATTERY_DISCHARGE_COLOR = "#E74C3C"
-BATTERY_CHARGE_COLOR = "#27AE60"
-MARKET_BUY_COLOR = "#3498DB"
-MARKET_PRICE_COLOR = "#E74C3C"
-SDAC_COLOR = "#3498DB"
-SIDC_COLOR = "#E67E22"
-FLEXIBLE_LOAD_COLOR = "#3498DB"
-VALUE_OF_CONSUMPTION_COLOR = "#E67E22"
-EV_1_COLOR = "#3498DB"
-EV_2_COLOR = "#E74C3C"
-EV_3_COLOR = "#9B59B6"
+# Chart colours and font come from the brand tokens, the single source of truth for Odys styling.
+# Figures are built with the light colours; _save_figure derives the dark figure from them, and
+# each chart page follows the colour scheme of the docs page that embeds it.
+_BRAND = json.loads((Path(__file__).parent / "brand" / "tokens.json").read_text())
+_CHART = _BRAND["chart"]
+BRAND_FONT = f"{_BRAND['font']['sans']['family']}, {_BRAND['font']['sans']['fallback']}"
+TRANSPARENT = "rgba(0, 0, 0, 0)"
+_HEX_OR_RGBA = re.compile(r"#[0-9a-f]{6}\b|rgba\((\d+), (\d+), (\d+), ([\d.]+)\)", re.IGNORECASE)
+
+
+def _chart_color(role: str, scheme: str = "light") -> str:
+    """Resolve a chart role ("solar", "price", ...) to its brand colour in one colour scheme."""
+    return _CHART["roles"][role][scheme]
+
+
+def _chrome_color(name: str, scheme: str = "light") -> str:
+    """Resolve a non-data chart colour ("text", "grid", ...) in one colour scheme."""
+    return _CHART["chrome"][name][scheme]
+
+
+def with_alpha(hex_color: str, alpha: float) -> str:
+    """Turn a hex colour into an rgba() colour with the given alpha."""
+    red, green, blue = _rgb(hex_color)
+    return f"rgba({red}, {green}, {blue}, {alpha})"
+
+
+def _rgb(hex_color: str) -> tuple[int, int, int]:
+    red, green, blue = (int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
+    return red, green, blue
+
+
+def _dark_colors() -> dict[str, str]:
+    """Map every light chart colour (roles and chrome) to its dark counterpart."""
+    pairs = [*_CHART["roles"].values(), *_CHART["chrome"].values()]
+    return {pair["light"]: pair["dark"] for pair in pairs}
+
+
+def to_dark(figure_json: str) -> str:
+    """Swap every light brand colour in a serialised figure for its dark counterpart.
+
+    Hex colours are swapped directly; rgba() colours built with with_alpha keep their alpha.
+    """
+    dark = _dark_colors()
+    dark_by_rgb = {_rgb(light): dark_color for light, dark_color in dark.items()}
+
+    def swap(match: re.Match[str]) -> str:
+        if match.group(1) is None:
+            return dark.get(match.group(0).lower(), match.group(0))
+        rgb = (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+        if rgb not in dark_by_rgb:
+            return match.group(0)
+        return with_alpha(dark_by_rgb[rgb], float(match.group(4)))
+
+    return _HEX_OR_RGBA.sub(swap, figure_json)
+
+
+SOLAR_COLOR = _chart_color("solar")
+SOLAR_LINE_COLOR = _chart_color("solar_line")
+THERMAL_COLOR = _chart_color("thermal")
+LOAD_COLOR = _chart_color("load")
+BATTERY_SOC_COLOR = _chart_color("battery_soc")
+BATTERY_DISCHARGE_COLOR = _chart_color("discharge")
+BATTERY_CHARGE_COLOR = _chart_color("charge")
+MARKET_BUY_COLOR = _chart_color("market_buy")
+MARKET_PRICE_COLOR = _chart_color("price")
+SDAC_COLOR = _chart_color("sdac")
+SIDC_COLOR = _chart_color("sidc")
+FLEXIBLE_LOAD_COLOR = _chart_color("flexible_load")
+VALUE_OF_CONSUMPTION_COLOR = _chart_color("value_of_consumption")
+EV_1_COLOR = _chart_color("ev_1")
+EV_2_COLOR = _chart_color("ev_2")
+EV_3_COLOR = _chart_color("ev_3")
+BACKGROUND_COLOR = _chrome_color("background")
+GRID_COLOR = _chrome_color("grid")
+
+# Runs inside each chart page. The page is embedded in a same-origin iframe, so it reads the
+# docs page's colour scheme and re-renders when the reader switches it. Opened on its own, the
+# chart follows the operating system's preference.
+_THEME_SCRIPT = """
+const figures = {"light": %(light)s, "dark": %(dark)s};
+const chart = document.getElementById("chart");
+const media = window.matchMedia("(prefers-color-scheme: dark)");
+let host = null;
+try {
+  if (window.parent !== window) host = window.parent.document.body;
+} catch (error) {}
+let current = null;
+function scheme() {
+  const docsScheme = host && host.dataset.mdColorScheme;
+  if (docsScheme) return docsScheme === "slate" ? "dark" : "light";
+  return media.matches ? "dark" : "light";
+}
+function render() {
+  const next = scheme();
+  if (next === current) return;
+  current = next;
+  Plotly.react(chart, figures[next].data, figures[next].layout, {responsive: true});
+}
+render();
+if (host) new MutationObserver(render).observe(host, {attributes: true, attributeFilter: ["data-md-color-scheme"]});
+media.addEventListener("change", render);
+"""
+
+_CHART_PAGE = """<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<style>html, body { margin: 0; height: 100%%; background: transparent; } #chart { height: 100%%; }</style>
+<script src="https://cdn.plot.ly/plotly-%(version)s.min.js"></script>
+</head>
+<body>
+<div id="chart"></div>
+<script>%(script)s</script>
+</body>
+</html>
+"""
+
+
+def _apply_chart_theme(fig: go.Figure) -> None:
+    """Give a figure the brand font and the light chrome on a transparent background."""
+    text, muted, axis = (_chrome_color(name) for name in ("text", "muted", "axis"))
+    fig.update_layout(
+        template=None,
+        font={"family": BRAND_FONT, "color": text},
+        paper_bgcolor=TRANSPARENT,
+        plot_bgcolor=TRANSPARENT,
+        legend_bgcolor=TRANSPARENT,
+        hoverlabel={"bgcolor": BACKGROUND_COLOR, "bordercolor": axis, "font": {"color": text}},
+    )
+    axes = {"gridcolor": GRID_COLOR, "zerolinecolor": axis, "linecolor": axis, "tickfont": {"color": muted}}
+    fig.update_xaxes(**axes)
+    fig.update_yaxes(**axes)
 
 
 def _save_figure(fig: go.Figure, name: str) -> None:
     path = OUTPUT_DIR / f"{name}.html"
-    fig.update_layout(template=None)
-    fig.write_html(path, include_plotlyjs="cdn")
+    _apply_chart_theme(fig)
+    light = fig.to_json().replace("</", "<\\/")
+    script = _THEME_SCRIPT % {"light": light, "dark": to_dark(light)}
+    path.write_text(_CHART_PAGE % {"version": get_plotlyjs_version(), "script": script})
     print(f"  \u2713 {path.name}")
 
 
@@ -82,7 +207,7 @@ def generate_basic_dispatch() -> None:
             x=steps,
             y=df["ccgt"],
             name="CCGT",
-            marker=dict(color=CCGT_COLOR),
+            marker=dict(color=THERMAL_COLOR),
         ),
     )
 
@@ -94,7 +219,7 @@ def generate_basic_dispatch() -> None:
             y=solar_profile,
             mode="lines",
             name="Solar Capacity",
-            line=dict(color=SOLAR_COLOR, width=2, dash="dash"),
+            line=dict(color=SOLAR_LINE_COLOR, width=2, dash="dash"),
         ),
     )
 
@@ -150,7 +275,7 @@ def generate_battery_dispatch() -> None:
             x=steps,
             y=battery_discharge,
             name="Battery Discharge",
-            marker=dict(color=BATTERY_SOC_COLOR),
+            marker=dict(color=BATTERY_DISCHARGE_COLOR),
             legendgroup="gen",
         ),
         row=1,
@@ -174,7 +299,7 @@ def generate_battery_dispatch() -> None:
             x=steps,
             y=ccgt,
             name="CCGT",
-            marker=dict(color=CCGT_COLOR),
+            marker=dict(color=THERMAL_COLOR),
             legendgroup="gen",
         ),
         row=1,
@@ -186,7 +311,7 @@ def generate_battery_dispatch() -> None:
             x=steps,
             y=battery_charge,
             name="Battery Charge",
-            marker=dict(color=BATTERY_SOC_COLOR),
+            marker=dict(color=BATTERY_CHARGE_COLOR),
             legendgroup="gen",
         ),
         row=1,
@@ -259,7 +384,7 @@ def generate_market_arbitrage() -> None:
             x=steps,
             y=gen_df["ccgt"],
             name="CCGT Generation",
-            marker=dict(color=CCGT_COLOR),
+            marker=dict(color=THERMAL_COLOR),
         ),
         row=1,
         col=1,
@@ -498,21 +623,22 @@ def generate_cvar_market_risk() -> None:
 
 
 EV_COLORS = {"ev_1": EV_1_COLOR, "ev_2": EV_2_COLOR, "ev_3": EV_3_COLOR}
-EV_V2G_COLOR = "#2980B9"
-PRICE_STEP_COLOR = "#5D6D7E"
-CUMULATIVE_PROFIT_COLOR = "#1E8449"
-MARKER_OUTLINE_COLOR = "#2C3E50"
-CHECK_OK_FILL = "rgba(46, 204, 113, 0.18)"
-CHECK_FAIL_FILL = "rgba(231, 76, 60, 0.22)"
-CHECK_OK_INK = "#1E8449"
-CHECK_FAIL_INK = "#C0392B"
-NEUTRAL_CELL_FILL = "rgba(0, 0, 0, 0)"
+SOC_START = {state.vehicle.name: state.soc for state in EV_INITIAL_STATES}
+SOC_END = {state.vehicle.name: state.soc for state in EV_FINAL_STATES}
+PRICE_STEP_COLOR = _chart_color("price_step")
+MARKER_OUTLINE_COLOR = _chart_color("marker_outline")
+TABLE_HEADER_FILL = _chart_color("table_header")
+CHECK_OK_INK = _chart_color("check_ok")
+CHECK_FAIL_INK = _chart_color("check_fail")
+CHECK_OK_FILL = with_alpha(CHECK_OK_INK, 0.18)
+CHECK_FAIL_FILL = with_alpha(CHECK_FAIL_INK, 0.22)
+NEUTRAL_CELL_FILL = TRANSPARENT
 ACTIVE_POWER_TOLERANCE = 1e-6
 ASSIGNMENT_THRESHOLD = 0.5
 TRIP_POWER_TOLERANCE_KW = 1e-3
-TRIP_COLOR = "#95A5A6"
-CHARGING_COLOR = "#27AE60"
-DISCHARGING_COLOR = "#E74C3C"
+TRIP_COLOR = _chart_color("trip")
+CHARGING_COLOR = _chart_color("charge")
+DISCHARGING_COLOR = _chart_color("discharge")
 
 NUMBER_OF_HOURS = len(MARKET_PRICES)
 HOUR_EDGES = list(range(NUMBER_OF_HOURS + 1))
@@ -768,7 +894,7 @@ def generate_ev_fleet_dispatch_combined(result: OptimalDispatchResults) -> None:
 
     ev_dataset = result.electric_vehicles.to_dataset()
     for ev in EVS:
-        soc_values = [ev.battery.soc_start, *ev_dataset.sel(ev=ev.name).soc.values]
+        soc_values = [SOC_START[ev.name], *ev_dataset.sel(ev=ev.name).soc.values]
         fig.add_trace(
             go.Scatter(
                 x=HOUR_EDGES,
@@ -871,7 +997,7 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
     for ev in EVS:
         soc_values = ev_dataset.sel(ev=ev.name).soc.values
         for trip in ev.trips:
-            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else ev.battery.soc_start
+            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else SOC_START[ev.name]
             rows.append((
                 f"{_ev_display_name(ev.name)} SoC before {trip.name} (t{trip.start_time})",
                 f"≥ {trip.min_soc_at_departure:.2f}",
@@ -880,14 +1006,14 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
             ))
 
     for ev in EVS:
-        if ev.battery.soc_end is None:
+        if ev.name not in SOC_END:
             continue
         actual = float(ev_dataset.sel(ev=ev.name).soc.values[-1])
         rows.append((
             f"{_ev_display_name(ev.name)} end-of-day SoC",
-            f"= {ev.battery.soc_end:.2f}",
+            f"= {SOC_END[ev.name]:.2f}",
             f"{actual:.3f}",
-            abs(actual - ev.battery.soc_end) <= tolerance,
+            abs(actual - SOC_END[ev.name]) <= tolerance,
         ))
 
     worst_trip_power_kw = 0.0
@@ -946,7 +1072,8 @@ def generate_ev_fleet_verification(result: OptimalDispatchResults) -> None:
                 columnwidth=[0.46, 0.16, 0.2, 0.18],
                 header=dict(
                     values=["<b>Check</b>", "<b>Requirement</b>", "<b>Result</b>", "<b>Status</b>"],
-                    fill_color="#ECF0F1",
+                    fill_color=TABLE_HEADER_FILL,
+                    line=dict(color=GRID_COLOR),
                     font=dict(color=MARKER_OUTLINE_COLOR, size=12),
                     align=["left", "center", "center", "center"],
                     height=30,
@@ -954,6 +1081,7 @@ def generate_ev_fleet_verification(result: OptimalDispatchResults) -> None:
                 cells=dict(
                     values=[checks, requirements, actuals, statuses],
                     fill_color=[NEUTRAL_CELL_FILL, NEUTRAL_CELL_FILL, NEUTRAL_CELL_FILL, status_fills],
+                    line=dict(color=GRID_COLOR),
                     font=dict(
                         size=12,
                         color=[MARKER_OUTLINE_COLOR, MARKER_OUTLINE_COLOR, MARKER_OUTLINE_COLOR, status_inks],
@@ -998,7 +1126,7 @@ def generate_ev_fleet_economics(result: OptimalDispatchResults) -> None:
             y=_mw_to_kw(buy_mwh),
             width=0.88,
             name="Buy from grid",
-            marker=dict(color=MARKET_BUY_COLOR, line=dict(color="#FFFFFF", width=1)),
+            marker=dict(color=MARKET_BUY_COLOR, line=dict(color=BACKGROUND_COLOR, width=1)),
             hovertemplate="%{y:.1f} kW<extra>Buy</extra>",
         ),
         row=2,
@@ -1010,7 +1138,7 @@ def generate_ev_fleet_economics(result: OptimalDispatchResults) -> None:
             y=[-v for v in _mw_to_kw(sell_mwh)],
             width=0.88,
             name="Sell to grid (V2G)",
-            marker=dict(color=MARKET_PRICE_COLOR, line=dict(color="#FFFFFF", width=1)),
+            marker=dict(color=MARKET_PRICE_COLOR, line=dict(color=BACKGROUND_COLOR, width=1)),
             hovertemplate="%{y:.1f} kW<extra>Sell</extra>",
         ),
         row=2,
