@@ -12,6 +12,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from odys.domain.conditions import AnyFinalCondition, AnyInitialCondition, ConditionSet
 from odys.domain.entities.base import EnergyEntity
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -38,6 +39,11 @@ class EnergySystem(BaseModel):
     Validation includes:
     - Validating that the timestep is positive and there is at least one step
     - Validating that scenario probabilities sum to 1 and names are unique
+    - Checking that each initial and final condition references an asset of the system,
+      at most one of each type per asset
+    - Checking that every asset whose results depend on its starting state has an initial condition
+    - Checking that durations (minimum up and down times, time in state) are whole timesteps
+    - Checking that each generator's final power fits its available capacity at the last timestep
     - Checking that each profile references an asset or market of the system
     - Checking that every load and market has a profile in every scenario
     - Checking that every profile has one value per timestep
@@ -68,6 +74,8 @@ class EnergySystem(BaseModel):
     objective: Objective = Field(default_factory=Objective)
     markets: EnergyMarket | Sequence[EnergyMarket] | None = Field(default=None, init_var=True)
     scenarios: Scenario | Sequence[Scenario] = Field(init_var=True)
+    initial_conditions: Sequence[AnyInitialCondition] = Field(default=(), init_var=True)
+    final_conditions: Sequence[AnyFinalCondition] = Field(default=(), init_var=True)
 
     @model_validator(mode="after")
     def _validate_inputs(self) -> Self:
@@ -77,6 +85,7 @@ class EnergySystem(BaseModel):
             scenario_set=self.scenario_set,
             markets=self.collection_of_markets,
             horizon=self.horizon,
+            condition_set=self.condition_set,
         )
         return self
 
@@ -91,6 +100,11 @@ class EnergySystem(BaseModel):
         if isinstance(self.scenarios, Scenario):
             return ScenarioSet(scenarios=(self.scenarios,))
         return ScenarioSet(scenarios=tuple(self.scenarios))
+
+    @cached_property
+    def condition_set(self) -> ConditionSet:
+        """Return the initial and final conditions as a `ConditionSet`."""
+        return ConditionSet(initial=tuple(self.initial_conditions), final=tuple(self.final_conditions))
 
     @cached_property
     def collection_of_markets(self) -> tuple[EnergyMarket, ...]:
@@ -108,7 +122,13 @@ class EnergySystem(BaseModel):
 
     def build_problem(self) -> OptimizationProblem:
         """Build the optimization problem of this energy system: one formulation per entity type and objective term."""
-        return OptimizationProblem.assemble(self._entities, self.horizon, self.scenario_set, self.objective)
+        return OptimizationProblem.assemble(
+            self._entities,
+            self.horizon,
+            self.scenario_set,
+            self.condition_set,
+            self.objective,
+        )
 
     def optimize(self, solver_config: SolverConfig | None = None) -> OptimalDispatchResults:
         """Optimize the energy system.

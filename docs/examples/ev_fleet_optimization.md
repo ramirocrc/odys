@@ -43,7 +43,7 @@ The dashed lines show all possible charger-to-EV connections. The optimizer dyna
 
 ### 1. Define the EV fleet and chargers
 
-Each EV is an [ElectricVehicle](../api/domain/entities/electric_vehicle.md) with trip schedules and optional V2G capability. Trips consume energy and make the vehicle unavailable for charging during the trip window. The key fields for ev_1:
+Each EV is an [ElectricVehicle](../developer/api/domain/entities/electric_vehicle.md) with trip schedules and optional V2G capability. Trips consume energy and make the vehicle unavailable for charging during the trip window. The key fields for ev_1:
 
 ```python
 from datetime import timedelta
@@ -54,6 +54,8 @@ from odys import (
     Battery,
     Charger,
     ElectricVehicle,
+    ElectricVehicleFinalState,
+    ElectricVehicleInitialState,
     EnergyMarket,
     EnergySystem,
     PriceProfile,
@@ -67,8 +69,6 @@ ev_1 = ElectricVehicle(
         capacity=0.100,  # 100 kWh
         max_charge_power=0.022,  # 22 kW
         max_discharge_power=0.011,  # 11 kW V2G
-        soc_start=0.8,
-        soc_end=0.3,
     ),
     trips=(
         Trip(
@@ -94,9 +94,11 @@ ev_1 = ElectricVehicle(
         ),
     ),
 )
+ev_1_starts = ElectricVehicleInitialState(vehicle=ev_1, soc=0.8)
+ev_1_ends = ElectricVehicleFinalState(vehicle=ev_1, soc=0.3)
 ```
 
-`max_discharge_power` is what enables V2G. Without it, the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip. The [Charger](../api/domain/entities/charger.md) objects are plain power limits:
+ev_1 starts the day at 80% and must end it at 30%. These [initial and final conditions](../user_guide/initial_and_final_conditions.md) belong to the run, so they are passed to the energy system in step 4. `max_discharge_power` is what enables V2G. Without it, the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip. The [Charger](../developer/api/domain/entities/charger.md) objects are plain power limits:
 
 ```python
 charger_dc = Charger(name="charger_dc", max_power=0.050)  # 50 kW
@@ -105,7 +107,7 @@ charger_ac = Charger(name="charger_ac", max_power=0.022)  # 22 kW
 
 Unlike [StationaryStorage](../user_guide/storage.md), EVs must be assigned to chargers, and each charger serves at most one EV at a time. With 2 chargers and 3 EVs, there is charger competition.
 
-ev_2 (60 kWh, charge-only, 3 trips) and ev_3 (40 kWh, charge-only, 2 trips) follow the same pattern. See the [full source](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py).
+ev_2 (60 kWh, charge-only, 3 trips) and ev_3 (40 kWh, charge-only, 2 trips) follow the same pattern, with their own initial and final states (`ev_2_starts`, `ev_3_ends`, ...). See the [full source](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py).
 
 ### 2. Add the market with buy-and-sell capability
 
@@ -154,6 +156,8 @@ energy_system = EnergySystem(
     timestep=timedelta(hours=1),
     number_of_steps=24,
     scenarios=scenario,
+    initial_conditions=(ev_1_starts, ev_2_starts, ev_3_starts),
+    final_conditions=(ev_1_ends, ev_2_ends, ev_3_ends),
 )
 
 result = energy_system.optimize()

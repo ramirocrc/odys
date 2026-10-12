@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.conditions import ElectricVehicleInitialState, StorageInitialState
 from odys.domain.entities.base import Asset, EnergyEntity
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
@@ -38,13 +39,16 @@ FLEXIBLE_BASE = [40.0, 50.0]
 GENERATOR = Generator(name="gen", nominal_power=500.0, variable_cost=1.0)
 FIXED_LOAD = FixedLoad(name="load")
 FLEXIBLE_LOAD = FlexibleLoad(name="flex", max_increase=5.0, max_decrease=5.0, value_of_consumption=40.0)
-BATTERY = Battery(capacity=10.0, max_charge_power=5.0, max_discharge_power=5.0, soc_start=0.5)
+BATTERY = Battery(capacity=10.0, max_charge_power=5.0, max_discharge_power=5.0)
+SOC_START = 0.5
+STORAGE = StationaryStorage(name="storage", battery=BATTERY)
+ELECTRIC_VEHICLE = ElectricVehicle(name="ev", battery=BATTERY, trips=())
 ONE_OF_EACH_ENTITY: tuple[EnergyEntity, ...] = (
     GENERATOR,
     FIXED_LOAD,
     FLEXIBLE_LOAD,
-    StationaryStorage(name="storage", battery=BATTERY),
-    ElectricVehicle(name="ev", battery=BATTERY, trips=()),
+    STORAGE,
+    ELECTRIC_VEHICLE,
     Charger(name="charger", max_power=5.0),
     EnergyMarket(name="market", max_trading_volume_per_step=50.0),
 )
@@ -125,6 +129,10 @@ def _problem_with_one_entity_of_each_type() -> OptimizationProblem:
                 LoadProfile(load=FLEXIBLE_LOAD, values=FLEXIBLE_BASE),
                 *(PriceProfile(market=market, values=DEMAND) for market in markets),
             ),
+        ),
+        initial_conditions=(
+            StorageInitialState(storage=STORAGE, soc=SOC_START),
+            ElectricVehicleInitialState(vehicle=ELECTRIC_VEHICLE, soc=SOC_START),
         ),
     ).build_problem()
 

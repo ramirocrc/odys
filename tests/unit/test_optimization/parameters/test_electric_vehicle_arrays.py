@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.conditions import ConditionSet, ElectricVehicleFinalState, ElectricVehicleInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.trip import Trip
@@ -23,10 +24,20 @@ TRIP2_ENERGY_PER_HOUR = 7.5
 TRIP1_MIN_SOC_AT_DEPARTURE = 0.3
 TRIP2_MIN_SOC_AT_DEPARTURE = 0.4
 NUMBER_OF_STEPS = 24
-TIME = ModelContext(
-    horizon=Horizon(timestep=timedelta(hours=1), number_of_steps=NUMBER_OF_STEPS),
-    scenario_set=ScenarioSet(scenarios=(Scenario(),)),
-).time
+EV1_SOC_START = 0.8
+EV2_SOC_START = 0.5
+EV1_SOC_END = 0.6
+
+
+def _context(*conditions: ElectricVehicleInitialState | ElectricVehicleFinalState) -> ModelContext:
+    return ModelContext(
+        horizon=Horizon(timestep=timedelta(hours=1), number_of_steps=NUMBER_OF_STEPS),
+        scenario_set=ScenarioSet(scenarios=(Scenario(),)),
+        condition_set=ConditionSet(
+            initial=tuple(condition for condition in conditions if isinstance(condition, ElectricVehicleInitialState)),
+            final=tuple(condition for condition in conditions if isinstance(condition, ElectricVehicleFinalState)),
+        ),
+    )
 
 
 @pytest.fixture
@@ -55,7 +66,7 @@ def trip2() -> Trip:
 def ev1(trip1: Trip, trip2: Trip) -> ElectricVehicle:
     return ElectricVehicle(
         name="ev1",
-        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.8),
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0),
         trips=(trip1, trip2),
     )
 
@@ -64,14 +75,19 @@ def ev1(trip1: Trip, trip2: Trip) -> ElectricVehicle:
 def ev2() -> ElectricVehicle:
     return ElectricVehicle(
         name="ev2",
-        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=25.0, soc_start=0.5),
+        battery=Battery(capacity=75.0, max_charge_power=50.0, max_discharge_power=25.0),
         trips=(),
     )
 
 
 @pytest.fixture
 def ev_arrays(ev1: ElectricVehicle, ev2: ElectricVehicle) -> ElectricVehicleArrays:
-    return electric_vehicle_arrays([ev1, ev2], Coordinates.of_entities(EV_DIMENSION, [ev1, ev2]), TIME)
+    context = _context(
+        ElectricVehicleInitialState(vehicle=ev1, soc=EV1_SOC_START),
+        ElectricVehicleInitialState(vehicle=ev2, soc=EV2_SOC_START),
+        ElectricVehicleFinalState(vehicle=ev1, soc=EV1_SOC_END),
+    )
+    return electric_vehicle_arrays([ev1, ev2], Coordinates.of_entities(EV_DIMENSION, [ev1, ev2]), context)
 
 
 def test_ev_arrays_creation(ev_arrays: ElectricVehicleArrays) -> None:
@@ -83,7 +99,7 @@ def test_ev_arrays_creation(ev_arrays: ElectricVehicleArrays) -> None:
 def test_ev_arrays_empty_raises_error() -> None:
     """Vectorizing no EVs is an internal error: the EV block is absent instead."""
     with pytest.raises(OdysError, match="BatteryArrays requires at least one model"):
-        electric_vehicle_arrays([], Coordinates.of_entities(EV_DIMENSION, []), TIME)
+        electric_vehicle_arrays([], Coordinates.of_entities(EV_DIMENSION, []), _context())
 
 
 def test_ev_arrays_is_driving(ev_arrays: ElectricVehicleArrays) -> None:
@@ -162,10 +178,11 @@ def test_ev_arrays_empty_trips() -> None:
     """EVs without trips get all-zero trip arrays."""
     ev = ElectricVehicle(
         name="ev_no_trips",
-        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.8),
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0),
         trips=(),
     )
-    params = electric_vehicle_arrays([ev], Coordinates.of_entities(EV_DIMENSION, [ev]), TIME)
+    context = _context(ElectricVehicleInitialState(vehicle=ev, soc=EV1_SOC_START))
+    params = electric_vehicle_arrays([ev], Coordinates.of_entities(EV_DIMENSION, [ev]), context)
 
     assert params.trips.is_driving.shape == (1, 24)
     assert params.trips.trip_energy.shape == (1, 24)
@@ -175,3 +192,16 @@ def test_ev_arrays_empty_trips() -> None:
     assert params.trips.is_driving.sel(ev="ev_no_trips", time="8").values == 0
     assert params.trips.trip_energy.sel(ev="ev_no_trips", time="8").values == 0.0
     assert params.trips.min_soc_at_departure.sel(ev="ev_no_trips", time="8").values == 0.0
+
+
+def test_ev_arrays_states_read_the_initial_and_final_state_of_charge(ev_arrays: ElectricVehicleArrays) -> None:
+    assert ev_arrays.states.soc_start.sel(ev="ev1").item() == pytest.approx(EV1_SOC_START)
+    assert ev_arrays.states.soc_start.sel(ev="ev2").item() == pytest.approx(EV2_SOC_START)
+    assert ev_arrays.states.soc_end.sel(ev="ev1").item() == pytest.approx(EV1_SOC_END)
+    assert bool(ev_arrays.states.soc_end.sel(ev="ev2").isnull())
+
+
+def test_ev_arrays_without_initial_state_raise(ev2: ElectricVehicle) -> None:
+    """Validation requires an initial state for every EV, so a missing one is an internal error."""
+    with pytest.raises(OdysError, match="There is no ElectricVehicleInitialState for 'ev2'"):
+        electric_vehicle_arrays([ev2], Coordinates.of_entities(EV_DIMENSION, [ev2]), _context())
