@@ -16,9 +16,10 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $s$ | Scenario |
 | $s_0$ | First scenario |
 | $g$ | Generator |
-| $b$ | Stationary storage asset |
+| $b$ | Battery-backed asset (stationary storage or electric vehicle) |
 | $e$ | Electric vehicle |
 | $c$ | Charger |
+| $k$ | EV trip |
 | $l$ | Load |
 | $m$ | Market |
 
@@ -94,8 +95,12 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $a_{c,e,t,s}$ | Binary charger-to-EV assignment |
 | $P^{\max}_c$ | Charger maximum power |
 | $\Delta SOC^{trip}_{e,t}$ | Trip energy drop as a fraction of capacity |
+| $\omega_{e,t}$ | 1 while the EV is driving |
+| $SOC^{dep}_{e,t}$ | Minimum SoC at departure, at the trip's start step |
+| $E^{trip}_k$ | Energy consumed by trip $k$ |
+| $t^{start}_k$, $t^{end}_k$ | Start and end timestep of trip $k$ |
 
-Electric vehicles reuse the storage SOC dynamics and add trip consumption, driving unavailability, departure SoC requirements, and charger assignment limits.
+Electric vehicles reuse the [Battery](assets/battery.md#mathematical-formulation) symbols with $b = e$.
 
 ## Market symbols
 
@@ -116,13 +121,12 @@ Electric vehicles reuse the storage SOC dynamics and add trip consumption, drivi
 | $\Delta d_{l,t,s}$ | Flexible load adjustment (positive = increase, negative = decrease) |
 | $\Delta d^{\max+}_l$ | Maximum increase above base profile |
 | $\Delta d^{\max-}_l$ | Maximum decrease below base profile |
+| $D^{\min}_l$ | Absolute minimum consumption (`min_load`) |
+| $D^{\max}_l$ | Absolute maximum consumption (`max_load`) |
+| $d_{l,t,s}$ | Actual flexible load consumption, $d^{\text{base}}_{l,t,s} + \Delta d_{l,t,s}$ |
 | $v_l$ | Value of consumption (economic value per MWh) |
 
-The power-balance equation uses generation, storage/EV discharge, and market buys on the supply side, and load (fixed + flexible base + adjustment), storage/EV charge, and market sells on the demand side.
-
-Flexible load adjustment is bounded: $-\Delta d^{\max-}_l \leq \Delta d_{l,t,s} \leq \Delta d^{\max+}_l$.
-
-The objective includes a profit term $\Delta d_{l,t,s} \cdot v_l$ for flexible loads. The procurement cost of adjusting load is captured implicitly through the power balance: increasing load requires additional supply from generators or markets, whose costs already appear in the objective.
+See [Power balance](concepts/power_balance.md) and [FlexibleLoad](assets/flexible_load.md#mathematical-formulation) for how these symbols are used.
 
 ## Sign conventions
 
@@ -134,4 +138,4 @@ The objective includes a profit term $\Delta d_{l,t,s} \cdot v_l$ for flexible l
 
 ## Next steps
 
-Learn about [Multi-stage Optimization](multi_stage.md), a planned extension to the current two-stage stochastic framework.
+Ready to see Odys in action? Check out the [Examples](../examples/index.md) for end-to-end worked scenarios.

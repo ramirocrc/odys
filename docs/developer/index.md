@@ -4,7 +4,7 @@ icon: lucide/code
 
 # Developer Reference
 
-How odys is put together, from the public import surface down to the internals. It is meant for contributors and for users who want the details behind the [user guide](../user_guide/energy_system.md); building and optimizing a system needs only the user guide.
+How odys is put together, from the public import surface down to the internals. It is meant for contributors and for users who want the details behind the [user guide](../user_guide/index.md); building and optimizing a system needs only the user guide.
 
 ## Start here
 
@@ -42,7 +42,7 @@ flowchart TD
 
 ## Keeping the diagrams current
 
-`tests/test_architecture_docs.py` compares the class diagrams of the [data model](data_model.md), the sequence diagram of the [`optimize()` pipeline](sequences.md), and the diagram in the [user guide](../user_guide/energy_system.md), with the code in `src/odys`, so `just test` fails when they drift apart. For the class diagrams it checks that:
+`tests/test_architecture_docs.py` compares the class diagrams of the [data model](data_model.md), the sequence diagram of the [`optimize()` pipeline](sequences.md), and the diagram in the [user guide](../user_guide/index.md), with the code in `src/odys`, so `just test` fails when they drift apart. For the class diagrams it checks that:
 
 - every **public** class (`odys.__all__`) and every **core model** class appears in a diagram. Core classes are the extension-point bases (`EnergyEntity`, `Profile`, `ObjectiveTerm`, `Formulation`, `ObjectiveTermFormulation`, `Dispatch`) with every class derived from them, plus the pipeline classes listed in the test (`ModelContext`, `OptimizationProblem`, `SolveOutcome`, …). Exceptions, typed variables objects, concrete `*Arrays` classes and solver option translators are left out;
 - every class a diagram names is defined in `src/odys`;
