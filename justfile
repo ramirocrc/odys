@@ -59,7 +59,9 @@ docs: generate-plots
 
 generate-plots:
     @echo "🚀 Generating example plots"
+    uv run --locked python docs/generate_brand.py
     uv run --locked python docs/generate_example_plots.py
+    uv run --locked python docs/generate_landing_data.py
 
 docs-build: generate-plots
     @echo "🚀 Building docs"

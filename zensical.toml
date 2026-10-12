@@ -10,7 +10,8 @@ edit_uri = "edit/main/docs/"
 extra_javascript = [
   "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 ]
-extra_css = ["assets/stylesheets/extra.css"]
+# brand.css is generated from docs/brand/tokens.json by `just generate-plots`
+extra_css = ["assets/stylesheets/brand.css", "assets/stylesheets/extra.css"]
 
 nav = [
   { "Home" = "index.md" },
@@ -123,7 +124,9 @@ nav = [
 ]
 
 [project.theme]
-font = { text = "Roboto", code = "Roboto Mono" }
+custom_dir = "overrides"
+# Fonts are loaded by brand.css (docs/brand/tokens.json)
+font = false
 features = [
   "announce.dismiss",
   "content.action.edit",
@@ -146,8 +149,8 @@ features = [
 # Palette toggle for automatic mode
 [[project.theme.palette]]
 media = "(prefers-color-scheme)"
-primary = "indigo"
-accent = "indigo"
+primary = "custom"
+accent = "custom"
 toggle.icon = "lucide/sun-moon"
 toggle.name = "Switch to light mode"
 
@@ -155,8 +158,8 @@ toggle.name = "Switch to light mode"
 [[project.theme.palette]]
 media = "(prefers-color-scheme: light)"
 scheme = "default"
-primary = "indigo"
-accent = "indigo"
+primary = "custom"
+accent = "custom"
 toggle.icon = "lucide/sun"
 toggle.name = "Switch to dark mode"
 
@@ -164,8 +167,8 @@ toggle.name = "Switch to dark mode"
 [[project.theme.palette]]
 media = "(prefers-color-scheme: dark)"
 scheme = "slate"
-primary = "indigo"
-accent = "orange"
+primary = "custom"
+accent = "custom"
 toggle.icon = "lucide/moon-star"
 toggle.name = "Switch to system preference"
 
