@@ -25,7 +25,7 @@ icon: lucide/home
     </a>
   </div>
   <div class="mdx-hero__buttons">
-    <a href="user_guide/energy_system.md" class="md-button md-button--primary">Get started</a>
+    <a href="user_guide/concepts/energy_system.md" class="md-button md-button--primary">Get started</a>
     <a href="https://github.com/ramirocrc/odys" class="md-button">View on GitHub</a>
   </div>
 </div>
@@ -72,7 +72,7 @@ Whether you're a student learning energy optimization, a researcher prototyping 
     uv add odys
     ```
 
-Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/). If you use a commercial solver, install the matching extra as well. See [Solvers](user_guide/solvers.md) for details.
+Odys requires a recent and currently supported [version of Python](https://www.python.org/downloads/). If you use a commercial solver, install the matching extra as well. See [Solvers](user_guide/optimization/solvers.md) for details.
 
 ## Quick example
 
@@ -122,7 +122,7 @@ Name: power, dtype: float64
 
 Notice how the generator output matches demand exactly at every timestep. There's only one source of power, so the optimizer has no choice but to dispatch it to cover the load. Add a second generator with a different cost, and the story gets a lot more interesting -- the solver will use the cheaper one first and only call on the expensive one when necessary.
 
-See [EnergySystem](user_guide/energy_system.md) to understand the full workflow, or jump to the [Examples](examples/index.md) for complete worked scenarios.
+See [EnergySystem](user_guide/concepts/energy_system.md) to understand the full workflow, or jump to the [Examples](examples/index.md) for complete worked scenarios.
 
 ## Dependencies
 

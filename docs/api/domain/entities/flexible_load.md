@@ -6,6 +6,6 @@ icon: fontawesome/solid/plug
 
 Flexible load asset representing adjustable demand within bounds to optimize profit.
 
-See [Load](../../../user_guide/load.md) in the User Guide for a conceptual walkthrough.
+See [Load](../../../user_guide/assets/flexible_load.md) in the User Guide for a conceptual walkthrough.
 
 ::: odys.domain.entities.flexible_load

@@ -8,32 +8,7 @@ icon: lucide/zap
 
 We designed `EnergySystem` as a single orchestrator because energy optimization involves multiple moving parts: assets, scenarios, time, and markets. Keeping them together in one object makes the workflow straightforward and validates everything at once.
 
-Here's how the main objects relate to each other:
-
-```mermaid
-%%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
-flowchart TD
-    ES["<b>EnergySystem</b>"]
-    AP["<b>AssetPortfolio</b>"]
-    subgraph Assets [ ]
-        direction LR
-        GEN["Generator(s)"]
-        STO["StationaryStorage(s)"]
-        EV["ElectricVehicle(s)"]
-        CHG["Charger(s)"]
-        FL["FixedLoad(s)"]
-        FX["FlexibleLoad(s)"]
-    end
-    MKT["<b>EnergyMarket(s)</b>"]
-    SC["<b>Scenario(s)</b>"]
-    OBJ["<b>Objective</b>"]
-
-    ES --> AP
-    ES --> MKT
-    ES --> SC
-    ES --> OBJ
-    AP --> Assets
-```
+See the [User Guide overview](../index.md) for how the main objects relate to each other.
 
 ## Basic usage
 
@@ -116,7 +91,7 @@ scenarios = [
 ]
 ```
 
-See [Stochastic Optimization](stochastic.md) for more details.
+See [Stochastic Optimization](../optimization/stochastic.md) for more details.
 
 ## Adding markets
 
@@ -145,7 +120,7 @@ energy_system = EnergySystem(
 
 Notice that market prices are specified in the scenario, not on the market object. We chose this design because prices vary over time and across scenarios, while market properties (like trading limits) stay fixed. Keeping time-varying data in scenarios keeps the model clean.
 
-See [Market](market.md) for details.
+See [EnergyMarket](../markets/energy_market.md) for details.
 
 ## Configuring the objective
 
@@ -168,7 +143,7 @@ energy_system = EnergySystem(
 )
 ```
 
-See [Optimization](optimization.md) for the full objective formulation, and the [CVaR Market Risk example](../examples/cvar_market_risk.md) for a worked scenario.
+See [Objective](../optimization/objective.md) for the full objective formulation, and the [CVaR Market Risk example](../../examples/cvar_market_risk.md) for a worked scenario.
 
 ## Running the optimization
 
@@ -178,7 +153,7 @@ Call `.optimize()` to build and solve the mathematical model:
 result = energy_system.optimize()
 ```
 
-This returns an `OptimalDispatchResults` object. See [Optimization](optimization.md) for how to read and interpret the results.
+This returns an `OptimalDispatchResults` object. See [Results](../optimization/results.md) for how to read and interpret them.
 
 ## Validation
 
@@ -200,8 +175,8 @@ When you call `.optimize()`, odys:
 2. Solves it with the HiGHS solver (or the solver you configure)
 3. Wraps the solution in an `OptimalDispatchResults` object
 
-You don't need to interact with any of these internals -- but if you're curious, the [API Reference](../api/energy_system.md) has the full details.
+You don't need to interact with any of these internals -- but if you're curious, the [API Reference](../../api/energy_system.md) has the full details.
 
 ## Next steps
 
-Now that you've seen the complete workflow, let's dive into each asset type. See [Generator](generator.md) to understand how to model power sources.
+Next, see [AssetPortfolio](asset_portfolio.md) to collect your assets, or jump to [Assets](../assets/index.md) for every asset type.

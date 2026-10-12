@@ -36,81 +36,11 @@ Every profile has one value per optimization timestep, so its length must equal 
 
 | Profile                    | References   | Unit         | Required in every scenario | Meaning                                                      |
 | -------------------------- | ------------ | ------------ | -------------------------- | ------------------------------------------------------------ |
-| `LoadProfile`              | `load=`      | MW           | Yes, for every load        | Demand of a `FixedLoad`, or base profile of a `FlexibleLoad` |
-| `AvailableCapacityProfile` | `generator=` | MW           | No                         | Upper bound on a generator's output at each timestep         |
-| `PriceProfile`             | `market=`    | currency/MWh | Yes, for every market      | Price of an `EnergyMarket` at each timestep                  |
+| `LoadProfile`              | `load=`      | MW           | Yes, for every load        | Demand of a [FixedLoad](../assets/fixed_load.md#profiles), or base profile of a [FlexibleLoad](../assets/flexible_load.md#profiles) |
+| `AvailableCapacityProfile` | `generator=` | MW           | No                         | Upper bound on a [Generator](../assets/generator.md#profiles)'s output at each timestep |
+| `PriceProfile`             | `market=`    | currency/MWh | Yes, for every market      | Price of an [EnergyMarket](../markets/energy_market.md#profiles) at each timestep |
 
-### Demand of a fixed load
-
-Every [FixedLoad](load.md#fixed-loads) in the portfolio needs a `LoadProfile` in every scenario:
-
-```python
-from odys import LoadProfile, FixedLoad, Scenario
-
-factory = FixedLoad(name="factory")
-office = FixedLoad(name="office")
-
-scenario = Scenario(
-    profiles=(
-        LoadProfile(load=factory, values=[100, 120, 80, 90]),
-        LoadProfile(load=office, values=[20, 25, 15, 20]),
-    ),
-)
-```
-
-### Base demand of a flexible load
-
-For a [FlexibleLoad](load.md#flexible-loads), `LoadProfile` is the base profile. The optimizer can adjust consumption up or down from it:
-
-```python
-from odys import LoadProfile, FlexibleLoad, Scenario
-
-process = FlexibleLoad(name="industrial_process", max_increase=20, max_decrease=10, value_of_consumption=60)
-
-scenario = Scenario(
-    profiles=(LoadProfile(load=process, values=[80, 80, 80, 80]),),
-)
-```
-
-### Available capacity of a generator
-
-Cap the output of specific generators over time. This is how you model variable renewable generation like wind or solar:
-
-```python
-from odys import AvailableCapacityProfile, LoadProfile, FixedLoad, Generator, Scenario
-
-wind = Generator(name="wind_farm", nominal_power=100, variable_cost=0)
-solar = Generator(name="solar", nominal_power=100, variable_cost=0)
-demand = FixedLoad(name="demand")
-
-scenario = Scenario(
-    profiles=(
-        AvailableCapacityProfile(generator=wind, values=[80, 60, 90, 70]),
-        AvailableCapacityProfile(generator=solar, values=[0, 50, 80, 30]),
-        LoadProfile(load=demand, values=[100, 120, 80, 90]),
-    ),
-)
-```
-
-At each timestep, the generator can't produce more than this value. Each value must lie between 0 and the generator's `nominal_power`. A generator without an `AvailableCapacityProfile` can produce up to its `nominal_power`.
-
-### Price of a market
-
-Provide a price time series for each [EnergyMarket](market.md) passed to the `EnergySystem`:
-
-```python
-from odys import LoadProfile, EnergyMarket, FixedLoad, PriceProfile, Scenario
-
-day_ahead = EnergyMarket(name="day_ahead", max_trading_volume_per_step=200)
-demand = FixedLoad(name="demand")
-
-scenario = Scenario(
-    profiles=(
-        PriceProfile(market=day_ahead, values=[50, 55, 45, 60]),
-        LoadProfile(load=demand, values=[100, 120, 80, 90]),
-    ),
-)
-```
+Each asset page's **Profiles** section shows an example and the validation rules for its profile.
 
 ## Putting it all together
 
@@ -194,8 +124,8 @@ Odys enforces two rules across the scenarios and raises `OdysValidationError` ot
 1. **Probabilities sum to 1.0**, within floating-point tolerance, so 49 scenarios of `1 / 49` each are accepted.
 2. **Names are unique.**
 
-Any profile can differ between scenarios, so a single run can capture renewable, demand and price uncertainty at once. See [Stochastic Optimization](stochastic.md) for how the optimizer weighs the scenarios.
+Any profile can differ between scenarios, so a single run can capture renewable, demand and price uncertainty at once. See [Stochastic Optimization](../optimization/stochastic.md) for how the optimizer weighs the scenarios.
 
 ## Next steps
 
-Ready to run your first optimization? See [Optimization](optimization.md) to understand the objective function, constraints, and how to read results.
+See [Power balance](power_balance.md) for how assets and markets are tied together, then [Assets](../assets/index.md) for each asset type.

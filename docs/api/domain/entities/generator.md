@@ -6,6 +6,6 @@ icon: fontawesome/solid/bolt
 
 Power generator asset with operational constraints: nominal power, variable cost, ramp rates, startup/shutdown costs, and minimum up/down time.
 
-See [Generator](../../../user_guide/generator.md) in the User Guide for a conceptual walkthrough.
+See [Generator](../../../user_guide/assets/generator.md) in the User Guide for a conceptual walkthrough.
 
 ::: odys.domain.entities.generator
