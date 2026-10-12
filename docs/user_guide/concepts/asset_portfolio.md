@@ -23,7 +23,6 @@ portfolio = AssetPortfolio([
             max_discharge_power=25.0,
             efficiency_charging=0.95,
             efficiency_discharging=0.95,
-            soc_start=0.5,
         ),
     ),
     FixedLoad(name="demand"),

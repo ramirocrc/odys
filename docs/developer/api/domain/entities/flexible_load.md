@@ -1,0 +1,11 @@
+---
+icon: fontawesome/solid/plug
+---
+
+# `odys.domain.entities.flexible_load`
+
+Flexible load asset representing adjustable demand within bounds to optimize profit.
+
+See [FlexibleLoad](../../../../user_guide/assets/flexible_load.md) in the User Guide for a conceptual walkthrough.
+
+::: odys.domain.entities.flexible_load

@@ -23,12 +23,15 @@ from odys import (
     FixedLoad,
     FlexibleLoad,
     Generator,
+    GeneratorInitialState,
     LoadProfile,
     OptimalDispatchResults,
     PriceProfile,
     Scenario,
     SolverConfig,
     StationaryStorage,
+    StorageFinalState,
+    StorageInitialState,
 )
 
 EXAMPLES_DIR = Path(__file__).parents[2] / "examples"
@@ -116,8 +119,8 @@ def _unit_commitment_system() -> EnergySystem:
         min_power=40.0,
         ramp_up=50.0,
         ramp_down=50.0,
-        min_up_time=3,
-        min_down_time=3,
+        min_up_time=timedelta(hours=3),
+        min_down_time=timedelta(hours=3),
         startup_cost=300.0,
         shutdown_cost=50.0,
     )
@@ -138,6 +141,10 @@ def _unit_commitment_system() -> EnergySystem:
                 LoadProfile(load=demand, values=COMMITMENT_LOAD),
             ),
         ),
+        initial_conditions=(
+            GeneratorInitialState(generator=baseload, power=0.0, time_in_state=timedelta(hours=3)),
+            GeneratorInitialState(generator=peaker, power=0.0),
+        ),
     )
 
 
@@ -150,8 +157,6 @@ def _storage_and_market_system() -> EnergySystem:
             max_discharge_power=15.0,
             efficiency_charging=0.95,
             efficiency_discharging=0.9,
-            soc_start=0.5,
-            soc_end=0.5,
             soc_min=0.1,
             soc_max=0.9,
             degradation_cost=2.0,
@@ -177,6 +182,8 @@ def _storage_and_market_system() -> EnergySystem:
                 PriceProfile(market=market, values=STORAGE_PRICES),
             ),
         ),
+        initial_conditions=(StorageInitialState(storage=battery, soc=0.5),),
+        final_conditions=(StorageFinalState(storage=battery, soc=0.5),),
     )
 
 

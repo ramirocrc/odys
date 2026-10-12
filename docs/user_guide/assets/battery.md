@@ -4,17 +4,19 @@ icon: fontawesome/solid/battery-three-quarters
 
 # Battery
 
-A `Battery` describes the physics of an energy store: its capacity, power limits, efficiencies, and state of charge (SOC). It is not an asset by itself. Assets *have* a battery:
+A `Battery` describes the physics of an energy store: its capacity, power limits, efficiencies, and state of charge (SOC) limits. It is not an asset by itself. Assets *have* a battery:
 
 - a [StationaryStorage](stationary_storage.md) is a battery at a fixed site;
 - an [ElectricVehicle](electric_vehicle.md) is a battery with a trip schedule.
 
 Everything on this page applies to both.
 
+Where the battery starts and ends is not part of the battery: it belongs to the run, so you pass it to the `EnergySystem` as an initial and, optionally, a final condition. See [State of charge](#state-of-charge-soc).
+
 ## Basic usage
 
 ```python
-from odys import Battery, StationaryStorage
+from odys import Battery, StationaryStorage, StorageInitialState
 
 storage = StationaryStorage(
     name="bess",
@@ -24,10 +26,12 @@ storage = StationaryStorage(
         max_discharge_power=50.0,  # MW discharge limit
         efficiency_charging=0.95,
         efficiency_discharging=0.95,
-        soc_start=0.5,  # starts at 50%
     ),
 )
+starts_half_full = StorageInitialState(storage=storage, soc=0.5)
 ```
+
+Pass `starts_half_full` to the energy system with `EnergySystem(..., initial_conditions=(starts_half_full,))`. Every storage and EV needs an initial state: its state of charge carries over from one step to the next, so odys never guesses where it starts.
 
 ## Fields
 
@@ -38,8 +42,6 @@ storage = StationaryStorage(
 | `max_discharge_power`    | `float`         | Yes      | -       | Maximum discharging power (MW). Use `0` for charge-only assets                   |
 | `efficiency_charging`    | `float`         | No       | `1.0`   | Charging efficiency, between 0 and 1                                             |
 | `efficiency_discharging` | `float`         | No       | `1.0`   | Discharging efficiency, between 0 and 1                                          |
-| `soc_start`              | `float`         | Yes      | -       | Initial state of charge, as a fraction of capacity (0-1)                         |
-| `soc_end`                | `float \| None` | No       | `None`  | Required final state of charge (0-1). If `None`, the optimizer is free to choose |
 | `soc_min`                | `float`         | No       | `0.0`   | Minimum allowed state of charge (0-1)                                            |
 | `soc_max`                | `float`         | No       | `1.0`   | Maximum allowed state of charge (0-1)                                            |
 | `degradation_cost`       | `float`         | No       | `0.0`   | Cost per MWh cycled (charged or discharged), included in the objective           |
@@ -53,29 +55,36 @@ See the [formulation](#math-power-limits).
 
 ## State of charge (SOC)
 
-The SOC fields control how the battery's energy level behaves:
+Four values control how the battery's energy level behaves:
 
-- `soc_start` is where the battery begins. A value of `0.5` means it starts at 50% of its capacity.
-- `soc_end` constrains where the battery must end up. This is useful when you want to ensure the battery isn't fully drained at the end of the optimization horizon.
-- `soc_min` and `soc_max` set the operating range. For example, if you don't want to go below 20% or above 90%:
+- The initial state (`StorageInitialState`, or `ElectricVehicleInitialState` for an EV) sets where the battery begins. `soc=0.5` means it starts at 50% of its capacity.
+- An optional final state (`StorageFinalState` or `ElectricVehicleFinalState`) sets where the battery must end up. This is useful when you don't want it drained at the end of the horizon, so the next run can use it. Without one, the optimizer is free to choose.
+- The battery's `soc_min` and `soc_max` set the operating range. For example, if you don't want to go below 20% or above 90%:
 
 ```python
-battery = Battery(
-    capacity=100.0,
-    max_charge_power=50.0,
-    max_discharge_power=50.0,
-    efficiency_charging=0.90,
-    efficiency_discharging=0.85,
-    soc_start=0.5,
-    soc_end=0.5,
-    soc_min=0.2,
-    soc_max=0.9,
+from odys import StorageFinalState
+
+storage = StationaryStorage(
+    name="bess",
+    battery=Battery(
+        capacity=100.0,
+        max_charge_power=50.0,
+        max_discharge_power=50.0,
+        efficiency_charging=0.90,
+        efficiency_discharging=0.85,
+        soc_min=0.2,
+        soc_max=0.9,
+    ),
 )
+initial_conditions = (StorageInitialState(storage=storage, soc=0.5),)
+final_conditions = (StorageFinalState(storage=storage, soc=0.5),)
 ```
 
 !!! note
 
-    `soc_start` and `soc_end` must fall within the `[soc_min, soc_max]` range. Pydantic validation will catch this if you get it wrong.
+    The initial and final state of charge must fall within the battery's `[soc_min, soc_max]` range. Creating the state raises an `OdysValidationError` if it doesn't.
+
+See [Initial and final conditions](../concepts/initial_and_final_conditions.md) for every condition type.
 
 See the [formulation](#math-soc).
 
@@ -104,7 +113,6 @@ battery = Battery(
     max_discharge_power=50.0,
     efficiency_charging=0.95,
     efficiency_discharging=0.95,
-    soc_start=0.5,
     degradation_cost=5.0,  # 5 currency units per MWh cycled
 )
 ```
@@ -152,7 +160,7 @@ SOC_{b,t,s} = SOC_{b,t-1,s} \left(1 - \delta_b \Delta t\right)
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,t,s}
 $$
 
-At the first timestep, the battery starts from $SOC^{start}_b$:
+At the first timestep, the battery starts from its initial state of charge $SOC^{start}_b$:
 
 $$
 SOC_{b,0,s} = SOC^{start}_b
@@ -160,7 +168,7 @@ SOC_{b,0,s} = SOC^{start}_b
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,0,s}
 $$
 
-The SOC stays within its operating range and, when `soc_end` is set, ends at $SOC^{end}_b$:
+The SOC stays within its operating range and, when the battery has a final state, ends at $SOC^{end}_b$:
 
 $$
 SOC^{\min}_b \le SOC_{b,t,s} \le SOC^{\max}_b, \qquad

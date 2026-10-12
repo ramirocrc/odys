@@ -55,6 +55,8 @@ from odys import (
     Battery,
     Charger,
     ElectricVehicle,
+    ElectricVehicleFinalState,
+    ElectricVehicleInitialState,
     EnergyMarket,
     EnergySystem,
     OptimalDispatchResults,
@@ -67,7 +69,7 @@ logger = logging.getLogger(__name__)
 
 ev_1 = ElectricVehicle(
     name="ev_1",
-    battery=Battery(capacity=0.100, max_charge_power=0.022, max_discharge_power=0.011, soc_start=0.8, soc_end=0.3),
+    battery=Battery(capacity=0.100, max_charge_power=0.022, max_discharge_power=0.011),
     trips=(
         Trip(
             name="morning_delivery",
@@ -95,7 +97,7 @@ ev_1 = ElectricVehicle(
 
 ev_2 = ElectricVehicle(
     name="ev_2",
-    battery=Battery(capacity=0.060, max_charge_power=0.022, max_discharge_power=0.0, soc_start=0.5, soc_end=0.6),
+    battery=Battery(capacity=0.060, max_charge_power=0.022, max_discharge_power=0.0),
     trips=(
         Trip(
             name="morning_route",
@@ -123,7 +125,7 @@ ev_2 = ElectricVehicle(
 
 ev_3 = ElectricVehicle(
     name="ev_3",
-    battery=Battery(capacity=0.040, max_charge_power=0.007, max_discharge_power=0.0, soc_start=0.5, soc_end=0.5),
+    battery=Battery(capacity=0.040, max_charge_power=0.007, max_discharge_power=0.0),
     trips=(
         Trip(
             name="delivery_1",
@@ -143,6 +145,18 @@ ev_3 = ElectricVehicle(
 )
 
 EVS: tuple[ElectricVehicle, ...] = (ev_1, ev_2, ev_3)
+
+EV_INITIAL_STATES: tuple[ElectricVehicleInitialState, ...] = (
+    ElectricVehicleInitialState(vehicle=ev_1, soc=0.8),
+    ElectricVehicleInitialState(vehicle=ev_2, soc=0.5),
+    ElectricVehicleInitialState(vehicle=ev_3, soc=0.5),
+)
+
+EV_FINAL_STATES: tuple[ElectricVehicleFinalState, ...] = (
+    ElectricVehicleFinalState(vehicle=ev_1, soc=0.3),
+    ElectricVehicleFinalState(vehicle=ev_2, soc=0.6),
+    ElectricVehicleFinalState(vehicle=ev_3, soc=0.5),
+)
 
 CHARGERS: tuple[Charger, ...] = (
     Charger(name="charger_dc", max_power=0.050),
@@ -195,6 +209,8 @@ def run_ev_fleet_optimization() -> OptimalDispatchResults:
         timestep=timedelta(hours=1),
         number_of_steps=24,
         scenarios=scenario,
+        initial_conditions=EV_INITIAL_STATES,
+        final_conditions=EV_FINAL_STATES,
     )
 
     return energy_system.optimize()

@@ -128,4 +128,4 @@ Any profile can differ between scenarios, so a single run can capture renewable,
 
 ## Next steps
 
-See [Power balance](power_balance.md) for how assets and markets are tied together, then [Assets](../assets/index.md) for each asset type.
+See [Initial and final conditions](initial_and_final_conditions.md) to set where each asset starts and ends a run.
