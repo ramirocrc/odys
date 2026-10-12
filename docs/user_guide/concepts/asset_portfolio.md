@@ -73,7 +73,7 @@ It returns a tuple in the order you added the assets, so it's safe to iterate ov
 
 ## Only assets belong in a portfolio
 
-A portfolio holds what you own and operate: generators, storage, electric vehicles, chargers, and loads. Every one of them is an `Asset`. Markets are not assets, so pass them to `EnergySystem(markets=...)`. Putting a market in a portfolio raises an `OdysValidationError`.
+A portfolio holds what you own and operate: the [assets](../assets/index.md). Every one of them is an `Asset`. Markets are not assets, so pass them to `EnergySystem(markets=...)` (see [EnergyMarket](../markets/energy_market.md)). Putting a market in a portfolio raises an `OdysValidationError`.
 
 ## Next steps
 

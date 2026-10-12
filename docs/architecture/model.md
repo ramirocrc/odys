@@ -4,7 +4,7 @@ icon: lucide/network
 
 # Architecture model
 
-This page describes how odys is put together: the package layers, the `optimize()` pipeline, and the classes of each layer. It is meant for contributors; users only need the [user guide](../user_guide/energy_system.md).
+This page describes how odys is put together: the package layers, the `optimize()` pipeline, and the classes of each layer. It is meant for contributors; users only need the [user guide](../user_guide/index.md).
 
 ## Domain
 
@@ -434,7 +434,7 @@ classDiagram
 
 ## Keeping this page current
 
-`tests/test_architecture_docs.py` compares the diagrams on this page, and the diagram in the [user guide](../user_guide/energy_system.md), with the code in `src/odys`, so `just test` fails when they drift apart. For the class diagrams it checks that:
+`tests/test_architecture_docs.py` compares the diagrams on this page, and the diagram in the [user guide](../user_guide/index.md), with the code in `src/odys`, so `just test` fails when they drift apart. For the class diagrams it checks that:
 
 - every **public** class (`odys.__all__`) and every **core model** class appears in a diagram. Core classes are the extension-point bases (`EnergyEntity`, `Profile`, `ObjectiveTerm`, `Formulation`, `ObjectiveTermFormulation`, `Dispatch`) with every class derived from them, plus the pipeline classes listed in the test (`ModelContext`, `OptimizationProblem`, `SolveOutcome`, …). Exceptions, typed variables objects, concrete `*Arrays` classes and solver option translators are left out;
 - every class a diagram names is defined in `src/odys`;
