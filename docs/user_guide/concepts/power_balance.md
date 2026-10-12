@@ -43,4 +43,4 @@ Here $b$ ranges over stationary storages and electric vehicles.
 
 ## Next steps
 
-See [Assets](../assets/index.md) for what each asset contributes to the balance.
+Each asset page ends with its power balance contribution. Start with [Generator](../assets/generator.md#power-balance-contribution).

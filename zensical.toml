@@ -25,7 +25,6 @@ nav = [
       { "Power balance" = "user_guide/concepts/power_balance.md" },
     ] },
     { "Assets" = [
-      "user_guide/assets/index.md",
       { "Generator" = "user_guide/assets/generator.md" },
       { "FixedLoad" = "user_guide/assets/fixed_load.md" },
       { "FlexibleLoad" = "user_guide/assets/flexible_load.md" },
