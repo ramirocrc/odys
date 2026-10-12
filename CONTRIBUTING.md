@@ -68,7 +68,7 @@ Run these commands before opening a PR. They must all pass.
 just check
 ```
 
-This runs prek hooks plus three type checkers in parallel: `ty`, `pyrefly`, and `basedpyright`. It also checks for obsolete dependencies with `deptry`.
+This runs the prek hooks, four type checkers (`ty`, `pyrefly`, `basedpyright` and `zuban`), `complexipy` for cognitive complexity, `import-linter` for the architecture layers, and `deptry` for obsolete dependencies.
 
 ```bash
 # Unit tests with coverage
@@ -101,6 +101,17 @@ git push origin my-new-feature-branch
 
 Open a pull request on GitHub. Link any related issues and describe what your changes do.
 
+## Working with coding agents
+
+Coding agents are welcome. The project ships guidance that works with any agent:
+
+- [`AGENTS.md`](AGENTS.md) is the single source of truth: commands, the Definition of Done, architecture, conventions and golden files to imitate. Most agents read it automatically; if yours doesn't, point it there.
+- [`.agents/skills/`](.agents/skills/) holds step-by-step playbooks for recurring tasks: adding an asset type, adding a constraint, fixing a bug, verifying a change, and reviewing it before a PR. They are plain Markdown in the Agent Skills format, so you can load them into your agent's skill or rules directory, or just ask the agent to read the one that fits.
+
+Tool-specific setup (instruction files for one agent, editor rules, hooks) stays on your machine and is not committed.
+
+You are responsible for every line you submit, whoever wrote it. An agent-assisted PR meets the same bar as any other: run `just check` and `just test` yourself, read the diff, and don't add suppressions or loosen tests to make checks pass. `tests/test_escape_hatches.py` fails on any new `# noqa`, `# type: ignore`, `Any`, `cast` or skipped test.
+
 ## Pull Request checklist
 
 Before opening a PR, verify that your changes:
@@ -112,6 +123,7 @@ Before opening a PR, verify that your changes:
 5. Pass `just docs-build` if you touched documentation.
 6. Follow the code style conventions below.
 7. Use type hints everywhere with `X | None` syntax, not `Optional[X]`.
+8. Add no new suppressions or escape hatches (`tests/test_escape_hatches.py` checks this).
 
 ## Code style
 
