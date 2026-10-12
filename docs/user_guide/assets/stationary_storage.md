@@ -13,7 +13,7 @@ A storage asset *has* a [Battery](battery.md): the asset is the site you own, an
 Let's add a battery to the portfolio.
 
 ```python
-from odys import Battery, StationaryStorage
+from odys import Battery, StationaryStorage, StorageInitialState
 
 storage = StationaryStorage(
     name="bess",
@@ -23,10 +23,12 @@ storage = StationaryStorage(
         max_discharge_power=50.0,  # MW discharge limit
         efficiency_charging=0.95,
         efficiency_discharging=0.95,
-        soc_start=0.5,  # starts at 50%
     ),
 )
+starts_half_full = StorageInitialState(storage=storage, soc=0.5)
 ```
+
+Pass `starts_half_full` to the energy system with `EnergySystem(..., initial_conditions=(starts_half_full,))`. Every storage needs an initial state: its state of charge carries over from one step to the next, so odys never guesses where it starts.
 
 ## Fields
 
@@ -36,6 +38,19 @@ storage = StationaryStorage(
 | `battery` | `Battery` | Yes      | -       | The battery's physics; see [Battery](battery.md#fields) |
 
 SOC limits, efficiencies, self-discharge, and degradation cost are all set on the `Battery`. See [Battery](battery.md).
+
+## Initial and final state
+
+Where the storage starts and ends belongs to the run, not to the battery. Pass a `StorageInitialState` (required) and, optionally, a `StorageFinalState` to the `EnergySystem`:
+
+| Class                 | Field     | Type                | Description                                |
+| --------------------- | --------- | ------------------- | ------------------------------------------ |
+| `StorageInitialState` | `storage` | `StationaryStorage` | The storage                                |
+|                       | `soc`     | `float`             | State of charge just before the first step |
+| `StorageFinalState`   | `storage` | `StationaryStorage` | The storage                                |
+|                       | `soc`     | `float`             | State of charge at the last step           |
+
+See [Battery](battery.md#state-of-charge-soc) for how they shape the state of charge, and the [formulation](battery.md#math-soc).
 
 ## Results
 

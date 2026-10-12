@@ -8,11 +8,15 @@ every profile through its type's `entity_types` and `required` flags. A new
 asset type is covered by overriding those queries (that the optimizer models
 it is checked against its formulations, in `odys.optimization.formulations`);
 a new profile type by adding it to `AnyProfile` and `PROFILE_TYPES` in
-`profiles.py`.
+`profiles.py`. Conditions are checked through their own queries
+(`validate_horizon`, `validate_operating_conditions`) and required per asset
+through each initial condition type's `required_for`; a new initial condition
+type is added to `INITIAL_CONDITION_TYPES` in `conditions.py`.
 """
 
 from collections.abc import Mapping, Sequence
 
+from odys.domain.conditions import INITIAL_CONDITION_TYPES, ConditionSet
 from odys.domain.entities.base import Asset, EnergyEntity
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -27,6 +31,7 @@ def validate_energy_system_inputs(
     scenario_set: ScenarioSet,
     markets: Sequence[EnergyMarket],
     horizon: Horizon,
+    condition_set: ConditionSet,
 ) -> None:
     """Run all cross-domain validation checks on the energy system.
 
@@ -35,6 +40,7 @@ def validate_energy_system_inputs(
         scenario_set: The scenarios of the problem.
         markets: Normalized sequence of energy markets.
         horizon: The time grid of the optimization.
+        condition_set: The initial and final conditions of the run.
 
     Raises:
         OdysValidationError: If any validation check fails.
@@ -44,10 +50,14 @@ def validate_energy_system_inputs(
     for entity in entities:
         entity.validate_horizon(horizon)
 
+    validate_conditions_reference_system_assets(condition_set, portfolio)
+    validate_required_initial_conditions_present(condition_set, portfolio)
+
     scenarios = scenario_set.scenarios
     validate_profiles_reference_system_entities(scenarios, portfolio, markets)
     validate_required_profiles_present(scenarios, entities)
     validate_profile_lengths(scenarios, horizon)
+    validate_conditions_fit_the_run(condition_set, scenarios, horizon)
 
     for scenario in scenarios:
         validate_has_load_or_market(scenario, markets)
@@ -97,6 +107,86 @@ def _validate_profile_references(scenario: Scenario, profile: Profile, system_en
             f"'{profile.entity.name}' does not reference the entity of that name in the energy system."
         )
         raise OdysValidationError(msg)
+
+
+def validate_conditions_reference_system_assets(condition_set: ConditionSet, portfolio: AssetPortfolio) -> None:
+    """Validate that each condition references an asset of the energy system.
+
+    A condition whose asset is missing from the portfolio, or differs from the
+    portfolio's asset of that name, would describe an asset that is not being optimized.
+
+    Args:
+        condition_set: The initial and final conditions of the run.
+        portfolio: The asset portfolio.
+
+    Raises:
+        OdysValidationError: If a condition's asset is not the portfolio's asset of that name.
+
+    """
+    for condition in condition_set.conditions:
+        system_asset = portfolio.assets.get(condition.entity.name)
+        if system_asset is None:
+            msg = (
+                f"The {type(condition).__name__} for '{condition.entity.name}' references an asset "
+                "that is not in the energy system."
+            )
+            raise OdysValidationError(msg)
+        if system_asset != condition.entity:
+            msg = (
+                f"The {type(condition).__name__} for '{condition.entity.name}' does not reference "
+                "the asset of that name in the energy system."
+            )
+            raise OdysValidationError(msg)
+
+
+def validate_required_initial_conditions_present(condition_set: ConditionSet, portfolio: AssetPortfolio) -> None:
+    """Validate that every asset whose results depend on its starting state has an initial condition.
+
+    Args:
+        condition_set: The initial and final conditions of the run.
+        portfolio: The asset portfolio.
+
+    Raises:
+        OdysValidationError: If an asset lacks an initial condition it requires.
+
+    """
+    for kind in INITIAL_CONDITION_TYPES:
+        for asset in portfolio.assets.values():
+            if not isinstance(asset, kind.entity_types) or condition_set.get(kind, asset) is not None:
+                continue
+            reason = kind.required_for(asset)
+            if reason is not None:
+                msg = f"{type(asset).__name__} '{asset.name}' needs a {kind.__name__} because {reason}."
+                raise OdysValidationError(msg)
+
+
+def validate_conditions_fit_the_run(
+    condition_set: ConditionSet,
+    scenarios: Sequence[Scenario],
+    horizon: Horizon,
+) -> None:
+    """Validate every condition against the horizon and what its asset faces in each scenario.
+
+    Conditions are reached through their `validate_horizon` and
+    `validate_operating_conditions` queries, like entities through theirs.
+
+    Args:
+        condition_set: The initial and final conditions of the run.
+        scenarios: The scenarios of the problem, whose profiles have one value per timestep.
+        horizon: The time grid of the optimization.
+
+    Raises:
+        OdysValidationError: If a condition does not fit the horizon or cannot be met in a scenario.
+
+    """
+    for condition in condition_set.conditions:
+        condition.validate_horizon(horizon)
+        for scenario in scenarios:
+            try:
+                condition.validate_operating_conditions(_operating_conditions(scenario, condition.entity, horizon))
+            except OdysValidationError as err:
+                msg = f"Scenario '{scenario.name}': {err}"
+                raise OdysValidationError(msg) from err
 
 
 def validate_required_profiles_present(scenarios: Sequence[Scenario], entities: Sequence[EnergyEntity]) -> None:

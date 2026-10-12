@@ -11,7 +11,7 @@ Unlike a [StationaryStorage](stationary_storage.md), EVs must connect through a 
 ## Basic usage
 
 ```python
-from odys import Battery, ElectricVehicle, Trip
+from odys import Battery, ElectricVehicle, ElectricVehicleFinalState, ElectricVehicleInitialState, Trip
 
 ev = ElectricVehicle(
     name="ev_1",
@@ -19,8 +19,6 @@ ev = ElectricVehicle(
         capacity=0.100,  # 100 kWh
         max_charge_power=0.022,  # 22 kW
         max_discharge_power=0.011,  # 11 kW V2G
-        soc_start=0.8,
-        soc_end=0.3,
     ),
     trips=(
         Trip(
@@ -32,7 +30,11 @@ ev = ElectricVehicle(
         ),
     ),
 )
+initial_conditions = (ElectricVehicleInitialState(vehicle=ev, soc=0.8),)
+final_conditions = (ElectricVehicleFinalState(vehicle=ev, soc=0.3),)
 ```
+
+The vehicle starts at 80% and must end the day at 30%. Pass both to the `EnergySystem` (`initial_conditions=...`, `final_conditions=...`). See [Initial and final state](#initial-and-final-state).
 
 ## Fields
 
@@ -72,9 +74,24 @@ Trip(
 
 While a trip is active, the EV cannot charge, discharge, or be assigned to a charger. Trip energy is spread evenly over the trip's timesteps and subtracted from the battery SoC. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip.
 
-Building an `ElectricVehicle` raises an `OdysValidationError` if two of its trips overlap, or if a trip departing at `start_time=0` cannot be served from the starting charge: it needs a higher `min_soc_at_departure` than the battery's `soc_start`, or more energy than the battery holds above `soc_min` at the start (`(soc_start − soc_min) × capacity`). There is no earlier step to charge in, and the vehicle cannot charge while driving. Creating the `EnergySystem` also checks that every trip ends within `number_of_steps`.
+Building an `ElectricVehicle` raises an `OdysValidationError` if two of its trips overlap. Creating the `EnergySystem` also checks that every trip ends within `number_of_steps`.
 
 See the [formulation](#math-trips).
+
+## Initial and final state
+
+Where the vehicle's battery starts and ends belongs to the run. Pass an `ElectricVehicleInitialState` (required) and, optionally, an `ElectricVehicleFinalState` to the `EnergySystem`:
+
+| Class                         | Field     | Type              | Description                                |
+| ----------------------------- | --------- | ----------------- | ------------------------------------------ |
+| `ElectricVehicleInitialState` | `vehicle` | `ElectricVehicle` | The vehicle                                |
+|                               | `soc`     | `float`           | State of charge just before the first step |
+| `ElectricVehicleFinalState`   | `vehicle` | `ElectricVehicle` | The vehicle                                |
+|                               | `soc`     | `float`           | State of charge at the last step           |
+
+Building the `ElectricVehicleInitialState` raises an `OdysValidationError` if a trip departing at `start_time=0` cannot be served from the starting charge. That happens when the trip needs a higher `min_soc_at_departure` than the initial `soc`, or more energy than the battery holds above `soc_min` at the start (`(soc − soc_min) × capacity`). There is no earlier step to charge in, and the vehicle cannot charge while driving.
+
+See [Battery](battery.md#state-of-charge-soc) for how the states shape the state of charge, and the [formulation](battery.md#math-soc).
 
 ## Results
 

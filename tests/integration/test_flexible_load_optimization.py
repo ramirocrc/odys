@@ -21,6 +21,8 @@ from odys import (
     ProfitTerm,
     Scenario,
     StationaryStorage,
+    StorageFinalState,
+    StorageInitialState,
 )
 
 MAX_DECREASE = 30.0
@@ -352,8 +354,6 @@ def test_flexible_load_with_storage() -> None:
             max_discharge_power=50.0,
             efficiency_charging=0.9,
             efficiency_discharging=0.9,
-            soc_start=0.5,
-            soc_end=0.5,
         ),
     )
     flexible_load = FlexibleLoad(
@@ -377,6 +377,8 @@ def test_flexible_load_with_storage() -> None:
                 PriceProfile(market=market, values=[60.0, 60.0, 60.0, 60.0]),
             ),
         ),
+        initial_conditions=(StorageInitialState(storage=battery, soc=0.5),),
+        final_conditions=(StorageFinalState(storage=battery, soc=0.5),),
     )
 
     results = system.optimize()

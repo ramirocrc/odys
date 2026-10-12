@@ -16,7 +16,6 @@ def battery_base_params() -> MappingProxyType[str, Any]:
         "max_discharge_power": 50.0,
         "efficiency_charging": 0.9,
         "efficiency_discharging": 0.85,
-        "soc_start": 0.5,
     })
 
 
@@ -30,10 +29,6 @@ def battery_base_params() -> MappingProxyType[str, Any]:
         ("efficiency_charging", 1.1, "Input should be less than or equal to 1"),
         ("efficiency_discharging", 0.0, "Input should be greater than 0"),
         ("efficiency_discharging", 1.1, "Input should be less than or equal to 1"),
-        ("soc_start", -0.1, "Input should be greater than or equal to 0"),
-        ("soc_start", 1.1, "Input should be less than or equal to 1"),
-        ("soc_end", -0.1, "Input should be greater than or equal to 0"),
-        ("soc_end", 1.1, "Input should be less than or equal to 1"),
         ("soc_min", -0.1, "Input should be greater than or equal to 0"),
         ("soc_min", 1.1, "Input should be less than or equal to 1"),
         ("soc_max", 1.1, "Input should be less than or equal to 1"),
@@ -57,10 +52,6 @@ def test_battery_creation_with_invalid_parameters_raises_error(
 @pytest.mark.parametrize(
     ("invalid_parameters", "expected_match"),
     [
-        ({"soc_start": 0.2, "soc_min": 0.3}, "soc_start \\(0\\.2\\) must be ≥ soc_min \\(0\\.3\\)"),
-        ({"soc_start": 0.8, "soc_max": 0.7}, "soc_start \\(0\\.8\\) must be ≤ soc_max \\(0\\.7\\)"),
-        ({"soc_end": 0.15, "soc_min": 0.25}, "soc_end \\(0\\.15\\) must be ≥ soc_min \\(0\\.25\\)"),
-        ({"soc_end": 0.85, "soc_max": 0.75}, "soc_end \\(0\\.85\\) must be ≤ soc_max \\(0\\.75\\)"),
         ({"soc_min": 0.5, "soc_max": 0.5}, "soc_min \\(0\\.5\\) must be < soc_max \\(0\\.5\\)"),
     ],
 )
@@ -91,3 +82,12 @@ def test_battery_is_frozen(battery_base_params: MappingProxyType[str, Any]) -> N
 def test_battery_has_no_name(battery_base_params: MappingProxyType[str, Any]) -> None:
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
         Battery.model_validate({**battery_base_params, "name": "bess"})
+
+
+@pytest.mark.parametrize("moved_field", ["soc_start", "soc_end"])
+def test_battery_rejects_start_and_end_state_of_charge(
+    moved_field: str,
+    battery_base_params: MappingProxyType[str, Any],
+) -> None:
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        Battery.model_validate({**battery_base_params, moved_field: 0.5})

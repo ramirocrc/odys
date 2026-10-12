@@ -48,8 +48,13 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $P^{\min}_g$ | Generator minimum power when on |
 | $R^{up}_g$ | Ramp-up limit |
 | $R^{down}_g$ | Ramp-down limit |
-| $U_g$ | Minimum up time |
-| $D_g$ | Minimum down time |
+| $U_g$ | Minimum up time, in steps |
+| $D_g$ | Minimum down time, in steps |
+| $p^0_g$ | Output just before the first step (initial state) |
+| $u^0_g$ | Status just before the first step, 1 if $p^0_g > 0$ |
+| $T^0_g$ | Steps already spent in the initial status |
+| $H^{up}_{g,t}$, $H^{down}_{g,t}$ | Steps on (off) before the first step that fall in the minimum up (down) time window ending at $t$ |
+| $p^{end}_g$ | Output at the last step (final state) |
 | $\epsilon_g$ | Small numerical lower bound used when the generator is on |
 | $A_{g,t,s}$ | Available-capacity profile |
 | $c_g$ | Generator variable cost |
@@ -64,8 +69,8 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $p^{dis}_{b,t,s}$ | Discharging power |
 | $p^{net}_{b,t,s}$ | Net storage power |
 | $SOC_{b,t,s}$ | State of charge (fraction of capacity) |
-| $SOC^{start}_b$ | Initial state of charge |
-| $SOC^{end}_b$ | Final state of charge |
+| $SOC^{start}_b$ | Initial state of charge (initial state) |
+| $SOC^{end}_b$ | Final state of charge (final state) |
 | $SOC^{min}_b$ | Minimum state of charge |
 | $SOC^{max}_b$ | Maximum state of charge |
 | $E_b$ | Storage energy capacity |

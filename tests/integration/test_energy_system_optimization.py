@@ -5,6 +5,7 @@ from datetime import timedelta
 import pandas as pd
 import pytest
 
+from odys.domain.conditions import StorageFinalState, StorageInitialState
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.fixed_load import FixedLoad
@@ -28,6 +29,8 @@ STANDARD_STORAGE_CAPACITY = 100.0
 
 PERFECT_EFFICIENCY = 1.0
 HALF_EFFICIENCY = 0.5
+EMPTY = 0.0
+HALF_FULL = 0.5
 
 SIMPLE_LOAD_PROFILE: list[float] = [50.0, 100.0, 150.0, 180.0, 120.0]
 RAMPING_LOAD_PROFILE: list[float] = [50.0, 100.0, 150.0, 200.0, 250.0, 300.0]
@@ -85,8 +88,6 @@ def perfect_battery() -> StationaryStorage:
             max_discharge_power=STANDARD_GENERATOR_POWER,
             efficiency_charging=PERFECT_EFFICIENCY,
             efficiency_discharging=PERFECT_EFFICIENCY,
-            soc_start=0.0,
-            soc_end=0.5,
         ),
     )
 
@@ -136,8 +137,9 @@ def _create_energy_system(
     markets: list[EnergyMarket] | None = None,
     prices: tuple[PriceProfile, ...] = (),
 ) -> EnergySystem:
-    """Create energy system with common setup logic."""
+    """Create energy system with common setup logic. Every storage starts empty and ends half full."""
     portfolio = AssetPortfolio([*assets, load])
+    storages = [asset for asset in assets if isinstance(asset, StationaryStorage)]
 
     return EnergySystem(
         portfolio=portfolio,
@@ -145,6 +147,8 @@ def _create_energy_system(
         timestep=timedelta(hours=1),
         number_of_steps=len(load_profile),
         scenarios=Scenario(profiles=(LoadProfile(load=load, values=load_profile), *prices)),
+        initial_conditions=tuple(StorageInitialState(storage=storage, soc=EMPTY) for storage in storages),
+        final_conditions=tuple(StorageFinalState(storage=storage, soc=HALF_FULL) for storage in storages),
     )
 
 
@@ -241,8 +245,6 @@ def _create_generator_and_battery_system() -> SystemTestCase:
             max_discharge_power=STANDARD_GENERATOR_POWER,
             efficiency_charging=PERFECT_EFFICIENCY,
             efficiency_discharging=PERFECT_EFFICIENCY,
-            soc_start=0.0,
-            soc_end=0.5,
         ),
     )
 
@@ -288,8 +290,6 @@ def _create_generator_and_battery_with_efficiencies_system() -> SystemTestCase:
             max_discharge_power=STANDARD_GENERATOR_POWER,
             efficiency_charging=HALF_EFFICIENCY,
             efficiency_discharging=HALF_EFFICIENCY,
-            soc_start=0.0,
-            soc_end=0.5,
         ),
     )
 
