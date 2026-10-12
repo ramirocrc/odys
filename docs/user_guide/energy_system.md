@@ -71,6 +71,8 @@ result = energy_system.optimize()
 | `number_of_steps` | `int`                                            | Yes      | -       | How many timesteps to optimize over                      |
 | `markets`         | `EnergyMarket` or `list[EnergyMarket]` or `None` | No       | `None`  | Energy markets for buying/selling                        |
 | `objective`       | `Objective`                                      | No       | `Objective()` | Objective configuration. Defaults to maximize expected profit |
+| `initial_conditions` | sequence of initial states                    | No       | `()`    | State of each asset just before the first step (see below) |
+| `final_conditions`   | sequence of final states                      | No       | `()`    | State each asset must reach at the last step (see below)   |
 
 ## Scenarios
 
@@ -147,6 +149,32 @@ Notice that market prices are specified in the scenario, not on the market objec
 
 See [Market](market.md) for details.
 
+## Initial and final conditions
+
+An optimization run starts from the state your assets are in right now and may need to leave them in a given state for the next run. Pass both to the energy system:
+
+```python
+from odys import Battery, StationaryStorage, StorageFinalState, StorageInitialState
+
+bess = StationaryStorage(
+    name="bess",
+    battery=Battery(capacity=50.0, max_charge_power=25.0, max_discharge_power=25.0),
+)
+
+energy_system = EnergySystem(
+    portfolio=AssetPortfolio([generator, bess, load]),
+    scenarios=Scenario(profiles=(LoadProfile(load=load, values=[60, 90, 40, 70]),)),
+    timestep=timedelta(hours=1),
+    number_of_steps=4,
+    initial_conditions=(StorageInitialState(storage=bess, soc=0.6),),
+    final_conditions=(StorageFinalState(storage=bess, soc=0.5),),
+)
+```
+
+Conditions belong to the run, not to a scenario: the starting state is known when you optimize, so it is the same in every scenario. Every storage and EV needs an initial state, and so does every generator whose results depend on it.
+
+See [Initial and final conditions](initial_and_final_conditions.md) for every condition type.
+
 ## Configuring the objective
 
 By default, Odys maximizes expected profit. To balance profit against risk, pass an `Objective` with a CVaR term:
@@ -186,6 +214,9 @@ Creating an `EnergySystem` validates the whole configuration and raises an `Odys
 
 - `timestep` is positive and `number_of_steps` is at least 1
 - scenario probabilities sum to 1 and scenario names are unique
+- every initial and final condition references an asset of the portfolio, with at most one condition of each type per asset
+- every storage and EV has an initial state, and so does every generator with ramp limits, minimum up or down times, or startup or shutdown costs
+- minimum up and down times and each generator's `time_in_state` are a whole number of timesteps, and each generator's final power fits its available capacity at the last step
 - every profile references an asset of the portfolio or one of the markets
 - every load has a `LoadProfile`, and every market a `PriceProfile`, in every scenario
 - every profile has `number_of_steps` values, and every EV trip ends within the horizon
@@ -200,7 +231,7 @@ When you call `.optimize()`, odys:
 2. Solves it with the HiGHS solver (or the solver you configure)
 3. Wraps the solution in an `OptimalDispatchResults` object
 
-You don't need to interact with any of these internals -- but if you're curious, the [API Reference](../api/energy_system.md) has the full details.
+You don't need to interact with any of these internals -- but if you're curious, the [Developer Reference](../developer/index.md) has the full details.
 
 ## Next steps
 

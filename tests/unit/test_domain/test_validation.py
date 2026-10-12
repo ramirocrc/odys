@@ -4,6 +4,13 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.conditions import (
+    ConditionSet,
+    ElectricVehicleInitialState,
+    GeneratorFinalState,
+    GeneratorInitialState,
+    StorageInitialState,
+)
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
@@ -19,12 +26,15 @@ from odys.domain.horizon import Horizon
 from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario, ScenarioSet
 from odys.domain.validation import (
+    validate_conditions_fit_the_run,
+    validate_conditions_reference_system_assets,
     validate_energy_system_inputs,
     validate_enough_energy_to_meet_demand,
     validate_enough_power_to_meet_demand,
     validate_has_load_or_market,
     validate_profile_lengths,
     validate_profiles_reference_system_entities,
+    validate_required_initial_conditions_present,
     validate_required_profiles_present,
 )
 
@@ -49,6 +59,10 @@ EV_CAPACITY = 50.0
 EV_MAX_CHARGE_POWER = 22.0
 EV_MAX_DISCHARGE_POWER = 30.0
 CHARGER_MAX_POWER = 50.0
+RAMP_UP = 40.0
+INITIAL_POWER = 50.0
+FINAL_POWER_ABOVE_LAST_CAPACITY = 100.0
+MIN_UP_TIME = timedelta(hours=2)
 
 
 @pytest.fixture
@@ -66,9 +80,13 @@ def storage() -> StationaryStorage:
             max_discharge_power=STORAGE_MAX_DISCHARGE_POWER,
             efficiency_charging=STORAGE_EFFICIENCY,
             efficiency_discharging=STORAGE_EFFICIENCY,
-            soc_start=SOC_START,
         ),
     )
+
+
+@pytest.fixture
+def storage_initial_state(storage: StationaryStorage) -> StorageInitialState:
+    return StorageInitialState(storage=storage, soc=SOC_START)
 
 
 @pytest.fixture
@@ -112,29 +130,50 @@ def _electric_vehicle(trips: tuple[Trip, ...] = ()) -> ElectricVehicle:
             capacity=EV_CAPACITY,
             max_charge_power=EV_MAX_CHARGE_POWER,
             max_discharge_power=EV_MAX_DISCHARGE_POWER,
-            soc_start=SOC_START,
         ),
         trips=trips,
     )
 
 
 class TestValidateEnergySystemInputs:
-    def test_valid(self, portfolio: AssetPortfolio, scenario: Scenario) -> None:
-        validate_energy_system_inputs(portfolio, ScenarioSet(scenarios=(scenario,)), (), HORIZON)
+    def test_valid(
+        self,
+        portfolio: AssetPortfolio,
+        scenario: Scenario,
+        storage_initial_state: StorageInitialState,
+    ) -> None:
+        validate_energy_system_inputs(
+            portfolio,
+            ScenarioSet(scenarios=(scenario,)),
+            (),
+            HORIZON,
+            ConditionSet(initial=(storage_initial_state,)),
+        )
 
     def test_checks_every_entity_against_the_horizon(self, generator: Generator, load: FixedLoad) -> None:
         late_trip = Trip(name="late_trip", start_time=2, end_time=NUMBER_OF_STEPS + 1, energy_consumption=5.0)
+        electric_vehicle = _electric_vehicle((late_trip,))
         portfolio = AssetPortfolio([
             generator,
             load,
-            _electric_vehicle((late_trip,)),
+            electric_vehicle,
             Charger(name="charger1", max_power=CHARGER_MAX_POWER),
         ])
         scenario = Scenario(profiles=(LoadProfile(load=load, values=DEMAND_PROFILE),))
+        conditions = ConditionSet(initial=(ElectricVehicleInitialState(vehicle=electric_vehicle, soc=SOC_START),))
         with pytest.raises(OdysValidationError, match="Trip 'late_trip' for vehicle 'ev1' extends beyond"):
-            validate_energy_system_inputs(portfolio, ScenarioSet(scenarios=(scenario,)), (), HORIZON)
+            validate_energy_system_inputs(portfolio, ScenarioSet(scenarios=(scenario,)), (), HORIZON, conditions)
 
-    def test_energy_check_is_skipped_with_markets(self, storage: StationaryStorage, load: FixedLoad) -> None:
+    def test_checks_the_conditions(self, portfolio: AssetPortfolio, scenario: Scenario) -> None:
+        with pytest.raises(OdysValidationError, match="StationaryStorage 'bat1' needs a StorageInitialState"):
+            validate_energy_system_inputs(portfolio, ScenarioSet(scenarios=(scenario,)), (), HORIZON, ConditionSet())
+
+    def test_energy_check_is_skipped_with_markets(
+        self,
+        storage: StationaryStorage,
+        load: FixedLoad,
+        storage_initial_state: StorageInitialState,
+    ) -> None:
         small_volume = 1.0
         market = EnergyMarket(name="market1", max_trading_volume_per_step=small_volume)
         scenario = Scenario(
@@ -148,7 +187,137 @@ class TestValidateEnergySystemInputs:
             ScenarioSet(scenarios=(scenario,)),
             (market,),
             HORIZON,
+            ConditionSet(initial=(storage_initial_state,)),
         )
+
+
+class TestValidateConditionsReferenceSystemAssets:
+    def test_conditions_referencing_system_assets_are_valid(
+        self,
+        portfolio: AssetPortfolio,
+        storage_initial_state: StorageInitialState,
+    ) -> None:
+        validate_conditions_reference_system_assets(ConditionSet(initial=(storage_initial_state,)), portfolio)
+
+    def test_rejects_condition_for_an_asset_not_in_the_portfolio(self, generator: Generator, load: FixedLoad) -> None:
+        other_generator = Generator(name="other", nominal_power=NOMINAL_POWER, variable_cost=VARIABLE_COST)
+        conditions = ConditionSet(initial=(GeneratorInitialState(generator=other_generator, power=0.0),))
+
+        with pytest.raises(
+            OdysValidationError,
+            match="The GeneratorInitialState for 'other' references an asset that is not in the energy system",
+        ):
+            validate_conditions_reference_system_assets(conditions, AssetPortfolio([generator, load]))
+
+    def test_rejects_condition_for_a_different_asset_with_the_same_name(
+        self,
+        generator: Generator,
+        load: FixedLoad,
+    ) -> None:
+        copy_with_other_cost = generator.model_copy(update={"variable_cost": VARIABLE_COST + 1})
+        conditions = ConditionSet(final=(GeneratorFinalState(generator=copy_with_other_cost, power=0.0),))
+
+        with pytest.raises(
+            OdysValidationError,
+            match="The GeneratorFinalState for 'gen1' does not reference the asset of that name",
+        ):
+            validate_conditions_reference_system_assets(conditions, AssetPortfolio([generator, load]))
+
+
+class TestValidateRequiredInitialConditionsPresent:
+    def test_plain_generator_needs_no_initial_state(self, generator: Generator, load: FixedLoad) -> None:
+        validate_required_initial_conditions_present(ConditionSet(), AssetPortfolio([generator, load]))
+
+    def test_storage_without_initial_state_is_rejected(self, portfolio: AssetPortfolio) -> None:
+        with pytest.raises(
+            OdysValidationError,
+            match="StationaryStorage 'bat1' needs a StorageInitialState because its state of charge carries over",
+        ):
+            validate_required_initial_conditions_present(ConditionSet(), portfolio)
+
+    def test_electric_vehicle_without_initial_state_is_rejected(self, load: FixedLoad) -> None:
+        portfolio = AssetPortfolio([load, _electric_vehicle(), Charger(name="charger1", max_power=CHARGER_MAX_POWER)])
+
+        with pytest.raises(OdysValidationError, match="ElectricVehicle 'ev1' needs a ElectricVehicleInitialState"):
+            validate_required_initial_conditions_present(ConditionSet(), portfolio)
+
+    def test_time_coupled_generator_without_initial_state_is_rejected(self, load: FixedLoad) -> None:
+        ramping = Generator(name="ramping", nominal_power=NOMINAL_POWER, variable_cost=VARIABLE_COST, ramp_up=RAMP_UP)
+
+        with pytest.raises(
+            OdysValidationError,
+            match="Generator 'ramping' needs a GeneratorInitialState because it has ramp_up set",
+        ):
+            validate_required_initial_conditions_present(ConditionSet(), AssetPortfolio([ramping, load]))
+
+    def test_time_coupled_generator_with_initial_state_is_valid(self, load: FixedLoad) -> None:
+        ramping = Generator(name="ramping", nominal_power=NOMINAL_POWER, variable_cost=VARIABLE_COST, ramp_up=RAMP_UP)
+        conditions = ConditionSet(initial=(GeneratorInitialState(generator=ramping, power=INITIAL_POWER),))
+
+        validate_required_initial_conditions_present(conditions, AssetPortfolio([ramping, load]))
+
+
+class TestValidateConditionsFitTheHorizon:
+    @pytest.fixture
+    def generator_with_min_up_time(self) -> Generator:
+        return Generator(
+            name="gen1",
+            nominal_power=NOMINAL_POWER,
+            variable_cost=VARIABLE_COST,
+            min_up_time=MIN_UP_TIME,
+        )
+
+    def test_whole_steps_are_valid(self, generator_with_min_up_time: Generator) -> None:
+        state = GeneratorInitialState(
+            generator=generator_with_min_up_time,
+            power=INITIAL_POWER,
+            time_in_state=timedelta(hours=1),
+        )
+
+        validate_conditions_fit_the_run(ConditionSet(initial=(state,)), (Scenario(),), HORIZON)
+
+    def test_partial_step_is_rejected(self, generator_with_min_up_time: Generator) -> None:
+        state = GeneratorInitialState(
+            generator=generator_with_min_up_time,
+            power=INITIAL_POWER,
+            time_in_state=timedelta(minutes=30),
+        )
+
+        with pytest.raises(
+            OdysValidationError,
+            match=r"time_in_state=0:30:00, which is not a whole number of timesteps \(1:00:00\)",
+        ):
+            validate_conditions_fit_the_run(ConditionSet(initial=(state,)), (Scenario(),), HORIZON)
+
+
+class TestValidateConditionsFitEachScenario:
+    def test_final_power_within_last_capacity_is_valid(self, generator: Generator) -> None:
+        scenario = Scenario(profiles=(AvailableCapacityProfile(generator=generator, values=CAPACITY_PROFILE),))
+        conditions = ConditionSet(final=(GeneratorFinalState(generator=generator, power=CAPACITY_PROFILE[-1]),))
+
+        validate_conditions_fit_the_run(conditions, (scenario,), HORIZON)
+
+    def test_final_power_without_capacity_profile_is_valid(self, generator: Generator) -> None:
+        conditions = ConditionSet(final=(GeneratorFinalState(generator=generator, power=NOMINAL_POWER),))
+
+        validate_conditions_fit_the_run(conditions, (Scenario(),), HORIZON)
+
+    def test_final_power_above_last_capacity_is_rejected(self, generator: Generator) -> None:
+        capacity = [NOMINAL_POWER, NOMINAL_POWER, NOMINAL_POWER, CAPACITY_PROFILE[0]]
+        scenario = Scenario(
+            name="low_wind",
+            profiles=(AvailableCapacityProfile(generator=generator, values=capacity),),
+        )
+        conditions = ConditionSet(
+            final=(GeneratorFinalState(generator=generator, power=FINAL_POWER_ABOVE_LAST_CAPACITY),),
+        )
+
+        with pytest.raises(
+            OdysValidationError,
+            match=r"Scenario 'low_wind': GeneratorFinalState for generator 'gen1' has power=100.0, "
+            r"above its available capacity \(90.0\) at the last timestep",
+        ):
+            validate_conditions_fit_the_run(conditions, (scenario,), HORIZON)
 
 
 class TestValidateProfilesReferenceSystemEntities:

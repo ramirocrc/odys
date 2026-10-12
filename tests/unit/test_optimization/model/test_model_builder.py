@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import pytest
 
+from odys.domain.conditions import ElectricVehicleInitialState, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
@@ -28,7 +29,21 @@ def load1() -> FixedLoad:
 
 
 @pytest.fixture
-def asset_portfolio_sample(load1: FixedLoad) -> AssetPortfolio:
+def battery1() -> StationaryStorage:
+    return StationaryStorage(
+        name="battery1",
+        battery=Battery(
+            max_charge_power=200.0,
+            max_discharge_power=200.0,
+            capacity=100.0,
+            efficiency_charging=1,
+            efficiency_discharging=1,
+        ),
+    )
+
+
+@pytest.fixture
+def asset_portfolio_sample(load1: FixedLoad, battery1: StationaryStorage) -> AssetPortfolio:
     return AssetPortfolio(
         assets=[
             Generator(
@@ -41,31 +56,26 @@ def asset_portfolio_sample(load1: FixedLoad) -> AssetPortfolio:
                 nominal_power=150.0,
                 variable_cost=25.0,
             ),
-            StationaryStorage(
-                name="battery1",
-                battery=Battery(
-                    max_charge_power=200.0,
-                    max_discharge_power=200.0,
-                    capacity=100.0,
-                    efficiency_charging=1,
-                    efficiency_discharging=1,
-                    soc_start=1.0,
-                    soc_end=0.5,
-                ),
-            ),
+            battery1,
             load1,
         ],
     )
 
 
 @pytest.fixture
-def energy_system_sample(asset_portfolio_sample: AssetPortfolio, load1: FixedLoad) -> EnergySystem:
+def energy_system_sample(
+    asset_portfolio_sample: AssetPortfolio,
+    load1: FixedLoad,
+    battery1: StationaryStorage,
+) -> EnergySystem:
     demand_profile = [150, 200, 150]
     return EnergySystem(
         portfolio=asset_portfolio_sample,
         number_of_steps=len(demand_profile),
         timestep=timedelta(hours=1),
         scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile),)),
+        initial_conditions=(StorageInitialState(storage=battery1, soc=1.0),),
+        final_conditions=(StorageFinalState(storage=battery1, soc=0.5),),
     )
 
 
@@ -103,18 +113,19 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
     demand_profile = [50, 80, 60]
     ev_names = ["ev1", "ev2"]
     charger_names = ["charger1"]
+    electric_vehicles = [
+        ElectricVehicle(
+            name=name,
+            battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0),
+            trips=(),
+        )
+        for name in ev_names
+    ]
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(
             assets=[
                 Generator(name="gen1", nominal_power=200.0, variable_cost=20.0),
-                *[
-                    ElectricVehicle(
-                        name=name,
-                        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0, soc_start=0.5),
-                        trips=(),
-                    )
-                    for name in ev_names
-                ],
+                *electric_vehicles,
                 *[Charger(name=name, max_power=22.0) for name in charger_names],
                 load1,
             ],
@@ -122,6 +133,7 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
         number_of_steps=len(demand_profile),
         timestep=timedelta(hours=1),
         scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile),)),
+        initial_conditions=tuple(ElectricVehicleInitialState(vehicle=ev, soc=0.5) for ev in electric_vehicles),
     )
     linopy_model = build_model(energy_system.build_problem())
 

@@ -4,10 +4,13 @@ This module provides the Generator class for modeling electrical generators
 in energy system optimization problems.
 """
 
+from datetime import timedelta
+
 from pydantic import Field
 
 from odys.domain.entities.base import Asset
-from odys.domain.horizon import OperatingConditions
+from odys.domain.exceptions import OdysValidationError
+from odys.domain.horizon import Horizon, OperatingConditions
 
 
 class Generator(Asset):
@@ -43,18 +46,18 @@ class Generator(Asset):
         description="Ramp-down rate of the generator in MW per hour",
     )
 
-    min_up_time: int = Field(
-        default=1,
+    min_up_time: timedelta | None = Field(
+        default=None,
         strict=True,
-        ge=1,
-        description="Minimum up time",
+        gt=timedelta(0),
+        description="Minimum time the generator stays on once started. None means no minimum.",
     )
 
-    min_down_time: int = Field(
-        default=1,
+    min_down_time: timedelta | None = Field(
+        default=None,
         strict=True,
-        ge=1,
-        description="Minimum down time",
+        gt=timedelta(0),
+        description="Minimum time the generator stays off once stopped. None means no minimum.",
     )
 
     min_power: float = Field(
@@ -83,3 +86,20 @@ class Generator(Asset):
         if conditions.profile_values is not None:
             return conditions.profile_values
         return (self.nominal_power,) * conditions.horizon.number_of_steps
+
+    def validate_horizon(self, horizon: Horizon) -> None:
+        """Check that the minimum up and down times span a whole number of timesteps.
+
+        Args:
+            horizon: The time grid of the optimization.
+
+        Raises:
+            OdysValidationError: If a minimum time is not a whole number of timesteps.
+        """
+        for field, duration in (("min_up_time", self.min_up_time), ("min_down_time", self.min_down_time)):
+            if duration is not None and not horizon.is_whole_steps(duration):
+                msg = (
+                    f"Generator '{self.name}' has {field}={duration}, "
+                    f"which is not a whole number of timesteps ({horizon.timestep})."
+                )
+                raise OdysValidationError(msg)

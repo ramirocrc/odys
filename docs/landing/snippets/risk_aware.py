@@ -15,6 +15,8 @@ from odys import (
     ProfitTerm,
     Scenario,
     StationaryStorage,
+    StorageFinalState,
+    StorageInitialState,
 )
 
 price_scenarios = runpy.run_path(str(Path(__file__).with_name("prices.py")))["price_scenarios"]
@@ -28,14 +30,20 @@ battery = StationaryStorage(
         max_discharge_power=30,
         efficiency_charging=0.95,
         efficiency_discharging=0.95,
-        soc_start=0.5,
-        soc_end=0.5,
     ),
 )
 market = EnergyMarket(
     name="day_ahead",
     max_trading_volume_per_step=30,
     stage_fixed=True,
+)
+initial = StorageInitialState(
+    storage=battery,
+    soc=0.5,
+)
+final = StorageFinalState(
+    storage=battery,
+    soc=0.5,
 )
 
 system = EnergySystem(
@@ -65,6 +73,8 @@ system = EnergySystem(
     ),
     timestep=timedelta(hours=1),
     number_of_steps=24,
+    initial_conditions=(initial,),
+    final_conditions=(final,),
 )
 result = system.optimize()
 # --8<-- [end:shown]

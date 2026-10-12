@@ -17,18 +17,14 @@ from odys.domain.horizon import Horizon
 EV_CAPACITY = 75.0
 EV_MAX_CHARGE_POWER = 22.0
 EV_MAX_DISCHARGE_POWER = 11.0
-EV_SOC_START = 0.8
 NUM_TRIPS = 2
 NUM_STEPS = 24
 TRIP_BEYOND_STARTING_CHARGE = 70.0
-TRIP_WITHIN_STARTING_CHARGE = 59.0
-RAISED_SOC_MIN = 0.2
 
 EV_BATTERY_PARAMS = MappingProxyType({
     "capacity": EV_CAPACITY,
     "max_charge_power": EV_MAX_CHARGE_POWER,
     "max_discharge_power": EV_MAX_DISCHARGE_POWER,
-    "soc_start": EV_SOC_START,
 })
 
 
@@ -47,7 +43,6 @@ def test_ev_creation_with_valid_parameters(ev_base_params: MappingProxyType[str,
     assert ev.battery.capacity == EV_CAPACITY
     assert ev.battery.max_charge_power == EV_MAX_CHARGE_POWER
     assert ev.battery.max_discharge_power == EV_MAX_DISCHARGE_POWER
-    assert ev.battery.soc_start == EV_SOC_START
     assert ev.trips == ()
 
 
@@ -82,13 +77,6 @@ def test_ev_validates_its_battery(ev_base_params: MappingProxyType[str, Any]) ->
         ElectricVehicle.model_validate(base_params)
 
 
-def test_ev_soc_validation(ev_base_params: MappingProxyType[str, Any]) -> None:
-    base_params = dict(ev_base_params)
-    base_params["battery"] = dict(EV_BATTERY_PARAMS) | {"soc_start": 0.2, "soc_min": 0.3}
-    with pytest.raises(OdysValidationError, match="soc_start"):
-        ElectricVehicle.model_validate(base_params)
-
-
 def test_ev_accepts_non_overlapping_trips(ev_base_params: MappingProxyType[str, Any]) -> None:
     trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=5.0)
     trip2 = Trip(name="evening", start_time=17, end_time=19, energy_consumption=5.0)
@@ -115,63 +103,9 @@ def test_ev_accepts_back_to_back_trips(ev_base_params: MappingProxyType[str, Any
     assert ElectricVehicle(**params).trips == (trip1, trip2)
 
 
-def test_ev_rejects_departure_soc_above_soc_start_at_t0(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=5.0, min_soc_at_departure=0.9)
-    params = dict(ev_base_params)
-    params["trips"] = (trip,)
-    with pytest.raises(OdysValidationError, match=r"departs at t=0 with min_soc_at_departure=0.9 > soc_start=0.8"):
-        ElectricVehicle(**params)
-
-
-def test_ev_accepts_departure_soc_up_to_soc_start_at_t0(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=5.0, min_soc_at_departure=EV_SOC_START)
-    params = dict(ev_base_params)
-    params["trips"] = (trip,)
-    assert ElectricVehicle(**params).trips == (trip,)
-
-
-def test_ev_accepts_high_departure_soc_after_t0(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip = Trip(name="later", start_time=1, end_time=3, energy_consumption=5.0, min_soc_at_departure=0.9)
-    params = dict(ev_base_params)
-    params["trips"] = (trip,)
-    assert ElectricVehicle(**params).trips == (trip,)
-
-
-def test_ev_rejects_trip_at_t0_needing_more_than_the_starting_charge(
-    ev_base_params: MappingProxyType[str, Any],
-) -> None:
+def test_ev_accepts_a_trip_at_t0_beyond_any_charge_on_its_own(ev_base_params: MappingProxyType[str, Any]) -> None:
+    """Whether a trip at t=0 fits the starting charge is checked by the vehicle's initial state, not the vehicle."""
     trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=TRIP_BEYOND_STARTING_CHARGE)
-    params = dict(ev_base_params)
-    params["trips"] = (trip,)
-    with pytest.raises(
-        OdysValidationError,
-        match=r"Trip 'early' for vehicle 'ev_1' departs at t=0 and consumes 70 MWh, "
-        r"but the battery holds only 60 MWh above soc_min at the start",
-    ):
-        ElectricVehicle(**params)
-
-
-def test_ev_accepts_trip_at_t0_within_the_starting_charge(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=TRIP_WITHIN_STARTING_CHARGE)
-    params = dict(ev_base_params)
-    params["trips"] = (trip,)
-    assert ElectricVehicle(**params).trips == (trip,)
-
-
-def test_ev_starting_charge_for_a_trip_at_t0_excludes_the_soc_min_reserve(
-    ev_base_params: MappingProxyType[str, Any],
-) -> None:
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=TRIP_WITHIN_STARTING_CHARGE)
-    params = dict(ev_base_params)
-    params["battery"] = Battery(**EV_BATTERY_PARAMS, soc_min=RAISED_SOC_MIN)
-    params["trips"] = (trip,)
-    with pytest.raises(OdysValidationError, match=r"holds only 45 MWh above soc_min"):
-        ElectricVehicle(**params)
-
-
-def test_ev_accepts_a_long_trip_after_t0(ev_base_params: MappingProxyType[str, Any]) -> None:
-    """A vehicle can charge before a later trip, so the starting charge does not bound it."""
-    trip = Trip(name="later", start_time=1, end_time=3, energy_consumption=TRIP_BEYOND_STARTING_CHARGE)
     params = dict(ev_base_params)
     params["trips"] = (trip,)
     assert ElectricVehicle(**params).trips == (trip,)
