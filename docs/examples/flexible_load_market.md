@@ -15,7 +15,7 @@ The optimizer's decision logic compares the marginal value of consumption (70 $/
 - When market price > 70 $/MWh: cost exceeds value, so consuming less saves money
 - When market price = 70 $/MWh: neutral, no adjustment
 
-This demonstrates [demand response](../user_guide/load.md#flexible-loads): the flexibility to shift when you consume, not just how much you generate.
+This demonstrates [demand response](../user_guide/assets/flexible_load.md): the flexibility to shift when you consume, not just how much you generate.
 
 ```mermaid
 flowchart LR
@@ -32,7 +32,7 @@ flowchart LR
 
 ### 1. Define the market and flexible load
 
-The [market](../user_guide/market.md) gives us an external source of electricity with time-varying prices. The [flexible load](../user_guide/load.md#flexible-loads) represents an industrial process that can adjust its consumption within bounds.
+The [market](../user_guide/markets/energy_market.md) gives us an external source of electricity with time-varying prices. The [flexible load](../user_guide/assets/flexible_load.md) represents an industrial process that can adjust its consumption within bounds.
 
 ```python
 from datetime import timedelta
