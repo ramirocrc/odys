@@ -119,23 +119,20 @@ class ContourFlattener(BasePen):
         self.contours[-1].append(Point(*pt))
 
     @override
-    def _qCurveToOne(self, pt1: tuple[float, float], pt2: tuple[float, float]) -> None:
-        start, control, end = self.contours[-1][-1], Point(*pt1), Point(*pt2)
-        self.contours[-1].extend(
-            _quadratic_point(start, control, end, step / CURVE_STEPS) for step in range(1, CURVE_STEPS + 1)
-        )
+    def _curveToOne(self, pt1: tuple[float, float], pt2: tuple[float, float], pt3: tuple[float, float]) -> None:
+        controls = (self.contours[-1][-1], Point(*pt1), Point(*pt2), Point(*pt3))
+        self.contours[-1].extend(_cubic_point(controls, step / CURVE_STEPS) for step in range(1, CURVE_STEPS + 1))
 
     @override
     def _closePath(self) -> None:
         self.contours[-1].append(self.contours[-1][0])
 
 
-def _quadratic_point(start: Point, control: Point, end: Point, t: float) -> Point:
-    weights = ((1 - t) ** 2, 2 * (1 - t) * t, t**2)
-    points = (start, control, end)
+def _cubic_point(controls: tuple[Point, Point, Point, Point], t: float) -> Point:
+    weights = ((1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t**2, t**3)
     return Point(
-        sum(w * p.x for w, p in zip(weights, points, strict=True)),
-        sum(w * p.y for w, p in zip(weights, points, strict=True)),
+        sum(w * p.x for w, p in zip(weights, controls, strict=True)),
+        sum(w * p.y for w, p in zip(weights, controls, strict=True)),
     )
 
 
