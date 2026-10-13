@@ -139,6 +139,16 @@ def test_generated_css_exposes_every_token_and_maps_both_schemes() -> None:
         assert all(f"{variable}:" in block for variable in generator.THEME_VARIABLES)
 
 
+def test_generated_css_loads_the_sans_width_axis_for_display_headings() -> None:
+    generator = _load_generator()
+    css = generator.render_brand_css(generator.load_brand())
+    sans = TOKENS["font"]["sans"]
+    widths = "..".join(str(width) for width in sans["widths"])
+    weights = f"{min(sans['weights'])}..{max(sans['weights'])}"
+
+    assert f"family=Mona+Sans:wdth,wght@{widths},{weights}" in css
+
+
 @pytest.mark.parametrize("path", LANDING_FILES, ids=lambda p: p.name)
 def test_landing_page_has_no_hard_coded_colours(path: Path) -> None:
     source = path.read_text()
