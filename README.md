@@ -21,13 +21,15 @@ Optimize energy portfolios under uncertainty.
 
 ---
 
-Odys is a modern Python framework for optimizing multi-asset energy systems.
+Odys is a free, open-source Python framework for the short-term operation of energy asset portfolios across electricity markets. Generators, storage, electric vehicles, chargers and loads are scheduled against one or more markets, with uncertainty represented by probability-weighted scenarios.
 
-The key features are:
-- **Optimization under uncertainty**: Stochastic optimization is the default, not an afterthought. Multi-asset, multi-market from day one with built-in CVaR risk management.
-- **Multi-solver support**: Swap between HiGHS (default), Gurobi, CPLEX, or SCIP with a single configuration change.
-- **Simple API**: Define your assets, describe the uncertainty through scenarios, and call `.optimize()`. No boilerplate, no configuration files.
-- **Transparent math**: Every constraint and objective term is documented with equations. You know exactly what the solver sees.
+Features:
+- **Stochastic optimization**: maximize expected profit over a set of scenarios, with optional stage-fixed (non-anticipative) market positions and a CVaR risk term.
+- **Solver choice**: HiGHS by default; Gurobi, CPLEX and SCIP as optional extras. Models are built with [linopy](https://github.com/PyPSA/linopy).
+- **Validated inputs**: assets, profiles and scenarios are Pydantic models, checked before the model is built.
+- **Documented formulation**: every variable, constraint and objective term is written out in the documentation.
+
+Scope: Odys models a portfolio on a single bus over a short horizon. It does not model networks, power flow or capacity expansion; for those, see [PyPSA](https://pypsa.org/) or [Calliope](https://calliope.readthedocs.io/).
 
 ## Installation
 

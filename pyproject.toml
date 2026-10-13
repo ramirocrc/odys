@@ -1,7 +1,7 @@
 [project]
 name = "odys"
 version = "0.2.1"
-description = "Python framework for optimizing multi-energy systems."
+description = "Stochastic optimization of energy asset portfolios across electricity markets."
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 authors = [{ name = "Ramiro Criach", email = "ramirocriach@gmail.com" }]

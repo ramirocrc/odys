@@ -1,7 +1,7 @@
 [project]
 site_name = "Odys"
 site_url = "https://ramirocrc.github.io/odys"
-site_description = "Python framework for optimizing multi-energy systems"
+site_description = "Stochastic optimization of energy asset portfolios across electricity markets"
 site_author = "Ramiro Criach"
 copyright = "Maintained by Ramiro Criach"
 repo_url = "https://github.com/ramirocrc/odys"
