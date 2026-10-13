@@ -1,4 +1,9 @@
-# Odys
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ramirocrc/odys/main/docs/assets/brand/odys-wordmark-on-dark.svg">
+    <img alt="Odys" src="https://raw.githubusercontent.com/ramirocrc/odys/main/docs/assets/brand/odys-wordmark-on-light.svg" height="56">
+  </picture>
+</h1>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ramirocrc/odys/main.yml?branch=main)](https://github.com/ramirocrc/odys/actions/workflows/main.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/ramirocrc/odys/branch/main/graph/badge.svg)](https://codecov.io/gh/ramirocrc/odys)

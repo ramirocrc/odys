@@ -31,6 +31,7 @@ Other useful commands:
 - Run a single test: `uv run python -m pytest tests/unit/test_domain/test_validation.py::test_name` (`just test` uses pytest-xdist `-n auto`; drop it when debugging a single test)
 - `just nox` / `uvx nox` — integration tests across Python 3.11–3.14 with `highest` and `lowest-direct` dependency resolutions
 - `just generate-plots` — regenerate docs example plots (`docs/generate_example_plots.py`)
+- `just generate-logo` — regenerate the committed logo SVGs in `docs/assets/brand/` from Michroma (`docs/generate_logo.py`)
 
 ## Definition of Done
 
@@ -188,7 +189,7 @@ Touches: entity (`domain/entities/`, subclass `Asset`, override the capability q
 
 ## Testing
 
-- Unit tests live in `tests/unit/`, mirroring `src/odys/` (`test_domain`, `test_optimization/{formulations,objective_terms,model,parameters}`, `test_results`, `test_solvers`). Put new tests in the matching folder. Test modules need unique basenames across the tree (no `__init__.py`), e.g. `test_fixed_load_formulation.py` next to `test_domain/entities/test_fixed_load.py`. The `tests/` root holds checks on the repository rather than a module: `test_architecture_docs.py` (diagrams against the code), `test_escape_hatches.py` (no new suppressions) and `test_agent_guidelines.py` (paths named in this file and the playbooks exist).
+- Unit tests live in `tests/unit/`, mirroring `src/odys/` (`test_domain`, `test_optimization/{formulations,objective_terms,model,parameters}`, `test_results`, `test_solvers`). Put new tests in the matching folder. Test modules need unique basenames across the tree (no `__init__.py`), e.g. `test_fixed_load_formulation.py` next to `test_domain/entities/test_fixed_load.py`. The `tests/` root holds checks on the repository rather than a module: `test_architecture_docs.py` (diagrams against the code), `test_escape_hatches.py` (no new suppressions), `test_agent_guidelines.py` (paths named in this file and the playbooks exist) and `test_logo_assets.py` (the committed logo SVGs match `docs/generate_logo.py`).
 - Integration tests live in `tests/integration/`: they solve real models end to end and also run across Python versions with `just nox`. Use `@pytest.mark.parametrize` with factory functions there.
 - Shared fixtures live in the nearest `conftest.py` (e.g. `unit/test_optimization/objective_terms/conftest.py`). Reuse them before adding new ones.
 - Test data as module-level UPPER_CASE constants (e.g. `STANDARD_GENERATOR_POWER = 100.0`); no magic numbers inside test bodies.
