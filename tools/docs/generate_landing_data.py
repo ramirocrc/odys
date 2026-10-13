@@ -1,12 +1,12 @@
 """Generate the data behind the docs landing page.
 
 Usage:
-    uv run --locked python docs/generate_landing_data.py
+    uv run --locked python tools/docs/generate_landing_data.py
 
 Output:
     Writes docs/assets/landing/data.json (git-ignored build output), read by
     docs/assets/javascripts/home.js. Every number on the landing page comes from a
-    real Odys run here: the hero snippets in docs/landing/snippets/ are executed
+    real Odys run here: the hero snippets in tools/docs/landing/snippets/ are executed
     as written, so the code shown on the page is guaranteed to run.
 """
 
@@ -30,10 +30,11 @@ from odys import (
     Scenario,
 )
 
-DOCS_DIR = Path(__file__).parent
-EXAMPLES_DIR = DOCS_DIR.parent / "examples"
-SNIPPETS_DIR = DOCS_DIR / "landing" / "snippets"
-OUTPUT_PATH = DOCS_DIR / "assets" / "landing" / "data.json"
+TOOLS_DIR = Path(__file__).parent
+REPOSITORY_ROOT = TOOLS_DIR.parent.parent
+EXAMPLES_DIR = REPOSITORY_ROOT / "examples"
+SNIPPETS_DIR = TOOLS_DIR / "landing" / "snippets"
+OUTPUT_PATH = REPOSITORY_ROOT / "docs" / "assets" / "landing" / "data.json"
 
 SHOWN_START = "# --8<-- [start:shown]"
 SHOWN_END = "# --8<-- [end:shown]"
@@ -233,7 +234,7 @@ def generate_landing_data() -> None:
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
-    print(f"  ✓ {OUTPUT_PATH.relative_to(Path(__file__).parent)}")
+    print(f"  ✓ {OUTPUT_PATH.relative_to(REPOSITORY_ROOT)}")
 
 
 if __name__ == "__main__":
