@@ -63,6 +63,10 @@ generate-plots:
     uv run --locked python docs/generate_example_plots.py
     uv run --locked python docs/generate_landing_data.py
 
+generate-logo:
+    @echo "🚀 Generating the logo SVGs"
+    uv run --locked python docs/generate_logo.py
+
 docs-build: generate-plots
     @echo "🚀 Building docs"
     uv run --locked zensical build --strict --clean
