@@ -142,6 +142,8 @@ nav = [
 
 [project.theme]
 custom_dir = "overrides"
+logo = "assets/brand/odys-wordmark-on-dark.svg"
+favicon = "assets/brand/favicon.svg"
 # Fonts are loaded by brand.css (docs/brand/tokens.json)
 font = false
 features = [
