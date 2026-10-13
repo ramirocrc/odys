@@ -254,6 +254,8 @@ The landing page should answer:
 
 Users appreciate honesty about scope and trade-offs.
 
+Odys is a free, open-source tool for a technical audience. Outside the hero, write the landing page and README in a plain, factual register: say what Odys is and does, not what it promises. No audience personas.
+
 ## 15. End every page with the next step
 
 Every page links forward. The reader never wonders where to go next.
