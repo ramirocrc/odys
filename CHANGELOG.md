@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `GeneratorFinalState` fixes the output at the last step; 0 turns the generator off. It must fit the generator's available capacity at the last step.
     - Every storage and electric vehicle needs an initial state, and so does every generator with `ramp_up`, `ramp_down`, `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost`. `time_in_state` is required when the matching minimum time is set. Missing or inconsistent conditions raise `OdysValidationError`.
 - Contributor guidance that works with any coding agent: `AGENTS.md` (conventions, Definition of Done, architecture) and step-by-step playbooks in `.agents/skills/`. `tests/test_escape_hatches.py` fails on any new lint or type-check suppression, and `tests/test_agent_guidelines.py` keeps the paths in the guidance current.
-- The Odys logo: a wordmark set in Michroma whose O has an open top-right corner with a dot. It is the docs header logo and favicon and heads the README; the SVGs for dark and light backgrounds are in `docs/assets/brand/`.
+- The Odys logo: a wordmark set in Michroma whose O has an open top-right corner with a dot. It is the docs header logo and favicon and heads the README; the SVGs for dark and light backgrounds are in `docs/assets/brand/`. `just generate-logo` rebuilds them from the vendored font (`docs/brand/fonts/`) with `docs/generate_logo.py`, and the favicon is drawn heavier so it stays legible at 16 px.
 
 ### Changed
 
