@@ -42,7 +42,7 @@ build:
     rm -rf dist/
     @echo "🚀 Building source distribution and wheel"
     uv build --no-sources
-    @echo "🚀 Smoke test whell"
+    @echo "🚀 Smoke test wheel"
     uv run --isolated --no-project --with dist/*.whl tests/smoke_test.py
     @echo "🚀 Smoke test source distribution"
     uv run --isolated --no-project --with dist/*.tar.gz tests/smoke_test.py
@@ -53,21 +53,21 @@ publish:
 
 build-and-publish: build publish
 
-docs: generate-plots
+docs: docs-assets
     @echo "🚀 Serving docs"
     uv run --locked zensical serve
 
-generate-plots:
-    @echo "🚀 Generating example plots"
-    uv run --locked python docs/generate_brand.py
-    uv run --locked python docs/generate_example_plots.py
-    uv run --locked python docs/generate_landing_data.py
+docs-assets:
+    @echo "🚀 Generating docs assets: brand stylesheet, example plots, landing data"
+    uv run --locked python tools/docs/generate_brand.py
+    uv run --locked python tools/docs/generate_example_plots.py
+    uv run --locked python tools/docs/generate_landing_data.py
 
 generate-logo:
     @echo "🚀 Generating the logo SVGs"
-    uv run --locked python docs/generate_logo.py
+    uv run --locked python tools/docs/generate_logo.py
 
-docs-build: generate-plots
+docs-build: docs-assets
     @echo "🚀 Building docs"
     uv run --locked zensical build --strict --clean
 

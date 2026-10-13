@@ -1,5 +1,5 @@
 /* Landing page (design "G · Orbit"). Loaded only by overrides/home.html.
-   Colours and fonts come from brand.css (generated from docs/brand/tokens.json).
+   Colours and fonts come from brand.css (generated from tools/docs/brand/tokens.json).
    The landing page is always dark, so it uses the dark brand colours directly
    instead of the scheme-dependent --md-* variables the docs pages follow. */
 
