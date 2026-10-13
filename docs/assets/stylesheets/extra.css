@@ -27,3 +27,10 @@
   display: flex;
   justify-content: center;
 }
+
+/* Page titles widen like the landing headings, echoing the Michroma wordmark. */
+.md-typeset h1 {
+  font-weight: 600;
+  font-stretch: 115%;
+  letter-spacing: 0;
+}
