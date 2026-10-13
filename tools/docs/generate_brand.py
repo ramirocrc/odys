@@ -40,11 +40,16 @@ SCHEME_SELECTORS = {"light": '[data-md-color-scheme="default"]', "dark": '[data-
 
 @dataclass(frozen=True)
 class Font:
-    """A brand font role: Google Fonts family, CSS fallback stack and the styles to load."""
+    """A brand font role: Google Fonts family, CSS fallback stack and the styles to load.
+
+    A role with ``widths`` loads the family's variable width axis over that range, with its
+    weights as a continuous range too, so display headings can widen with ``font-stretch``.
+    """
 
     family: str
     fallback: str
     weights: tuple[int, ...] = (400,)
+    widths: tuple[int, ...] = ()
     italic: bool = False
 
     @property
@@ -58,6 +63,9 @@ class Font:
         name = quote_plus(self.family)
         if self.italic:
             return f"family={name}:ital@1"
+        if self.widths:
+            widths = f"{min(self.widths)}..{max(self.widths)}"
+            return f"family={name}:wdth,wght@{widths},{min(self.weights)}..{max(self.weights)}"
         return f"family={name}:wght@{';'.join(str(w) for w in self.weights)}"
 
 
@@ -78,6 +86,7 @@ def load_brand(path: Path = TOKENS_PATH) -> Brand:
             family=spec["family"],
             fallback=spec["fallback"],
             weights=tuple(spec.get("weights", (400,))),
+            widths=tuple(spec.get("widths", ())),
             italic=bool(spec.get("italic", False)),
         )
         for role, spec in raw["font"].items()
