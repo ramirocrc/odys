@@ -412,3 +412,35 @@ def test_stationary_storage_variable_names_match_the_model(
     assert variables.net_power.name == StationaryStorageFormulation.net_power_name
     assert variables.soc.name == StationaryStorageFormulation.soc_name
     assert variables.charge_mode.name == StationaryStorageFormulation.charge_mode_name
+
+
+IDLE_SELF_DISCHARGE_RATE = 0.1
+IDLE_SOC_START = 0.5
+IDLE_DEMAND = [10.0, 10.0]
+IDLE_EXPECTED_SOC = [0.45, 0.405]
+
+
+def test_idle_storage_self_discharges_from_the_first_step() -> None:
+    storage = StationaryStorage(
+        name="batt_idle",
+        battery=Battery(
+            capacity=100.0,
+            max_charge_power=10.0,
+            max_discharge_power=10.0,
+            degradation_cost=1.0,
+            self_discharge_rate=IDLE_SELF_DISCHARGE_RATE,
+        ),
+    )
+    free_generator = Generator(name="free_gen", nominal_power=100.0, variable_cost=0.0)
+    demand = FixedLoad(name="demand")
+    energy_system = EnergySystem(
+        portfolio=AssetPortfolio(assets=[storage, free_generator, demand]),
+        number_of_steps=len(IDLE_DEMAND),
+        timestep=timedelta(hours=1),
+        scenarios=Scenario(profiles=(LoadProfile(load=demand, values=IDLE_DEMAND),)),
+        initial_conditions=(StorageInitialState(storage=storage, soc=IDLE_SOC_START),),
+    )
+
+    result = energy_system.optimize()
+
+    assert result.stationary_storages.soc.tolist() == pytest.approx(IDLE_EXPECTED_SOC)

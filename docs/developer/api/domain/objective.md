@@ -17,11 +17,11 @@ In the current configuration, that is the expected profit term plus an optional 
 $$
 \max\; w_{\text{profit}} \sum_s \pi_s \Pi_s
 + w_{\text{risk}} \left(
-\eta - \frac{1}{1-\alpha} \sum_s \pi_s \xi_s
+\zeta - \frac{1}{1-\alpha} \sum_s \pi_s \xi_s
 \right)
 $$
 
-where $\xi_s \ge \eta - \Pi_s$. If no CVaR term is configured, the implementation builds only the expected-profit term.
+where $\xi_s \ge \zeta - \Pi_s$. If no CVaR term is configured, the implementation builds only the expected-profit term.
 
 See also [optimization.objective_terms](../optimization/objective_terms/index.md) for the implementation-side construction.
 

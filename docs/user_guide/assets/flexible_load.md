@@ -10,14 +10,16 @@ The optimizer starts from a base profile and decides, at every timestep, how muc
 
 ## Basic usage
 
+Let's add the flexible process of the [running example](../index.md#the-running-example): it normally draws 30 MW, can run 20 MW higher or 10 MW lower, and each MWh it consumes is worth 60 $/MWh to the site.
+
 ```python
 from odys import FlexibleLoad
 
-flexible_load = FlexibleLoad(
-    name="industrial_process",
-    max_increase=50.0,
-    max_decrease=30.0,
-    value_of_consumption=100.0,
+process = FlexibleLoad(
+    name="process",
+    max_increase=20.0,
+    max_decrease=10.0,
+    value_of_consumption=60.0,
 )
 ```
 
@@ -47,20 +49,20 @@ See the [formulation](#math-objective).
 
 ## Relative bounds
 
-`max_increase` and `max_decrease` bound the adjustment relative to the base profile. With the load above and a base of 80 MW, consumption can move between 50 and 130 MW.
+`max_increase` and `max_decrease` bound the adjustment relative to the base profile. With the process above and a base of 30 MW, consumption can move between 20 and 50 MW.
 
 See the [formulation](#math-bounds).
 
 ## Absolute bounds
 
-Use `min_load` and `max_load` when the process has hard physical limits that don't depend on the base profile, for example a compressor that can run between 20 and 100 MW:
+Use `min_load` and `max_load` when the process has hard physical limits that don't depend on the base profile, for example a process that can run anywhere between 15 and 50 MW:
 
 ```python
-compressor = FlexibleLoad(
-    name="compressor",
-    min_load=20.0,
-    max_load=100.0,
-    value_of_consumption=40.0,
+bounded_process = FlexibleLoad(
+    name="process",
+    min_load=15.0,
+    max_load=50.0,
+    value_of_consumption=60.0,
 )
 ```
 
@@ -76,7 +78,7 @@ Every flexible load needs a `LoadProfile` in every scenario. This is the **base 
 from odys import LoadProfile, Scenario
 
 scenario = Scenario(
-    profiles=(LoadProfile(load=flexible_load, values=[80, 80, 80, 80]),),
+    profiles=(LoadProfile(load=process, values=[30, 30, 30, 30]),),
 )
 ```
 
@@ -87,16 +89,48 @@ Every base value must lie within the load's bounds, otherwise building the `Load
 
 ## Results
 
-After optimization, access flexible load results through `result.flexible_loads`:
+Let's add the process to the CCGT, the wind farm and the factory, and read its results through `result.flexible_loads`:
 
 ```python
-result = energy_system.optimize()
+from datetime import timedelta
 
-result.flexible_loads.load_adjustment  # MW adjustment per timestep
-result.flexible_loads.actual_load  # MW consumed (base + adjustment)
+from odys import AssetPortfolio, AvailableCapacityProfile, EnergySystem, FixedLoad, Generator
+
+ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
+wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
+factory = FixedLoad(name="factory")
+
+energy_system = EnergySystem(
+    portfolio=AssetPortfolio([ccgt, wind, factory, process]),
+    scenarios=Scenario(
+        profiles=(
+            LoadProfile(load=factory, values=[60, 90, 40, 70]),
+            LoadProfile(load=process, values=[30, 30, 30, 30]),
+            AvailableCapacityProfile(generator=wind, values=[40, 10, 60, 30]),
+        ),
+    ),
+    timestep=timedelta(hours=1),
+    number_of_steps=4,
+)
+
+result = energy_system.optimize()
+print(result.flexible_loads.to_dataframe())
 ```
 
-See the [Flexible Load Market example](../../examples/flexible_load_market.md) for a full worked scenario.
+```text
+                    load_adjustment  actual_load
+time flexible_load
+0    process                   20.0         50.0
+1    process                  -10.0         20.0
+2    process                   20.0         50.0
+3    process                   20.0         50.0
+```
+
+`load_adjustment` is the change from the base profile (MW, positive = increase) and `actual_load` is what the load consumes (MW). Each is a `pandas.Series` indexed by load and time (and scenario, when there is more than one).
+
+Every MWh of the process is worth 60 $/MWh and the most expensive supply, the CCGT, costs 50 $/MWh, so the optimizer runs the process 20 MW above its base whenever it can. At step 1 the factory needs 90 MW and only 110 MW of supply is available, so the process drops 10 MW below its base instead.
+
+See the [Flexible Load Market example](../../examples/flexible_load_market.md) for a full day of demand response against market prices.
 
 ## Mathematical formulation
 
@@ -145,4 +179,4 @@ Demand side: $\sum_l \left( d^{\text{base}}_{l,t,s} + \Delta d_{l,t,s} \right)$.
 
 ## Next steps
 
-Ready to add time-shifting to your portfolio? See [Battery](battery.md) and [StationaryStorage](stationary_storage.md).
+A flexible load shifts *when* energy is consumed. To store energy and use it later, see [StationaryStorage](stationary_storage.md).

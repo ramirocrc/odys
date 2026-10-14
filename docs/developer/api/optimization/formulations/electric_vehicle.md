@@ -9,7 +9,7 @@ The electric vehicle formulation: the shared battery model (see [storage](storag
 EVs inherit storage physics and add trip-driven constraints. The SOC dynamics include trip energy consumption:
 
 $$
-SOC_{v,t,s} = SOC_{v,t-1,s}
+SOC_{v,t,s} = SOC_{v,t-1,s} \left(1 - \delta_v \Delta t\right)
 + \eta^{ch}_v \frac{\Delta t}{E_v} p^{ch}_{v,t,s}
 - \frac{\Delta t}{\eta^{dis}_v E_v} p^{dis}_{v,t,s}
 - \frac{e^{trip}_{v,t}}{E_v}
@@ -18,7 +18,7 @@ $$
 where $e^{trip}_{v,t}$ is the trip energy consumed at timestep $t$. The first step starts from the initial SOC and draws a trip departing at $t=0$ the same way:
 
 $$
-SOC_{v,0,s} = SOC^{start}_v
+SOC_{v,0,s} = SOC^{start}_v \left(1 - \delta_v \Delta t\right)
 + \eta^{ch}_v \frac{\Delta t}{E_v} p^{ch}_{v,0,s}
 - \frac{\Delta t}{\eta^{dis}_v E_v} p^{dis}_{v,0,s}
 - \frac{e^{trip}_{v,0}}{E_v}

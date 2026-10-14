@@ -11,14 +11,14 @@ The model maximizes the weighted sum of the objective's terms:
 $$
 \max\; w_{\text{profit}} \sum_s \pi_s \Pi_s
 + w_{\text{risk}} \left(
-\eta - \frac{1}{1-\alpha} \sum_s \pi_s \xi_s
+\zeta - \frac{1}{1-\alpha} \sum_s \pi_s \xi_s
 \right)
 $$
 
 with the CVaR shortfall constraint:
 
 $$
-\xi_s \ge \eta - \Pi_s
+\xi_s \ge \zeta - \Pi_s
 $$
 
 The per-scenario profit implementation is:

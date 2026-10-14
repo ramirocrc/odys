@@ -8,7 +8,7 @@ An optimization run rarely starts from scratch. A gas turbine that ran yesterday
 
 ## Basic usage
 
-Let's start a day with a gas turbine already running and a half-full battery, and ask for the battery to be half full again at the end.
+Let's give the CCGT of the [running example](../index.md#the-running-example) a ramp limit and a minimum output, add the site's battery (see [StationaryStorage](../assets/stationary_storage.md)), and start the day with the CCGT already running and the battery half full. We also ask for the battery to be half full again at the end.
 
 ```python
 from datetime import timedelta
@@ -27,13 +27,13 @@ from odys import (
     StorageInitialState,
 )
 
-ccgt = Generator(name="ccgt", nominal_power=100.0, min_power=30.0, variable_cost=45.0, ramp_up=40.0)
+ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0, min_power=30.0, ramp_up=40.0)
 bess = StationaryStorage(name="bess", battery=Battery(capacity=50.0, max_charge_power=25.0, max_discharge_power=25.0))
-load = FixedLoad(name="demand")
+factory = FixedLoad(name="factory")
 
 energy_system = EnergySystem(
-    portfolio=AssetPortfolio([ccgt, bess, load]),
-    scenarios=Scenario(profiles=(LoadProfile(load=load, values=[60, 90, 40, 70]),)),
+    portfolio=AssetPortfolio([ccgt, bess, factory]),
+    scenarios=Scenario(profiles=(LoadProfile(load=factory, values=[60, 90, 40, 70]),)),
     timestep=timedelta(hours=1),
     number_of_steps=4,
     initial_conditions=(
@@ -46,7 +46,7 @@ energy_system = EnergySystem(
 result = energy_system.optimize()
 ```
 
-Because the CCGT starts at 50 MW with a 40 MW/h ramp limit, it can produce at most 90 MW in the first hour.
+Because the CCGT starts at 50 MW and can ramp up by at most 40 MW per step, it can produce at most 90 MW in the first hour.
 
 Conditions are passed to the `EnergySystem`, not to a `Scenario`. The starting state is something you know when you optimize, so it is the same in every scenario. A final condition is a target you choose, not an uncertain input.
 
@@ -120,7 +120,9 @@ tomorrow_starts_from = (
 )
 ```
 
-Round the solved values: the solver can return 29.9999999 MW for a generator at its 30 MW minimum, and odys checks that a condition's output is either 0 or at least `min_power`.
+Round the solved values: the solver can return 29.9999999 MW for a generator at its 30 MW minimum, and Odys checks that a condition's output is either 0 or at least `min_power`.
+
+This works for a single scenario. With several scenarios, each series has a scenario level and the last step can differ between scenarios, so pick the scenario you will actually follow, for example `today.generators["ccgt"].power.xs("high_wind", level="scenario").iloc[-1]`.
 
 ## Mathematical formulation
 
@@ -137,4 +139,4 @@ Conditions are the same in every scenario $s$.
 
 ## Next steps
 
-See [Power balance](power_balance.md) for how assets and markets are tied together, or [Stochastic optimization](../optimization/stochastic.md) to optimize over several scenarios that share the same starting state.
+Next, see the [Power balance](power_balance.md), the constraint that ties assets and markets together.

@@ -68,6 +68,8 @@ generate-logo:
     uv run --locked python docs/generate_logo.py
 
 docs-build: generate-plots
+    @echo "🚀 Checking that the User Guide code runs and prints what it shows"
+    uv run --locked python docs/check_user_guide.py
     @echo "🚀 Building docs"
     uv run --locked zensical build --strict --clean
 

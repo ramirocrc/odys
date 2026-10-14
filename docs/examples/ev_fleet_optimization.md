@@ -73,22 +73,22 @@ ev_1 = ElectricVehicle(
     trips=(
         Trip(
             name="morning_delivery",
-            start_time=7,
-            end_time=9,
+            start_time=timedelta(hours=7),
+            end_time=timedelta(hours=9),
             energy_consumption=0.015,  # 15 kWh
             min_soc_at_departure=0.6,
         ),
         Trip(
             name="midday_delivery",
-            start_time=11,
-            end_time=12,
+            start_time=timedelta(hours=11),
+            end_time=timedelta(hours=12),
             energy_consumption=0.010,  # 10 kWh
             min_soc_at_departure=0.4,
         ),
         Trip(
             name="afternoon_delivery",
-            start_time=14,
-            end_time=16,
+            start_time=timedelta(hours=14),
+            end_time=timedelta(hours=16),
             energy_consumption=0.012,  # 12 kWh
             min_soc_at_departure=0.3,
         ),

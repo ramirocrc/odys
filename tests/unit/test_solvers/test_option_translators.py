@@ -69,6 +69,20 @@ SOLVER_CASES = [
 ]
 
 
+PRESOLVE_OPTION_NAMES = {
+    SolverName.HIGHS: "presolve",
+    SolverName.GUROBI: "Presolve",
+    SolverName.CPLEX: "preprocessing.presolve",
+    SolverName.SCIP: "presolving/maxrounds",
+}
+
+
+@pytest.mark.parametrize("solver_name", list(SolverName), ids=str)
+def test_default_config_leaves_presolve_to_the_solver(solver_name: SolverName) -> None:
+    result = translate_solver_config(SolverConfig(solver_name=solver_name))
+    assert PRESOLVE_OPTION_NAMES[solver_name] not in result
+
+
 @pytest.mark.parametrize("case", SOLVER_CASES)
 def test_solver_all_options(case: SolverTestCase) -> None:
     config = COMMON_OPTS.model_copy(update={"solver_name": case.solver_name})

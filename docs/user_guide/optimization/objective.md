@@ -8,7 +8,7 @@ When you call `energy_system.optimize()`, Odys maximizes an objective built from
 
 ## Basic usage
 
-By default, Odys maximizes expected profit. Configure the objective with `Objective`, `ProfitTerm`, and `CVaRTerm`:
+By default, Odys maximizes expected profit, and every system so far has used that default. To also protect against bad outcomes, configure the objective with `Objective`, `ProfitTerm`, and `CVaRTerm`:
 
 ```python
 from odys import CVaRTerm, Objective, ProfitTerm
@@ -19,9 +19,9 @@ objective = Objective(
         CVaRTerm(weight=0.5, confidence_level=0.95),
     ),
 )
-
-energy_system = EnergySystem(..., objective=objective)
 ```
+
+Pass it to the system with `EnergySystem(..., objective=objective)`. A CVaR term only matters with [several scenarios](stochastic.md): with a single scenario, the worst outcome is the only outcome.
 
 ## Fields
 
@@ -41,7 +41,9 @@ An `Objective` holds a tuple of terms: a `ProfitTerm` is required, a `CVaRTerm` 
 
 ## Profit
 
-The profit of a scenario adds up the market revenue and every asset's costs and values. Each asset page explains its own contribution; the sum is shown [below](#math-profit).
+The profit of a scenario adds up the market revenue and every asset's costs and values: generation costs, the value of flexible consumption and battery degradation. Each asset page explains its own contribution; the sum is shown [below](#math-profit).
+
+`result.objective_value` is the value of the whole objective. Without a CVaR term, that is the expected profit; with one, it is the weighted sum of the expected profit and the CVaR, not a profit you can book.
 
 ## Risk (CVaR)
 
@@ -58,7 +60,7 @@ See [Mathematical notation](../mathematical_notation.md) for every symbol.
 $$
 \max\; w_{\text{profit}} \sum_s \pi_s \Pi_s
 + w_{\text{risk}} \left(
-\eta - \frac{1}{1-\alpha} \sum_s \pi_s \xi_s
+\zeta - \frac{1}{1-\alpha} \sum_s \pi_s \xi_s
 \right)
 $$
 
@@ -91,13 +93,13 @@ Prices and costs are per MWh, while volumes and powers are in MW, so every energ
 
 | Symbol | Domain | Meaning |
 | ------ | ------ | ------- |
-| $\eta$ | $\mathbb{R}$ | Value at risk |
-| $\xi_s$ | $\ge 0$ | Shortfall of scenario $s$ below $\eta$ |
+| $\zeta$ | $\mathbb{R}$ | Value at risk |
+| $\xi_s$ | $\ge 0$ | Shortfall of scenario $s$ below $\zeta$ |
 
 $$
-\xi_s \ge \eta - \Pi_s
+\xi_s \ge \zeta - \Pi_s
 $$
 
 ## Next steps
 
-See [Stochastic optimization](stochastic.md) to optimize across several scenarios, or [Results](results.md) to read what the optimizer decided.
+Next, see [Results](results.md) to read what the optimizer decided.
