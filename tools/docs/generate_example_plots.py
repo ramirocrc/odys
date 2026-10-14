@@ -1,7 +1,7 @@
 """Generate interactive Plotly charts for example documentation.
 
 Usage:
-    uv run --locked python docs/generate_example_plots.py
+    uv run --locked python tools/docs/generate_example_plots.py
 
 Output:
     Writes standalone Plotly HTML files to docs/assets/plots/ (git-ignored build output)
@@ -13,7 +13,7 @@ import re
 import sys
 from pathlib import Path
 
-_project_root = str(Path(__file__).resolve().parent.parent)
+_project_root = str(Path(__file__).resolve().parent.parent.parent)
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
@@ -38,7 +38,7 @@ from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
 from odys import Charger, OptimalDispatchResults
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 
-OUTPUT_DIR = Path(__file__).parent / "assets" / "plots"
+OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "docs" / "assets" / "plots"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Chart colours and font come from the brand tokens, the single source of truth for Odys styling.

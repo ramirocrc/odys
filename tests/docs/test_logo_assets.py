@@ -1,4 +1,4 @@
-"""Tests that the committed logo SVGs are what docs/generate_logo.py renders.
+"""Tests that the committed logo SVGs are what tools/docs/generate_logo.py renders.
 
 The SVGs are committed because the README links them; rerun `just generate-logo` when this fails.
 """
@@ -9,8 +9,8 @@ from types import ModuleType
 
 import pytest
 
-REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
-GENERATOR_PATH = REPOSITORY_ROOT / "docs" / "generate_logo.py"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+GENERATOR_PATH = REPOSITORY_ROOT / "tools" / "docs" / "generate_logo.py"
 ASSETS_DIRECTORY = REPOSITORY_ROOT / "docs" / "assets" / "brand"
 LOGO_ASSETS = (
     "odys-wordmark-on-dark.svg",
