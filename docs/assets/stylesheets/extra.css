@@ -19,6 +19,16 @@
   width: auto;
 }
 
+/* overrides/partials/logo.html renders both wordmarks; show the one drawn for the scheme. */
+.odys-logo {
+  display: contents;
+}
+
+[data-md-color-scheme="default"] .odys-logo--on-dark,
+[data-md-color-scheme="slate"] .odys-logo--on-light {
+  display: none;
+}
+
 .md-header__title .md-header__topic:first-child {
   visibility: hidden;
 }

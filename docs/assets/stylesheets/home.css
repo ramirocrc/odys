@@ -46,6 +46,14 @@ body:has(.odys-home) .md-header {
   box-shadow: none;
 }
 
+body:has(.odys-home) .odys-logo--on-dark {
+  display: contents;
+}
+
+body:has(.odys-home) .odys-logo--on-light {
+  display: none;
+}
+
 body:has(.odys-home) .md-main {
   display: none;
 }
