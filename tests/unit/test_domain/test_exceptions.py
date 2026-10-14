@@ -2,6 +2,7 @@
 
 import pytest
 
+import odys
 from odys.domain.exceptions import (
     OdysError,
     OdysNoResultsError,
@@ -91,3 +92,13 @@ class TestExceptionInheritanceHierarchy:
             BaseException,
             object,
         )
+
+
+@pytest.mark.parametrize(
+    "exception",
+    [OdysError, OdysValidationError, OdysSolverError, OdysNoResultsError],
+    ids=lambda exception: exception.__name__,
+)
+def test_exception_is_exported_from_odys(exception: type[OdysError]) -> None:
+    assert exception.__name__ in odys.__all__
+    assert getattr(odys, exception.__name__) is exception

@@ -29,7 +29,8 @@ class HiGHSOptionTranslator:
             result["mip_rel_gap"] = config.mip_rel_gap
         if config.threads is not None:
             result["threads"] = config.threads
-        result["presolve"] = "on" if config.presolve else "off"
+        if config.presolve is not None:
+            result["presolve"] = "on" if config.presolve else "off"
         result["output_flag"] = config.log_output
         return result
 
@@ -46,7 +47,8 @@ class GurobiOptionTranslator:
             result["MIPGap"] = config.mip_rel_gap
         if config.threads is not None:
             result["Threads"] = config.threads
-        result["Presolve"] = 1 if config.presolve else 0
+        if config.presolve is not None:
+            result["Presolve"] = 1 if config.presolve else 0
         result["OutputFlag"] = 1 if config.log_output else 0
         return result
 
@@ -63,7 +65,8 @@ class CPLEXOptionTranslator:
             result["mip.tolerances.mipgap"] = config.mip_rel_gap
         if config.threads is not None:
             result["threads"] = config.threads
-        result["preprocessing.presolve"] = 1 if config.presolve else 0
+        if config.presolve is not None:
+            result["preprocessing.presolve"] = 1 if config.presolve else 0
         result["mip.display"] = 0 if not config.log_output else 2
         result["output.clonelog"] = 1 if config.log_output else 0
         return result
@@ -81,7 +84,8 @@ class SCIPOptionTranslator:
             result["limits/gap"] = config.mip_rel_gap
         if config.threads is not None:
             result["parallel/maxnthreads"] = config.threads
-        result["presolving/maxrounds"] = -1 if config.presolve else 0
+        if config.presolve is not None:
+            result["presolving/maxrounds"] = -1 if config.presolve else 0
         result["display/verblevel"] = 4 if config.log_output else 0
         return result
 

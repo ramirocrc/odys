@@ -223,6 +223,9 @@ ignore = [
   "INP001",  # No __init__.py in tools/docs/
   "T201",  # print() for CLI output is intentional
 ]
+"tools/docs/check_user_guide.py" = [
+  "INP001",  # No __init__.py in tools/docs/
+]
 "tools/docs/landing/snippets/**" = [
   "INP001",  # Standalone scripts shown on the landing page, not a package
 ]
