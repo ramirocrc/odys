@@ -233,15 +233,17 @@ def electric_vehicle_arrays(
             coordinates,
             context,
         ),
-        trips=_trip_arrays(electric_vehicles, coordinates, context.time),
+        trips=_trip_arrays(electric_vehicles, coordinates, context),
     )
 
 
 def _trip_arrays(
     electric_vehicles: Sequence[ElectricVehicle],
     coordinates: Coordinates,
-    time: Coordinates,
+    context: ModelContext,
 ) -> ElectricVehicleTripArrays:
+    time = context.time
+    steps_in = context.horizon.steps_in
     shape = (len(electric_vehicles), len(time.labels))
     is_driving = np.zeros(shape)
     trip_energy = np.zeros(shape)
@@ -249,10 +251,10 @@ def _trip_arrays(
 
     for i, ev in enumerate(electric_vehicles):
         for trip in ev.trips:
-            trip_steps = slice(trip.start_time, trip.end_time)
-            is_driving[i, trip_steps] = 1
-            trip_energy[i, trip_steps] = trip.energy_consumption / (trip.end_time - trip.start_time)
-            min_soc_at_departure[i, trip.start_time] = trip.min_soc_at_departure
+            start_step, end_step = steps_in(trip.start_time), steps_in(trip.end_time)
+            is_driving[i, start_step:end_step] = 1
+            trip_energy[i, start_step:end_step] = trip.energy_consumption / (end_step - start_step)
+            min_soc_at_departure[i, start_step] = trip.min_soc_at_departure
 
     dims = (coordinates.dimension, time.dimension)
     coords = coordinates.dimension_coordinates_map | time.dimension_coordinates_map

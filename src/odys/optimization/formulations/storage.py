@@ -113,13 +113,13 @@ class StorageFormulation:
         )
 
     def soc_start_constraint(self, variables: StorageVariables) -> ModelConstraint:
-        """The SOC after the first step starts from `soc_start`, less the SOC drop at t=0 (a trip departing then)."""
+        """The SOC after the first step starts from `soc_start`, less self-discharge and the SOC drop at t=0."""
         dt = self.context.timestep_hours
         battery = self.battery
         first_step = {TIME: variables.soc.coords[TIME.value].values[0]}
         expression = (
             variables.soc.sel(first_step)
-            - self.states.soc_start
+            - self.states.soc_start * (1 - battery.self_discharge_rate * dt)
             - battery.efficiency_charging * variables.power_in.sel(first_step) * dt / battery.capacity
             + 1 / battery.efficiency_discharging * variables.power_out.sel(first_step) * dt / battery.capacity
         )

@@ -53,8 +53,14 @@ def test_ev_is_an_asset_that_has_a_battery(ev_base_params: MappingProxyType[str,
 
 
 def test_ev_creation_with_trips(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip1 = Trip(name="morning", start_time=8, end_time=9, energy_consumption=5.0)
-    trip2 = Trip(name="evening", start_time=17, end_time=18, energy_consumption=5.0, min_soc_at_departure=0.3)
+    trip1 = Trip(name="morning", start_time=timedelta(hours=8), end_time=timedelta(hours=9), energy_consumption=5.0)
+    trip2 = Trip(
+        name="evening",
+        start_time=timedelta(hours=17),
+        end_time=timedelta(hours=18),
+        energy_consumption=5.0,
+        min_soc_at_departure=0.3,
+    )
     params = dict(ev_base_params)
     params["trips"] = (trip1, trip2)
     ev = ElectricVehicle(**params)
@@ -78,8 +84,8 @@ def test_ev_validates_its_battery(ev_base_params: MappingProxyType[str, Any]) ->
 
 
 def test_ev_accepts_non_overlapping_trips(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=5.0)
-    trip2 = Trip(name="evening", start_time=17, end_time=19, energy_consumption=5.0)
+    trip1 = Trip(name="morning", start_time=timedelta(hours=8), end_time=timedelta(hours=10), energy_consumption=5.0)
+    trip2 = Trip(name="evening", start_time=timedelta(hours=17), end_time=timedelta(hours=19), energy_consumption=5.0)
     params = dict(ev_base_params)
     params["trips"] = (trip1, trip2)
     ev = ElectricVehicle(**params)
@@ -87,8 +93,13 @@ def test_ev_accepts_non_overlapping_trips(ev_base_params: MappingProxyType[str, 
 
 
 def test_ev_rejects_overlapping_trips_at_construction(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip1 = Trip(name="morning", start_time=8, end_time=10, energy_consumption=5.0)
-    trip2 = Trip(name="overlapping", start_time=9, end_time=11, energy_consumption=5.0)
+    trip1 = Trip(name="morning", start_time=timedelta(hours=8), end_time=timedelta(hours=10), energy_consumption=5.0)
+    trip2 = Trip(
+        name="overlapping",
+        start_time=timedelta(hours=9),
+        end_time=timedelta(hours=11),
+        energy_consumption=5.0,
+    )
     params = dict(ev_base_params)
     params["trips"] = (trip2, trip1)
     with pytest.raises(OdysValidationError, match="Trips 'morning' and 'overlapping' overlap for vehicle 'ev_1'"):
@@ -96,8 +107,8 @@ def test_ev_rejects_overlapping_trips_at_construction(ev_base_params: MappingPro
 
 
 def test_ev_accepts_back_to_back_trips(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip1 = Trip(name="out", start_time=8, end_time=10, energy_consumption=5.0)
-    trip2 = Trip(name="back", start_time=10, end_time=12, energy_consumption=5.0)
+    trip1 = Trip(name="out", start_time=timedelta(hours=8), end_time=timedelta(hours=10), energy_consumption=5.0)
+    trip2 = Trip(name="back", start_time=timedelta(hours=10), end_time=timedelta(hours=12), energy_consumption=5.0)
     params = dict(ev_base_params)
     params["trips"] = (trip1, trip2)
     assert ElectricVehicle(**params).trips == (trip1, trip2)
@@ -105,23 +116,48 @@ def test_ev_accepts_back_to_back_trips(ev_base_params: MappingProxyType[str, Any
 
 def test_ev_accepts_a_trip_at_t0_beyond_any_charge_on_its_own(ev_base_params: MappingProxyType[str, Any]) -> None:
     """Whether a trip at t=0 fits the starting charge is checked by the vehicle's initial state, not the vehicle."""
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=TRIP_BEYOND_STARTING_CHARGE)
+    trip = Trip(
+        name="early",
+        start_time=timedelta(hours=0),
+        end_time=timedelta(hours=2),
+        energy_consumption=TRIP_BEYOND_STARTING_CHARGE,
+    )
     params = dict(ev_base_params)
     params["trips"] = (trip,)
     assert ElectricVehicle(**params).trips == (trip,)
 
 
 def test_ev_validate_horizon_accepts_trips_within_horizon(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip = Trip(name="last", start_time=20, end_time=NUM_STEPS, energy_consumption=5.0)
+    trip = Trip(
+        name="last",
+        start_time=timedelta(hours=20),
+        end_time=timedelta(hours=NUM_STEPS),
+        energy_consumption=5.0,
+    )
     params = dict(ev_base_params)
     params["trips"] = (trip,)
     ElectricVehicle(**params).validate_horizon(Horizon(timestep=timedelta(hours=1), number_of_steps=NUM_STEPS))
 
 
 def test_ev_validate_horizon_rejects_trips_beyond_horizon(ev_base_params: MappingProxyType[str, Any]) -> None:
-    trip = Trip(name="late_trip", start_time=20, end_time=30, energy_consumption=5.0)
+    trip = Trip(name="late_trip", start_time=timedelta(hours=20), end_time=timedelta(hours=30), energy_consumption=5.0)
     params = dict(ev_base_params)
     params["trips"] = (trip,)
     ev = ElectricVehicle(**params)
     with pytest.raises(OdysValidationError, match=r"Trip 'late_trip' for vehicle 'ev_1' extends beyond.*horizon=24"):
+        ev.validate_horizon(Horizon(timestep=timedelta(hours=1), number_of_steps=NUM_STEPS))
+
+
+def test_ev_validate_horizon_rejects_trips_off_the_timestep_grid() -> None:
+    trip = Trip(
+        name="half_hour",
+        start_time=timedelta(hours=8),
+        end_time=timedelta(hours=8, minutes=30),
+        energy_consumption=5.0,
+    )
+    ev = ElectricVehicle(name="ev_1", battery=Battery(**EV_BATTERY_PARAMS), trips=(trip,))
+    with pytest.raises(
+        OdysValidationError,
+        match=r"Trip 'half_hour' for vehicle 'ev_1' has end_time=8:30:00, which is not",
+    ):
         ev.validate_horizon(Horizon(timestep=timedelta(hours=1), number_of_steps=NUM_STEPS))

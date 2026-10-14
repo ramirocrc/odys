@@ -247,7 +247,13 @@ def test_soc_state_rejects_soc_outside_zero_to_one(
 
 
 def test_ev_initial_state_rejects_departure_soc_above_initial_soc_at_t0() -> None:
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=5.0, min_soc_at_departure=SOC_MAX)
+    trip = Trip(
+        name="early",
+        start_time=timedelta(hours=0),
+        end_time=timedelta(hours=2),
+        energy_consumption=5.0,
+        min_soc_at_departure=SOC_MAX,
+    )
 
     with pytest.raises(
         OdysValidationError,
@@ -257,7 +263,13 @@ def test_ev_initial_state_rejects_departure_soc_above_initial_soc_at_t0() -> Non
 
 
 def test_ev_initial_state_accepts_departure_soc_up_to_initial_soc_at_t0() -> None:
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=5.0, min_soc_at_departure=SOC_WITHIN_LIMITS)
+    trip = Trip(
+        name="early",
+        start_time=timedelta(hours=0),
+        end_time=timedelta(hours=2),
+        energy_consumption=5.0,
+        min_soc_at_departure=SOC_WITHIN_LIMITS,
+    )
 
     state = ElectricVehicleInitialState(vehicle=_vehicle_with_trip(trip), soc=SOC_WITHIN_LIMITS)
 
@@ -265,7 +277,13 @@ def test_ev_initial_state_accepts_departure_soc_up_to_initial_soc_at_t0() -> Non
 
 
 def test_ev_initial_state_accepts_high_departure_soc_after_t0() -> None:
-    trip = Trip(name="later", start_time=1, end_time=3, energy_consumption=5.0, min_soc_at_departure=SOC_MAX)
+    trip = Trip(
+        name="later",
+        start_time=timedelta(hours=1),
+        end_time=timedelta(hours=3),
+        energy_consumption=5.0,
+        min_soc_at_departure=SOC_MAX,
+    )
 
     state = ElectricVehicleInitialState(vehicle=_vehicle_with_trip(trip), soc=SOC_WITHIN_LIMITS)
 
@@ -273,7 +291,12 @@ def test_ev_initial_state_accepts_high_departure_soc_after_t0() -> None:
 
 
 def test_ev_initial_state_rejects_trip_at_t0_needing_more_than_the_starting_charge() -> None:
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=TRIP_BEYOND_STARTING_CHARGE)
+    trip = Trip(
+        name="early",
+        start_time=timedelta(hours=0),
+        end_time=timedelta(hours=2),
+        energy_consumption=TRIP_BEYOND_STARTING_CHARGE,
+    )
 
     with pytest.raises(
         OdysValidationError,
@@ -284,7 +307,12 @@ def test_ev_initial_state_rejects_trip_at_t0_needing_more_than_the_starting_char
 
 
 def test_ev_initial_state_accepts_trip_at_t0_within_the_starting_charge() -> None:
-    trip = Trip(name="early", start_time=0, end_time=2, energy_consumption=TRIP_WITHIN_STARTING_CHARGE)
+    trip = Trip(
+        name="early",
+        start_time=timedelta(hours=0),
+        end_time=timedelta(hours=2),
+        energy_consumption=TRIP_WITHIN_STARTING_CHARGE,
+    )
 
     state = ElectricVehicleInitialState(vehicle=_vehicle_with_trip(trip), soc=SOC_WITHIN_LIMITS)
 
@@ -293,7 +321,12 @@ def test_ev_initial_state_accepts_trip_at_t0_within_the_starting_charge() -> Non
 
 def test_ev_initial_state_accepts_a_long_trip_after_t0() -> None:
     """A vehicle can charge before a later trip, so the starting charge does not bound it."""
-    trip = Trip(name="later", start_time=1, end_time=3, energy_consumption=TRIP_BEYOND_STARTING_CHARGE)
+    trip = Trip(
+        name="later",
+        start_time=timedelta(hours=1),
+        end_time=timedelta(hours=3),
+        energy_consumption=TRIP_BEYOND_STARTING_CHARGE,
+    )
 
     state = ElectricVehicleInitialState(vehicle=_vehicle_with_trip(trip), soc=SOC_WITHIN_LIMITS)
 

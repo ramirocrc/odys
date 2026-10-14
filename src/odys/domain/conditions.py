@@ -296,7 +296,7 @@ class ElectricVehicleInitialState(InitialCondition):
     @model_validator(mode="after")
     def _validate_min_soc_at_departure_feasible(self) -> Self:
         for trip in self.vehicle.trips:
-            if trip.start_time == 0 and trip.min_soc_at_departure > self.soc:
+            if trip.start_time == timedelta(0) and trip.min_soc_at_departure > self.soc:
                 msg = (
                     f"Trip '{trip.name}' for vehicle '{self.vehicle.name}' departs at t=0 with "
                     f"min_soc_at_departure={trip.min_soc_at_departure} > initial soc={self.soc}"
@@ -309,7 +309,7 @@ class ElectricVehicleInitialState(InitialCondition):
         battery = self.vehicle.battery
         available_energy = (self.soc - battery.soc_min) * battery.capacity
         for trip in self.vehicle.trips:
-            if trip.start_time != 0:
+            if trip.start_time != timedelta(0):
                 continue
             if trip.energy_consumption > available_energy and not math.isclose(
                 trip.energy_consumption,

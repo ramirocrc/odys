@@ -28,8 +28,8 @@ nav = [
       { "Generator" = "user_guide/assets/generator.md" },
       { "FixedLoad" = "user_guide/assets/fixed_load.md" },
       { "FlexibleLoad" = "user_guide/assets/flexible_load.md" },
-      { "Battery" = "user_guide/assets/battery.md" },
       { "StationaryStorage" = "user_guide/assets/stationary_storage.md" },
+      { "Battery" = "user_guide/assets/battery.md" },
       { "ElectricVehicle" = "user_guide/assets/electric_vehicle.md" },
       { "Charger" = "user_guide/assets/charger.md" },
     ] },
@@ -38,8 +38,8 @@ nav = [
     ] },
     { "Optimization" = [
       { "Objective" = "user_guide/optimization/objective.md" },
-      { "Stochastic optimization" = "user_guide/optimization/stochastic.md" },
       { "Results" = "user_guide/optimization/results.md" },
+      { "Stochastic optimization" = "user_guide/optimization/stochastic.md" },
       { "Solvers" = "user_guide/optimization/solvers.md" },
     ] },
     { "Mathematical notation" = "user_guide/mathematical_notation.md" },
@@ -143,7 +143,7 @@ nav = [
 [project.theme]
 custom_dir = "overrides"
 logo = "assets/brand/odys-wordmark-on-dark.svg"
-favicon = "assets/brand/favicon.svg"
+favicon = "assets/brand/favicon-light.svg"
 # Fonts are loaded by brand.css (tools/docs/brand/tokens.json)
 font = false
 features = [
