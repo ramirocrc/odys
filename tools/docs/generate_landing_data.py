@@ -47,8 +47,8 @@ _cvar = runpy.run_path(str(EXAMPLES_DIR / "cvar_market_risk.py"))
 _ev_fleet = runpy.run_path(str(EXAMPLES_DIR / "ev_fleet_optimization.py"))
 _flexible = runpy.run_path(str(EXAMPLES_DIR / "flexible_load_market.py"))
 _arbitrage = runpy.run_path(str(EXAMPLES_DIR / "market_arbitrage.py"))
-_prices = runpy.run_path(str(SNIPPETS_DIR / "prices.py"))
-price_scenarios: list[list[float]] = _prices["price_scenarios"]
+_snippets = {tab: runpy.run_path(str(SNIPPETS_DIR / f"{tab}.py")) for tab in TABS}
+price_scenarios: list[list[float]] = _snippets["stochastic"]["price_scenarios"]
 
 
 def _shown_lines(tab: str) -> list[str]:
@@ -57,8 +57,8 @@ def _shown_lines(tab: str) -> list[str]:
     return lines[lines.index(SHOWN_START) + 1 : lines.index(SHOWN_END)]
 
 
-def _run_snippet(tab: str) -> OptimalDispatchResults:
-    result = runpy.run_path(str(SNIPPETS_DIR / f"{tab}.py"))["result"]
+def _snippet_result(tab: str) -> OptimalDispatchResults:
+    result = _snippets[tab]["result"]
     if not isinstance(result, OptimalDispatchResults):
         msg = f"Snippet {tab}.py must define `result` as OptimalDispatchResults"
         raise TypeError(msg)
@@ -104,15 +104,22 @@ def _changed_lines(lines: list[str], reference: list[str]) -> list[int]:
 
 
 def _setup_fold(lines: list[str]) -> dict[str, int]:
-    """Fold the asset definitions, up to the blank line before ``system = ...``."""
-    end = next(i for i, line in enumerate(lines) if line.startswith("system ="))
+    """Fold the asset definitions, up to the blank line before the first commented block."""
+    end = next(i for i, line in enumerate(lines) if line.startswith("# "))
     return {"start": 0, "end": end - 1}
 
 
+def _data_fold(lines: list[str], name: str) -> dict[str, int]:
+    """Fold the literal price data assigned to `name`, which spans one line or ends at a lone ``]``."""
+    start = next(i for i, line in enumerate(lines) if line.startswith(f"{name} = ["))
+    end = start if lines[start].endswith("]") else lines.index("]", start)
+    return {"start": start, "end": end + 1}
+
+
 def _scenarios_fold(lines: list[str]) -> dict[str, int]:
-    """Fold the ``scenarios=[...]`` block, which risk_aware.py shares with stochastic.py."""
-    start = next(i for i, line in enumerate(lines) if line.startswith("    scenarios=["))
-    end = next(i for i in range(start, len(lines)) if lines[i] == "    ],")
+    """Fold the price data and ``scenarios = [...]`` blocks, which risk_aware.py shares with stochastic.py."""
+    start = next(i for i, line in enumerate(lines) if line.startswith("price_scenarios = [")) - 1
+    end = lines.index("]", next(i for i, line in enumerate(lines) if line.startswith("scenarios = [")))
     return {"start": start, "end": end + 1}
 
 
@@ -122,11 +129,16 @@ def _hero() -> dict[str, object]:
     references["risk_aware"] = shown["stochastic"]
     tabs: dict[str, object] = {}
     for tab in TABS:
-        schedule = _market_schedule(_run_snippet(tab))
+        schedule = _market_schedule(_snippet_result(tab))
         expected, worst = _profit_across_scenarios(schedule)
         folds = [{**_setup_fold(shown[tab]), "kind": "setup"}]
-        if tab == "risk_aware":
-            folds.append({**_scenarios_fold(shown[tab]), "kind": "scenarios"})
+        match tab:
+            case "deterministic":
+                folds.append({**_data_fold(shown[tab], "forecast"), "kind": "forecast"})
+            case "stochastic":
+                folds.append({**_data_fold(shown[tab], "price_scenarios"), "kind": "price_scenarios"})
+            case _:
+                folds.append({**_scenarios_fold(shown[tab]), "kind": "scenarios"})
         tabs[tab] = {
             "code": shown[tab],
             "changed": _changed_lines(shown[tab], references[tab]),
@@ -135,7 +147,7 @@ def _hero() -> dict[str, object]:
             "expected_profit": expected,
             "worst_profit": worst,
         }
-    deterministic_forecast = _prices["forecast"]
+    deterministic_forecast = _snippets["deterministic"]["forecast"]
     return {"price_scenarios": price_scenarios, "forecast": deterministic_forecast, "tabs": tabs}
 
 

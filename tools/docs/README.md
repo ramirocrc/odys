@@ -31,7 +31,6 @@ the "G · Mobile" board shows the phone layout).
 | Behaviour (tabs, code folds, charts, copy button, carousel) | `docs/assets/javascripts/home.js` |
 | Selects the template | `docs/index.md` (front matter only) |
 | Hero code snippets, run as written | `tools/docs/landing/snippets/{deterministic,stochastic,risk_aware}.py` |
-| Shared price scenarios for the snippets | `tools/docs/landing/snippets/prices.py` |
 | Data generation | `tools/docs/generate_landing_data.py` → `docs/assets/landing/data.json` (git-ignored) |
 | Guard against the snippets drifting from the API | `tests/docs/test_landing_snippets.py` |
 
@@ -43,21 +42,42 @@ the "G · Mobile" board shows the phone layout).
 Each snippet is a complete script. The landing page shows only the part
 between the `# --8<-- [start:shown]` and `# --8<-- [end:shown]` markers. The
 generator runs the snippets, diffs them to find the highlighted lines, and
-computes the fold ranges. The setup fold covers everything before
-`system = ...`; on `risk_aware.py`, the scenarios block it shares with
-`stochastic.py` is folded too.
+computes the fold ranges. The setup fold covers the asset definitions, up to
+the first commented block. The price data (`forecast`, `price_scenarios`) is
+folded too; on `risk_aware.py`, one fold covers the price data and the
+`scenarios = [...]` block it shares with `stochastic.py`.
+
+Each snippet reads top to bottom: assets, then the price data, then
+`scenarios` (and `objective` on `risk_aware.py`) as their own variables, each
+under a one-line comment saying what it is, then an `EnergySystem(...)` call
+that is the same in every tab apart from `objective=`. The highlight then lands on the blocks that make
+the tab different, not on lines nested inside the system call.
+
+The price data is written out in each snippet, so the code runs exactly as
+shown: twelve days built from a typical day-ahead price shape with varied
+solar dip and evening peak, rounded to whole €/MWh. `stochastic.py` and
+`risk_aware.py` hold the same twelve days, and the snippet tests check that
+they match.
+
+The hero keeps one height across tabs. `home.js` renders every tab's code
+into one grid cell, and invisible copies of every caption sit in the
+caption's cell; the inactive ones get `visibility: hidden`, so each cell
+takes the height of its tallest tab at any width and with any folds open.
 
 The deterministic tab optimizes against a single point forecast: one
-plausible scenario, `forecast` in `prices.py`. It must not be the scenario
-mean or median. Expected profit is linear in prices and the market is
+plausible scenario, `forecast` in `deterministic.py`, which the snippet tests
+check is one of the twelve days. It must not be the scenario mean or
+median. Expected profit is linear in prices and the market is
 stage-fixed, so optimizing against the mean reproduces the stochastic
 schedule exactly, and the two tabs would look identical. The snippet test
 checks that the stochastic schedule differs from the deterministic one and
 earns more in expectation.
 
-Snippets are formatted by ruff with magic trailing commas. Keep calls
-exploded (one argument per line, trailing comma) so lines stay under about
-70 characters and fit the page.
+Snippets are formatted by ruff with magic trailing commas. Keep outer calls
+exploded (one argument per line, trailing comma), and keep short inner calls
+such as `PriceProfile(...)` on one line, so lines stay under about 70
+characters and fit the page. The folded price rows are the exception: one
+day per line, under the 120-character limit.
 
 ### Data in `data.json`
 

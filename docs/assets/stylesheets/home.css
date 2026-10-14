@@ -276,14 +276,23 @@ body:has(.odys-home) .md-footer-meta {
 }
 
 .odys-caption {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
+  display: grid;
+  align-items: center;
   min-height: 72px;
   margin: 28px 28px 0;
   padding: 4px 0 4px 20px;
   border-left: 3px solid var(--odys-mint-400);
+}
+
+.odys-caption__text {
+  display: flex;
+  flex-direction: column;
+  grid-area: 1 / 1;
+  gap: 4px;
+}
+
+.odys-caption__text--sizer {
+  visibility: hidden;
 }
 
 .odys-caption__lead {
@@ -308,15 +317,26 @@ body:has(.odys-home) .md-footer-meta {
 
 .odys-code {
   box-sizing: border-box;
+  display: grid;
   flex: 1 1 520px;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   min-height: 548px;
   padding: 22px 0;
-  overflow-x: auto;
   border-right: 1px solid var(--odys-line);
   background: var(--odys-bg);
   color: var(--odys-code);
   font: 400 13.5px/22px var(--odys-font-mono);
+}
+
+.odys-code__panel {
+  grid-area: 1 / 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.odys-code__panel--inactive {
+  visibility: hidden;
 }
 
 .odys-chart {
@@ -416,6 +436,7 @@ body:has(.odys-home) .md-footer-meta {
 .odys-home .tk-s { color: var(--odys-mint-400); }
 .odys-home .tk-n { color: var(--odys-amber-300); }
 .odys-home .tk-kw { color: var(--odys-code-comment); font-style: italic; }
+.odys-home .tk-cm { color: var(--odys-code-comment); font-style: italic; }
 .odys-home .tk-p { color: var(--odys-code-punct); }
 .odys-home .tk-v { color: var(--odys-code); }
 .odys-home .tk-err { color: var(--odys-code-error); }
