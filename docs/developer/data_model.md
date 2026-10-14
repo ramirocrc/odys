@@ -453,3 +453,19 @@ classDiagram
     Dispatch <|-- MarketDispatch
     Dispatch <|-- FlexibleLoadDispatch
 ```
+
+## Errors
+
+The errors odys raises itself derive from `OdysError`, and all four are exported from `odys`; field types and ranges are pydantic's, so they raise `pydantic.ValidationError`. Input that breaks an odys rule is rejected with `OdysValidationError` when it is built (an entity, profile, condition or the `EnergySystem`), a missing solver or a run without a solution raises `OdysSolverError`, and reading a results container the system has no assets for raises `OdysNoResultsError`. API reference: [`odys.domain.exceptions`](api/domain/exceptions.md).
+
+```mermaid
+classDiagram
+    class OdysError
+    class OdysValidationError
+    class OdysSolverError
+    class OdysNoResultsError
+
+    OdysError <|-- OdysValidationError
+    OdysError <|-- OdysSolverError
+    OdysError <|-- OdysNoResultsError
+```

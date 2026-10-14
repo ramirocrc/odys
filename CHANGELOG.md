@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Asset`, the public base class of all user-owned entities (generators, storage, electric vehicles, chargers, loads).
 - `AssetPortfolio.assets_of(asset_type)` returns all assets of a given type.
 - `OptimalDispatchResults` is exported from `odys`.
+- `OdysError`, `OdysValidationError`, `OdysSolverError` and `OdysNoResultsError` are exported from `odys`, so `except odys.OdysValidationError` works; before, they were only importable from the internal `odys.domain.exceptions`.
 - `Battery`, a value object with the battery physics (capacity, power limits, efficiencies, state of charge, degradation, self-discharge).
 - Typed scenario profiles that reference their entity: `LoadProfile(load=..., values=...)` (fixed load demand or flexible load base profile), `AvailableCapacityProfile(generator=..., values=...)` and `PriceProfile(market=..., values=...)`.
 - `EnergySystem` rejects a profile whose entity differs from the system's entity of the same name (for example a copy of a generator with other parameters).
@@ -25,9 +26,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Every storage and electric vehicle needs an initial state, and so does every generator with `ramp_up`, `ramp_down`, `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost`. `time_in_state` is required when the matching minimum time is set. Missing or inconsistent conditions raise `OdysValidationError`.
 - Contributor guidance that works with any coding agent: `AGENTS.md` (conventions, Definition of Done, architecture) and step-by-step playbooks in `.agents/skills/`. `tests/test_escape_hatches.py` fails on any new lint or type-check suppression, and `tests/test_agent_guidelines.py` keeps the paths in the guidance current.
 - The Odys logo: a wordmark set in Michroma whose O has an open top-right corner with a dot. It is the docs header logo (the dark wordmark on the light scheme, the light one on the dark scheme and the landing page) and favicon and heads the README; the SVGs for dark and light backgrounds are in `docs/assets/brand/`. `just generate-logo` rebuilds them from the vendored font (`tools/docs/brand/fonts/`) with `tools/docs/generate_logo.py`. The favicon is the O alone on a transparent background, dark on light browser themes and light on dark ones (a script in `overrides/main.html` swaps it when the theme changes), drawn heavier so it stays legible at 16 px.
+- `just docs-build` runs every code block of the User Guide (`tools/docs/check_user_guide.py`) and fails when one raises or prints something other than the output the page shows.
 
 ### Changed
 
+- **Breaking:** `Trip.start_time` and `Trip.end_time` are `timedelta`s measured from the start of the horizon, like the other times in odys; they were step indices. Each must be a whole number of timesteps, which the `EnergySystem` checks:
+
+    ```python
+    # Before (hourly steps)
+    Trip(name="delivery", start_time=7, end_time=9, energy_consumption=0.015)
+
+    # After
+    Trip(name="delivery", start_time=timedelta(hours=7), end_time=timedelta(hours=9), energy_consumption=0.015)
+    ```
+
+- `SolverConfig.presolve` defaults to `None`, which leaves presolve to each solver's own default (on or automatic in every supported solver). Before, the default `False` turned presolve off. `True` and `False` still force it on or off.
+- `to_dataframe()` of a results container has one row per label of the dimensions all its series share. For chargers, that is one row per time and charger, with one `assignment[<vehicle>]` column per vehicle; before, each charger's `power` was repeated on the row of every vehicle.
 - **Breaking:** `Battery.soc_start` and `Battery.soc_end` are removed; the state of charge at the start and end of a run is an initial or final condition of the `EnergySystem`:
 
     ```python
@@ -110,6 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A battery's self-discharge now applies at the first step too; before, the state of charge after the first step started from the full initial state of charge, so storage and EVs lost less energy than `self_discharge_rate` says.
 - An electric vehicle trip departing at the first timestep now draws its energy from the battery; before, the model added it to the state of charge (an EV at 50% SOC making a 10%-of-capacity trip at t=0 ended the first step at 60% instead of 40%).
 - `AssetPortfolio` built from a one-shot iterable (such as a generator expression) now keeps all assets; before, it was silently empty.
 - Objective terms priced per MWh now scale with the timestep length (see Changed).
@@ -122,6 +137,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation: result properties are documented as `pandas.Series` (were "DataFrame"), the available-capacity snippet in the generator guide no longer exceeds its generator's nominal power, the portfolio guide no longer lists a `Battery` as an asset, the README output shows the new series name, and the `odys.parameters` API pages moved out of `odys.optimization` to their own section.
 - Documentation: the battery dispatch figure's hover now shows each asset's own power; before, it showed the top of each stacked bar, so values at a timestep did not add up to the load. The state of charge is labelled as a percentage (was "MWh").
 - Documentation: the EV fleet example no longer names the exact hour ev_2 and ev_3 charge, since any 5 $/MWh hour is equally optimal and the solver's choice changed (t21 → t23). Example figures are no longer committed; they are generated on every docs build, which also checks the facts the battery and EV example pages state.
+- Documentation: the User Guide now follows one running example, a site with a CCGT, a wind farm, a battery, a factory, a flexible process and a day-ahead market, that grows page by page. Every code block runs in order on its page, and the printed outputs are those of a real solve. Asset pages share one template and each links its worked example. The overview has a "Units and time" section, the Results page covers selecting one asset, solves without a solution and the meaning of `objective_value`, and the Stochastic page explains which decisions are shared across scenarios (stage-fixed trades) and which adapt to each one. Results comes before Stochastic optimization in the navigation, and Battery follows StationaryStorage.
+- Documentation: ramp limits are per timestep (the conditions guide called them MW/h), the generator and storage guides say the optimizer maximizes profit (they said it minimizes cost), `result.chargers.power` is documented as charging power only, without V2G discharge, and the value at risk is written ζ instead of η, which is also the battery efficiency.
 
 ### Known issues
 

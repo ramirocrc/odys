@@ -11,7 +11,9 @@ Output:
 import json
 import re
 import sys
+from datetime import timedelta
 from pathlib import Path
+from typing import NamedTuple
 
 _project_root = str(Path(__file__).resolve().parent.parent.parent)
 if _project_root not in sys.path:
@@ -35,7 +37,7 @@ from examples.ev_fleet_optimization import (  # pyrefly: ignore
 )
 from examples.flexible_load_market import run_flexible_load_market  # pyrefly: ignore
 from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
-from odys import Charger, OptimalDispatchResults
+from odys import Charger, OptimalDispatchResults, Trip
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "docs" / "assets" / "plots"
@@ -645,6 +647,20 @@ HOUR_EDGES = list(range(NUMBER_OF_HOURS + 1))
 HOUR_CENTERS = [t + 0.5 for t in range(NUMBER_OF_HOURS)]
 
 
+ONE_HOUR = timedelta(hours=1)
+
+
+class TripHours(NamedTuple):
+    """The first hour of a trip and the hour the vehicle is back, as step indices of the hourly example."""
+
+    start: int
+    end: int
+
+
+def _trip_hours(trip: Trip) -> TripHours:
+    return TripHours(start=trip.start_time // ONE_HOUR, end=trip.end_time // ONE_HOUR)
+
+
 def _ev_display_name(ev_name: str) -> str:
     return ev_name.replace("ev_", "EV ")
 
@@ -694,10 +710,10 @@ def _add_price_row(fig: go.Figure, row: int, *, annotate: bool = False, show_leg
 
 def _add_trip_vrects(fig: go.Figure, row: int) -> None:
     for ev in EVS:
-        for trip in ev.trips:
+        for hours in map(_trip_hours, ev.trips):
             fig.add_vrect(
-                x0=trip.start_time,
-                x1=trip.end_time,
+                x0=hours.start,
+                x1=hours.end,
                 fillcolor=EV_COLORS[ev.name],
                 opacity=0.08,
                 line_width=0,
@@ -744,13 +760,14 @@ def _extract_ev_state_intervals(result: OptimalDispatchResults) -> list[tuple[st
     for ev in EVS:
         ev_power = net_power.sel(ev=ev.name).values
 
-        intervals.extend((ev.name, "trip", trip.start_time, trip.end_time) for trip in ev.trips)
+        trip_hours = [_trip_hours(trip) for trip in ev.trips]
+        intervals.extend((ev.name, "trip", hours.start, hours.end) for hours in trip_hours)
 
         is_charging = ev_power > ACTIVE_POWER_TOLERANCE
         is_discharging = ev_power < -ACTIVE_POWER_TOLERANCE
 
         for t in range(NUMBER_OF_HOURS):
-            on_trip = any(trip.start_time <= t < trip.end_time for trip in ev.trips)
+            on_trip = any(hours.start <= t < hours.end for hours in trip_hours)
             if on_trip:
                 continue
 
@@ -787,16 +804,17 @@ def generate_ev_fleet_setup() -> None:
     for ev in EVS:
         lane = lanes[ev.name]
         for trip in ev.trips:
+            hours = _trip_hours(trip)
             fig.add_trace(
                 go.Scatter(
-                    x=[trip.start_time, trip.end_time],
+                    x=[hours.start, hours.end],
                     y=[lane, lane],
                     mode="lines",
                     line=dict(color=TRIP_COLOR, width=16),
                     name="Trip (vehicle away)",
                     legendgroup="trip",
                     showlegend=first_trip,
-                    text=f"{trip.name} (t{trip.start_time}-t{trip.end_time})",
+                    text=f"{trip.name} (t{hours.start}-t{hours.end})",
                     hoverinfo="text",
                 ),
                 row=2,
@@ -804,7 +822,7 @@ def generate_ev_fleet_setup() -> None:
             )
             first_trip = False
             fig.add_annotation(
-                x=(trip.start_time + trip.end_time) / 2,
+                x=(hours.start + hours.end) / 2,
                 y=lane + 0.38,
                 text=trip.name,
                 showarrow=False,
@@ -997,9 +1015,10 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
     for ev in EVS:
         soc_values = ev_dataset.sel(ev=ev.name).soc.values
         for trip in ev.trips:
-            actual = float(soc_values[trip.start_time - 1]) if trip.start_time > 0 else SOC_START[ev.name]
+            start = _trip_hours(trip).start
+            actual = float(soc_values[start - 1]) if start > 0 else SOC_START[ev.name]
             rows.append((
-                f"{_ev_display_name(ev.name)} SoC before {trip.name} (t{trip.start_time})",
+                f"{_ev_display_name(ev.name)} SoC before {trip.name} (t{start})",
                 f"≥ {trip.min_soc_at_departure:.2f}",
                 f"{actual:.3f}",
                 actual >= trip.min_soc_at_departure - tolerance,
@@ -1019,8 +1038,8 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
     worst_trip_power_kw = 0.0
     for ev in EVS:
         net_power = ev_dataset.sel(ev=ev.name).net_power.values
-        for trip in ev.trips:
-            trip_power = float(np.abs(net_power[trip.start_time : trip.end_time]).max()) * 1000
+        for hours in map(_trip_hours, ev.trips):
+            trip_power = float(np.abs(net_power[hours.start : hours.end]).max()) * 1000
             worst_trip_power_kw = max(worst_trip_power_kw, trip_power)
     rows.append((
         "Largest |EV power| during any trip",

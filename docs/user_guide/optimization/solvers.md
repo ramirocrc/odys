@@ -15,11 +15,11 @@ Odys supports multiple optimization solvers: HiGHS (default), Gurobi, CPLEX, and
 | CPLEX  | `cplex`             | Commercial        |
 | SCIP   | `pyscipopt`         | Open-source (ZIB) |
 
-HiGHS is bundled as a core dependency, so it's always available. The other solvers require installing optional extras.
+HiGHS is bundled as a core dependency, so it's always available. The other solvers require installing optional extras, and Gurobi and CPLEX also need a license.
 
 ## Installation
 
-Install commercial solvers via pip extras:
+Install the optional solvers as extras:
 
 === "pip"
 
@@ -43,17 +43,35 @@ You only need to install the solvers you plan to use. If you request a solver th
 
 ## Selecting a solver
 
+The snippets on this page solve the first system of the [EnergySystem](../concepts/energy_system.md#basic-usage) page:
+
+??? example "The system"
+
+    ```python
+    from datetime import timedelta
+
+    from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, LoadProfile, Scenario
+
+    ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
+    factory = FixedLoad(name="factory")
+
+    energy_system = EnergySystem(
+        portfolio=AssetPortfolio([ccgt, factory]),
+        scenarios=Scenario(profiles=(LoadProfile(load=factory, values=[60, 90, 40, 70]),)),
+        timestep=timedelta(hours=1),
+        number_of_steps=4,
+    )
+    ```
+
 Pass a `SolverConfig` to `EnergySystem.optimize()`:
 
 ```python
-from odys import EnergySystem, SolverConfig, SolverName
+from odys import SolverConfig, SolverName
 
-result = energy_system.optimize(
-    SolverConfig(solver_name=SolverName.GUROBI)
-)
+result = energy_system.optimize(SolverConfig(solver_name=SolverName.HIGHS))
 ```
 
-When you don't pass a `SolverConfig`, Odys uses HiGHS with default settings.
+When you don't pass a `SolverConfig`, Odys uses HiGHS with default settings. To use another solver, install it and change `solver_name`, for example `SolverName.GUROBI`.
 
 ## Configuration options
 
@@ -64,39 +82,38 @@ When you don't pass a `SolverConfig`, Odys uses HiGHS with default settings.
 | `solver_name`    | `SolverName`               | `HIGHS` | Which solver backend to use          |
 | `time_limit`     | `float \| None`            | `None`  | Max solve time in seconds            |
 | `mip_rel_gap`    | `float \| None`            | `None`  | Relative MIP gap tolerance (0 to 1)  |
-| `presolve`       | `bool`                     | `False` | Enable solver presolve               |
+| `presolve`       | `bool \| None`             | `None`  | Turn presolve on or off; `None` keeps the solver's default |
 | `threads`        | `int \| None`              | `None`  | Number of solver threads             |
 | `log_output`     | `bool`                     | `False` | Display solver output logs           |
 | `solver_options` | `dict[str, Any] \| None`   | `None`  | Raw solver-specific options          |
 
-Example with common options:
+Options left at `None` keep each solver's own default, so presolve runs unless you set `presolve=False`. Example with common options:
 
 ```python
-from odys import SolverConfig, SolverName
-
 result = energy_system.optimize(
     SolverConfig(
-        solver_name=SolverName.GUROBI,
+        solver_name=SolverName.HIGHS,
         time_limit=60.0,
         mip_rel_gap=0.01,
         threads=4,
-        log_output=True,
     )
 )
 ```
 
 ## Solver-specific options
 
-For parameters not covered by the common options, use the `solver_options` dict to pass raw solver-native parameters:
+For parameters not covered by the common options, use the `solver_options` dict to pass raw solver-native parameters. For example, HiGHS's random seed and MIP feasibility tolerance:
 
 ```python
 result = energy_system.optimize(
     SolverConfig(
-        solver_name=SolverName.GUROBI,
-        solver_options={"Method": 2, "Cuts": 2},
+        solver_name=SolverName.HIGHS,
+        solver_options={"random_seed": 42, "mip_feasibility_tolerance": 1e-7},
     )
 )
 ```
+
+With Gurobi, the same dict takes Gurobi's names, such as `{"Method": 2, "Cuts": 2}`.
 
 Values in `solver_options` override the translated common options if there's a conflict.
 
@@ -119,8 +136,7 @@ You can use either the common option names or the native names in `solver_option
 Before solving, Odys verifies the requested solver is installed. If it's not available, you'll get an `OdysSolverError` listing all installed solvers:
 
 ```python
-from odys import SolverConfig, SolverName
-from odys.domain.exceptions import OdysSolverError
+from odys import OdysSolverError
 
 try:
     result = energy_system.optimize(
@@ -134,4 +150,4 @@ This makes it safe to write code that tries multiple solvers or gracefully falls
 
 ## Next steps
 
-Ready to see Odys in action? Check out the [Examples](../../examples/index.md) for end-to-end worked scenarios.
+That completes the User Guide workflow. [Mathematical notation](../mathematical_notation.md) collects every symbol used in the formulations, and the [Examples](../../examples/index.md) solve full problems end to end.

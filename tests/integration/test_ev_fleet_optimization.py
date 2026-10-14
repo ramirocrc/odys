@@ -99,7 +99,13 @@ class TestSingleEvSingleCharger:
         assert (ev_soc <= 1).all().all()
 
     def test_ev_with_trips(self) -> None:
-        trip = Trip(name="commute", start_time=2, end_time=3, energy_consumption=5.0, min_soc_at_departure=0.3)
+        trip = Trip(
+            name="commute",
+            start_time=timedelta(hours=2),
+            end_time=timedelta(hours=3),
+            energy_consumption=5.0,
+            min_soc_at_departure=0.3,
+        )
         ev = _create_ev("ev1", trips=(trip,))
         charger = _create_charger("charger1")
         gen = Generator(name="gen1", nominal_power=GENERATOR_POWER, variable_cost=20.0)
@@ -225,7 +231,13 @@ class TestEvFleetWithMarket:
         assert ev_net_power.shape[1] == 1
 
     def test_trip_constraints_bind_under_price_incentive(self) -> None:
-        trip = Trip(name="commute", start_time=2, end_time=4, energy_consumption=5.0, min_soc_at_departure=0.6)
+        trip = Trip(
+            name="commute",
+            start_time=timedelta(hours=2),
+            end_time=timedelta(hours=4),
+            energy_consumption=5.0,
+            min_soc_at_departure=0.6,
+        )
         ev = _create_ev("ev1", max_discharge_power=EV_MAX_DISCHARGE_POWER, trips=(trip,))
         charger = _create_charger("charger1")
         market = EnergyMarket(
@@ -313,7 +325,12 @@ class TestEvTripAtFirstStep:
 
         The driving constraint forbids charging during the trip, so the SOC at t=0 is fixed.
         """
-        trip = Trip(name="early", start_time=0, end_time=1, energy_consumption=EARLY_TRIP_ENERGY)
+        trip = Trip(
+            name="early",
+            start_time=timedelta(hours=0),
+            end_time=timedelta(hours=1),
+            energy_consumption=EARLY_TRIP_ENERGY,
+        )
         ev = _create_ev("ev1", trips=(trip,))
         load = FixedLoad(name="load1")
         system = EnergySystem(

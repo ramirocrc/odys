@@ -18,7 +18,7 @@ source .venv/bin/activate  # Activate virtual environment
 just check                 # uv lock check + prek + ty + pyrefly + basedpyright + zuban + complexipy + import-linter + deptry
 just test                  # pytest -n auto --cov (90% minimum coverage, branch coverage)
 just docs                  # Serve docs locally (zensical serve)
-just docs-build            # Generate example plots + zensical build --strict --clean
+just docs-build            # Generate example plots, run the User Guide code (tools/docs/check_user_guide.py), zensical build --strict --clean
 just build                 # Build wheel + sdist, smoke test both
 just examples              # Run all examples/*.py
 just nox                   # Run nox sessions (integration tests, multiple Python versions)
