@@ -1,12 +1,12 @@
 // Landing page behaviour (design "G · Orbit"). Loaded only by overrides/home.html.
 // Renders the hero chart and code, the CVaR card and the example thumbnails from
-// assets/landing/data.json (written by docs/generate_landing_data.py from real Odys
+// assets/landing/data.json (written by tools/docs/generate_landing_data.py from real Odys
 // runs), and wires up the tabs, code folds, copy button and examples carousel.
 (() => {
   "use strict";
 
   const SVG_NS = "http://www.w3.org/2000/svg";
-  // Brand colours come from brand.css (generated from docs/brand/tokens.json).
+  // Brand colours come from brand.css (generated from tools/docs/brand/tokens.json).
   const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(`--odys-${name}`).trim();
   const TONES = {};
   const TAB_TAGS = {

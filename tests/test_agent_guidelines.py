@@ -13,7 +13,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 AGENTS_FILE = REPOSITORY_ROOT / "AGENTS.md"
 PLAYBOOKS_DIRECTORY = REPOSITORY_ROOT / ".agents" / "skills"
 PLAYBOOK_FILE_NAME = "SKILL.md"
-TOP_LEVEL_DIRECTORIES = ("src", "tests", "docs", "examples", ".agents", ".github")
+TOP_LEVEL_DIRECTORIES = ("src", "tests", "docs", "tools", "examples", ".agents", ".github")
 
 BACKTICKED = re.compile(r"`([^`\s]+)`")
 PLACEHOLDER = re.compile(r"[<>{}*]|\.\.\.")
