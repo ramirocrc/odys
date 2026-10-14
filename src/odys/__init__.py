@@ -26,6 +26,7 @@ from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.entities.trip import Trip
+from odys.domain.exceptions import OdysError, OdysNoResultsError, OdysSolverError, OdysValidationError
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
 from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
@@ -56,6 +57,10 @@ __all__ = [
     "GeneratorInitialState",
     "LoadProfile",
     "Objective",
+    "OdysError",
+    "OdysNoResultsError",
+    "OdysSolverError",
+    "OdysValidationError",
     "OptimalDispatchResults",
     "PriceProfile",
     "ProfitTerm",

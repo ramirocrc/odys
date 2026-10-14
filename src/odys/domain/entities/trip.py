@@ -4,6 +4,7 @@ This module provides the Trip class for modeling vehicle trips that consume
 energy and make the vehicle unavailable for charging.
 """
 
+from datetime import timedelta
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -26,8 +27,16 @@ class Trip(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     name: str
-    start_time: int = Field(ge=0, description="Timestep index when trip starts.")
-    end_time: int = Field(ge=0, description="Timestep index when trip ends.")
+    start_time: timedelta = Field(
+        strict=True,
+        ge=timedelta(0),
+        description="Time from the start of the horizon at which the trip departs.",
+    )
+    end_time: timedelta = Field(
+        strict=True,
+        ge=timedelta(0),
+        description="Time from the start of the horizon at which the vehicle is back.",
+    )
     energy_consumption: float = Field(
         gt=0,
         description="Battery-side energy consumed during trip in MWh. This is what the battery provides.",

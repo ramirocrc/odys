@@ -1,0 +1,23 @@
+{#-
+  Every page. The favicon follows the browser's light or dark theme: Chromium browsers ignore
+  prefers-color-scheme inside an SVG favicon, so the icon link is swapped here instead.
+  tools/docs/generate_logo.py writes both icons.
+-#}
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <script>
+    (() => {
+      const icon = document.querySelector('link[rel="icon"]');
+      const dark = window.matchMedia("(prefers-color-scheme: dark)");
+      const update = () => {
+        icon.href = dark.matches
+          ? "{{ 'assets/brand/favicon-dark.svg' | url }}"
+          : "{{ 'assets/brand/favicon-light.svg' | url }}";
+      };
+      update();
+      dark.addEventListener("change", update);
+    })();
+  </script>
+{% endblock %}

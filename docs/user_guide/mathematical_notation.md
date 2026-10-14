@@ -4,7 +4,9 @@ icon: lucide/sigma
 
 # Mathematical notation
 
-Let's collect the mathematical symbols used across the User Guide. The notation is aligned with the current optimization model implementation.
+This page collects the mathematical symbols used across the User Guide. Each asset and market page writes its own formulation with these symbols.
+
+The subscripts say what a symbol belongs to: $z_{b,t,s}$ is a battery's charging mode and $z_{m,t,s}$ a market's trade mode, and $D_g$ is a generator's minimum down time while $D^{\min}_l$ and $D^{\max}_l$ are a load's bounds.
 
 ## Indices and sets
 
@@ -12,7 +14,7 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | ------ | ------- |
 | $t$ | Timestep |
 | $T$ | Final timestep |
-| $\tau$ | Rolling-window timestep index |
+| $\tau$ | Timestep inside a minimum up or down time window (summation index) |
 | $s$ | Scenario |
 | $s_0$ | First scenario |
 | $g$ | Generator |
@@ -31,7 +33,7 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $\pi_s$ | Scenario probability |
 | $w_{\text{profit}}$ | Expected-profit weight |
 | $w_{\text{risk}}$ | CVaR weight |
-| $\eta$ | Value-at-risk threshold |
+| $\zeta$ | Value-at-risk threshold |
 | $\xi_s$ | CVaR shortfall in scenario $s$ |
 | $\alpha$ | CVaR confidence level |
 | $\lambda_{m,t,s}$ | Market price |
@@ -98,7 +100,7 @@ Let's collect the mathematical symbols used across the User Guide. The notation 
 | $\omega_{e,t}$ | 1 while the EV is driving |
 | $SOC^{dep}_{e,t}$ | Minimum SoC at departure, at the trip's start step |
 | $E^{trip}_k$ | Energy consumed by trip $k$ |
-| $t^{start}_k$, $t^{end}_k$ | Start and end timestep of trip $k$ |
+| $t^{start}_k$, $t^{end}_k$ | Start and end step of trip $k$: its `start_time` and `end_time` divided by $\Delta t$ |
 
 Electric vehicles reuse the [Battery](assets/battery.md#mathematical-formulation) symbols with $b = e$.
 
@@ -138,4 +140,4 @@ See [Power balance](concepts/power_balance.md) and [FlexibleLoad](assets/flexibl
 
 ## Next steps
 
-Ready to see Odys in action? Check out the [Examples](../examples/index.md) for end-to-end worked scenarios.
+See the [Examples](../examples/index.md) for end-to-end worked problems.

@@ -26,7 +26,7 @@ class ElectricVehicle(Asset):
     can discharge through a V2G-capable charger.
 
     Trips must not overlap, which is checked at construction. Whether a trip
-    departing at t=0 fits the starting charge is checked by the vehicle's
+    departing at the start fits the starting charge is checked by the vehicle's
     `ElectricVehicleInitialState`.
     """
 
@@ -54,19 +54,27 @@ class ElectricVehicle(Asset):
         return min(self.battery.capacity, super().max_energy_supply(conditions))
 
     def validate_horizon(self, horizon: Horizon) -> None:
-        """Validate that all trips fall within the optimization horizon.
+        """Validate that every trip starts and ends on a timestep and within the optimization horizon.
 
         Args:
             horizon: The time grid of the optimization.
 
         Raises:
-            OdysValidationError: If any trip extends beyond the horizon.
+            OdysValidationError: If a trip time is not a whole number of timesteps, or a trip
+                extends beyond the horizon.
         """
         for trip in self.trips:
-            if trip.end_time > horizon.number_of_steps:
+            for field, time in (("start_time", trip.start_time), ("end_time", trip.end_time)):
+                if not horizon.is_whole_steps(time):
+                    msg = (
+                        f"Trip '{trip.name}' for vehicle '{self.name}' has {field}={time}, "
+                        f"which is not a whole number of timesteps ({horizon.timestep})."
+                    )
+                    raise OdysValidationError(msg)
+            if trip.end_time > horizon.timestep * horizon.number_of_steps:
                 msg = (
                     f"Trip '{trip.name}' for vehicle '{self.name}' extends beyond "
                     f"optimization horizon (start={trip.start_time}, end={trip.end_time}, "
-                    f"horizon={horizon.number_of_steps})"
+                    f"horizon={horizon.number_of_steps} steps of {horizon.timestep})"
                 )
                 raise OdysValidationError(msg)

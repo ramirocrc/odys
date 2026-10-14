@@ -1,6 +1,6 @@
 """Typed dispatch results for assets and markets."""
 
-from collections.abc import Iterator
+from collections.abc import Hashable, Iterator
 from typing import ClassVar, Self
 
 import pandas as pd
@@ -64,8 +64,15 @@ class Dispatch:
         return data
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Return the dispatch results as a pandas DataFrame."""
-        return self._data.to_dataframe()
+        """Return the dispatch results as a pandas DataFrame, one row per label of the dimensions every series has.
+
+        A series with more dimensions, such as a charger's assignment to each vehicle, gets one
+        column per label of the extra dimensions (`assignment[ev_1]`), so no value is repeated.
+        """
+        variables = list(self._data.data_vars.values())
+        shared_dims = [dim for dim in self._data.dims if all(dim in variable.dims for variable in variables)]
+        columns = xr.merge([_split_extra_dim(variable, shared_dims) for variable in variables])
+        return columns.to_dataframe(dim_order=shared_dims)
 
     def __repr__(self) -> str:
         """Return the type and the entity names."""
@@ -188,3 +195,15 @@ class FlexibleLoadDispatch(Dispatch):
     def actual_load(self) -> pd.Series:
         """Actual consumption = base profile + adjustment (MW)."""
         return self._series("actual_load")
+
+
+def _split_extra_dim(variable: xr.DataArray, row_dims: list[Hashable]) -> xr.Dataset:
+    """Return one series as a dataset along `row_dims`, with one variable per label of its extra dimension, if any."""
+    extra_dims = [dim for dim in variable.dims if dim not in row_dims]
+    if not extra_dims:
+        return variable.to_dataset()
+    (extra_dim,) = extra_dims
+    return xr.Dataset({
+        f"{variable.name}[{label}]": variable.sel({extra_dim: label}, drop=True)
+        for label in variable.coords[extra_dim].to_numpy()
+    })

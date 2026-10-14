@@ -4,51 +4,51 @@ icon: fontawesome/solid/bolt
 
 # Generator
 
-A `Generator` represents any dispatchable power source in your energy system -- think gas turbines, diesel generators, or even a simplified solar/wind unit with a fixed capacity.
+A `Generator` represents any power source in your energy system: gas turbines, diesel generators, or wind and solar farms whose output is capped by the weather.
 
 The optimizer decides how much power each generator produces at every timestep, and whether it is on or off, to maximize profit while meeting demand.
 
 ## Basic usage
 
-Let's create a generator.
+Let's create the CCGT of the [running example](../index.md#the-running-example).
 
 ```python
 from odys import Generator
 
-gen = Generator(
-    name="gas_turbine",
+ccgt = Generator(
+    name="ccgt",
     nominal_power=100.0,
     variable_cost=50.0,
 )
 ```
 
-That's really all you need. The optimizer will figure out the dispatch (how much power to produce at each timestep) to minimize total cost while meeting demand.
+That's really all you need. The optimizer decides how much the CCGT produces at each timestep, weighing its 50 $/MWh cost against the other ways of meeting demand.
 
 ## Fields
 
-| Field           | Type            | Required | Default | Description                                             |
-| --------------- | --------------- | -------- | ------- | ------------------------------------------------------- |
-| `name`          | `str`           | Yes      | -       | Unique identifier for the generator                     |
-| `nominal_power` | `float`         | Yes      | -       | Maximum power output (in your chosen power unit)        |
-| `variable_cost` | `float`         | Yes      | -       | Cost per unit of energy produced (currency/MWh)         |
-| `min_power`     | `float`         | No       | `0.0`   | Minimum power output when the generator is on           |
-| `ramp_up`       | `float \| None` | No       | `None`  | Max increase in power from one timestep to the next     |
-| `ramp_down`     | `float \| None` | No       | `None`  | Max decrease in power from one timestep to the next     |
-| `min_up_time`   | `timedelta \| None` | No   | `None`  | Minimum time the generator stays on once started        |
-| `min_down_time` | `timedelta \| None` | No   | `None`  | Minimum time the generator stays off once stopped       |
-| `startup_cost`  | `float`         | No       | `0.0`   | Cost incurred each time the generator starts up         |
-| `shutdown_cost` | `float`         | No       | `0.0`   | Cost incurred each time the generator shuts down        |
+| Field           | Type                | Required | Default | Description                                                        |
+| --------------- | ------------------- | -------- | ------- | ------------------------------------------------------------------ |
+| `name`          | `str`               | Yes      | -       | Unique identifier for the generator                                |
+| `nominal_power` | `float`             | Yes      | -       | Maximum power output (MW)                                          |
+| `variable_cost` | `float`             | Yes      | -       | Cost per unit of energy produced (currency/MWh)                    |
+| `min_power`     | `float`             | No       | `0.0`   | Minimum power output when the generator is on (MW)                 |
+| `ramp_up`       | `float \| None`     | No       | `None`  | Maximum increase in output from one timestep to the next (MW/step) |
+| `ramp_down`     | `float \| None`     | No       | `None`  | Maximum decrease in output from one timestep to the next (MW/step) |
+| `min_up_time`   | `timedelta \| None` | No       | `None`  | Minimum time the generator stays on once started                   |
+| `min_down_time` | `timedelta \| None` | No       | `None`  | Minimum time the generator stays off once stopped                  |
+| `startup_cost`  | `float`             | No       | `0.0`   | Cost of each startup (currency)                                    |
+| `shutdown_cost` | `float`             | No       | `0.0`   | Cost of each shutdown (currency)                                   |
 
 ## Minimum power
 
 When a generator is on, it must produce at least `min_power`. When it is off, it produces nothing. This models thermal plants that cannot run stably below a technical minimum.
 
 ```python
-gen = Generator(
+ccgt = Generator(
     name="ccgt",
-    nominal_power=400.0,
-    variable_cost=45.0,
-    min_power=150.0,  # either off, or between 150 and 400 MW
+    nominal_power=100.0,
+    variable_cost=50.0,
+    min_power=30.0,  # either off, or between 30 and 100 MW
 )
 ```
 
@@ -56,19 +56,20 @@ See the [formulation](#math-power-limits).
 
 ## Ramp limits
 
-If your generator can't change output instantly, set ramp limits. Real thermal plants can't jump from zero to full power in a single step -- they need time to ramp up.
+If your generator can't change output instantly, set ramp limits. Real thermal plants can't jump from zero to full power in a single step; they need time to ramp up.
 
 ```python
-gen = Generator(
-    name="slow_gen",
-    nominal_power=200.0,
-    variable_cost=30.0,
-    ramp_up=50.0,  # can increase by at most 50 MW per step
+ccgt = Generator(
+    name="ccgt",
+    nominal_power=100.0,
+    variable_cost=50.0,
+    min_power=30.0,
+    ramp_up=40.0,  # can increase by at most 40 MW per step
     ramp_down=40.0,  # can decrease by at most 40 MW per step
 )
 ```
 
-When `ramp_up` or `ramp_down` is `None` (the default), there's no ramp constraint -- the generator can jump from 0 to full power in a single step. Use this for fast-responding assets or when ramp limits don't matter for your study.
+Ramp limits are **per timestep**, not per hour: with 15-minute steps, `ramp_up=40.0` allows 40 MW every 15 minutes. When `ramp_up` or `ramp_down` is `None` (the default), there's no ramp constraint, and the generator can jump from 0 to full power in a single step. Use this for fast-responding assets or when ramp limits don't matter for your study.
 
 Ramp limits also apply at the first step, measured from the generator's [initial state](#initial-and-final-state), so a generator with ramp limits needs one.
 
@@ -78,15 +79,15 @@ See the [formulation](#math-ramp-limits).
 
 ## Minimum up and down time
 
-`min_up_time` keeps a generator on for at least that many timesteps once it starts. `min_down_time` keeps it off for at least that many timesteps once it stops.
+`min_up_time` keeps a generator on for at least that long once it starts. `min_down_time` keeps it off for at least that long once it stops.
 
 ```python
 from datetime import timedelta
 
-gen = Generator(
-    name="coal_plant",
-    nominal_power=500.0,
-    variable_cost=25.0,
+ccgt = Generator(
+    name="ccgt",
+    nominal_power=100.0,
+    variable_cost=50.0,
     min_up_time=timedelta(hours=4),  # once on, stays on for at least 4 hours
     min_down_time=timedelta(hours=3),  # once off, stays off for at least 3 hours
 )
@@ -100,13 +101,13 @@ See the [formulation](#math-min-up-down-time).
 
 ## Startup and shutdown cost
 
-Both startup and shutdown cost are included in the objective.
+Both startup and shutdown cost are included in the objective, once per event.
 
 ```python
-gen = Generator(
-    name="peaker",
-    nominal_power=50.0,
-    variable_cost=80.0,
+ccgt = Generator(
+    name="ccgt",
+    nominal_power=100.0,
+    variable_cost=50.0,
     startup_cost=500.0,
     shutdown_cost=200.0,
 )
@@ -123,13 +124,10 @@ See the [formulation](#math-startup-shutdown).
 Most studies don't start from scratch: a plant that ran yesterday is still on this morning. Tell the optimizer where each generator starts with a `GeneratorInitialState`, and pass it to the [EnergySystem](../concepts/energy_system.md):
 
 ```python
-from datetime import timedelta
-
 from odys import (
     AssetPortfolio,
     EnergySystem,
     FixedLoad,
-    Generator,
     GeneratorFinalState,
     GeneratorInitialState,
     LoadProfile,
@@ -138,63 +136,50 @@ from odys import (
 
 ccgt = Generator(
     name="ccgt",
-    nominal_power=400.0,
-    min_power=150.0,
-    variable_cost=45.0,
-    ramp_up=100.0,
+    nominal_power=100.0,
+    variable_cost=50.0,
+    min_power=30.0,
+    ramp_up=40.0,
     min_up_time=timedelta(hours=4),
 )
-load = FixedLoad(name="demand")
+factory = FixedLoad(name="factory")
 
 energy_system = EnergySystem(
-    portfolio=AssetPortfolio([ccgt, load]),
+    portfolio=AssetPortfolio([ccgt, factory]),
+    scenarios=Scenario(profiles=(LoadProfile(load=factory, values=[60, 90, 40, 70]),)),
     timestep=timedelta(hours=1),
     number_of_steps=4,
-    scenarios=Scenario(profiles=(LoadProfile(load=load, values=[300, 350, 250, 200]),)),
-    initial_conditions=(GeneratorInitialState(generator=ccgt, power=250.0, time_in_state=timedelta(hours=2)),),
-    final_conditions=(GeneratorFinalState(generator=ccgt, power=200.0),),
+    initial_conditions=(GeneratorInitialState(generator=ccgt, power=50.0, time_in_state=timedelta(hours=2)),),
+    final_conditions=(GeneratorFinalState(generator=ccgt, power=70.0),),
 )
 ```
 
-Here the CCGT has been producing 250 MW for 2 hours. That means:
+Here the CCGT has been producing 50 MW for 2 hours. That means:
 
-- it can ramp to at most 350 MW at the first step;
+- it can ramp to at most 90 MW at the first step;
 - it must stay on for 2 more hours to complete its 4-hour minimum up time;
 - it pays no startup cost;
-- it must end at 200 MW.
+- it must end at 70 MW.
 
-| Class                   | Field           | Type                | Description                                                                           |
-| ----------------------- | --------------- | ------------------- | ------------------------------------------------------------------------------------- |
-| `GeneratorInitialState` | `generator`     | `Generator`         | The generator this state belongs to                                                   |
-|                         | `power`         | `float`             | Output just before the first step: 0 (off) or between `min_power` and `nominal_power` |
-|                         | `time_in_state` | `timedelta \| None` | How long it has been on (`power > 0`) or off (`power = 0`)                            |
-| `GeneratorFinalState`   | `generator`     | `Generator`         | The generator this state belongs to                                                   |
-|                         | `power`         | `float`             | Output at the last step: 0 (off) or between `min_power` and `nominal_power`           |
-
-The status comes from the power: a generator at 0 MW is off, and any other output means it is on.
-
-A `GeneratorInitialState` is **required** when a generator's results depend on its starting state. That's the case when it has `ramp_up`, `ramp_down`, `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost` set; odys never guesses the starting state. A generator without these parameters needs no initial state and starts off.
-
-`time_in_state` is required when the matching minimum time is set: `min_up_time` for a generator that starts on, `min_down_time` for one that starts off. It must be a whole number of timesteps. Leave it out otherwise; the generator then counts as having been in its state long enough.
+A generator's state is its output: 0 MW means off, and any other output means on. A `GeneratorInitialState` is **required** when the generator's results depend on its starting state, which is the case when it has `ramp_up`, `ramp_down`, `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost` set. Odys never guesses the starting state; a generator without these parameters needs no initial state and starts off.
 
 The final output must fit the generator's available capacity at the last step in every scenario. An exact final output combined with ramp limits can make the problem infeasible, so give the generator enough steps to reach it.
 
-See [Initial and final conditions](../concepts/initial_and_final_conditions.md) for every asset type, and the [formulation](#math-initial-final-state).
+See [Initial and final conditions](../concepts/initial_and_final_conditions.md#generators) for every field, including when `time_in_state` is required, and the [formulation](#math-initial-final-state).
 
 ## Profiles
 
-In a `Scenario`, you can limit the generator's available capacity per timestep with an `AvailableCapacityProfile`. This is useful for modeling things like planned maintenance or variable renewable output:
+In a `Scenario`, you can limit a generator's available capacity per timestep with an `AvailableCapacityProfile`. This is how you model weather-dependent output, like the wind farm of the running example, or planned maintenance:
 
 ```python
-from odys import AvailableCapacityProfile, LoadProfile, FixedLoad, Generator, Scenario
+from odys import AvailableCapacityProfile
 
-gen = Generator(name="gas_turbine", nominal_power=100.0, variable_cost=50.0)
-load = FixedLoad(name="load")
+wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
 
 scenario = Scenario(
     profiles=(
-        AvailableCapacityProfile(generator=gen, values=[100, 100, 50, 50, 100, 100, 100]),
-        LoadProfile(load=load, values=[80, 90, 70, 60, 85, 95, 80]),
+        AvailableCapacityProfile(generator=wind, values=[40, 10, 60, 30]),
+        LoadProfile(load=factory, values=[60, 90, 40, 70]),
     ),
 )
 ```
@@ -205,18 +190,27 @@ See the [formulation](#math-available-capacity).
 
 ## Results
 
-After optimization, access generator results through `result.generators`:
+Let's solve the system with the CCGT's initial and final state from above and read its results through `result.generators`:
 
 ```python
 result = energy_system.optimize()
-
-result.generators.power  # dispatch per timestep
-result.generators.status  # on/off status (1 or 0)
-result.generators.startup  # startup events
-result.generators.shutdown  # shutdown events
+print(result.generators.to_dataframe())
 ```
 
-Each of these is a `pandas.Series` indexed by generator and time (and scenario, when there is more than one).
+```text
+                power  status  startup  shutdown
+time generator
+0    ccgt        60.0     1.0      0.0       0.0
+1    ccgt        90.0     1.0      0.0       0.0
+2    ccgt        40.0     1.0      0.0       0.0
+3    ccgt        70.0     1.0      0.0       0.0
+```
+
+Notice there is no startup at step 0: the CCGT was already on, so it pays no startup cost.
+
+The attributes are `power` (MW), `status` (1 when on), `startup` and `shutdown` (1 at the step the generator starts or stops). Each of these is a `pandas.Series` indexed by generator and time (and scenario, when there is more than one).
+
+See the [Basic Dispatch example](../../examples/basic_dispatch.md) for a full day of solar and CCGT dispatch.
 
 ## Mathematical formulation
 
@@ -325,4 +319,4 @@ Supply side: $+\sum_g p_{g,t,s}$. See [Power balance](../concepts/power_balance.
 
 ## Next steps
 
-Next, see how [FixedLoad](fixed_load.md) defines the demand your system must serve, or jump to [Battery](battery.md) to add storage.
+Next, see how [FixedLoad](fixed_load.md) defines the demand your system must serve.

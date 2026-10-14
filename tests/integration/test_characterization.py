@@ -59,7 +59,8 @@ RECORDED_EXAMPLE_OBJECTIVES = {
     "cvar_market_risk_penalized_cvar": 866_500.0,
 }
 RECORDED_UNIT_COMMITMENT_OBJECTIVE = -46_960.0
-RECORDED_STORAGE_MARKET_OBJECTIVE = -12_077.865502913086
+# Re-recorded when self-discharge started applying at the first step (it was skipped there before).
+RECORDED_STORAGE_MARKET_OBJECTIVE = -12_080.181292386771
 
 
 def _run_example(module_name: str, function_name: str) -> object:
