@@ -1,7 +1,7 @@
 """Check that every User Guide page runs and prints what it says it prints.
 
 Usage:
-    uv run --locked python docs/check_user_guide.py
+    uv run --locked python tools/docs/check_user_guide.py
 
 The Python blocks of each page run in order, in one namespace per page, so a block can use the
 names of the blocks above it on the same page but nothing from other pages. When a `text` block
@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import NamedTuple
 
-USER_GUIDE = Path(__file__).resolve().parent / "user_guide"
+USER_GUIDE = Path(__file__).resolve().parents[2] / "docs" / "user_guide"
 SIGNED_ZERO = re.compile(r"(?<![\w.])-(0(?:\.0*)?)(?![\w.])")
 FENCE = re.compile(
     r"^(?P<indent>[ \t]*)```(?P<language>python|text)\n(?P<body>.*?)^(?P=indent)```[ \t]*$",

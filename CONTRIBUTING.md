@@ -18,7 +18,7 @@ When reporting a bug, include the output of this command so we can reproduce the
 python -c "from importlib.metadata import version; print(version('odys'))"
 ```
 
-For security vulnerabilities, see [SECURITY.md](SECURITY.md) instead.
+To report a security vulnerability, open an issue that asks for a private contact. Leave the details out of the issue.
 
 ### Suggest a feature
 

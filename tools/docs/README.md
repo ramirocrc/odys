@@ -30,13 +30,13 @@ the "G · Mobile" board shows the phone layout).
 | Styles | `docs/assets/stylesheets/home.css` |
 | Behaviour (tabs, code folds, charts, copy button, carousel) | `docs/assets/javascripts/home.js` |
 | Selects the template | `docs/index.md` (front matter only) |
-| Hero code snippets, run as written | `docs/landing/snippets/{deterministic,stochastic,risk_aware}.py` |
-| Shared price scenarios for the snippets | `docs/landing/snippets/prices.py` |
-| Data generation | `docs/generate_landing_data.py` → `docs/assets/landing/data.json` (git-ignored) |
-| Guard against the snippets drifting from the API | `tests/integration/test_landing_snippets.py` |
+| Hero code snippets, run as written | `tools/docs/landing/snippets/{deterministic,stochastic,risk_aware}.py` |
+| Shared price scenarios for the snippets | `tools/docs/landing/snippets/prices.py` |
+| Data generation | `tools/docs/generate_landing_data.py` → `docs/assets/landing/data.json` (git-ignored) |
+| Guard against the snippets drifting from the API | `tests/docs/test_landing_snippets.py` |
 
 `just docs` and `just docs-build` regenerate `data.json` through the
-`generate-plots` recipe before building.
+`docs-assets` recipe before building.
 
 ### The hero snippets
 
@@ -76,24 +76,24 @@ exploded (one argument per line, trailing comma) so lines stay under about
   `overrides/home.html`.
 - **Hero captions:** the `data-lead` / `data-rest` attributes on the tab
   buttons in `overrides/home.html`.
-- **Hero code:** edit the snippet files, then run `just generate-plots` and
+- **Hero code:** edit the snippet files, then run `just docs-assets` and
   `just test`.
 - **Breakpoints:** 1060px (code and chart stack), 1000px (proof grid in two
   columns), 760px (phone layout), 700px (vertical line hidden, one column).
 
 ## Brand
 
-`docs/brand/tokens.json` is the single source of truth for Odys colours and
-fonts. To change a colour, edit it there and run `just generate-plots`. Never
-hard-code a colour elsewhere; `tests/integration/test_brand.py` fails on hex
+`tools/docs/brand/tokens.json` is the single source of truth for Odys colours and
+fonts. To change a colour, edit it there and run `just docs-assets`. Never
+hard-code a colour elsewhere; `tests/docs/test_brand.py` fails on hex
 or `rgb()` values in the landing files.
 
 | Tokens | Read by | Used for |
 |---|---|---|
-| `color` | `docs/generate_brand.py`, which writes `brand.css` (git-ignored) | Every colour becomes `--odys-<name>`. `home.css` uses these variables, and `home.js` reads them at runtime. |
+| `color` | `tools/docs/generate_brand.py`, which writes `brand.css` (git-ignored) | Every colour becomes `--odys-<name>`. `home.css` uses these variables, and `home.js` reads them at runtime. |
 | `scheme.light`, `scheme.dark` | `generate_brand.py` | Maps zensical's `--md-*` theme variables, so the docs follow the brand in both modes. |
 | `font` | `generate_brand.py` | The Google Fonts import plus `--odys-font-*` and `--md-text-font` / `--md-code-font`. |
-| `chart.roles`, `chart.chrome` | `docs/generate_example_plots.py` | The example charts: a light and a dark value for every series role (solar, thermal, battery, …) and for text, gridlines, axes and background. |
+| `chart.roles`, `chart.chrome` | `tools/docs/generate_example_plots.py` | The example charts: a light and a dark value for every series role (solar, thermal, battery, …) and for text, gridlines, axes and background. |
 
 Chart colours follow energy conventions where they exist: solar is gold and
 thermal units are terracotta. Storage takes the brand violet, money (prices)
@@ -112,7 +112,7 @@ the iframe in dark mode.
 
 ## Verification
 
-- `just generate-plots`, then `just docs`: check the landing page at desktop,
+- `just docs-assets`, then `just docs`: check the landing page at desktop,
   about 900px and phone widths, in light, dark and system mode. The home page
   should stay dark; docs pages should follow the toggle.
 - Switching tabs replays the chart and swaps the code without changing the

@@ -18,7 +18,7 @@ source .venv/bin/activate  # Activate virtual environment
 just check                 # uv lock check + prek + ty + pyrefly + basedpyright + zuban + complexipy + import-linter + deptry
 just test                  # pytest -n auto --cov (90% minimum coverage, branch coverage)
 just docs                  # Serve docs locally (zensical serve)
-just docs-build            # Generate example plots, run the User Guide code (docs/check_user_guide.py), zensical build --strict --clean
+just docs-build            # Generate example plots, run the User Guide code (tools/docs/check_user_guide.py), zensical build --strict --clean
 just build                 # Build wheel + sdist, smoke test both
 just examples              # Run all examples/*.py
 just nox                   # Run nox sessions (integration tests, multiple Python versions)
@@ -30,8 +30,8 @@ Other useful commands:
 
 - Run a single test: `uv run python -m pytest tests/unit/test_domain/test_validation.py::test_name` (`just test` uses pytest-xdist `-n auto`; drop it when debugging a single test)
 - `just nox` / `uvx nox` — integration tests across Python 3.11–3.14 with `highest` and `lowest-direct` dependency resolutions
-- `just generate-plots` — regenerate docs example plots (`docs/generate_example_plots.py`)
-- `just generate-logo` — regenerate the committed logo SVGs in `docs/assets/brand/` from Michroma (`docs/generate_logo.py`)
+- `just docs-assets` — regenerate the git-ignored docs assets: brand stylesheet, example plots and landing page data (`tools/docs/`, run by `just docs` and `just docs-build`)
+- `just generate-logo` — regenerate the committed logo SVGs in `docs/assets/brand/` from Michroma (`tools/docs/generate_logo.py`)
 
 ## Definition of Done
 
@@ -189,7 +189,8 @@ Touches: entity (`domain/entities/`, subclass `Asset`, override the capability q
 
 ## Testing
 
-- Unit tests live in `tests/unit/`, mirroring `src/odys/` (`test_domain`, `test_optimization/{formulations,objective_terms,model,parameters}`, `test_results`, `test_solvers`). Put new tests in the matching folder. Test modules need unique basenames across the tree (no `__init__.py`), e.g. `test_fixed_load_formulation.py` next to `test_domain/entities/test_fixed_load.py`. The `tests/` root holds checks on the repository rather than a module: `test_architecture_docs.py` (diagrams against the code), `test_escape_hatches.py` (no new suppressions), `test_agent_guidelines.py` (paths named in this file and the playbooks exist) and `test_logo_assets.py` (the committed logo SVGs match `docs/generate_logo.py`).
+- Unit tests live in `tests/unit/`, mirroring `src/odys/` (`test_domain`, `test_optimization/{formulations,objective_terms,model,parameters}`, `test_results`, `test_solvers`). Put new tests in the matching folder. Test modules need unique basenames across the tree (no `__init__.py`), e.g. `test_fixed_load_formulation.py` next to `test_domain/entities/test_fixed_load.py`. The `tests/` root holds checks on the repository rather than a module: `test_architecture_docs.py` (diagrams against the code), `test_escape_hatches.py` (no new suppressions), `test_agent_guidelines.py` (paths named in this file and the playbooks exist).
+- Docs tests live in `tests/docs/`: the brand tokens, the landing page snippets and the committed logo SVGs. They run in `just test` but not in the `just nox` matrix, because they need the `docs` dependency group.
 - Integration tests live in `tests/integration/`: they solve real models end to end and also run across Python versions with `just nox`. Use `@pytest.mark.parametrize` with factory functions there.
 - Shared fixtures live in the nearest `conftest.py` (e.g. `unit/test_optimization/objective_terms/conftest.py`). Reuse them before adding new ones.
 - Test data as module-level UPPER_CASE constants (e.g. `STANDARD_GENERATOR_POWER = 100.0`); no magic numbers inside test bodies.
@@ -214,10 +215,11 @@ Touches: entity (`domain/entities/`, subclass `Asset`, override the capability q
 - `src/odys/solvers/` - Solver configuration and invocation, returning a `SolveOutcome`
 - `src/odys/results/` - `OptimalDispatchResults` and the per-type `Dispatch` views
 - `src/odys/energy_system.py` - `EnergySystem`, the composition root
-- `tests/unit/`, `tests/integration/`, `tests/smoke_test.py` (post-build smoke test), `tests/test_architecture_docs.py` (architecture diagrams against the code), `tests/test_escape_hatches.py` (no new suppressions), `tests/test_agent_guidelines.py` (guidance paths exist)
+- `tests/unit/`, `tests/integration/`, `tests/smoke_test.py` (post-build smoke test), `tests/test_architecture_docs.py` (architecture diagrams against the code), `tests/test_escape_hatches.py` (no new suppressions), `tests/test_agent_guidelines.py` (guidance paths exist), `tests/docs/` (docs tooling checks)
 - `.agents/skills/` - Playbooks for recurring tasks (see Playbooks)
 - `examples/*.py` - Standalone example scripts
-- `docs/` - Documentation (built with zensical, config in `zensical.toml`)
+- `docs/` - Documentation content (built with zensical, config in `zensical.toml`; the landing page template is in `overrides/`)
+- `tools/docs/` - Docs build tooling: asset generators, brand tokens, landing page snippets (see `tools/docs/README.md`)
 
 ## Key Libraries
 
