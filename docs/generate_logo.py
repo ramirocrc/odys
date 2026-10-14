@@ -5,10 +5,11 @@ Usage:
 
 Output:
     Writes docs/assets/brand/: the "Odys" wordmark and the standalone O for dark and light
-    backgrounds, and the favicon. The letters are Michroma's own outlines (docs/brand/fonts/,
-    SIL Open Font License 1.1). The O has its top-right corner cut away, the top stroke with a
-    vertical cut and the right stroke with a horizontal one, and a dot on the stroke at the
-    corner. Colours come from docs/brand/tokens.json.
+    backgrounds, and a transparent favicon for dark and light browser themes (overrides/main.html
+    picks one). The letters are Michroma's own outlines (docs/brand/fonts/, SIL Open Font
+    License 1.1). The O has its top-right corner cut away, the top stroke with a vertical cut
+    and the right stroke with a horizontal one, and a dot on the stroke at the corner. Colours
+    come from docs/brand/tokens.json.
 
     The SVGs are committed because the README links them, so rerun this after changing the font,
     the cut or the colours; tests/test_logo_assets.py fails while they are out of date.
@@ -48,8 +49,7 @@ DOT_RADIUS = 0.6 * 192
 WORDMARK_HEIGHT = 100
 MARK_HEIGHT = 100
 FAVICON_SIZE = 64
-FAVICON_PADDING = 0.08
-FAVICON_CORNER_RADIUS = 0.2
+FAVICON_PADDING = 0.02
 FAVICON_EMBOLDEN = 90.0
 FAVICON_DOT_SCALE = 1.35
 
@@ -249,14 +249,12 @@ def render_mark(outlines: LogoOutlines, palette: Palette) -> str:
     return _svg(ViewBox.around(outlines.ring.bounds), MARK_HEIGHT, body)
 
 
-def render_favicon(outlines: LogoOutlines, palette: Palette, background: str) -> str:
-    """The O on a rounded square, drawn heavier so it stays legible at 16 px."""
+def render_favicon(outlines: LogoOutlines, palette: Palette) -> str:
+    """The O on a transparent background, drawn heavier so it stays legible at 16 px."""
     x_min, y_min, x_max, y_max = outlines.ring.bounds
     side = max(x_max - x_min, y_max - y_min) * (1 + 2 * FAVICON_PADDING) + FAVICON_EMBOLDEN
     view_box = ViewBox((x_min + x_max - side) / 2, (y_min + y_max - side) / 2, side, side)
     body = [
-        f'<rect fill="{background}" x="{_number(view_box.x)}" y="{_number(view_box.y)}" width="{_number(side)}" '
-        f'height="{_number(side)}" rx="{_number(side * FAVICON_CORNER_RADIUS)}"/>',
         f'<path fill="{palette.letters}" stroke="{palette.letters}" stroke-width="{_number(FAVICON_EMBOLDEN)}" '
         f'stroke-linejoin="miter" d="{_path_data(outlines.ring)}"/>',
         _dot(outlines, palette.dot, DOT_RADIUS * FAVICON_DOT_SCALE),
@@ -275,7 +273,8 @@ def render_logo_assets() -> dict[str, str]:
         "odys-wordmark-on-light.svg": render_wordmark(outlines, on_light),
         "odys-mark-on-dark.svg": render_mark(outlines, on_dark),
         "odys-mark-on-light.svg": render_mark(outlines, on_light),
-        "favicon.svg": render_favicon(outlines, on_dark, background=colours["bg"]),
+        "favicon-dark.svg": render_favicon(outlines, on_dark),
+        "favicon-light.svg": render_favicon(outlines, on_light),
     }
 
 
