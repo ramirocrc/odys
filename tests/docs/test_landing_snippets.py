@@ -9,7 +9,7 @@ import pytest
 
 from odys import OptimalDispatchResults
 
-SNIPPETS_DIR = Path(__file__).parents[2] / "docs" / "landing" / "snippets"
+SNIPPETS_DIR = Path(__file__).parents[2] / "tools" / "docs" / "landing" / "snippets"
 NUMBER_OF_SCENARIOS = 12
 
 

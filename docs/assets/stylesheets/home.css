@@ -1,5 +1,5 @@
 /* Landing page (design "G · Orbit"). Loaded only by overrides/home.html.
-   Colours and fonts come from brand.css (generated from docs/brand/tokens.json).
+   Colours and fonts come from brand.css (generated from tools/docs/brand/tokens.json).
    The landing page is always dark, so it uses the dark brand colours directly
    instead of the scheme-dependent --md-* variables the docs pages follow. */
 
@@ -82,10 +82,11 @@ body:has(.odys-home) .md-footer-meta {
 .odys-hero__title {
   margin: 0;
   color: var(--odys-text);
-  font-size: clamp(44px, 7vw, 92px);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.045em;
+  font-size: clamp(40px, 6.2vw, 84px);
+  font-weight: 600;
+  font-stretch: 125%;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
 }
 
 .odys-hero__lead {
@@ -597,10 +598,11 @@ body:has(.odys-home) .md-footer-meta {
   max-width: 760px;
   margin: 0;
   color: var(--odys-text);
-  font-size: clamp(30px, 4vw, 52px);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+  font-size: clamp(28px, 3.6vw, 46px);
+  font-weight: 600;
+  font-stretch: 115%;
+  line-height: 1.1;
+  letter-spacing: 0;
 }
 
 .odys-h2 span {
@@ -998,7 +1000,7 @@ body:has(.odys-home) .md-footer-meta {
   }
 
   .odys-hero__title {
-    font-size: 40px;
+    font-size: 34px;
     line-height: 1.05;
   }
 
