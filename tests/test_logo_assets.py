@@ -17,7 +17,8 @@ LOGO_ASSETS = (
     "odys-wordmark-on-light.svg",
     "odys-mark-on-dark.svg",
     "odys-mark-on-light.svg",
-    "favicon.svg",
+    "favicon-dark.svg",
+    "favicon-light.svg",
 )
 
 
