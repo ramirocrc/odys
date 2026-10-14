@@ -13,10 +13,18 @@ SNIPPETS_DIR = Path(__file__).parents[2] / "tools" / "docs" / "landing" / "snipp
 NUMBER_OF_SCENARIOS = 12
 
 
+def _namespace(snippet: str) -> dict[str, object]:
+    return runpy.run_path(str(SNIPPETS_DIR / f"{snippet}.py"))
+
+
 def _run(snippet: str) -> OptimalDispatchResults:
-    result = runpy.run_path(str(SNIPPETS_DIR / f"{snippet}.py"))["result"]
+    result = _namespace(snippet)["result"]
     assert isinstance(result, OptimalDispatchResults)
     return result
+
+
+def _prices(snippet: str, name: str) -> np.ndarray:
+    return np.asarray(_namespace(snippet)[name], dtype=float)
 
 
 def _schedules(result: OptimalDispatchResults) -> pd.DataFrame:
@@ -38,8 +46,7 @@ def _schedules(result: OptimalDispatchResults) -> pd.DataFrame:
 
 
 def _expected_profit(schedule: np.ndarray) -> float:
-    price_scenarios = runpy.run_path(str(SNIPPETS_DIR / "prices.py"))["price_scenarios"]
-    return float((np.asarray(price_scenarios) @ schedule).mean())
+    return float((_prices("stochastic", "price_scenarios") @ schedule).mean())
 
 
 @pytest.mark.parametrize("snippet", ["deterministic", "stochastic", "risk_aware"])
@@ -65,3 +72,13 @@ def test_stochastic_schedule_beats_the_point_forecast_in_expectation() -> None:
 
     assert not np.allclose(deterministic, stochastic)
     assert _expected_profit(stochastic) > _expected_profit(deterministic)
+
+
+def test_risk_aware_snippet_uses_the_stochastic_price_scenarios() -> None:
+    np.testing.assert_array_equal(_prices("risk_aware", "price_scenarios"), _prices("stochastic", "price_scenarios"))
+
+
+def test_deterministic_forecast_is_one_of_the_price_scenarios() -> None:
+    forecast = _prices("deterministic", "forecast")
+
+    assert any(np.array_equal(forecast, scenario) for scenario in _prices("stochastic", "price_scenarios"))
