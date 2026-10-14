@@ -47,7 +47,7 @@ Think in terms of "What is the user wondering now?" not "What feature should I d
 
 ## 3. Every page should have runnable examples
 
-Every page contains executable code. Not pseudocode. Real code. The code blocks of a page run in order, from its first block, without names from other pages. A block that shows output is followed by a `text` block with exactly what it prints. `just docs-build` runs `docs/check_user_guide.py`, which executes every User Guide page and fails on an error or an output that differs (column spacing and the sign of zero aside). Avoid ties: when several dispatches are equally optimal, the solver may print another one, so change the data until the optimum is unique, and round what you print.
+Every page contains executable code. Not pseudocode. Real code. The code blocks of a page run in order, from its first block, without names from other pages. A block that shows output is followed by a `text` block with exactly what it prints. `just docs-build` runs `tools/docs/check_user_guide.py`, which executes every User Guide page and fails on an error or an output that differs (column spacing and the sign of zero aside). Avoid ties: when several dispatches are equally optimal, the solver may print another one, so change the data until the optimum is unique, and round what you print.
 
 The User Guide builds on one running example, described on `user_guide/index.md`: reuse its names and numbers (`ccgt`, `wind`, `factory`, `process`, `bess`, `day_ahead`) rather than inventing a new system on each page.
 

@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
-SCANNED_DIRECTORIES = ("src", "tests", "examples", "docs")
+SCANNED_DIRECTORIES = ("src", "tests", "examples", "docs", "tools")
 SCANNED_FILES = ("noxfile.py",)
 SOURCE_DIRECTORY = "src"
 
@@ -39,7 +39,7 @@ SOURCE_ONLY_ESCAPE_HATCHES: dict[str, re.Pattern[str]] = {
 }
 
 ALLOWED_ESCAPE_HATCHES: dict[tuple[str, str], int] = {
-    ("docs/generate_example_plots.py", "# pyrefly: ignore"): 6,
+    ("tools/docs/generate_example_plots.py", "# pyrefly: ignore"): 6,
     ("src/odys/domain/entities/base.py", "# pyright: ignore"): 1,
     ("src/odys/optimization/constraints/constraints_group.py", "# noqa"): 1,
     ("src/odys/optimization/constraints/constraints_group.py", "typing.Any"): 2,

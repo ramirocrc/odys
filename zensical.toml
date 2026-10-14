@@ -10,7 +10,7 @@ edit_uri = "edit/main/docs/"
 extra_javascript = [
   "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 ]
-# brand.css is generated from docs/brand/tokens.json by `just generate-plots`
+# brand.css is generated from tools/docs/brand/tokens.json by `just docs-assets`
 extra_css = ["assets/stylesheets/brand.css", "assets/stylesheets/extra.css"]
 
 nav = [
@@ -143,8 +143,8 @@ nav = [
 [project.theme]
 custom_dir = "overrides"
 logo = "assets/brand/odys-wordmark-on-dark.svg"
-favicon = "assets/brand/favicon.svg"
-# Fonts are loaded by brand.css (docs/brand/tokens.json)
+favicon = "assets/brand/favicon-light.svg"
+# Fonts are loaded by brand.css (tools/docs/brand/tokens.json)
 font = false
 features = [
   "announce.dismiss",
