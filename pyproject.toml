@@ -63,7 +63,6 @@ dev = [
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   "pytest-xdist>=3.8.0",
-  "radon>=6.0.1",
   "ruff>=0.15.22",
   "ty>=0.0.61",
   "vulture>=2.16",
@@ -206,25 +205,25 @@ ignore = [
   "S101",  # Use of 'assert' detected
   "D",  # Check for missing docstrings
 ]
-"docs/generate_example_plots.py" = [
-  "INP001",  # No __init__.py in docs/
+"tools/docs/generate_example_plots.py" = [
+  "INP001",  # No __init__.py in tools/docs/
   "E402",  # sys.path manipulation before imports
   "C408",  # plotly API uses dict() extensively
   "T201",  # print() for CLI output is intentional
 ]
-"docs/generate_brand.py" = [
-  "INP001",  # No __init__.py in docs/
+"tools/docs/generate_brand.py" = [
+  "INP001",  # No __init__.py in tools/docs/
   "T201",  # print() for CLI output is intentional
 ]
-"docs/generate_logo.py" = [
-  "INP001",  # No __init__.py in docs/
+"tools/docs/generate_logo.py" = [
+  "INP001",  # No __init__.py in tools/docs/
   "T201",  # print() for CLI output is intentional
 ]
-"docs/generate_landing_data.py" = [
-  "INP001",  # No __init__.py in docs/
+"tools/docs/generate_landing_data.py" = [
+  "INP001",  # No __init__.py in tools/docs/
   "T201",  # print() for CLI output is intentional
 ]
-"docs/landing/snippets/**" = [
+"tools/docs/landing/snippets/**" = [
   "INP001",  # Standalone scripts shown on the landing page, not a package
 ]
 ".claude/hooks/**" = [

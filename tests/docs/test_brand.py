@@ -1,4 +1,4 @@
-"""docs/brand/tokens.json is the single source of truth for Odys colours and fonts.
+"""tools/docs/brand/tokens.json is the single source of truth for Odys colours and fonts.
 
 These tests keep it valid and accessible, and keep the landing page from drifting
 away from it with hard-coded values.
@@ -13,7 +13,7 @@ from types import ModuleType
 import pytest
 
 ROOT = Path(__file__).parents[2]
-TOKENS = json.loads((ROOT / "docs" / "brand" / "tokens.json").read_text())
+TOKENS = json.loads((ROOT / "tools" / "docs" / "brand" / "tokens.json").read_text())
 COLORS: dict[str, str] = TOKENS["color"]
 SCHEMES: dict[str, dict[str, str]] = TOKENS["scheme"]
 CHART_ROLES: dict[str, dict[str, str | bool]] = TOKENS["chart"]["roles"]
@@ -50,7 +50,7 @@ def _load_module(name: str, path: Path) -> ModuleType:
 
 
 def _load_generator() -> ModuleType:
-    return _load_module("generate_brand", ROOT / "docs" / "generate_brand.py")
+    return _load_module("generate_brand", ROOT / "tools" / "docs" / "generate_brand.py")
 
 
 def _relative_luminance(hex_color: str) -> float:
@@ -113,7 +113,7 @@ def test_each_light_chart_colour_has_one_dark_counterpart() -> None:
 
 
 def test_dark_chart_conversion_swaps_every_light_colour() -> None:
-    plots = _load_module("generate_example_plots", ROOT / "docs" / "generate_example_plots.py")
+    plots = _load_module("generate_example_plots", ROOT / "tools" / "docs" / "generate_example_plots.py")
     light = {str(pair["light"]) for pair in [*CHART_ROLES.values(), *CHART_CHROME.values()]}
     unchanged = {
         str(pair["light"]) for pair in [*CHART_ROLES.values(), *CHART_CHROME.values()] if pair["light"] == pair["dark"]
