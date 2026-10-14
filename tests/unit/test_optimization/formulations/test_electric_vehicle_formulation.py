@@ -37,7 +37,15 @@ def ev_with_trips() -> ElectricVehicle:
             efficiency_charging=0.9,
             efficiency_discharging=0.85,
         ),
-        trips=(Trip(name="trip1", start_time=1, end_time=2, energy_consumption=5.0, min_soc_at_departure=0.3),),
+        trips=(
+            Trip(
+                name="trip1",
+                start_time=timedelta(hours=1),
+                end_time=timedelta(hours=2),
+                energy_consumption=5.0,
+                min_soc_at_departure=0.3,
+            ),
+        ),
     )
 
 

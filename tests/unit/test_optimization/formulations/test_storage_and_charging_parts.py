@@ -42,12 +42,16 @@ EV = ElectricVehicle(
         max_discharge_power=11.0,
         degradation_cost=DEGRADATION_COST,
     ),
-    trips=(Trip(name="trip1", start_time=1, end_time=2, energy_consumption=TRIP_ENERGY),),
+    trips=(
+        Trip(name="trip1", start_time=timedelta(hours=1), end_time=timedelta(hours=2), energy_consumption=TRIP_ENERGY),
+    ),
 )
 EV_LEAVING_AT_T0 = ElectricVehicle(
     name="ev_early",
     battery=Battery(capacity=EV_CAPACITY, max_charge_power=22.0, max_discharge_power=11.0),
-    trips=(Trip(name="early", start_time=0, end_time=1, energy_consumption=TRIP_ENERGY),),
+    trips=(
+        Trip(name="early", start_time=timedelta(hours=0), end_time=timedelta(hours=1), energy_consumption=TRIP_ENERGY),
+    ),
 )
 CHARGER = Charger(name="charger1", max_power=22.0)
 GENERATOR = Generator(name="gen", nominal_power=100.0, variable_cost=10.0)

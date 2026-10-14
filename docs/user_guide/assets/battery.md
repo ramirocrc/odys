@@ -9,29 +9,28 @@ A `Battery` describes the physics of an energy store: its capacity, power limits
 - a [StationaryStorage](stationary_storage.md) is a battery at a fixed site;
 - an [ElectricVehicle](electric_vehicle.md) is a battery with a trip schedule.
 
-Everything on this page applies to both.
+Everything on this page applies to both. We use composition rather than inheritance because a site battery and a vehicle battery share their physics but not their purpose: one sits on the bus, the other drives away.
 
 Where the battery starts and ends is not part of the battery: it belongs to the run, so you pass it to the `EnergySystem` as an initial and, optionally, a final condition. See [State of charge](#state-of-charge-soc).
 
 ## Basic usage
 
-```python
-from odys import Battery, StationaryStorage, StorageInitialState
+Here is the battery of the site's `bess` from the [StationaryStorage](stationary_storage.md#basic-usage) page on its own:
 
-storage = StationaryStorage(
-    name="bess",
-    battery=Battery(
-        capacity=100.0,  # MWh of storage
-        max_charge_power=50.0,  # MW charge limit
-        max_discharge_power=50.0,  # MW discharge limit
-        efficiency_charging=0.95,
-        efficiency_discharging=0.95,
-    ),
+```python
+from odys import Battery, StationaryStorage
+
+battery = Battery(
+    capacity=50.0,  # MWh of storage
+    max_charge_power=25.0,  # MW charge limit
+    max_discharge_power=25.0,  # MW discharge limit
+    efficiency_charging=0.95,
+    efficiency_discharging=0.95,
 )
-starts_half_full = StorageInitialState(storage=storage, soc=0.5)
+bess = StationaryStorage(name="bess", battery=battery)
 ```
 
-Pass `starts_half_full` to the energy system with `EnergySystem(..., initial_conditions=(starts_half_full,))`. Every storage and EV needs an initial state: its state of charge carries over from one step to the next, so odys never guesses where it starts.
+A `Battery` has no name and is never added to a portfolio: the asset that owns it is.
 
 ## Fields
 
@@ -44,7 +43,7 @@ Pass `starts_half_full` to the energy system with `EnergySystem(..., initial_con
 | `efficiency_discharging` | `float`         | No       | `1.0`   | Discharging efficiency, between 0 and 1                                          |
 | `soc_min`                | `float`         | No       | `0.0`   | Minimum allowed state of charge (0-1)                                            |
 | `soc_max`                | `float`         | No       | `1.0`   | Maximum allowed state of charge (0-1)                                            |
-| `degradation_cost`       | `float`         | No       | `0.0`   | Cost per MWh cycled (charged or discharged), included in the objective           |
+| `degradation_cost`       | `float`         | No       | `0.0`   | Cost per MWh charged or discharged (currency/MWh), included in the objective     |
 | `self_discharge_rate`    | `float`         | No       | `0.0`   | Fractional self-discharge per hour applied in the SOC dynamics                   |
 
 ## Charge and discharge limits
@@ -62,31 +61,29 @@ Four values control how the battery's energy level behaves:
 - The battery's `soc_min` and `soc_max` set the operating range. For example, if you don't want to go below 20% or above 90%:
 
 ```python
-from odys import StorageFinalState
+from odys import StorageFinalState, StorageInitialState
 
-storage = StationaryStorage(
+bess = StationaryStorage(
     name="bess",
     battery=Battery(
-        capacity=100.0,
-        max_charge_power=50.0,
-        max_discharge_power=50.0,
-        efficiency_charging=0.90,
-        efficiency_discharging=0.85,
+        capacity=50.0,
+        max_charge_power=25.0,
+        max_discharge_power=25.0,
+        efficiency_charging=0.95,
+        efficiency_discharging=0.95,
         soc_min=0.2,
         soc_max=0.9,
     ),
 )
-initial_conditions = (StorageInitialState(storage=storage, soc=0.5),)
-final_conditions = (StorageFinalState(storage=storage, soc=0.5),)
+initial_conditions = (StorageInitialState(storage=bess, soc=0.5),)
+final_conditions = (StorageFinalState(storage=bess, soc=0.5),)
 ```
 
 !!! note
 
     The initial and final state of charge must fall within the battery's `[soc_min, soc_max]` range. Creating the state raises an `OdysValidationError` if it doesn't.
 
-See [Initial and final conditions](../concepts/initial_and_final_conditions.md) for every condition type.
-
-See the [formulation](#math-soc).
+See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field, and the [formulation](#math-soc).
 
 ## Efficiency
 
@@ -98,7 +95,7 @@ See the [formulation](#math-soc).
 
 ## Self-discharge
 
-`self_discharge_rate` is the fraction of the stored energy lost per hour while the battery sits idle. A rate of `0.001` loses 0.1% of the SOC every hour.
+`self_discharge_rate` is the fraction of the stored energy lost per hour while the battery sits idle. A rate of `0.001` loses 0.1% of the SOC every hour, from the first step on.
 
 See the [formulation](#math-soc).
 
@@ -108,9 +105,9 @@ See the [formulation](#math-soc).
 
 ```python
 battery = Battery(
-    capacity=100.0,
-    max_charge_power=50.0,
-    max_discharge_power=50.0,
+    capacity=50.0,
+    max_charge_power=25.0,
+    max_discharge_power=25.0,
     efficiency_charging=0.95,
     efficiency_discharging=0.95,
     degradation_cost=5.0,  # 5 currency units per MWh cycled
@@ -123,7 +120,9 @@ See the [formulation](#math-objective).
 
 ## Results
 
-A battery's results are read through the asset that owns it: [`result.stationary_storages`](stationary_storage.md#results) or [`result.electric_vehicles`](electric_vehicle.md#results). Both expose `net_power`, `soc`, and `charge_mode`.
+A battery's results are read through the asset that owns it: [`result.stationary_storages`](stationary_storage.md#results) or [`result.electric_vehicles`](electric_vehicle.md#results). Both expose `net_power` (MW, positive when charging), `soc` (fraction of capacity) and `charge_mode`.
+
+See the [Battery Dispatch example](../../examples/battery_dispatch.md) for a battery storing solar output over a full day.
 
 ## Mathematical formulation
 
@@ -163,7 +162,7 @@ $$
 At the first timestep, the battery starts from its initial state of charge $SOC^{start}_b$:
 
 $$
-SOC_{b,0,s} = SOC^{start}_b
+SOC_{b,0,s} = SOC^{start}_b \left(1 - \delta_b \Delta t\right)
 + \eta^{ch}_b \frac{\Delta t}{E_b} p^{ch}_{b,0,s}
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,0,s}
 $$
@@ -198,4 +197,4 @@ Discharging is supply ($+\sum_b p^{dis}_{b,t,s}$) and charging is demand ($\sum_
 
 ## Next steps
 
-Put the battery in a site with [StationaryStorage](stationary_storage.md), or on the road with [ElectricVehicle](electric_vehicle.md).
+Next, let's put a battery on the road: see [ElectricVehicle](electric_vehicle.md).

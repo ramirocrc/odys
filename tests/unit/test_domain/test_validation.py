@@ -151,7 +151,12 @@ class TestValidateEnergySystemInputs:
         )
 
     def test_checks_every_entity_against_the_horizon(self, generator: Generator, load: FixedLoad) -> None:
-        late_trip = Trip(name="late_trip", start_time=2, end_time=NUMBER_OF_STEPS + 1, energy_consumption=5.0)
+        late_trip = Trip(
+            name="late_trip",
+            start_time=timedelta(hours=2),
+            end_time=timedelta(hours=NUMBER_OF_STEPS + 1),
+            energy_consumption=5.0,
+        )
         electric_vehicle = _electric_vehicle((late_trip,))
         portfolio = AssetPortfolio([
             generator,

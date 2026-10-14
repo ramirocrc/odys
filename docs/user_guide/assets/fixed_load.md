@@ -4,7 +4,7 @@ icon: fontawesome/solid/plug
 
 # FixedLoad
 
-A `FixedLoad` represents inelastic demand that must be met exactly. The optimizer cannot adjust it; it must dispatch generators, batteries, and markets to match.
+A `FixedLoad` represents inelastic demand that must be met exactly, like the factory of the [running example](../index.md#the-running-example). The optimizer cannot adjust it; it must dispatch generators, batteries, and markets to match.
 
 Need demand the optimizer can shift up or down? See [FlexibleLoad](flexible_load.md).
 
@@ -13,7 +13,7 @@ Need demand the optimizer can shift up or down? See [FlexibleLoad](flexible_load
 ```python
 from odys import FixedLoad
 
-load = FixedLoad(name="factory_demand")
+factory = FixedLoad(name="factory")
 ```
 
 The actual demand values are specified later in the `Scenario` as a `LoadProfile`. We separate the load definition from its time series because the same load can appear in multiple scenarios with different profiles.
@@ -32,20 +32,19 @@ Every fixed load needs a `LoadProfile` in every scenario. It holds the demand at
 from odys import LoadProfile, Scenario
 
 scenario = Scenario(
-    profiles=(LoadProfile(load=load, values=[100, 120, 80, 90]),),
+    profiles=(LoadProfile(load=factory, values=[60, 90, 40, 70]),),
 )
 ```
 
 For multiple fixed loads, add one `LoadProfile` per load:
 
 ```python
-factory = FixedLoad(name="factory")
-office = FixedLoad(name="office")
+offices = FixedLoad(name="offices")
 
 scenario = Scenario(
     profiles=(
-        LoadProfile(load=factory, values=[100, 120, 80, 90]),
-        LoadProfile(load=office, values=[20, 25, 15, 20]),
+        LoadProfile(load=factory, values=[60, 90, 40, 70]),
+        LoadProfile(load=offices, values=[5, 8, 8, 4]),
     ),
 )
 ```
@@ -53,6 +52,8 @@ scenario = Scenario(
 ## Results
 
 Fixed loads have no decision variables, so they have no results container. Their demand is exactly the `LoadProfile` you provided.
+
+See the [Basic Dispatch example](../../examples/basic_dispatch.md) for a fixed load served by solar and a CCGT.
 
 ## Mathematical formulation
 
@@ -76,4 +77,4 @@ Demand side: $\sum_l d^{\text{fixed}}_{l,t,s}$. See [Power balance](../concepts/
 
 ## Next steps
 
-Want demand that responds to prices? See [FlexibleLoad](flexible_load.md).
+Next, let's give the optimizer demand it can shift: see [FlexibleLoad](flexible_load.md).

@@ -23,7 +23,7 @@ $$
 The core SOC dynamics are:
 
 $$
-SOC_{b,t,s} = SOC_{b,t-1,s}
+SOC_{b,t,s} = SOC_{b,t-1,s} \left(1 - \delta_b \Delta t\right)
 + \eta^{ch}_b \frac{\Delta t}{E_b} p^{ch}_{b,t,s}
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,t,s}
 $$
@@ -31,7 +31,7 @@ $$
 for $t > 0$. At the first timestep:
 
 $$
-SOC_{b,0,s} = SOC^{start}_b
+SOC_{b,0,s} = SOC^{start}_b \left(1 - \delta_b \Delta t\right)
 + \eta^{ch}_b \frac{\Delta t}{E_b} p^{ch}_{b,0,s}
 - \frac{\Delta t}{\eta^{dis}_b E_b} p^{dis}_{b,0,s}
 $$

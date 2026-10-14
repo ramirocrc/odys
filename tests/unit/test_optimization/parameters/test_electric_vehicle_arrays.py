@@ -27,11 +27,18 @@ NUMBER_OF_STEPS = 24
 EV1_SOC_START = 0.8
 EV2_SOC_START = 0.5
 EV1_SOC_END = 0.6
+ONE_HOUR = timedelta(hours=1)
+HALF_HOUR = timedelta(minutes=30)
+HALF_HOUR_TRIP_ENERGY = 4.0
+HALF_HOUR_TRIP_STEPS = ("2", "3")
 
 
-def _context(*conditions: ElectricVehicleInitialState | ElectricVehicleFinalState) -> ModelContext:
+def _context(
+    *conditions: ElectricVehicleInitialState | ElectricVehicleFinalState,
+    timestep: timedelta = ONE_HOUR,
+) -> ModelContext:
     return ModelContext(
-        horizon=Horizon(timestep=timedelta(hours=1), number_of_steps=NUMBER_OF_STEPS),
+        horizon=Horizon(timestep=timestep, number_of_steps=NUMBER_OF_STEPS),
         scenario_set=ScenarioSet(scenarios=(Scenario(),)),
         condition_set=ConditionSet(
             initial=tuple(condition for condition in conditions if isinstance(condition, ElectricVehicleInitialState)),
@@ -44,8 +51,8 @@ def _context(*conditions: ElectricVehicleInitialState | ElectricVehicleFinalStat
 def trip1() -> Trip:
     return Trip(
         name="trip1",
-        start_time=8,
-        end_time=10,
+        start_time=timedelta(hours=8),
+        end_time=timedelta(hours=10),
         energy_consumption=10.0,
         min_soc_at_departure=TRIP1_MIN_SOC_AT_DEPARTURE,
     )
@@ -55,8 +62,8 @@ def trip1() -> Trip:
 def trip2() -> Trip:
     return Trip(
         name="trip2",
-        start_time=17,
-        end_time=19,
+        start_time=timedelta(hours=17),
+        end_time=timedelta(hours=19),
         energy_consumption=15.0,
         min_soc_at_departure=TRIP2_MIN_SOC_AT_DEPARTURE,
     )
@@ -205,3 +212,33 @@ def test_ev_arrays_without_initial_state_raise(ev2: ElectricVehicle) -> None:
     """Validation requires an initial state for every EV, so a missing one is an internal error."""
     with pytest.raises(OdysError, match="There is no ElectricVehicleInitialState for 'ev2'"):
         electric_vehicle_arrays([ev2], Coordinates.of_entities(EV_DIMENSION, [ev2]), _context())
+
+
+def test_ev_arrays_place_trips_by_duration_with_half_hour_steps() -> None:
+    """A trip from 1:00 to 2:00 covers steps 2 and 3 when each step is 30 minutes."""
+    ev = ElectricVehicle(
+        name="ev_half_hour",
+        battery=Battery(capacity=50.0, max_charge_power=22.0, max_discharge_power=0.0),
+        trips=(
+            Trip(
+                name="short",
+                start_time=timedelta(hours=1),
+                end_time=timedelta(hours=2),
+                energy_consumption=HALF_HOUR_TRIP_ENERGY,
+                min_soc_at_departure=TRIP1_MIN_SOC_AT_DEPARTURE,
+            ),
+        ),
+    )
+    context = _context(ElectricVehicleInitialState(vehicle=ev, soc=EV1_SOC_START), timestep=HALF_HOUR)
+    trips = electric_vehicle_arrays([ev], Coordinates.of_entities(EV_DIMENSION, [ev]), context).trips
+
+    driving_steps = tuple(
+        trips.is_driving.sel(ev="ev_half_hour").where(lambda driving: driving == 1, drop=True).time.values,
+    )
+    assert driving_steps == HALF_HOUR_TRIP_STEPS
+    assert trips.trip_energy.sel(ev="ev_half_hour", time=list(HALF_HOUR_TRIP_STEPS)).values.tolist() == pytest.approx(
+        [HALF_HOUR_TRIP_ENERGY / 2, HALF_HOUR_TRIP_ENERGY / 2],
+    )
+    assert trips.min_soc_at_departure.sel(ev="ev_half_hour", time="2").item() == pytest.approx(
+        TRIP1_MIN_SOC_AT_DEPARTURE,
+    )

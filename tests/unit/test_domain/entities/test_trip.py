@@ -1,5 +1,6 @@
 """Unit tests for the Trip entity."""
 
+from datetime import timedelta
 from types import MappingProxyType
 from typing import Any
 
@@ -9,8 +10,8 @@ from pydantic import ValidationError
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 
-TRIP_START_TIME = 8
-TRIP_END_TIME = 9
+TRIP_START_TIME = timedelta(hours=8)
+TRIP_END_TIME = timedelta(hours=9)
 TRIP_ENERGY_CONSUMPTION = 5.0
 TRIP_MIN_SOC_AT_DEPARTURE = 0.3
 
@@ -42,8 +43,10 @@ def test_trip_creation_with_min_soc(trip_base_params: MappingProxyType[str, Any]
 @pytest.mark.parametrize(
     ("param_name", "invalid_value", "expected_match"),
     [
-        ("start_time", -1, "Input should be greater than or equal to 0"),
-        ("end_time", -1, "Input should be greater than or equal to 0"),
+        ("start_time", timedelta(hours=-1), "Input should be greater than or equal to 0 seconds"),
+        ("end_time", timedelta(hours=-1), "Input should be greater than or equal to 0 seconds"),
+        ("start_time", 8, "Input should be a valid timedelta"),
+        ("end_time", 9, "Input should be a valid timedelta"),
         ("energy_consumption", 0.0, "Input should be greater than 0"),
         ("energy_consumption", -1.0, "Input should be greater than 0"),
         ("min_soc_at_departure", -0.1, "Input should be greater than or equal to 0"),
@@ -52,7 +55,7 @@ def test_trip_creation_with_min_soc(trip_base_params: MappingProxyType[str, Any]
 )
 def test_trip_creation_with_invalid_parameters_raises_error(
     param_name: str,
-    invalid_value: float,
+    invalid_value: float | timedelta,
     expected_match: str,
     trip_base_params: MappingProxyType[str, Any],
 ) -> None:
@@ -64,15 +67,15 @@ def test_trip_creation_with_invalid_parameters_raises_error(
 
 def test_trip_end_time_must_be_greater_than_start_time(trip_base_params: MappingProxyType[str, Any]) -> None:
     base_params = dict(trip_base_params)
-    base_params["end_time"] = 8
-    base_params["start_time"] = 8
-    with pytest.raises(OdysValidationError, match=r"end_time \(8\) must be > start_time \(8\)"):
+    base_params["end_time"] = timedelta(hours=8)
+    base_params["start_time"] = timedelta(hours=8)
+    with pytest.raises(OdysValidationError, match=r"end_time \(8:00:00\) must be > start_time \(8:00:00\)"):
         Trip(**base_params)
 
 
 def test_trip_end_time_less_than_start_time_raises_error(trip_base_params: MappingProxyType[str, Any]) -> None:
     base_params = dict(trip_base_params)
-    base_params["end_time"] = 7
-    base_params["start_time"] = 8
-    with pytest.raises(OdysValidationError, match=r"end_time \(7\) must be > start_time \(8\)"):
+    base_params["end_time"] = timedelta(hours=7)
+    base_params["start_time"] = timedelta(hours=8)
+    with pytest.raises(OdysValidationError, match=r"end_time \(7:00:00\) must be > start_time \(8:00:00\)"):
         Trip(**base_params)

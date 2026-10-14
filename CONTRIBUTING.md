@@ -78,7 +78,7 @@ just test
 Tests require **90% minimum coverage**. If your changes drop coverage below this threshold, add more tests.
 
 ```bash
-# Documentation build (if you touched docs)
+# Documentation build (if you touched docs): runs every User Guide code block and checks its printed output
 just docs-build
 ```
 

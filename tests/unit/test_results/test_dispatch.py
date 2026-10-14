@@ -485,11 +485,14 @@ def test_charger_len_and_contains(charger_dispatch: ChargerDispatch) -> None:
     assert "charger_3" not in charger_dispatch
 
 
-def test_charger_to_dataframe(charger_dispatch: ChargerDispatch) -> None:
+def test_charger_to_dataframe_has_one_row_per_charger_and_step(charger_dispatch: ChargerDispatch) -> None:
     dataframe = charger_dispatch.to_dataframe()
 
-    assert "assignment" in dataframe.columns
-    assert "power" in dataframe.columns
+    assert list(dataframe.index.names) == [CHARGER_DIMENSION, "time"]
+    assert list(dataframe.columns) == ["assignment[ev_1]", "assignment[ev_2]", "power"]
+    assert dataframe.xs("charger_1", level=CHARGER_DIMENSION)["power"].tolist() == CHARGER_1_POWER
+    assert dataframe.xs("charger_1", level=CHARGER_DIMENSION)["assignment[ev_1]"].tolist() == [1, 0]
+    assert dataframe.xs("charger_2", level=CHARGER_DIMENSION)["assignment[ev_2]"].tolist() == [0, 1]
 
 
 def test_dispatch_repr_names_the_type_and_the_entities(generator_dispatch: GeneratorDispatch) -> None:

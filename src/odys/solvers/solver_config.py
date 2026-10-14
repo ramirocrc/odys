@@ -27,7 +27,10 @@ class SolverConfig(BaseModel):
     solver_name: SolverName = Field(default=SolverName.HIGHS, description="Solver name.")
     time_limit: float | None = Field(default=None, gt=0, description="Max solve time in seconds.")
     mip_rel_gap: float | None = Field(default=None, ge=0, le=1, description="Relative MIP gap tolerance.")
-    presolve: bool = Field(default=False, description="Enable solver presolve.")
+    presolve: bool | None = Field(
+        default=None,
+        description="Turn solver presolve on or off. None keeps the solver's own default.",
+    )
     threads: int | None = Field(default=None, gt=0, description="Number of solver threads.")
     log_output: bool = Field(default=False, description="Display solver output logs.")
     solver_options: dict[str, Any] | None = Field(
