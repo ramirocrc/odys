@@ -1,8 +1,6 @@
 """Landing page hero snippet: one price forecast, one schedule."""
 
-import runpy
 from datetime import timedelta
-from pathlib import Path
 
 from odys import (
     AssetPortfolio,
@@ -15,8 +13,6 @@ from odys import (
     StorageFinalState,
     StorageInitialState,
 )
-
-forecast = runpy.run_path(str(Path(__file__).with_name("prices.py")))["forecast"]
 
 # --8<-- [start:shown]
 battery = StationaryStorage(
@@ -43,21 +39,22 @@ final = StorageFinalState(
     soc=0.5,
 )
 
+# One point forecast of hourly day-ahead prices (€/MWh)
+forecast = [42, 36, 31, 37, 33, 37, 58, 71, 84, 66, 57, 42, 34, 33, 44, 58, 89, 114, 127, 120, 95, 79, 48, 42]
+
+# A single scenario with the forecast prices
+scenarios = Scenario(
+    profiles=(PriceProfile(market=market, values=forecast),),
+)
+
 system = EnergySystem(
     portfolio=AssetPortfolio([battery]),
     markets=[market],
-    scenarios=Scenario(
-        profiles=(
-            PriceProfile(
-                market=market,
-                values=forecast,
-            ),
-        ),
-    ),
+    scenarios=scenarios,
     timestep=timedelta(hours=1),
     number_of_steps=24,
-    initial_conditions=(initial,),
-    final_conditions=(final,),
+    initial_conditions=[initial],
+    final_conditions=[final],
 )
 result = system.optimize()
 # --8<-- [end:shown]

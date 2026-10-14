@@ -16,7 +16,9 @@
   };
   const FOLD_LABELS = {
     setup: "battery = StationaryStorage(…)  market = EnergyMarket(…)",
-    scenarios: "    scenarios=[…],",
+    forecast: "forecast = […]",
+    price_scenarios: "price_scenarios = [[…], …]",
+    scenarios: "price_scenarios = [[…], …]  scenarios = [Scenario(…) for …]",
   };
   const KEYWORDS = new Set(["for", "in", "import", "from", "return", "None", "True", "False"]);
   const TOKEN_RE = /("[^"]*")|(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*)(=(?!=))?|(\s+)|(.)/g;
@@ -54,6 +56,10 @@
       fragment.append(" ");
       return fragment;
     }
+    if (line.trimStart().startsWith("#")) {
+      fragment.append(span("tk-cm", line));
+      return fragment;
+    }
     for (const m of line.matchAll(TOKEN_RE)) {
       if (m[1]) fragment.append(span("tk-s", m[1]));
       else if (m[2]) fragment.append(span("tk-n", m[2]));
@@ -67,7 +73,20 @@
     return fragment;
   }
 
-  function renderCode(container, tab, tabData, openFolds, rerender) {
+  // Every tab's code is rendered into one grid cell, and the inactive tabs are only made invisible,
+  // so the panel always takes the height of the tallest tab and switching tabs never resizes it.
+  function renderCode(container, current, tabs, openFolds, rerender) {
+    container.replaceChildren(
+      ...Object.entries(tabs).map(([tab, tabData]) => {
+        const panel = document.createElement("div");
+        panel.className = tab === current ? "odys-code__panel" : "odys-code__panel odys-code__panel--inactive";
+        panel.append(...codeRows(tab, tabData, openFolds, rerender));
+        return panel;
+      }),
+    );
+  }
+
+  function codeRows(tab, tabData, openFolds, rerender) {
     const marker = tab === "deterministic" ? "›" : "+";
     const changed = new Set(tabData.changed);
     const foldsByStart = new Map(tabData.folds.map((fold) => [fold.start, fold]));
@@ -85,7 +104,8 @@
           span("odys-marker", open ? "▾" : "▸"),
           span(open ? "tk-kw" : "tk-p", open ? "hide" : FOLD_LABELS[fold.kind]),
         );
-        if (!open) button.append(span("odys-fold__meta", `${fold.end - fold.start} lines · show`));
+        const lineCount = fold.end - fold.start;
+        if (!open) button.append(span("odys-fold__meta", `${lineCount} line${lineCount === 1 ? "" : "s"} · show`));
         button.addEventListener("click", () => {
           openFolds[fold.kind] = !open;
           rerender();
@@ -102,7 +122,7 @@
       row.append(span("odys-gutter", String(i + 1)), span("odys-marker", isChanged ? marker : ""), highlight(tabData.code[i]));
       rows.push(row);
     }
-    container.replaceChildren(...rows);
+    return rows;
   }
 
   // ---- Hero chart ----
@@ -162,10 +182,19 @@
     const tag = root.querySelector("[data-tab-tag]");
     const lead = root.querySelector("[data-caption-lead]");
     const rest = root.querySelector("[data-caption-rest]");
-    const openFolds = { setup: false, scenarios: false };
+    const openFolds = { setup: false, forecast: false, price_scenarios: false, scenarios: false };
     let current = tabs.find((t) => t.getAttribute("aria-selected") === "true")?.dataset.tab ?? "stochastic";
 
-    const renderCurrentCode = () => renderCode(code, current, hero.tabs[current], openFolds, renderCurrentCode);
+    const renderCurrentCode = () => renderCode(code, current, hero.tabs, openFolds, renderCurrentCode);
+    // Invisible copies of every caption share the live caption's grid cell, so it keeps the tallest one's height.
+    const caption = lead.closest(".odys-caption");
+    for (const button of tabs) {
+      const sizer = document.createElement("div");
+      sizer.className = "odys-caption__text odys-caption__text--sizer";
+      sizer.setAttribute("aria-hidden", "true");
+      sizer.append(span("odys-caption__lead", button.dataset.lead), span("odys-caption__rest", button.dataset.rest));
+      caption.append(sizer);
+    }
     const select = (tab) => {
       current = tab;
       for (const button of tabs) button.setAttribute("aria-selected", String(button.dataset.tab === tab));
