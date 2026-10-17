@@ -44,6 +44,7 @@ from odys.optimization.model.model_builder import build_model
 FORMULATION_DIR = Path(__file__).parents[2] / "docs" / "formulation"
 
 DOCUMENTED_PAGES: dict[str, tuple[str, ...]] = {
+    "generators.md": ("generator_", "available_capacity_"),
     "markets.md": ("market_",),
     "non_anticipativity.md": ("non_anticipativity_",),
     "objective.md": ("cvar_",),
@@ -57,6 +58,9 @@ GENERATOR_MIN_POWER = 20.0
 GENERATOR_INITIAL_POWER = 50.0
 GENERATOR_MIN_UP_TIME = timedelta(hours=3)
 GENERATOR_TIME_ON_BEFORE_START = timedelta(hours=1)
+PEAKER_POWER = 30.0
+PEAKER_MIN_DOWN_TIME = timedelta(hours=3)
+PEAKER_TIME_OFF_BEFORE_START = timedelta(hours=1)
 BATTERY_CAPACITY = 10.0
 BATTERY_POWER = 5.0
 BATTERY_SOC = 0.5
@@ -72,6 +76,7 @@ CVAR_WEIGHT = 0.5
 CVAR_CONFIDENCE = 0.9
 CONDITIONAL_CONSTRAINTS = (
     "generator_initial_min_uptime_constraint",
+    "generator_initial_min_downtime_constraint",
     "generator_final_power_constraint",
     "stationary_storage_soc_end_constraint",
     "ev_soc_end_constraint",
@@ -91,6 +96,12 @@ def _reference_system() -> EnergySystem:
         variable_cost=40.0,
         min_power=GENERATOR_MIN_POWER,
         min_up_time=GENERATOR_MIN_UP_TIME,
+    )
+    peaker = Generator(
+        name="peaker",
+        nominal_power=PEAKER_POWER,
+        variable_cost=90.0,
+        min_down_time=PEAKER_MIN_DOWN_TIME,
     )
     storage = StationaryStorage(
         name="bess",
@@ -129,7 +140,7 @@ def _reference_system() -> EnergySystem:
         for name, prices in SCENARIO_PRICES.items()
     ]
     return EnergySystem(
-        portfolio=AssetPortfolio([generator, storage, vehicle, charger, fixed_load, flexible_load]),
+        portfolio=AssetPortfolio([generator, peaker, storage, vehicle, charger, fixed_load, flexible_load]),
         markets=(day_ahead, grid),
         scenarios=scenarios,
         timestep=TIMESTEP,
@@ -143,6 +154,7 @@ def _reference_system() -> EnergySystem:
                 power=GENERATOR_INITIAL_POWER,
                 time_in_state=GENERATOR_TIME_ON_BEFORE_START,
             ),
+            GeneratorInitialState(generator=peaker, power=0.0, time_in_state=PEAKER_TIME_OFF_BEFORE_START),
             StorageInitialState(storage=storage, soc=BATTERY_SOC),
             ElectricVehicleInitialState(vehicle=vehicle, soc=EV_INITIAL_SOC),
         ),
