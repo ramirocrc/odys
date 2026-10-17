@@ -10,9 +10,10 @@ Principles for writing and improving the Odys documentation. The voice is the sa
 ## Checklist
 
 - [ ] Find the page's place in the [information architecture](#information-architecture) and the question it answers (§2).
-- [ ] Start from the matching template in [templates.md](templates.md): an asset or market page, or a formulation page.
-- [ ] Write in the voice of §13. Explain every rule by what the optimizer would get away with without it (§11).
-- [ ] Equations only in `docs/formulation/`, in the constraint rhythm of §4. User Guide pages link to the constraint instead.
+- [ ] Start from the matching template in [templates.md](templates.md): an asset or market page, a formulation page, or an example page.
+- [ ] Check which section owns each fact (§10). Link to facts another page owns instead of explaining them again.
+- [ ] Write in the voice of §13. On formulation pages, explain every rule by what the optimizer would get away with without it (§11).
+- [ ] Equations only in `docs/formulation/`, in the constraint rhythm of §4. User Guide and Examples pages link to the constraint instead.
 - [ ] User Guide code runs in order and shows its exact output (§3). Reuse the running example's names.
 - [ ] End with a bridge to the next page (§15), and cross-link where concepts appear (§17).
 - [ ] Add new pages to the `nav` in `zensical.toml`.
@@ -85,7 +86,7 @@ The exception is the Mathematical Formulation section (`formulation/`): it descr
 
 Odys is a mathematical library. Equations are a first-class part of the documentation, not something to hide, but they always come with words around them.
 
-Equations live only in the Mathematical Formulation section (`docs/formulation/`), written once, on the page of the model part that owns them. User Guide pages carry no `$$` math: they explain the behaviour in words and link to the constraint ("The output can change by at most `ramp_up` per step; see [G-7](../../formulation/generators.md#g-7).").
+Equations live only in the Mathematical Formulation section (`docs/formulation/`), written once, on the page of the model part that owns them. User Guide and Examples pages carry no math at all, not even an inline symbol: they explain the behaviour in words and link to the constraint ("The output can change by at most `ramp_up` per step; see [G-7](../../formulation/generators.md#g-7).").
 
 On formulation pages, every constraint follows the same rhythm (see the formulation page template in [templates.md](templates.md)):
 
@@ -230,18 +231,27 @@ EnergySystem
 
 Good diagrams replace pages of text.
 
-## 10. Separate tutorials from reference
+## 10. Who owns what
 
-This is the Diataxis framework applied to Odys:
+Every fact has one home. The other sections link to it instead of explaining it again. Each section answers one question:
 
-| Section       | Purpose                                 | Location                                            |
-| ------------- | --------------------------------------- | --------------------------------------------------- |
-| User Guide    | Teach concepts and walk through the API | `user_guide/`                                       |
-| Examples      | Solve a specific problem end-to-end     | `examples/`                                         |
-| API Reference | Exact signatures, types, and defaults   | `developer/api/`                                    |
-| Mathematical Formulation | The exact model and why it looks that way | `formulation/`                          |
+| Section | The question it answers | It holds | It never holds |
+| ------- | ----------------------- | -------- | -------------- |
+| User Guide (`user_guide/`) | How do I use it? | What a type or field does in practice and when to use it, runnable code on the running example, fields tables, profiles, results | Math, inline symbols included; why the model is written that way; limitations and known issues |
+| Mathematical Formulation (`formulation/`) | What exactly is solved, and why that way? | Equations, "Why it looks like this", limitations, issue links, what's checked before solving, symbol → attribute tables | Code, how-to steps, the running example |
+| Examples (`examples/`) | How do I solve this problem end to end? | The story of the problem, its diagram, the walkthrough of `examples/*.py`, what the results mean for this case | Explanations of features or concepts, and math: link to the User Guide and the formulation instead |
+| API Reference (`developer/api/`) | What is the exact signature? | Signatures, types and defaults, from the docstrings | Tutorials and math: link to the User Guide and the formulation |
 
-Don't mix them. A user guide page teaches. An API page documents. An example page solves.
+The same fact often comes up in several places. This is where it lives, and how the others refer to it:
+
+| Fact | Lives in | Elsewhere |
+| ---- | -------- | --------- |
+| What a field means, its unit and default | The User Guide's fields table (it matches the docstring) | The formulation's symbol table names the attribute |
+| What a feature does in practice | A User Guide feature section, in one or two sentences | Examples link to it |
+| The rule itself, why it looks like this, its limitations and known issues | The formulation constraint | The User Guide feature section ends with "See [G-7](../../formulation/generators.md#g-7)". It may say that a limit exists ("ramps apply at start-up too; see G-7"), but doesn't explain it |
+| A worked case, with numbers and results | An example | The User Guide links to it in its next steps, where it helps |
+
+Before you write a paragraph, ask which section owns it. If another page already says it, link to that page. If the owner page is missing it, add it there, once.
 
 ## 11. Explain the rationale
 
@@ -256,6 +266,10 @@ Explain:
 > A binary variable stops the battery from charging and discharging at the same time. Every round trip loses energy, so when prices go negative, the optimizer would otherwise do both at once on purpose, burning energy to get paid for it.
 
 The easiest way to explain a rule is to say what the optimizer would get away with without it.
+
+That explanation belongs to the constraint's "Why it looks like this" on the formulation page (§10). A User Guide page says what the feature does for you in practice, and links there:
+
+> Without a charging mode, a battery could charge and discharge at the same time. odys rules that out; see [B-1](../../formulation/batteries.md#b-1).
 
 ## 12. The user guide is primary; the API reference is secondary
 
@@ -324,7 +338,7 @@ Every asset and market page follows the same template, in this order:
 3. Short introduction (1-2 paragraphs)
 4. Basic usage (runnable code)
 5. Fields table, always with the columns Field | Type | Required | Default | Description
-6. Feature sections, one concept each, with prose and code only. Each links to its constraints on the formulation page (`../../formulation/generators.md#g-7`).
+6. Feature sections, one concept each, with prose and code only: what the feature does in practice, in a sentence or two, then a link to its constraints on the formulation page (`../../formulation/generators.md#g-7`). Limitations stay on the formulation page (§10).
 7. Profiles (the `Scenario` time series the asset takes, if any)
 8. Results (how to read the output)
 9. How it's modelled: one or two sentences and links to the asset's formulation page and constraints
@@ -415,4 +429,4 @@ docs/
 
 ## Page templates
 
-The asset page template and the formulation page template are in [templates.md](templates.md). Copy the matching one when you start a new page.
+The asset, formulation and example page templates are in [templates.md](templates.md). Copy the matching one when you start a new page.

@@ -107,3 +107,41 @@ The bridge: the question the reader has now, and a link to the next page.
 
 Implemented in [`odys.optimization.formulations.generator`](../developer/api/optimization/formulations/generator.md).
 ````
+
+## Example page template
+
+An example solves one problem with one script in `examples/`. It explains the problem and its results; the concepts it uses are linked to the User Guide and the math to the formulation (see §10 in [SKILL.md](SKILL.md)).
+
+````markdown
+---
+icon: lucide/battery
+---
+
+# Example title
+
+## Problem Description
+
+The situation in everyday words: what the system has, and the question the optimizer answers. Link each asset type to its User Guide page instead of explaining it.
+
+```mermaid
+flowchart LR
+    Solar(["Solar PV<br/>150 MW"]) --> Bus(["Bus"])
+    Bus --> Load(["Load<br/>70 MW"])
+```
+
+**Source**: [`examples/battery_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/battery_dispatch.py)
+
+## Walkthrough
+
+### 1. A step of the script
+
+What this step adds to the problem, then its code. A feature the reader may not know gets a link, such as "the battery's [state of charge](../user_guide/assets/battery.md)", not an explanation.
+
+## Results
+
+The output, and what it means for this case: which asset does what, and why, in terms of this problem's numbers.
+
+## Discussion
+
+What the example shows, and the bridge to the next example.
+````
