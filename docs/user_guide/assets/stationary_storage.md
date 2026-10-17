@@ -4,13 +4,13 @@ icon: fontawesome/solid/car-battery
 
 # StationaryStorage
 
-A `StationaryStorage` models a stationary energy storage system in your portfolio, such as a grid-scale battery. The optimizer decides when to charge and discharge it to maximize profit: it stores energy when it is cheap or would otherwise be wasted, and releases it when it is valuable.
+A `StationaryStorage` models an energy store at a fixed site: a battery energy storage system (BESS), or any store whose behaviour fits the battery model, with a fixed capacity, charge and discharge limits, efficiencies and self-discharge. Pumped hydro, for example, fits it as a first approximation.
 
-A storage asset *has* a [Battery](battery.md): the asset is the site you own, and the battery describes its physics (capacity, power limits, efficiencies, state of charge limits).
+A stationary storage *has* a [Battery](battery.md): the asset is what you own and name, and the battery holds all its physics. This page covers what the asset adds; the [Battery](battery.md) page covers everything else.
 
 ## Basic usage
 
-Let's add the battery of the [running example](../index.md#the-running-example) to the site: 50 MWh that charges and discharges at up to 25 MW.
+Let's add the battery of the [running example](../index.md#the-running-example) to the site: 50 MWh that charges and discharges at up to 25 MW, starting half full.
 
 ```python
 from odys import Battery, StationaryStorage, StorageInitialState
@@ -28,98 +28,27 @@ bess = StationaryStorage(
 starts_half_full = StorageInitialState(storage=bess, soc=0.5)
 ```
 
-Pass `starts_half_full` to the energy system with `EnergySystem(..., initial_conditions=(starts_half_full,))`. Every storage needs an initial state: its state of charge carries over from one step to the next, so Odys never guesses where it starts.
+Add `bess` to your [AssetPortfolio](../concepts/asset_portfolio.md), and pass `starts_half_full` to the `EnergySystem` with `initial_conditions=(starts_half_full,)`.
 
 ## Fields
 
-| Field     | Type      | Required | Default | Description                                             |
-| --------- | --------- | -------- | ------- | ------------------------------------------------------- |
-| `name`    | `str`     | Yes      | -       | Unique identifier for the storage                       |
-| `battery` | `Battery` | Yes      | -       | The battery's physics; see [Battery](battery.md#fields) |
-
-Capacity, power limits, efficiencies, SOC limits, self-discharge and degradation cost are all set on the `Battery`, and the [Battery](battery.md) page explains each of them.
+| Field     | Type      | Required | Default | Description                                              |
+| --------- | --------- | -------- | ------- | -------------------------------------------------------- |
+| `name`    | `str`     | Yes      | -       | Unique name of the storage                               |
+| `battery` | `Battery` | Yes      | -       | Its capacity, ratings and losses; see [Battery](battery.md#fields) |
 
 ## Initial and final state
 
-Where the storage starts and ends belongs to the run, not to the battery. Pass a `StorageInitialState` (required) and, optionally, a `StorageFinalState` to the `EnergySystem`. Both take the storage and a `soc`, the state of charge as a fraction of capacity.
-
-A final state is useful when the next run needs the battery charged: without one, the optimizer is free to empty it by the end of the horizon.
-
-See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field, and the [formulation](../../formulation/batteries.md#b-3).
+A stationary storage takes a `StorageInitialState`, which is required, and optionally a `StorageFinalState`. Both take the storage and its state of charge, `soc`, as a fraction of capacity. How they shape the plan is on the Battery page, under [State of charge](battery.md#state-of-charge); every field is in [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles).
 
 ## Results
 
-Let's add the battery to the CCGT, the wind farm and the factory, and read its results through `result.stationary_storages`. To see clearly what it does with the wind, we start it empty:
+A stationary storage's results are in `result.stationary_storages`: `net_power`, `soc` and `charge_mode`, one `pandas.Series` each. The Battery page solves the running example and shows how to read them, under [Results](battery.md#results). The [Battery Dispatch example](../../examples/battery_dispatch.md) stores solar for the evening over a full day.
 
-```python
-from datetime import timedelta
+## How it's modelled
 
-from odys import (
-    AssetPortfolio,
-    AvailableCapacityProfile,
-    EnergySystem,
-    FixedLoad,
-    Generator,
-    LoadProfile,
-    Scenario,
-)
-
-ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
-wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
-factory = FixedLoad(name="factory")
-
-energy_system = EnergySystem(
-    portfolio=AssetPortfolio([ccgt, wind, bess, factory]),
-    scenarios=Scenario(
-        profiles=(
-            LoadProfile(load=factory, values=[60, 90, 40, 70]),
-            AvailableCapacityProfile(generator=wind, values=[40, 10, 60, 30]),
-        ),
-    ),
-    timestep=timedelta(hours=1),
-    number_of_steps=4,
-    initial_conditions=(StorageInitialState(storage=bess, soc=0.0),),
-)
-
-result = energy_system.optimize()
-print(result.stationary_storages.to_dataframe()[["net_power", "soc"]].round(3))
-```
-
-```text
-                         net_power   soc
-time stationary_storage
-0    bess                     0.00  0.00
-1    bess                     0.00  0.00
-2    bess                    20.00  0.38
-3    bess                   -18.05  0.00
-```
-
-`net_power` is in MW, positive when charging and negative when discharging. `soc` is the state of charge at the end of each step, as a fraction of capacity, and `charge_mode` is 1 when the battery may charge. Each is a `pandas.Series` indexed by storage and time (and scenario, when there is more than one).
-
-Notice what the battery does with no market to trade in: it stores the 20 MW of wind the factory can't use at step 2 and returns it at step 3, replacing CCGT output. Only 95% of each charged MWh reaches the battery and 95% of each stored MWh comes back out, so 20 MW charged raises the SOC by 0.38 and returns 18.05 MW. Charging from the CCGT to discharge later would only lose energy, so the battery stays idle the rest of the time.
-
-See the [Battery Dispatch example](../../examples/battery_dispatch.md) for a full day of storing solar for the evening.
-
-## Mathematical formulation
-
-A stationary storage is a [Battery](../../formulation/batteries.md) at a fixed site, with $b$ ranging over the stationary storages.
-
-### Variables
-
-Those of the [Battery](../../formulation/batteries.md#variables): $p^{ch}_{b,t,s}$, $p^{dis}_{b,t,s}$, $p^{net}_{b,t,s}$, $SOC_{b,t,s}$ and $z_{b,t,s}$.
-
-### Constraints
-
-Those of the [Battery](../../formulation/batteries.md#constraints): [charge and discharge limits](../../formulation/batteries.md#b-1), [state of charge](../../formulation/batteries.md#b-3) and [net power](../../formulation/batteries.md#b-7). A stationary storage adds none of its own.
-
-### Objective contribution
-
-The battery's degradation cost; see [Battery](../../formulation/batteries.md#objective-contribution).
-
-### Power balance contribution
-
-Discharging is supply ($+\sum_b p^{dis}_{b,t,s}$) and charging is demand ($\sum_b p^{ch}_{b,t,s}$). See [Power balance](../concepts/power_balance.md).
+A stationary storage is a battery on the bus, with no rules of its own: the battery's [B-1](../../formulation/batteries.md#b-1) to [B-7](../../formulation/batteries.md#b-7). It charges from the [power balance](../../formulation/power_balance.md#pb-1) and discharges into it, and its wear enters the [objective](../../formulation/batteries.md#objective-contribution).
 
 ## Next steps
 
-Next, see [Battery](battery.md) for the physics behind every storage: efficiencies, SOC limits, self-discharge and degradation.
+Some batteries drive away. Next, see how an [ElectricVehicle](electric_vehicle.md) adds trips to a battery.
