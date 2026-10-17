@@ -53,6 +53,7 @@ DOCUMENTED_PAGES: dict[str, tuple[str, ...]] = {
         "ev_max_",
         "ev_capacity_",
     ),
+    "electric_vehicles.md": ("ev_driving_", "ev_min_soc_departure_", "charger_"),
     "generators.md": ("generator_", "available_capacity_"),
     "markets.md": ("market_",),
     "non_anticipativity.md": ("non_anticipativity_",),
