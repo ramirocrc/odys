@@ -116,7 +116,7 @@ Two consequences are worth knowing:
 - **Without a stage-fixed market and without a [CVaR term](objective.md#risk-cvar), the scenarios don't interact.** The result is the same as solving each scenario on its own: every scenario gets its own perfect-foresight plan. Use a stage-fixed market to model a commitment you can't take back.
 - **Generator commitment adapts to each scenario.** The CCGT above is on in one scenario and off in the other at the same step. If a unit has to be scheduled in advance, model that commitment through a stage-fixed market position.
 
-See [EnergyMarket](../markets/energy_market.md#stage-fixed-decisions) for how to set `stage_fixed`, and the [CVaR Market Risk example](../../examples/cvar_market_risk.md) for a full walkthrough.
+See [EnergyMarket](../markets/energy_market.md#stage-fixed-markets) for how to set `stage_fixed`, and the [CVaR Market Risk example](../../examples/cvar_market_risk.md) for a full walkthrough.
 
 ## Results with multiple scenarios
 
@@ -163,7 +163,7 @@ $$
 \max \sum_s \pi_s \Pi_s
 $$
 
-The scenarios are coupled only through the [non-anticipativity constraints](../markets/energy_market.md#math-stage-fixed) of stage-fixed markets and, when the objective has one, the [CVaR term](objective.md#cvar). To weigh bad outcomes more heavily, add a CVaR term; see [Objective](objective.md).
+The scenarios are coupled only through the [non-anticipativity constraints](../../formulation/non_anticipativity.md#na-1) of stage-fixed markets and, when the objective has one, the [CVaR term](objective.md#cvar). To weigh bad outcomes more heavily, add a CVaR term; see [Objective](objective.md).
 
 ## Next steps
 

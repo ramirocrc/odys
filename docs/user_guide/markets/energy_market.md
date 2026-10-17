@@ -4,13 +4,13 @@ icon: fontawesome/solid/chart-line
 
 # EnergyMarket
 
-An `EnergyMarket` represents an electricity market where your portfolio can buy and/or sell energy. Use it to earn revenue from excess generation, or to buy power when it's cheaper than running your own assets.
+An `EnergyMarket` models a market your portfolio trades on: a day-ahead or intraday market, a supply contract you buy from, or an offtake agreement you sell to. At every step the optimizer decides how much to buy or sell on it, at the price of that step. Your trades never move the price.
 
-The optimizer decides how much to buy or sell in each market at every timestep. Markets are not assets: pass them to `EnergySystem(markets=...)`, not to the [AssetPortfolio](../concepts/asset_portfolio.md).
+Markets aren't assets. Pass them to the `EnergySystem` with `markets=...`, not to the [AssetPortfolio](../concepts/asset_portfolio.md).
 
 ## Basic usage
 
-Let's connect the site of the [running example](../index.md#the-running-example) to a day-ahead market.
+Let's connect the site of the [running example](../index.md#the-running-example) to a day-ahead market, trading up to 150 MW per step:
 
 ```python
 from odys import EnergyMarket
@@ -21,32 +21,36 @@ day_ahead = EnergyMarket(
 )
 ```
 
-By default, the market allows either buying or selling up to the specified volume per timestep, but never both in the same timestep.
+By default, a market can buy and sell, but goes only one way at each step: in a given step you either buy from it or sell to it ([M-2](../../formulation/markets.md#m-2)).
 
 ## Fields
 
 | Field                         | Type                    | Required | Default        | Description                                                                         |
 | ----------------------------- | ----------------------- | -------- | -------------- | ----------------------------------------------------------------------------------- |
-| `name`                        | `str`                   | Yes      | -              | Unique identifier for the market                                                    |
-| `max_trading_volume_per_step` | `float`                 | Yes      | -              | Maximum power bought or sold at each timestep (MW); the energy is this times the step length |
-| `allowed_trade_direction`     | `AllowedTradeDirection` | No       | `BUY_AND_SELL` | Allowed directions: `BUY_ONLY`, `SELL_ONLY`, or `BUY_AND_SELL`                      |
-| `stage_fixed`                 | `bool`                  | No       | `False`        | If `True`, trading decisions are the same in every scenario                         |
+| `name`                        | `str`                   | Yes      | -              | Unique name of the market                                                           |
+| `max_trading_volume_per_step` | `float`                 | Yes      | -              | Most power bought or sold at each step, above 0 (MW); the energy is this times the step length |
+| `allowed_trade_direction`     | `AllowedTradeDirection` | No       | `BUY_AND_SELL` | Which way it trades: `BUY_ONLY`, `SELL_ONLY` or `BUY_AND_SELL`                      |
+| `stage_fixed`                 | `bool`                  | No       | `False`        | If `True`, the trades are the same in every scenario                                |
+
+## Volume limit
+
+`max_trading_volume_per_step` is your limit, not the market's: how much you're willing or able to trade per step, such as the rating of your grid connection or the most you'd bid. Set it to what you'd really trade, because the optimizer uses all of it when the price is right.
+
+The limit is a power, in MW, held for the whole step: with 15-minute steps, a 100 MW limit trades at most 25 MWh per step. See [M-1](../../formulation/markets.md#m-1).
 
 ## Trade direction
 
-You can restrict which way the market trades. Use `BUY_ONLY` for procurement markets, `SELL_ONLY` for feed-in tariffs, or leave the default `BUY_AND_SELL` for markets that allow two-way trading.
+Not every market works both ways. Use `BUY_ONLY` for a supply contract you draw from but can't feed back into, and `SELL_ONLY` for a feed-in tariff or an offtake agreement that buys your output and sells you nothing:
 
 ```python
 from odys import AllowedTradeDirection
 
-# Can only sell into this market
 feed_in = EnergyMarket(
     name="feed_in",
     max_trading_volume_per_step=100.0,
     allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
 
-# Can only buy from this market
 backup_supply = EnergyMarket(
     name="backup_supply",
     max_trading_volume_per_step=50.0,
@@ -54,27 +58,11 @@ backup_supply = EnergyMarket(
 )
 ```
 
-See the [formulation](#math-trade-direction).
-
-## Stage-fixed decisions
-
-When `stage_fixed=True`, the optimizer must commit to the same trading volumes in every [scenario](../concepts/scenario.md#multiple-scenarios). This models markets where you lock in your position before uncertainty is resolved, like a day-ahead market where bids are placed before you know the actual wind output. Markets you can still trade in once the uncertainty is resolved, like intraday, keep the default and adapt per scenario.
-
-```python
-day_ahead = EnergyMarket(
-    name="day_ahead",
-    max_trading_volume_per_step=150.0,
-    stage_fixed=True,  # same volumes in all scenarios
-)
-```
-
-With a single scenario, `stage_fixed` changes nothing. See [Stochastic optimization](../optimization/stochastic.md#what-is-decided-before-and-after-the-uncertainty) for how it shapes a stochastic run.
-
-See the [formulation](#math-stage-fixed).
+See [M-3](../../formulation/markets.md#m-3).
 
 ## Multiple markets
 
-Pass several markets as a list or tuple, for example the day-ahead market and an intraday market with less liquidity:
+Pass several markets as a list or tuple, for example the day-ahead market and a thinner intraday market:
 
 ```python
 intraday = EnergyMarket(name="intraday", max_trading_volume_per_step=50.0)
@@ -82,11 +70,25 @@ intraday = EnergyMarket(name="intraday", max_trading_volume_per_step=50.0)
 markets = [day_ahead, intraday]  # EnergySystem(markets=markets, ...)
 ```
 
-Each market needs its own `PriceProfile`, and the optimizer trades in whichever pays best at each step.
+Each market has its own price, and the optimizer trades on whichever pays best at each step. When two markets have different prices at the same step, it also buys on the cheaper one and sells on the dearer one, up to the smaller of the two limits. If that isn't a trade you'd make, set the limits to what you'd really trade, or make one of the markets one-way. See [M-1](../../formulation/markets.md#m-1).
+
+## Stage-fixed markets
+
+Some markets clear before you know which future happens. You place day-ahead bids before you know tomorrow's wind, and you're held to them whatever the wind does. Mark such a market with `stage_fixed=True`, and the optimizer commits to the same trades, and the same direction, in every [scenario](../concepts/scenario.md#multiple-scenarios):
+
+```python
+day_ahead_bids = EnergyMarket(
+    name="day_ahead",
+    max_trading_volume_per_step=150.0,
+    stage_fixed=True,  # one set of bids for every scenario
+)
+```
+
+A market you can still trade on once the uncertainty is resolved, like intraday, keeps the default and adapts in each scenario. With a single scenario, `stage_fixed` changes nothing. See [Stochastic optimization](../optimization/stochastic.md#what-is-decided-before-and-after-the-uncertainty) for how it shapes a stochastic run, and [NA-1](../../formulation/non_anticipativity.md#na-1).
 
 ## Profiles
 
-Prices are provided as `PriceProfile` objects in each `Scenario`, not on the market object itself, because they change from one scenario to the next while the market's rules don't:
+Prices live in each `Scenario`, as a `PriceProfile`, not on the market, because they change from one future to the next while the market's rules don't. Every market needs a `PriceProfile` in every scenario, in currency per MWh:
 
 ```python
 from odys import FixedLoad, LoadProfile, PriceProfile, Scenario
@@ -102,13 +104,11 @@ scenario = Scenario(
 )
 ```
 
-Every market passed to the `EnergySystem` needs a `PriceProfile` in every scenario. Prices are in currency per MWh.
-
-See the [formulation](#math-objective).
+The same price applies to buying and selling. Prices can be negative: then selling costs money and buying earns it, so the optimizer may buy just to get paid, as long as something on the site can absorb the power: a battery charging, a flexible load raising its demand, or a generator turning down. See the [objective contribution](../../formulation/markets.md#objective-contribution).
 
 ## Results
 
-Let's put the whole running example together: the CCGT, the wind farm, the battery, the factory and the flexible process, trading in the day-ahead market. We read the market results through `result.markets`:
+The market is the last piece of the site. Let's put the whole running example together: the CCGT, the wind farm, the battery, the factory and the flexible process, trading on the day-ahead market:
 
 ```python
 from datetime import timedelta
@@ -124,7 +124,6 @@ from odys import (
     StorageInitialState,
 )
 
-day_ahead = EnergyMarket(name="day_ahead", max_trading_volume_per_step=150.0)
 ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
 wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
 process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
@@ -168,70 +167,24 @@ time market
 3    day_ahead         65.0        0.00       65.00
 ```
 
-`sell_volume` and `buy_volume` are in MW, and `net_volume` is sell minus buy, so it is negative when the site buys. Each is a `pandas.Series` indexed by market and time (and scenario, when there is more than one).
+The price now drives every asset. Print `result.generators`, `result.stationary_storages` and `result.flexible_loads` the same way to see it:
 
-Notice how the price now drives every asset (print `result.generators`, `result.stationary_storages` and `result.flexible_loads` the same way to see it):
+- **Steps 0 and 2, at 40 and 30 $/MWh:** buying is cheaper than the CCGT's 50 $/MWh, so the CCGT stays off and the site buys. The battery charges, and the process takes its full 20 MW extra, because power costs less than the 60 $/MWh its consumption is worth.
+- **Steps 1 and 3, at 75 and 65 $/MWh:** the CCGT runs at full output, the battery discharges at 25 MW, and the process cuts 10 MW, because the power is worth more on the market. The surplus is sold.
 
-- At 40 and 30 $/MWh (steps 0 and 2), buying is cheaper than the CCGT's 50 $/MWh. The CCGT stays off, the site buys, and the battery charges.
-- At 75 and 65 $/MWh (steps 1 and 3), the CCGT runs at full output, the battery discharges, and the surplus is sold.
-- At those steps the price is also above the process's 60 $/MWh value of consumption, so the process drops 10 MW below its base and that power is sold instead.
+The battery only tops up at step 0: half full, it already holds nearly enough for step 1. It ends the day empty, because nothing asks it to keep a charge (see [State of charge](../assets/battery.md#state-of-charge)).
 
-See the [Market Arbitrage example](../../examples/market_arbitrage.md) for buying from a market instead of running a CCGT, and the [CVaR Market Risk example](../../examples/cvar_market_risk.md) for trading under price uncertainty.
+The market's results are in `result.markets`, one `pandas.Series` per series, indexed by market and time, and by scenario when there's more than one:
 
-## Mathematical formulation
+- `buy_volume` and `sell_volume`: the power bought and sold, in MW.
+- `net_volume`: sell minus buy, so negative when the site buys.
 
-### Variables
+The [Market Arbitrage example](../../examples/market_arbitrage.md) buys from a market instead of running a CCGT, and the [CVaR Market Risk example](../../examples/cvar_market_risk.md) trades under price uncertainty.
 
-| Symbol | Result attribute | Domain | Meaning |
-| ------ | ---------------- | ------ | ------- |
-| $v^{sell}_{m,t,s}$ | `sell_volume` | $\ge 0$ | Volume sold |
-| $v^{buy}_{m,t,s}$ | `buy_volume` | $\ge 0$ | Volume bought |
-| $z_{m,t,s}$ | - | $\{0,1\}$ | Trade mode, 1 when selling |
+## How it's modelled
 
-`net_volume` is $v^{sell}_{m,t,s} - v^{buy}_{m,t,s}$.
-
-### Constraints
-
-#### Volume limits and exclusivity {#math-volume}
-
-$$
-v^{sell}_{m,t,s} \le V^{\max}_m, \qquad v^{buy}_{m,t,s} \le V^{\max}_m
-$$
-
-$$
-v^{sell}_{m,t,s} \le z_{m,t,s} \, V^{\max}_m, \qquad
-v^{buy}_{m,t,s} \le \left(1 - z_{m,t,s}\right) V^{\max}_m
-$$
-
-The binary $z_{m,t,s}$ keeps the market from buying and selling in the same timestep.
-
-#### Trade direction {#math-trade-direction}
-
-$$
-v^{sell}_{m,t,s} = 0 \;\text{ if } m \text{ is buy-only}, \qquad
-v^{buy}_{m,t,s} = 0 \;\text{ if } m \text{ is sell-only}
-$$
-
-#### Stage-fixed decisions {#math-stage-fixed}
-
-For stage-fixed markets, every market variable $x \in \{v^{sell}, v^{buy}, z\}$ takes its first-scenario value in all scenarios:
-
-$$
-x_{m,t,s} = x_{m,t,s_0} \quad \forall s
-$$
-
-### Objective contribution {#math-objective}
-
-Trading revenue is added to the profit $\Pi_s$:
-
-$$
-+ \sum_{t,m} \lambda_{m,t,s} \, \Delta t \left(v^{sell}_{m,t,s} - v^{buy}_{m,t,s}\right)
-$$
-
-### Power balance contribution
-
-Buying is supply ($+\sum_m v^{buy}_{m,t,s}$) and selling is demand ($\sum_m v^{sell}_{m,t,s}$). See [Power balance](../concepts/power_balance.md).
+A market has a buy volume, a sell volume and a trade mode at every step, in every scenario. The rules are on the [Markets](../../formulation/markets.md) formulation page: the volume limit ([M-1](../../formulation/markets.md#m-1)), one direction per step ([M-2](../../formulation/markets.md#m-2)) and one-way markets ([M-3](../../formulation/markets.md#m-3)). Stage-fixed markets add [NA-1](../../formulation/non_anticipativity.md#na-1). Buying supplies the [power balance](../../formulation/power_balance.md#pb-1) and selling draws from it, and the trading revenue enters the [objective](../../formulation/markets.md#objective-contribution).
 
 ## Next steps
 
-See [Objective](../optimization/objective.md) to learn how the market revenue and every asset's costs combine into what the optimizer maximizes.
+The site is complete. Next, see the [Objective](../optimization/objective.md): how the market revenue and every asset's costs add up to what the optimizer maximizes.
