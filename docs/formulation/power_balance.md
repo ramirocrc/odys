@@ -25,7 +25,7 @@ Each arrow is one term of the balance, with the sign from the [sign convention](
 
 ## Fixed loads
 
-A fixed load is demand you have to serve exactly as given: a building, a process that can't move, a site's base consumption. Its demand $D_{l,s,t}$ for $l \in \mathcal{L}^{fix}$ comes from its `LoadProfile`, one per scenario.
+A fixed load is demand you have to serve exactly as given: a building, a process that can't move, a site's base consumption. Its demand $D_{l,s,t}$ for $l \in \mathcal{L}^{fix}$ comes from its `LoadProfile`, one per scenario. odys doesn't check its sign today, so a negative value would quietly act as supply ([#148](https://github.com/ramirocrc/odys/issues/148)).
 
 That's all there is to it. A fixed load has no decision variables, no constraints of its own and no term in the [Objective](objective.md). Serving it costs money, but that cost shows up elsewhere: in the energy you buy for it, or the fuel your generators burn.
 
@@ -49,11 +49,11 @@ Read aloud: what your generators make, plus what you buy, plus what your batteri
 
 **Good to know.**
 
-- It's a **hard equality**, with no slack and no "unserved energy" variable. If some future can't be balanced, the whole problem is infeasible, not just that scenario (see [Scenarios](scenarios.md#when-scenarios-are-solved-on-their-own)).
+- It's a **hard equality**, with no slack and no "unserved energy" variable. If some future can't be balanced, the whole problem is infeasible, not just that scenario (see [Scenarios](scenarios.md#when-scenarios-are-solved-on-their-own)). The solver doesn't say which scenario or step is to blame; an optional slack that would show it is proposed in [#150](https://github.com/ramirocrc/odys/issues/150).
 - There's no curtailment variable either. Surplus power has to go somewhere: sold, stored, or absorbed by a flexible load.
 - Batteries count once, whether they sit at a site or on wheels: $\mathcal{K} = \mathcal{B} \cup \mathcal{E}$. An EV charges from the bus and, with V2G, feeds back into it. Chargers add no term of their own: they only cap and assign the power the vehicles draw (see [Electric vehicles and chargers](electric_vehicles.md)).
 - Energy a vehicle uses while driving doesn't pass through the bus. It leaves the battery directly.
-- Before solving, odys checks each scenario for an obvious mismatch: at every step, the most power you could possibly supply must cover the least you must serve, and the same over the whole horizon in energy. These checks are optimistic, so a model that passes them can still be infeasible, but one that fails them certainly is.
+- Before solving, odys checks each scenario for an obvious mismatch: at every step, the most power you could possibly supply must cover the least you must serve, and the same over the whole horizon in energy. These checks are optimistic, so a model that passes them can still be infeasible, but one that fails them certainly is. They even count a sell-only market as possible supply ([#149](https://github.com/ramirocrc/odys/issues/149)).
 
 `Added: always · Binds: always · Name: power_balance_constraint`
 

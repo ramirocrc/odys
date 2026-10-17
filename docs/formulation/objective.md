@@ -118,8 +118,9 @@ Read aloud: make the most money on average, but also keep the bad days from gett
 **Good to know.**
 
 - The weights are two independent numbers, both at least 0. They don't have to add up to 1, and odys doesn't normalize them. Only their ratio changes the plan: doubling both doubles the objective value and leaves the plan as it was.
-- The objective value that odys reports (`results.objective_value`) is this weighted sum, not the expected profit.
+- The objective value that odys reports (`results.objective_value`) is this weighted sum, not the expected profit. The parts (each scenario's profit, the expected profit, the CVaR and $\zeta$) aren't reported yet ([#152](https://github.com/ramirocrc/odys/issues/152)).
 - A weight of 0 keeps a term in the configuration but removes it from the objective.
+- odys accepts every weight at 0 today. The objective is then always 0, and any feasible plan counts as optimal ([#151](https://github.com/ramirocrc/odys/issues/151)).
 - With $w^P = 0$, only the worst futures count. The other scenarios get *some* feasible plan, not necessarily a good one.
 
 ## Where to find each symbol in odys

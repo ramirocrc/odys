@@ -55,9 +55,9 @@ You could write the same thing with a single variable shared by all scenarios. o
 
 **Good to know.**
 
-- odys also writes the row for $s_0$ itself, where it simply reads $x = x$.
+- odys also writes the row for $s_0$ itself, where it simply reads $x = x$. These rows do nothing ([#154](https://github.com/ramirocrc/odys/issues/154)).
 - The trade mode $y^{trade}$ is tied too, so a stage-fixed market also picks "buy" or "sell" once for all futures. The trade mode only removes plans that are worth the same profit; see [#140](https://github.com/ramirocrc/odys/issues/140).
-- Generator commitment is second-stage: a unit can be on in one scenario and off in another at the same step. If a unit has to be scheduled in advance, model that commitment through a stage-fixed market position.
+- Generator commitment is second-stage: a unit can be on in one scenario and off in another at the same step. If a unit has to be scheduled in advance, model that commitment through a stage-fixed market position. First-stage commitment is proposed in [#153](https://github.com/ramirocrc/odys/issues/153).
 
 `Added: always (empty without a stage-fixed market) · Binds: on markets with stage_fixed=True · Names: non_anticipativity_market_buy_volume_constraint, non_anticipativity_market_sell_volume_constraint, non_anticipativity_market_trade_mode_constraint`
 
