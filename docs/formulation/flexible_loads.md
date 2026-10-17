@@ -93,9 +93,8 @@ $$
 
 Read aloud: every extra MWh you consume is worth $c^{val}_l$, and every MWh you don't is worth that much less.
 
-- This is where the decision comes from. Raising the load earns $c^{val}_l$ per MWh, but the extra power has to come from somewhere: bought, generated or taken from a battery. So the optimizer raises the load when $c^{val}_l$ is above what that power costs, and lowers it when it's below.
+- This is where the decision comes from: the extra power has to come from somewhere, and its cost sits in the other assets' and markets' terms. How that plays out in a plan is on the [FlexibleLoad](../user_guide/assets/flexible_load.md#value-of-consumption) page.
 - Only the adjustment is valued, not the base. The base's value doesn't depend on any decision, so it's left out.
-- With $c^{val}_l = 0$, cutting the load costs nothing, so the optimizer cuts it whenever power costs anything at all.
 
 ## Where to find each symbol in odys
 
