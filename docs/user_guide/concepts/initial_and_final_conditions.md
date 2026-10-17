@@ -103,7 +103,7 @@ A battery's state is its state of charge, as a fraction of capacity:
 | `ElectricVehicleFinalState`   | `vehicle` | `ElectricVehicle`   | The vehicle                                 |
 |                               | `soc`     | `float`             | State of charge at the last step            |
 
-Both must lie within the battery's `[soc_min, soc_max]`. The initial state of charge starts the [state of charge dynamics](../assets/battery.md#state-of-charge-soc), and a final state fixes the state of charge at the last step.
+Both must lie within the battery's `[soc_min, soc_max]`. The initial state of charge starts the [state of charge dynamics](../assets/battery.md#state-of-charge), and a final state fixes the state of charge at the last step.
 
 An electric vehicle's initial state is also checked against its trips. A trip departing at the first step must fit the starting charge, because there is no earlier step to charge in. See [ElectricVehicle](../assets/electric_vehicle.md#initial-and-final-state).
 
@@ -132,8 +132,8 @@ Conditions add parameters, not variables. Each one enters the formulation of its
 | --------- | ---------- | --------------- |
 | `GeneratorInitialState` | $p^0_g$, $u^0_g$, $T^0_g$ | [Ramp limits](../../formulation/generators.md#g-7), [startup and shutdown](../../formulation/generators.md#g-5), [minimum up and down time](../../formulation/generators.md#g-8) at the first step |
 | `GeneratorFinalState` | $p^{end}_g$ | $p_{g,T,s} = p^{end}_g$; see [G-10](../../formulation/generators.md#g-10) |
-| `StorageInitialState`, `ElectricVehicleInitialState` | $SOC^{start}_b$ | The [state of charge](../assets/battery.md#math-soc) at the first step |
-| `StorageFinalState`, `ElectricVehicleFinalState` | $SOC^{end}_b$ | $SOC_{b,T,s} = SOC^{end}_b$; see [Battery](../assets/battery.md#math-soc) |
+| `StorageInitialState`, `ElectricVehicleInitialState` | $SOC^{start}_b$ | The [state of charge](../../formulation/batteries.md#b-3) at the first step |
+| `StorageFinalState`, `ElectricVehicleFinalState` | $SOC^{end}_b$ | $SOC_{b,T,s} = SOC^{end}_b$; see [Battery](../../formulation/batteries.md#b-3) |
 
 Conditions are the same in every scenario $s$.
 

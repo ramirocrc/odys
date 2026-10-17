@@ -83,7 +83,7 @@ $$
 | Market revenue | [EnergyMarket](../markets/energy_market.md#math-objective) |
 | Generation cost | [Generators](../../formulation/generators.md#objective-contribution) |
 | Value of flexible consumption | [Flexible loads](../../formulation/flexible_loads.md#objective-contribution) |
-| Degradation cost ($b$ over stationary storages and EVs) | [Battery](../assets/battery.md#math-objective) |
+| Degradation cost ($b$ over stationary storages and EVs) | [Battery](../../formulation/batteries.md#objective-contribution) |
 
 Prices and costs are per MWh, while volumes and powers are in MW, so every energy term is multiplied by the timestep length $\Delta t$ in hours. Startup and shutdown costs are charged per event, so they are not scaled.
 

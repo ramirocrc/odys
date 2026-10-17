@@ -137,4 +137,4 @@ A flexible load has one decision per step: how far to move away from its base. [
 
 ## Next steps
 
-A flexible load changes how much you consume, not when. To move energy from one step to another, store it: see [StationaryStorage](stationary_storage.md).
+A flexible load changes how much you consume, not when. To move energy from one step to another, store it: see [Battery](battery.md).

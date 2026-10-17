@@ -389,8 +389,8 @@ docs/
 │   │   ├── generator.md
 │   │   ├── fixed_load.md
 │   │   ├── flexible_load.md
-│   │   ├── stationary_storage.md
 │   │   ├── battery.md        # Battery physics shared by storage and EVs
+│   │   ├── stationary_storage.md
 │   │   ├── electric_vehicle.md
 │   │   └── charger.md
 │   ├── markets/

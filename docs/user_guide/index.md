@@ -34,7 +34,7 @@ flowchart TD
 ```
 
 - The [EnergySystem](concepts/energy_system.md) is the entry point: it holds everything and runs `.optimize()`.
-- The [AssetPortfolio](concepts/asset_portfolio.md) holds the assets you own and operate: [generators](assets/generator.md), [fixed](assets/fixed_load.md) and [flexible](assets/flexible_load.md) loads, [storage](assets/stationary_storage.md), [electric vehicles](assets/electric_vehicle.md) and [chargers](assets/charger.md). Storage and electric vehicles each have a [Battery](assets/battery.md).
+- The [AssetPortfolio](concepts/asset_portfolio.md) holds the assets you own and operate: [generators](assets/generator.md), [fixed](assets/fixed_load.md) and [flexible](assets/flexible_load.md) loads, [stationary storage](assets/stationary_storage.md), [electric vehicles](assets/electric_vehicle.md) and [chargers](assets/charger.md). Stationary storage and electric vehicles each have a [Battery](assets/battery.md).
 - [EnergyMarkets](markets/energy_market.md) are where the portfolio buys and sells energy.
 - [Scenarios](concepts/scenario.md) hold the time series: demand, available capacity, and prices.
 - [Initial and final conditions](concepts/initial_and_final_conditions.md) set where each asset starts and, optionally, ends the run.
@@ -50,7 +50,7 @@ Most pages build on one small industrial site, so you can watch a single system 
 | `factory`   | `FixedLoad`         | Demand of 60, 90, 40 and 70 MW                                | [EnergySystem](concepts/energy_system.md)         |
 | `wind`      | `Generator`         | Wind farm, 80 MW, free, with 40, 10, 60 and 30 MW available    | [Scenarios & Profiles](concepts/scenario.md)      |
 | `process`   | `FlexibleLoad`      | Process drawing 30 MW, can go +20 or −10 MW, worth 60 $/MWh   | [FlexibleLoad](assets/flexible_load.md)           |
-| `bess`      | `StationaryStorage` | Battery, 50 MWh at 25 MW, starting half full                  | [StationaryStorage](assets/stationary_storage.md) |
+| `bess`      | `StationaryStorage` | Battery, 50 MWh at 25 MW, starting half full                  | [Battery](assets/battery.md)                      |
 | `day_ahead` | `EnergyMarket`      | Day-ahead market, 150 MW, at 40, 75, 30 and 65 $/MWh          | [EnergyMarket](markets/energy_market.md)          |
 
 The [EnergySystem](concepts/energy_system.md) page starts with just the CCGT and the factory, and each later page adds one piece. Every code block on a page runs in order, from the first block of that page.
