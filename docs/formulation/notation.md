@@ -23,6 +23,8 @@ Everything odys models lives in a few sets. A lowercase letter picks one element
 | $\mathcal{L}^{fix}$ | Fixed loads | $l$ | `FixedLoad` |
 | $\mathcal{M}$ | Markets | $m$ | `EnergyMarket` |
 | $\mathcal{M}^{fix} \subseteq \mathcal{M}$ | Stage-fixed markets | $m$ | `EnergyMarket(stage_fixed=True)` |
+| $\mathcal{M}^{buy} \subseteq \mathcal{M}$ | Buy-only markets | $m$ | `EnergyMarket(allowed_trade_direction=AllowedTradeDirection.BUY_ONLY)` |
+| $\mathcal{M}^{sell} \subseteq \mathcal{M}$ | Sell-only markets | $m$ | `EnergyMarket(allowed_trade_direction=AllowedTradeDirection.SELL_ONLY)` |
 
 Time starts at 0, like in the code: the first step is $t = 0$ and the last one is $t = T - 1$.
 
