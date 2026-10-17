@@ -81,7 +81,7 @@ $$
 | Term | Defined on |
 | ---- | ---------- |
 | Market revenue | [EnergyMarket](../markets/energy_market.md#math-objective) |
-| Generation cost | [Generator](../assets/generator.md#objective-contribution) |
+| Generation cost | [Generators](../../formulation/generators.md#objective-contribution) |
 | Value of flexible consumption | [FlexibleLoad](../assets/flexible_load.md#math-objective) |
 | Degradation cost ($b$ over stationary storages and EVs) | [Battery](../assets/battery.md#math-objective) |
 

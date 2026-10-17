@@ -130,8 +130,8 @@ Conditions add parameters, not variables. Each one enters the formulation of its
 
 | Condition | Parameters | Where it enters |
 | --------- | ---------- | --------------- |
-| `GeneratorInitialState` | $p^0_g$, $u^0_g$, $T^0_g$ | [Ramp limits](../assets/generator.md#math-ramp-limits), [startup and shutdown](../assets/generator.md#math-startup-shutdown), [minimum up and down time](../assets/generator.md#math-min-up-down-time) at the first step |
-| `GeneratorFinalState` | $p^{end}_g$ | $p_{g,T,s} = p^{end}_g$; see [Generator](../assets/generator.md#math-initial-final-state) |
+| `GeneratorInitialState` | $p^0_g$, $u^0_g$, $T^0_g$ | [Ramp limits](../../formulation/generators.md#g-7), [startup and shutdown](../../formulation/generators.md#g-5), [minimum up and down time](../../formulation/generators.md#g-8) at the first step |
+| `GeneratorFinalState` | $p^{end}_g$ | $p_{g,T,s} = p^{end}_g$; see [G-10](../../formulation/generators.md#g-10) |
 | `StorageInitialState`, `ElectricVehicleInitialState` | $SOC^{start}_b$ | The [state of charge](../assets/battery.md#math-soc) at the first step |
 | `StorageFinalState`, `ElectricVehicleFinalState` | $SOC^{end}_b$ | $SOC_{b,T,s} = SOC^{end}_b$; see [Battery](../assets/battery.md#math-soc) |
 
