@@ -73,7 +73,7 @@ Read aloud: in discharging mode, discharge up to the rating; in charging mode, d
 
 **Good to know.**
 
-- With $\overline{P}^{dis}_k = 0$ the battery can only charge. For an electric vehicle, that means no vehicle-to-grid.
+- With $\overline{P}^{dis}_k = 0$ the battery can only charge. For an electric vehicle, that means no vehicle-to-grid. The other way round isn't allowed: $\overline{P}^{ch}_k$ must be above 0, so a battery can't be discharge-only ([#167](https://github.com/ramirocrc/odys/issues/167)).
 - When the battery is idle, either mode fits, so the reported `charge_mode` can be 0 or 1 at a step without any power.
 - It costs one binary per battery, scenario and step.
 
