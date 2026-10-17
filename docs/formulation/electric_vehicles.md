@@ -18,7 +18,7 @@ icon: lucide/car
 
 ### EV-1 · Trips drain the battery {#ev-1}
 
-<!-- The trip term in B-3 and B-4: E^trip_{e,t} / E_e, spread evenly over the trip's steps. -->
+<!-- The trip term added to B-3: E^trip_{e,t} / E_e, spread evenly over the trip's steps. Restate B-3 with it. -->
 
 ### EV-2 · No charging on the road {#ev-2}
 
