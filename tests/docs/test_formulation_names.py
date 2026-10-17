@@ -44,6 +44,15 @@ from odys.optimization.model.model_builder import build_model
 FORMULATION_DIR = Path(__file__).parents[2] / "docs" / "formulation"
 
 DOCUMENTED_PAGES: dict[str, tuple[str, ...]] = {
+    "batteries.md": (
+        "stationary_storage_",
+        "ev_power_",
+        "ev_net_power",
+        "ev_charge_mode",
+        "ev_soc",
+        "ev_max_",
+        "ev_capacity_",
+    ),
     "generators.md": ("generator_", "available_capacity_"),
     "markets.md": ("market_",),
     "non_anticipativity.md": ("non_anticipativity_",),
