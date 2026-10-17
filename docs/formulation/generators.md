@@ -92,7 +92,7 @@ Read aloud: you can't produce more than the wind, the sun or an outage allows ri
 
 - Without a profile, $A_{g,s,t} = +\infty$: the rows are there, but they never bind ([#154](https://github.com/ramirocrc/odys/issues/154)).
 - odys checks that each profile value is at most the rating.
-- The name has no `generator_` prefix.
+- The name has no `generator_` prefix ([#161](https://github.com/ramirocrc/odys/issues/161)).
 
 `Added: always · Binds: when the available capacity is below what the plan wants · Name: available_capacity_constraint`
 
@@ -273,6 +273,7 @@ Read aloud: whatever happens along the way, at the last step the unit produces e
 **Good to know.**
 
 - The final output is the same in every scenario.
+- It's an exact value, not a bound. Allowing "at least" or "at most" is proposed in [#163](https://github.com/ramirocrc/odys/issues/163).
 - A final output of 0 means the unit ends the run off, because [G-2](#g-2) ties "on" to producing.
 - odys checks that the final output is 0 or between the minimum and the rating, and that it fits each scenario's available capacity at the last step.
 

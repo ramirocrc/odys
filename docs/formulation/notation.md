@@ -82,7 +82,7 @@ States describe the **end** of a step. $\mathrm{soc}_{k,s,t}$ is the state of ch
 The run's boundary conditions fill in what lies outside the horizon:
 
 - **Before step 0**, the initial conditions stand in for "the previous step". A generator's previous output is its initial output $P^{init}_g$, it was on if $P^{init}_g > 0$, and it had been in that state for $N^{init}_g$ steps. A battery starts from $\mathrm{soc}^{init}_k$.
-- **After step $T - 1$**, a final condition, when you set one, is an equality: the generator's output at the last step is exactly $P^{final}_g$, and the battery's state of charge is exactly $\mathrm{soc}^{final}_k$. Without a final condition, the last step is free.
+- **After step $T - 1$**, a final condition, when you set one, is an equality: the generator's output at the last step is exactly $P^{final}_g$, and the battery's state of charge is exactly $\mathrm{soc}^{final}_k$. Without a final condition, the last step is free. Final conditions as bounds instead of exact values are proposed in [#163](https://github.com/ramirocrc/odys/issues/163).
 - The initial and final conditions are the same in every scenario.
 
 Durations become whole numbers of steps: minimum up and down times, a generator's time in its initial state, and trip departures and returns. odys rejects a duration that doesn't fit the step length. With 15-minute steps, a 2-hour minimum up time is 8 steps, and a 10-minute one is refused.
