@@ -104,7 +104,7 @@ Read aloud: if the market only sells to you, you can't sell back to it, and the 
 
 - The constraints are added in every model, but they only hold rows for the markets that restrict their direction. Without one, they're empty.
 - M-2 still applies to these markets, so the trade mode simply ends up on the open side.
-- The check odys runs before solving counts every market's cap as possible supply, a sell-only market included. That's one more reason the check is optimistic (see [PB-1](power_balance.md#pb-1)).
+- The check odys runs before solving counts every market's cap as possible supply, a sell-only market included. That's one more reason the check is optimistic (see [PB-1](power_balance.md#pb-1) and [#149](https://github.com/ramirocrc/odys/issues/149)).
 
 `Added: always (empty when no market restricts its direction) · Binds: on markets in ℳ^buy or ℳ^sell · Names: market_buy_only_constraint, market_sell_only_constraint`
 
