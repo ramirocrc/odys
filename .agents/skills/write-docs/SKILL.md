@@ -63,7 +63,10 @@ Follow the user's journey. Each page answers the next question a user naturally 
 
 Think in terms of "What is the user wondering now?" not "What feature should I describe?"
 
-The same holds inside each section. Every page opens with the question it answers, in everyday words, before any code or symbol, and ends with the question it leaves open (see §15).
+The same holds inside each section. Every page ends with the question it leaves open (see §15), and opens before any code or symbol:
+
+- A User Guide page opens by saying what the type models, in the reader's terms: "A `Generator` models a gas turbine, a diesel engine, or a wind or solar farm whose output depends on the weather." The readers know the energy domain, so skip hook questions and explanations of domain basics. Motivate a feature with a planning situation they recognize: "Say you're optimizing tomorrow's dispatch, and the CCGT is running tonight."
+- A formulation page opens with the question it answers, in everyday words ("How do I make my own power?").
 
 ## 3. Every page should have runnable examples
 
