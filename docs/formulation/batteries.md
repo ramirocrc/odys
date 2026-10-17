@@ -205,7 +205,7 @@ Read aloud: every MWh that goes in or out costs a little wear.
 
 - Both directions count, so a full cycle pays twice. The field is described as "per MWh cycled", which can also be read as per full cycle ([#159](https://github.com/ramirocrc/odys/issues/159)).
 - The energy is measured at the bus, before the charging losses and after the discharging ones.
-- With $c^{deg}_k = 0$, cycling is free, and the battery trades on any price difference that beats its losses.
+- How the wear cost changes when cycling pays is on the [Battery](../user_guide/assets/battery.md#degradation-cost) page.
 
 ## Where to find each symbol in odys
 

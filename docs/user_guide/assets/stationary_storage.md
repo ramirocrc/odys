@@ -45,7 +45,7 @@ Where the storage starts and ends belongs to the run, not to the battery. Pass a
 
 A final state is useful when the next run needs the battery charged: without one, the optimizer is free to empty it by the end of the horizon.
 
-See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field, and the [formulation](battery.md#math-soc).
+See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field, and the [formulation](../../formulation/batteries.md#b-3).
 
 ## Results
 
@@ -102,19 +102,19 @@ See the [Battery Dispatch example](../../examples/battery_dispatch.md) for a ful
 
 ## Mathematical formulation
 
-A stationary storage is a [Battery](battery.md#mathematical-formulation) at a fixed site, with $b$ ranging over the stationary storages.
+A stationary storage is a [Battery](../../formulation/batteries.md) at a fixed site, with $b$ ranging over the stationary storages.
 
 ### Variables
 
-Those of the [Battery](battery.md#variables): $p^{ch}_{b,t,s}$, $p^{dis}_{b,t,s}$, $p^{net}_{b,t,s}$, $SOC_{b,t,s}$ and $z_{b,t,s}$.
+Those of the [Battery](../../formulation/batteries.md#variables): $p^{ch}_{b,t,s}$, $p^{dis}_{b,t,s}$, $p^{net}_{b,t,s}$, $SOC_{b,t,s}$ and $z_{b,t,s}$.
 
 ### Constraints
 
-Those of the [Battery](battery.md#constraints): [charge and discharge limits](battery.md#math-power-limits), [state of charge](battery.md#math-soc) and [net power](battery.md#math-net-power). A stationary storage adds none of its own.
+Those of the [Battery](../../formulation/batteries.md#constraints): [charge and discharge limits](../../formulation/batteries.md#b-1), [state of charge](../../formulation/batteries.md#b-3) and [net power](../../formulation/batteries.md#b-7). A stationary storage adds none of its own.
 
 ### Objective contribution
 
-The battery's degradation cost; see [Battery](battery.md#math-objective).
+The battery's degradation cost; see [Battery](../../formulation/batteries.md#objective-contribution).
 
 ### Power balance contribution
 

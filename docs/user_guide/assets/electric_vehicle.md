@@ -54,7 +54,7 @@ The van starts the shift half charged, must leave at 08:00 with at least 80%, an
 
 The battery's `max_discharge_power` is what enables V2G. With `max_discharge_power=0`, the vehicle can only charge. Like charging, discharging only happens through a [Charger](charger.md).
 
-See the [formulation](battery.md#math-power-limits).
+See the [formulation](../../formulation/batteries.md#b-1).
 
 ## Trips
 
@@ -104,7 +104,7 @@ Where the vehicle's battery starts and ends belongs to the run. Pass an `Electri
 
 Building the `ElectricVehicleInitialState` raises an `OdysValidationError` if a trip departing at the start of the horizon (`start_time=timedelta(0)`) cannot be served from the starting charge. That happens when the trip needs a higher `min_soc_at_departure` than the initial `soc`, or more energy than the battery holds above `soc_min` at the start (`(soc − soc_min) × capacity`). There is no earlier step to charge in, and the vehicle cannot charge while driving.
 
-See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field, and the [formulation](battery.md#math-soc).
+See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field, and the [formulation](../../formulation/batteries.md#b-3).
 
 ## Results
 
@@ -170,11 +170,11 @@ See the [EV Fleet example](../../examples/ev_fleet_optimization.md) for three va
 
 ## Mathematical formulation
 
-An electric vehicle $e$ has all the variables and constraints of the [Battery formulation](battery.md#mathematical-formulation), with $b = e$. The trip schedule adds the constraints below. Charger coupling is on the [Charger](charger.md#mathematical-formulation) page.
+An electric vehicle $e$ has all the variables and constraints of the [Battery formulation](../../formulation/batteries.md), with $b = e$. The trip schedule adds the constraints below. Charger coupling is on the [Charger](charger.md#mathematical-formulation) page.
 
 ### Variables
 
-Those of the [Battery](battery.md#variables). Trips add no variables: $\omega_{e,t}$, $\Delta SOC^{trip}_{e,t}$ and $SOC^{dep}_{e,t}$ are parameters derived from the trip schedule.
+Those of the [Battery](../../formulation/batteries.md#variables). Trips add no variables: $\omega_{e,t}$, $\Delta SOC^{trip}_{e,t}$ and $SOC^{dep}_{e,t}$ are parameters derived from the trip schedule.
 
 ### Constraints
 
@@ -214,7 +214,7 @@ where $SOC^{dep}_{e,t}$ is the trip's `min_soc_at_departure` at its start step $
 
 ### Objective contribution
 
-The battery degradation cost; see [Battery](battery.md#math-objective).
+The battery degradation cost; see [Battery](../../formulation/batteries.md#objective-contribution).
 
 ### Power balance contribution
 
