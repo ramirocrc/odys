@@ -53,8 +53,6 @@ See the [CVaR Market Risk example](../../examples/cvar_market_risk.md) for a wor
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
 ### Objective
 
 $$

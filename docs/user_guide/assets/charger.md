@@ -155,8 +155,6 @@ See the [EV Fleet example](../../examples/ev_fleet_optimization.md) for V2G arbi
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
 ### Variables
 
 | Symbol | Result attribute | Domain | Meaning |

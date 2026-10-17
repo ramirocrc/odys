@@ -126,7 +126,7 @@ This works for a single scenario. With several scenarios, each series has a scen
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol. Conditions add parameters, not variables. Each one enters the formulation of its asset:
+Conditions add parameters, not variables. Each one enters the formulation of its asset:
 
 | Condition | Parameters | Where it enters |
 | --------- | ---------- | --------------- |

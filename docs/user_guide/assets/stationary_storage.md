@@ -102,7 +102,7 @@ See the [Battery Dispatch example](../../examples/battery_dispatch.md) for a ful
 
 ## Mathematical formulation
 
-A stationary storage is a [Battery](battery.md#mathematical-formulation) at a fixed site, with $b$ ranging over the stationary storages. See [Mathematical notation](../mathematical_notation.md) for every symbol.
+A stationary storage is a [Battery](battery.md#mathematical-formulation) at a fixed site, with $b$ ranging over the stationary storages.
 
 ### Variables
 

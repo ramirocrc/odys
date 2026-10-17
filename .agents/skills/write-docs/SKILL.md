@@ -1,6 +1,22 @@
-# Documentation guidelines
+---
+name: write-docs
+description: Voice, structure and page templates for the odys documentation (User Guide, Examples, Mathematical Formulation, landing page). Use whenever a page under docs/ is created or changed, including docs updates that come with a code change.
+---
 
-Principles for writing and improving the Odys documentation.
+# Write the docs
+
+Principles for writing and improving the Odys documentation. The voice is the same on every page: friendly, light and exact (§13).
+
+## Checklist
+
+- [ ] Find the page's place in the [information architecture](#information-architecture) and the question it answers (§2).
+- [ ] Start from the matching template in [templates.md](templates.md): an asset or market page, or a formulation page.
+- [ ] Write in the voice of §13. Explain every rule by what the optimizer would get away with without it (§11).
+- [ ] Equations only in `docs/formulation/`, in the constraint rhythm of §4. User Guide pages link to the constraint instead.
+- [ ] User Guide code runs in order and shows its exact output (§3). Reuse the running example's names.
+- [ ] End with a bridge to the next page (§15), and cross-link where concepts appear (§17).
+- [ ] Add new pages to the `nav` in `zensical.toml`.
+- [ ] Run `just docs-build` (strict build, plus `tools/docs/check_user_guide.py`) before saying the page is done.
 
 ## 1. Make the Quickstart unbelievably good
 
@@ -42,8 +58,11 @@ Follow the user's journey. Each page answers the next question a user naturally 
 5. What does the optimizer maximize, and how do I read the results? (`user_guide/optimization/`)
 6. What if the future is uncertain? (`user_guide/optimization/stochastic.md`)
 7. Can I see a full worked example? (`examples/`)
+8. What exactly does odys solve, and why that way? (`formulation/`)
 
 Think in terms of "What is the user wondering now?" not "What feature should I describe?"
+
+The same holds inside each section. Every page opens with the question it answers, in everyday words, before any code or symbol, and ends with the question it leaves open (see §15).
 
 ## 3. Every page should have runnable examples
 
@@ -60,11 +79,23 @@ Pattern:
 
 Someone can almost learn by scrolling.
 
-## 4. Minimize prose, but anchor math with words
+The exception is the Mathematical Formulation section (`formulation/`): it describes the model, so its pages have no code and no running example. `check_user_guide.py` runs only `user_guide/`.
 
-Odys is a mathematical library. Equations are a first-class part of the documentation, not something to hide. But every equation should be preceded by a short sentence that explains what it does and why it matters.
+## 4. Anchor every equation in words
 
-On asset and market pages, every equation lives in the **Mathematical formulation** section at the end of the page, never in the feature sections. Each feature section links to its constraints instead (see the [page template](#page-template)). This keeps the math in one place per page and lets readers skip it until they need it. Each formulation is written once, on the page of the asset that owns it; other pages link to it.
+Odys is a mathematical library. Equations are a first-class part of the documentation, not something to hide, but they always come with words around them.
+
+Equations live only in the Mathematical Formulation section (`docs/formulation/`), written once, on the page of the model part that owns them. User Guide pages carry no `$$` math: they explain the behaviour in words and link to the constraint ("The output can change by at most `ramp_up` per step; see [G-7](../../formulation/generators.md#g-7).").
+
+On formulation pages, every constraint follows the same rhythm (see the formulation page template in [templates.md](templates.md)):
+
+1. A heading that says what happens: `G-7 · Output changes gradually`, not `G-7 · Ramp limits`.
+2. One plain sentence on what it enforces.
+3. The equation. With a binary, the logical form first, then the big-M form with the value of M.
+4. The equation read aloud, in one everyday sentence.
+5. Why it looks like this: what the optimizer would get away with without it (§11).
+6. Good to know, when there is something: limitations and redundancy.
+7. A facts line: `Added: … · Binds: … · Name: <linopy name>`.
 
 Instead of:
 
@@ -72,11 +103,13 @@ Instead of:
 
 Write:
 
-> The optimizer caps generator output at the available capacity for each timestep:
+> **G-4 · Output fits the available capacity.** A generator never produces more than the scenario lets it.
 >
-> $$p_{g,t,s} \le A_{g,t,s}$$
+> $$p_{g,s,t} \le A_{g,s,t}$$
+>
+> Read aloud: at every step, output stays below what the wind, the sun or the fuel supply allows.
 
-People skim. Examples and equations beat paragraphs.
+Keep it short. People skim, and examples and equations beat paragraphs, but the few words around an equation are what make it readable.
 
 ## 5. One concept per section
 
@@ -89,7 +122,7 @@ A page like `assets/generator.md` covers:
 - Minimum up and down time (one concept)
 - Startup and shutdown cost (one concept)
 - Results (one concept)
-- Mathematical formulation (one concept)
+- How it's modelled (one concept: links to the formulation)
 
 Each section is self-contained. A reader can jump to "Ramp constraints" without reading the rest.
 
@@ -206,7 +239,7 @@ This is the Diataxis framework applied to Odys:
 | User Guide    | Teach concepts and walk through the API | `user_guide/`                                       |
 | Examples      | Solve a specific problem end-to-end     | `examples/`                                         |
 | API Reference | Exact signatures, types, and defaults   | `developer/api/`                                    |
-| Explanation   | Why the library is designed this way    | `user_guide/` (mathematical_notation, optimization/) |
+| Mathematical Formulation | The exact model and why it looks that way | `formulation/`                          |
 
 Don't mix them. A user guide page teaches. An API page documents. An example page solves.
 
@@ -220,7 +253,9 @@ Instead of:
 
 Explain:
 
-> A binary variable prevents the storage from charging and discharging simultaneously, which would be physically impossible and would create artificial efficiency losses in the model.
+> A binary variable stops the battery from charging and discharging at the same time. Every round trip loses energy, so when prices go negative, the optimizer would otherwise do both at once on purpose, burning energy to get paid for it.
+
+The easiest way to explain a rule is to say what the optimizer would get away with without it.
 
 ## 12. The user guide is primary; the API reference is secondary
 
@@ -228,7 +263,9 @@ The user guide teaches the workflow with runnable examples. The API reference (`
 
 Most users should never need to read the API reference to use Odys. The user guide should be self-sufficient.
 
-## 13. Write like you're pair programming
+## 13. Voice: friendly, light, exact
+
+Write like you're pair programming with the reader. This applies to every page: User Guide, Examples and Mathematical Formulation.
 
 Instead of:
 
@@ -242,7 +279,16 @@ Write:
 >
 > Notice how the solver uses solar first because it's free?
 
-That conversational style keeps readers engaged.
+Rules:
+
+- Address the reader as "you". Treat the optimizer as a character: "the optimizer would happily…".
+- Short sentences, one idea per paragraph.
+- Say each symbol or field in words the first time it appears on a page.
+- Use small concrete numbers when they help: "a battery that is 90 % efficient loses 0.1 MWh of every MWh it stores".
+- Keep the tone light and warm, and the content exact: no jokes inside the math, and never trade precision for tone.
+- No paper vocabulary: "hence", "w.l.o.g.", "it follows that", "we denote", "respectively", "the reader".
+
+The landing page and README are the exception: outside the hero they stay plain and factual (§14).
 
 ## 14. Explain why Odys exists
 
@@ -260,13 +306,14 @@ Odys is a free, open-source tool for a technical audience. Outside the hero, wri
 
 ## 15. End every page with the next step
 
-Every page links forward. The reader never wonders where to go next.
+Every page links forward. The reader never wonders where to go next. End with a bridge: one sentence that names the question the reader will have now, and links to the page that answers it. A bare "See X" is not enough.
 
 Examples:
 
 - End of `assets/generator.md`: "Next, see how [FixedLoad](fixed_load.md) defines the demand your system must serve."
 - End of `concepts/scenario.md`: "See [Initial and final conditions](initial_and_final_conditions.md) to set where each asset starts and ends a run."
 - End of an example: "This example used deterministic scenarios. The [CVaR Market Risk](../examples/cvar_market_risk.md) example adds risk-aware optimization."
+- End of `formulation/generators.md`: "Power made now is used now, unless you can store it. See [Batteries](batteries.md)."
 
 ## 16. Visual consistency
 
@@ -277,13 +324,15 @@ Every asset and market page follows the same template, in this order:
 3. Short introduction (1-2 paragraphs)
 4. Basic usage (runnable code)
 5. Fields table, always with the columns Field | Type | Required | Default | Description
-6. Feature sections, one concept each, with prose and code only. Each ends with a link to its constraints.
+6. Feature sections, one concept each, with prose and code only. Each links to its constraints on the formulation page (`../../formulation/generators.md#g-7`).
 7. Profiles (the `Scenario` time series the asset takes, if any)
 8. Results (how to read the output)
-9. Mathematical formulation, always last, with the same sub-sections: Variables, Constraints (one `####` heading per feature, with an explicit `{#math-...}` id), Objective contribution, Power balance contribution
-10. Next step link
+9. How it's modelled: one or two sentences and links to the asset's formulation page and constraints
+10. Next step bridge
 
-Concept and optimization pages use a lighter version: introduction, usage, details, formulation (if any), next steps. Skip a section only when it does not apply.
+Concept and optimization pages use a lighter version: introduction, usage, details, how it's modelled (if any), next steps. Skip a section only when it does not apply.
+
+Formulation pages follow their own template (see [templates.md](templates.md)).
 
 Readers quickly learn the pattern.
 
@@ -329,12 +378,23 @@ docs/
 │   │   └── charger.md
 │   ├── markets/
 │   │   └── energy_market.md
-│   ├── optimization/
-│   │   ├── objective.md      # Profit and CVaR
-│   │   ├── results.md        # Reading results
-│   │   ├── stochastic.md     # Stochastic optimization
-│   │   └── solvers.md        # Solver choice and options
-│   └── mathematical_notation.md
+│   └── optimization/
+│       ├── objective.md      # Profit and CVaR
+│       ├── results.md        # Reading results
+│       ├── stochastic.md     # Stochastic optimization
+│       └── solvers.md        # Solver choice and options
+│
+├── formulation/              # Mathematical Formulation: the exact MILP, one page per model part
+│   ├── index.md              # Overview: problem size, assumptions, compact model
+│   ├── notation.md           # Notation and conventions
+│   ├── scenarios.md
+│   ├── objective.md
+│   ├── power_balance.md
+│   ├── markets.md
+│   ├── generators.md
+│   ├── batteries.md          # Shared by stationary storage and EVs
+│   ├── electric_vehicles.md  # EVs and chargers
+│   └── flexible_loads.md
 │
 ├── examples/                 # End-to-end worked examples
 │   ├── index.md
@@ -352,70 +412,6 @@ docs/
     └── api/                  # API reference, one page per module (mkdocstrings)
 ```
 
-## Page template
+## Page templates
 
-````markdown
----
-icon: lucide/zap
----
-
-# Page title
-
-One-sentence description of what this is and why it matters.
-
-## Basic usage
-
-\```python
-from odys import ...
-
-# Runnable, copy-pasteable code
-
-\```
-
-One-sentence explanation of what this does.
-
-## Fields
-
-| Field | Type | Required | Default | Description |
-| ----- | ---- | -------- | ------- | ----------- |
-
-## A feature
-
-One concept, with prose and a runnable example. No equations here.
-
-See the [formulation](#math-a-feature).
-
-## Profiles
-
-The `Scenario` profile the asset takes, if any.
-
-## Results
-
-\```python
-result = energy_system.optimize()
-result.generators.power
-\```
-
-## Mathematical formulation
-
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
-### Variables
-
-| Symbol | Result attribute | Domain | Meaning |
-| ------ | ---------------- | ------ | ------- |
-
-### Constraints
-
-#### A feature {#math-a-feature}
-
-One sentence on what the constraint does, then the equation.
-
-### Objective contribution
-
-### Power balance contribution
-
-## Next steps
-
-See [Related Page](related.md) for ...
-````
+The asset page template and the formulation page template are in [templates.md](templates.md). Copy the matching one when you start a new page.

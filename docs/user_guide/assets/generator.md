@@ -214,8 +214,6 @@ See the [Basic Dispatch example](../../examples/basic_dispatch.md) for a full da
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
 ### Variables
 
 | Symbol | Result attribute | Domain | Meaning |

@@ -57,8 +57,6 @@ See the [Basic Dispatch example](../../examples/basic_dispatch.md) for a fixed l
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
 ### Variables
 
 None. The demand $d^{\text{fixed}}_{l,t,s}$ is a parameter taken from the `LoadProfile`.
