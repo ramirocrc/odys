@@ -180,8 +180,6 @@ See the [Market Arbitrage example](../../examples/market_arbitrage.md) for buyin
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
 ### Variables
 
 | Symbol | Result attribute | Domain | Meaning |

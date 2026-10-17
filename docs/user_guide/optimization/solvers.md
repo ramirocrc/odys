@@ -150,4 +150,4 @@ This makes it safe to write code that tries multiple solvers or gracefully falls
 
 ## Next steps
 
-That completes the User Guide workflow. [Mathematical notation](../mathematical_notation.md) collects every symbol used in the formulations, and the [Examples](../../examples/index.md) solve full problems end to end.
+That completes the User Guide workflow. The [Mathematical Formulation](../../formulation/index.md) section writes out the model odys builds, and the [Examples](../../examples/index.md) solve full problems end to end.

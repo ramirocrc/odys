@@ -82,7 +82,7 @@ Ramp limits (`ramp_up`, `ramp_down`) are **per timestep**, not per hour: a 40 MW
 3. **Markets**: [EnergyMarket](markets/energy_market.md).
 4. **Optimization**: the [Objective](optimization/objective.md), how to read [Results](optimization/results.md), [Stochastic optimization](optimization/stochastic.md) for decisions under uncertainty, and how to configure [Solvers](optimization/solvers.md).
 
-Every symbol used in the formulations is listed in [Mathematical notation](mathematical_notation.md).
+The exact model odys builds is written out in the [Mathematical Formulation](../formulation/index.md) section.
 
 ## Next steps
 

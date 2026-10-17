@@ -21,8 +21,6 @@ There is no network: power flows freely between all assets. Without markets, the
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
 ### Constraints
 
 $$

@@ -126,7 +126,7 @@ See the [Battery Dispatch example](../../examples/battery_dispatch.md) for a bat
 
 ## Mathematical formulation
 
-Here $b$ is any battery-backed asset: a stationary storage or an electric vehicle. See [Mathematical notation](../mathematical_notation.md) for every symbol.
+Here $b$ is any battery-backed asset: a stationary storage or an electric vehicle.
 
 ### Variables
 

@@ -151,8 +151,6 @@ For single-scenario runs, the scenario level is dropped automatically so you don
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
 Every variable and constraint is indexed by scenario $s$, and the scenario probabilities sum to 1:
 
 $$

@@ -134,8 +134,6 @@ See the [Flexible Load Market example](../../examples/flexible_load_market.md) f
 
 ## Mathematical formulation
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
 ### Variables
 
 | Symbol | Result attribute | Domain | Meaning |

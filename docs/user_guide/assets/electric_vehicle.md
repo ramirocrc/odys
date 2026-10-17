@@ -170,7 +170,7 @@ See the [EV Fleet example](../../examples/ev_fleet_optimization.md) for three va
 
 ## Mathematical formulation
 
-An electric vehicle $e$ has all the variables and constraints of the [Battery formulation](battery.md#mathematical-formulation), with $b = e$. The trip schedule adds the constraints below. Charger coupling is on the [Charger](charger.md#mathematical-formulation) page. See [Mathematical notation](../mathematical_notation.md) for every symbol.
+An electric vehicle $e$ has all the variables and constraints of the [Battery formulation](battery.md#mathematical-formulation), with $b = e$. The trip schedule adds the constraints below. Charger coupling is on the [Charger](charger.md#mathematical-formulation) page.
 
 ### Variables
 
