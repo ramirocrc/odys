@@ -378,13 +378,12 @@ docs/
 ├── index.md                  # Landing page + quickstart
 │
 ├── user_guide/               # Tutorials and concept pages
-│   ├── index.md              # Overview: object diagram and reading order
+│   ├── index.md              # Overview: what odys solves, object diagram, one bus, running example, reading order
 │   ├── concepts/
 │   │   ├── energy_system.md  # Main entry point
 │   │   ├── asset_portfolio.md
 │   │   ├── scenario.md       # Scenarios and profiles
-│   │   ├── initial_and_final_conditions.md
-│   │   └── power_balance.md  # The constraint that ties assets and markets together
+│   │   └── initial_and_final_conditions.md
 │   ├── assets/               # One page per asset, all with the same template
 │   │   ├── generator.md
 │   │   ├── fixed_load.md
