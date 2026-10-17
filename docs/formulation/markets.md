@@ -30,7 +30,7 @@ icon: lucide/arrow-left-right
 
 ### Stage-fixed markets
 
-<!-- Link to NA-1 on Scenario structure. -->
+<!-- Link to NA-1 on the Non-anticipativity page (non_anticipativity.md#na-1). -->
 
 ## Power balance contribution
 
