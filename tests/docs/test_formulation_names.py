@@ -45,6 +45,7 @@ FORMULATION_DIR = Path(__file__).parents[2] / "docs" / "formulation"
 
 DOCUMENTED_PAGES: dict[str, tuple[str, ...]] = {
     "non_anticipativity.md": ("non_anticipativity_",),
+    "objective.md": ("cvar_",),
 }
 
 NUMBER_OF_STEPS = 4
