@@ -4,7 +4,9 @@ icon: lucide/book-open
 
 # User Guide
 
-Odys optimizes how a portfolio of energy assets is operated. You describe what you own, the conditions it runs under, and the markets it can trade in, then let the optimizer decide the dispatch.
+odys plans how a portfolio of energy assets is operated and traded over a horizon: when each generator runs, when each battery charges, how far flexible demand moves, and what is bought and sold on each market. It plans against one future or several, each with its own probability, and solves the plan as a mixed-integer linear program.
+
+You describe what you own, the markets you trade on and the futures you plan for. odys returns the dispatch that maximizes your expected profit, optionally weighed against risk.
 
 ## How the pieces fit together
 
@@ -33,12 +35,26 @@ flowchart TD
     AP --> Assets
 ```
 
-- The [EnergySystem](concepts/energy_system.md) is the entry point: it holds everything and runs `.optimize()`.
+- The [EnergySystem](concepts/energy_system.md) holds everything, with the horizon and each asset's starting state, and runs `.optimize()`.
 - The [AssetPortfolio](concepts/asset_portfolio.md) holds the assets you own and operate: [generators](assets/generator.md), [fixed](assets/fixed_load.md) and [flexible](assets/flexible_load.md) loads, [stationary storage](assets/stationary_storage.md), [electric vehicles](assets/electric_vehicle.md) and [chargers](assets/charger.md). Stationary storage and electric vehicles each have a [Battery](assets/battery.md).
-- [EnergyMarkets](markets/energy_market.md) are where the portfolio buys and sells energy.
-- [Scenarios](concepts/scenario.md) hold the time series: demand, available capacity, and prices.
-- [Initial and final conditions](concepts/initial_and_final_conditions.md) set where each asset starts and, optionally, ends the run.
+- [EnergyMarkets](markets/energy_market.md) are where the portfolio buys and sells.
+- [Scenarios](concepts/scenario.md) hold the time series of each possible future: demand, available capacity and prices.
 - The [Objective](optimization/objective.md) says what to maximize: expected profit, optionally balanced against risk.
+
+## One bus
+
+odys connects every asset and every market to a single bus. At every step and in every scenario, the power fed in equals the power taken out:
+
+| Feeds the bus | Draws from the bus |
+| ------------- | ------------------ |
+| [Generator](assets/generator.md) output | [FixedLoad](assets/fixed_load.md) demand |
+| [Battery](assets/battery.md) discharge, from stationary storage and vehicles with V2G | [FlexibleLoad](assets/flexible_load.md) demand, after its adjustment |
+| [EnergyMarket](markets/energy_market.md) purchases | Battery charging |
+| | EnergyMarket sales |
+
+There's no network: no lines, no congestion and no losses between assets, so power fed in anywhere serves demand anywhere. [Chargers](assets/charger.md) aren't on the bus themselves: the vehicles plugged into them are.
+
+There's no unserved energy either. All demand has to be met, so a system whose supply can't cover it has no solution. odys catches the obvious cases when you create the `EnergySystem` (see [Validation](concepts/energy_system.md#validation)). See [PB-1](../formulation/power_balance.md#pb-1).
 
 ## The running example
 
@@ -77,10 +93,12 @@ Ramp limits (`ramp_up`, `ramp_down`) are **per timestep**, not per hour: a 40 MW
 
 ## Reading order
 
-1. **Core concepts**: [EnergySystem](concepts/energy_system.md), [AssetPortfolio](concepts/asset_portfolio.md), [Scenarios & Profiles](concepts/scenario.md), [Initial and final conditions](concepts/initial_and_final_conditions.md), and the [Power balance](concepts/power_balance.md) that ties everything together.
-2. **Assets**: one page per asset type, each with the same structure. Start from [Generator](assets/generator.md).
-3. **Markets**: [EnergyMarket](markets/energy_market.md).
-4. **Optimization**: the [Objective](optimization/objective.md), how to read [Results](optimization/results.md), [Stochastic optimization](optimization/stochastic.md) for decisions under uncertainty, and how to configure [Solvers](optimization/solvers.md).
+The guide starts with a stretch to read in order, then turns into pages to look up:
+
+1. **Building a model**: [EnergySystem](concepts/energy_system.md) and [AssetPortfolio](concepts/asset_portfolio.md) set up and solve a first system, [Scenarios & Profiles](concepts/scenario.md) add its time series, and [Initial and final conditions](concepts/initial_and_final_conditions.md) set where each asset starts. Read these in order.
+2. **Assets** and **Markets**: one page per type, all with the same structure. They also build the running example step by step, from the [Generator](assets/generator.md) to the [EnergyMarket](markets/energy_market.md), but each one stands on its own.
+3. **Solving and results**: how to read the [Results](optimization/results.md) and choose a [solver](optimization/solvers.md).
+4. **Uncertainty and risk**: planning against several futures with [Stochastic optimization](optimization/stochastic.md), and weighing bad outcomes in the [Objective](optimization/objective.md).
 
 The exact model odys builds is written out in the [Mathematical Formulation](../formulation/index.md) section.
 

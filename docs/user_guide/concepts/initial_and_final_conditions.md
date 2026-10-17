@@ -139,4 +139,4 @@ Conditions are the same in every scenario $s$.
 
 ## Next steps
 
-Next, see the [Power balance](power_balance.md), the constraint that ties assets and markets together.
+With the model's building blocks in place, let's meet the assets one by one, starting with the [Generator](../assets/generator.md).

@@ -187,4 +187,4 @@ A market has a buy volume, a sell volume and a trade mode at every step, in ever
 
 ## Next steps
 
-The site is complete. Next, see the [Objective](../optimization/objective.md): how the market revenue and every asset's costs add up to what the optimizer maximizes.
+The site is complete. Next, see how to read everything the optimizer decided, in [Results](../optimization/results.md).

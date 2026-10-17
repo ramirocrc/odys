@@ -17,12 +17,11 @@ nav = [
   { "Home" = "index.md" },
   { "User Guide" = [
     { "Overview" = "user_guide/index.md" },
-    { "Core concepts" = [
+    { "Building a model" = [
       { "EnergySystem" = "user_guide/concepts/energy_system.md" },
       { "AssetPortfolio" = "user_guide/concepts/asset_portfolio.md" },
       { "Scenarios & Profiles" = "user_guide/concepts/scenario.md" },
       { "Initial and final conditions" = "user_guide/concepts/initial_and_final_conditions.md" },
-      { "Power balance" = "user_guide/concepts/power_balance.md" },
     ] },
     { "Assets" = [
       { "Generator" = "user_guide/assets/generator.md" },
@@ -36,11 +35,13 @@ nav = [
     { "Markets" = [
       { "EnergyMarket" = "user_guide/markets/energy_market.md" },
     ] },
-    { "Optimization" = [
-      { "Objective" = "user_guide/optimization/objective.md" },
+    { "Solving and results" = [
       { "Results" = "user_guide/optimization/results.md" },
-      { "Stochastic optimization" = "user_guide/optimization/stochastic.md" },
       { "Solvers" = "user_guide/optimization/solvers.md" },
+    ] },
+    { "Uncertainty and risk" = [
+      { "Stochastic optimization" = "user_guide/optimization/stochastic.md" },
+      { "Objective" = "user_guide/optimization/objective.md" },
     ] },
   ] },
   { "Mathematical Formulation" = [
