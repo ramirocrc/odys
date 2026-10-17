@@ -15,7 +15,7 @@ This document is the design brief for the rewrite. It does not edit the odys rep
 | Battery math | Written **once**, over k ∈ 𝒦 = ℬ ∪ ℰ, on the Batteries page (the code shares one `StorageFormulation`). The EV page writes only what EVs add. |
 | Code issues | Pages **document the code as it is**. Known problems are tracked in GitHub issues (#124, #140–#145, see "Open code issues"). Each issue's fix also updates the formulation pages. |
 | Asset pages | Equations move out. User Guide keeps usage, fields, examples and results, and links to the formulation pages. **Requires updating the `write-docs` skill (§4 and its page templates)**, which currently put a "Mathematical formulation" section at the end of every asset page. |
-| Scenarios | General form throughout: every equation carries `s`. Deterministic = \|𝒮\| = 1. Introduced up front (Overview + Scenario structure page). |
+| Scenarios | General form throughout: every equation carries `s`. Deterministic = \|𝒮\| = 1. Introduced up front (Overview + Scenarios page). |
 | Stochastic structure | **Two-stage stochastic program with recourse.** No rolling horizon or scenario tree exists. ROADMAP's "multi-stage" means stage-fixed markets. |
 | Symbol ↔ code | A visible table per page: Symbol \| Attribute \| Type \| Unit. Constraints also show their linopy name. |
 | Depth | Variable domains and bounds, the exact big-M / linearizations, add/bind conditions, hidden constants, limitations. **Not** planned features. |
@@ -30,18 +30,19 @@ Mathematical Formulation/
 ├── Overview                problem class & size, modelling assumptions, guaranteed by validation, compact numbered model
 ├── Notation & conventions  sets, index rules, symbol convention, sign convention, time & boundary conventions (timeline),
 │                           initial-condition defaults
-├── Scenario structure      𝒮, π_s, two-stage view, first- vs second-stage variables, non-anticipativity written out,
-│                           when scenarios decouple
+├── Scenarios               uncertainty, deterministic vs stochastic, 𝒮, π_s, how scenarios enter the model,
+│                           when scenarios are solved on their own
+├── Non-anticipativity      decisions that can't wait, two-stage view, first- vs second-stage variables, NA-1
 ├── Objective               Π_s defined once; expected profit; CVaR (Rockafellar–Uryasev) with ζ, ξ_s, α; weights w^P, w^C
 ├── Power balance           single bus, hard equality ∀ s,t, no slack; fixed loads (D^fix) live here
-├── Markets                 buy/sell limits, trade-mode binary, trade direction, stage-fixed (links to Scenario structure)
+├── Markets                 buy/sell limits, trade-mode binary, trade direction, stage-fixed (links to Non-anticipativity)
 ├── Generators              limits, ε-status, commitment, start-up/shut-down, ramping, min up/down times, final power, costs
 ├── Batteries               k ∈ ℬ ∪ ℰ: SOC dynamics (start, interior, end), bounds, charge/discharge mode binary (big-M),
 │                           degradation; trip term is 0 for stationary storage
 ├── EVs & chargers          only the additions: trip energy, driving, departure SoC, charger assignment & power cap
 └── Flexible loads          adjustment bounds, value of consumption
 ```
-Markets come right after the power balance: their variables are in the balance, and they hold the only first-stage variables, so they follow the Scenario structure page naturally. There is no Multi-stage page and no fixed-load page. The old `user_guide/mathematical_notation.md` page is deleted and its content moves to "Notation & conventions". No redirects and no stub pages: the section is written fresh, and old URLs are not maintained.
+Markets come right after the power balance: their variables are in the balance, and they hold the only first-stage variables, so they follow the Non-anticipativity page naturally. There is no Multi-stage page and no fixed-load page. The old `user_guide/mathematical_notation.md` page is deleted and its content moves to "Notation & conventions". No redirects and no stub pages: the section is written fresh, and old URLs are not maintained.
 
 ## Overview: required content
 
@@ -96,12 +97,14 @@ Some properties hold because `EnergySystem` rejects inputs that would break them
 - Reading rule: a symbol indexed by `s` may differ across scenarios. A symbol without `s` is shared by all scenarios.
 - Deterministic case: |𝒮| = 1, π = 1. Every equation reduces to the deterministic model, so no separate deterministic version is written.
 
-## Scenario structure: required content
-- The scenario set, probabilities and the two-stage view.
+## Scenarios and Non-anticipativity: required content
+Two pages, one concept each. **Scenarios**: the future is uncertain (weather, prices, demand), so instead of a deterministic optimization odys plans over several possible futures, each with a probability; every decision gets a copy per scenario. **Non-anticipativity**: some decisions (a day-ahead bid) must be taken before the uncertainty resolves, so they take the same value in every scenario, which makes them one concrete decision.
+- Scenarios: the scenario set, probabilities, what a scenario carries, when scenarios are solved on their own.
+- Non-anticipativity: the two-stage view and NA-1.
 - The first-stage variables are `sell`, `buy` **and the `trade_mode` binary** of markets with `stage_fixed=True`. Generator commitment, storage, EV charging and charger assignment are second-stage.
 - Non-anticipativity, as implemented: per-scenario copies tied to the first scenario s₀ (the first in `ScenarioSet` order), `x_{m,s,t} = x_{m,s₀,t}  ∀ m ∈ ℳ^{fix}, s ∈ 𝒮, t ∈ 𝒯` (the row for s₀ is trivial; the code adds it). Say that this is equivalent to a single shared variable, and why the code uses copies (every variable keeps the same (s, t, asset) shape). Names: `non_anticipativity_market_{sell_volume,buy_volume,trade_mode}_constraint`.
 - Scenarios are coupled **only** through non-anticipativity and CVaR.
-- Motivation ("why use scenarios") stays on the User Guide's Stochastic Optimization page, which this page links to.
+- The Scenarios page gives the motivation in a few lines and links to the User Guide's Stochastic Optimization page for the code.
 
 ## Objective: required content
 - Per-scenario profit, defined once:
@@ -123,7 +126,8 @@ Each page answers the question the previous page leaves open, and ends with a on
 |---|---|---|
 | Overview | What does odys actually solve? | "Before the equations, a few words on how we write them." |
 | Notation | How do I read the symbols? | "The first symbol you'll meet everywhere is *s*. Where does it come from?" |
-| Scenarios | When are decisions made, and which ones wait for the future? | "Decisions are made *for* something. What is odys chasing?" |
+| Scenarios | What if the future isn't known? | "Each scenario now has its own plan, but you can only send one day-ahead bid. Which decisions must be the same in every future?" |
+| Non-anticipativity | Which decisions can't wait? | "Decisions are made *for* something. What is odys chasing?" |
 | Objective | What counts as a good plan? | "Profit is earned on energy, and energy has to add up at every step." |
 | Power balance | What ties every asset together? | "Who fills the gap? First, the outside world." |
 | Markets | How do I buy and sell? | "Buying isn't the only option: you can make your own power." |

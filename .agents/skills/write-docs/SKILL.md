@@ -388,6 +388,7 @@ docs/
 │   ├── index.md              # Overview: problem size, assumptions, compact model
 │   ├── notation.md           # Notation and conventions
 │   ├── scenarios.md
+│   ├── non_anticipativity.md
 │   ├── objective.md
 │   ├── power_balance.md
 │   ├── markets.md

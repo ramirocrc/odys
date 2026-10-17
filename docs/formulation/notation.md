@@ -103,8 +103,8 @@ Final conditions are always optional.
 
 A scenario is one possible future: its prices, demand and available capacity. Scenario $s$ happens with probability $\pi_s$, and the probabilities add up to 1.
 
-Most decisions adapt to each scenario, as if the optimizer knew which future will happen. The only exceptions are the trades on stage-fixed markets: they are decided once, before the future is known, and are the same in every scenario. That's the reading rule from above at work: a symbol with $s$ can differ between scenarios, and one without $s$ cannot.
+Most decisions adapt to each scenario, as if the optimizer knew which future will happen. The only exceptions are the trades on stage-fixed markets: they are decided once ([non-anticipativity](non_anticipativity.md)), before the future is known, and are the same in every scenario. That's the reading rule from above at work: a symbol with $s$ can differ between scenarios, and one without $s$ cannot.
 
 With a single scenario, $\pi_s = 1$, and every equation in this section is the plain deterministic model. There is no separate deterministic version to read.
 
-The first symbol you'll meet everywhere is $s$. Where does it come from? See [Scenario structure](scenarios.md).
+The first symbol you'll meet everywhere is $s$. Where does it come from? See [Scenarios](scenarios.md).
