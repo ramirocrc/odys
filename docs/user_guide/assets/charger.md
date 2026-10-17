@@ -186,7 +186,7 @@ None.
 
 ### Power balance contribution
 
-None: the vehicles connected to the chargers carry the power. See [ElectricVehicle](electric_vehicle.md#power-balance-contribution).
+None: the vehicles connected to the chargers carry the power. See [Electric vehicles and chargers](../../formulation/electric_vehicles.md#power-balance-contribution).
 
 ## Next steps
 
