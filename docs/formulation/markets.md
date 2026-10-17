@@ -132,7 +132,7 @@ $$
 
 Read aloud: the energy you sell times its price, minus the energy you buy times its price.
 
-- $\lambda_{m,s,t}$ comes from the market's `PriceProfile`, which every scenario has to provide. The price is the same for buying and selling.
+- $\lambda_{m,s,t}$ comes from the market's `PriceProfile`, which every scenario has to provide. The price is the same for buying and selling, with no fees and no spread ([#169](https://github.com/ramirocrc/odys/issues/169)).
 - Prices can be negative. Then selling costs money and buying earns it, and the optimizer may buy just to get paid, as long as something can absorb the power.
 
 ## Where to find each symbol in odys
