@@ -101,6 +101,16 @@ You don't always have to say where an asset starts:
 
 Final conditions are always optional.
 
+## Reading a constraint
+
+Every constraint on these pages tells the same little story. First a heading and one plain sentence, so you know what it's about before any math. Then the equation, and "Read aloud", the same idea said the way you'd explain it to a colleague. "Why it looks like this" is for when you wonder why it's written that way, and what would go wrong without it. "Good to know" collects the details that are easy to miss.
+
+Each constraint ends with a short line like this one:
+
+`Added: always · Binds: when a vehicle charges at its charger's rating, or isn't connected · Name: charger_power_limit_constraint`
+
+Think of it as the constraint's ID card. **Added** says when odys puts it in the model at all: most rules are always there, but some only appear when you ask for them, like a final state. **Binds** says when it actually shapes the plan. A constraint *binds* when the plan sits right against it, so that loosening it a little would let the optimizer do better. The rest of the time it's there but has no effect. Some lines say "never on its own": those rules are already covered by another one, and the note tells you which. **Name** is what odys calls the constraint inside the model, so you can find it in `model.constraints` when you want to look at it more closely, or when you're working out why a model is infeasible.
+
 ## Scenarios and decision stages
 
 A scenario is one possible future: its prices, demand and available capacity. Scenario $s$ happens with probability $\pi_s$, and the probabilities add up to 1.
