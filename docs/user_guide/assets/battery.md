@@ -13,7 +13,7 @@ Everything on this page applies to both. A `Battery` has no name and is never ad
 
 ## Basic usage
 
-Let's build the battery of the [running example](../index.md#the-running-example): 50 MWh that charges and discharges at up to 25 MW, and loses 5 % each way. It sits at the site, so it goes into a `StationaryStorage`:
+Let's build the site's battery: 50 MWh that charges and discharges at up to 25 MW, and loses 5 % each way. It sits at the site, so it goes into a `StationaryStorage`:
 
 ```python
 from odys import Battery, StationaryStorage, StorageInitialState
@@ -93,7 +93,7 @@ The `soc` is a fraction of capacity: the charge just before the first step for a
 
 Charging and discharging each lose energy. Charge 10 MWh at 90 % efficiency, and 9 MWh reaches the battery. Discharge those 9 MWh at 85 % efficiency, and 7.65 MWh comes back out. The round-trip efficiency is `efficiency_charging * efficiency_discharging`, here 76.5 %.
 
-So storing only pays when the price difference covers the losses: with the running example's 95 % each way, the battery needs to sell for more than about 1.11 times what it paid. See [B-3](../../formulation/batteries.md#b-3).
+So storing only pays when the price difference covers the losses: with this battery's 95 % each way, the battery needs to sell for more than about 1.11 times what it paid. See [B-3](../../formulation/batteries.md#b-3).
 
 ## Self-discharge
 
@@ -171,7 +171,7 @@ A battery's results are read through the asset that owns it, `result.stationary_
 - `soc`: the state of charge at the end of the step, as a fraction of capacity.
 - `charge_mode`: 1 when the battery may charge, 0 when it may discharge. At a step where it's idle, either value can show up ([B-1](../../formulation/batteries.md#b-1)).
 
-The [Battery Dispatch example](../../examples/battery_dispatch.md) stores solar for the evening over a full day.
+The [Storing Solar for the Evening](../../examples/solar_storage.md) example runs a battery through a full day of solar.
 
 ## How it's modelled
 

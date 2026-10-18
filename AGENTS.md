@@ -55,6 +55,7 @@ Step-by-step checklists for recurring tasks live in `.agents/skills/<name>/SKILL
 | Check the Definition of Done before saying a change is done | [`verify`](.agents/skills/verify/SKILL.md) |
 | Self-review the diff and its tests before opening a PR | [`review`](.agents/skills/review/SKILL.md) |
 | Write or change a docs page | [`write-docs`](.agents/skills/write-docs/SKILL.md) |
+| Write about markets, bidding, scenarios or stage-fixed decisions (docs, examples or model) | [`energy-markets`](.agents/skills/energy-markets/SKILL.md) |
 
 ## Code Style Guidelines
 

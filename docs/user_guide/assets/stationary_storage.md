@@ -10,7 +10,7 @@ A stationary storage *has* a [Battery](battery.md): the asset is what you own an
 
 ## Basic usage
 
-Let's add the battery of the [running example](../index.md#the-running-example) to the site: 50 MWh that charges and discharges at up to 25 MW, starting half full.
+Let's add a battery to the site: 50 MWh that charges and discharges at up to 25 MW, starting half full.
 
 ```python
 from odys import Battery, StationaryStorage, StorageInitialState
@@ -43,7 +43,7 @@ A stationary storage takes a `StorageInitialState`, which is required, and optio
 
 ## Results
 
-A stationary storage's results are in `result.stationary_storages`: `net_power`, `soc` and `charge_mode`, one `pandas.Series` each. The Battery page solves the running example and shows how to read them, under [Results](battery.md#results). The [Battery Dispatch example](../../examples/battery_dispatch.md) stores solar for the evening over a full day.
+A stationary storage's results are in `result.stationary_storages`: `net_power`, `soc` and `charge_mode`, one `pandas.Series` each. The Battery page solves the site with its battery and shows how to read them, under [Results](battery.md#results). The [Storing Solar for the Evening](../../examples/solar_storage.md) example runs a battery through a full day of solar.
 
 ## How it's modelled
 

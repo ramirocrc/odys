@@ -2,7 +2,7 @@
 icon: fontawesome/solid/car
 ---
 
-# EV Fleet Optimization
+# Depot Charging with V2G
 
 ## Problem Description
 
@@ -37,7 +37,7 @@ flowchart LR
 
 The dashed lines are the possible connections. At each step, a charger serves at most one van.
 
-**Source**: [`examples/ev_fleet_optimization.py`](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py). The script defines the fleet at module level, and wraps the rest in `run_ev_fleet_optimization()`, which returns the results.
+**Source**: [`examples/depot_charging.py`](https://github.com/ramirocrc/odys/blob/main/examples/depot_charging.py). The script defines the fleet at module level, and wraps the rest in `run_depot_charging()`, which returns the results.
 
 ## Walkthrough
 
@@ -210,7 +210,7 @@ scenario = Scenario(profiles=(PriceProfile(market=market, values=MARKET_PRICES),
 
 The chart shows the prices, with each van's trips shaded:
 
-<iframe src="../assets/plots/ev_fleet_setup.html" style="width:100%; height:520px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/depot_charging_setup.html" style="width:100%; height:520px; border:none;" loading="lazy"></iframe>
 
 ### 5. Solve
 
@@ -232,7 +232,7 @@ result = energy_system.optimize()
 
 The chart shows, on one time axis, the price, each van's charging and discharging, its state of charge, and the charger it's connected to:
 
-<iframe src="../assets/plots/ev_fleet_dispatch_combined.html" style="width:100%; height:1200px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/depot_charging_dispatch_combined.html" style="width:100%; height:1200px; border:none;" loading="lazy"></iframe>
 
 The vans buy cheap and sell dear, between their trips:
 
@@ -245,8 +245,8 @@ Over the day, the depot sells 178 kWh for 11.24 and buys 200 kWh for 1.25, so `r
 
 The market chart shows what the depot buys and sells at each hour:
 
-<iframe src="../assets/plots/ev_fleet_economics.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/depot_charging_economics.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 ## Discussion
 
-A fleet with V2G trades like a battery, but one that's only there between trips, and only through a charger. With fewer chargers than vans, the chargers become the bottleneck at the hours that pay most: here, a third charger would be worth 1.34 a day, which is what you'd weigh against its cost. Every example so far planned against a single future; to plan against uncertain prices or trips, see [Scenarios](../user_guide/uncertainty/scenarios.md) and [Risk (CVaR)](../user_guide/uncertainty/risk.md).
+A fleet with V2G trades like a battery, but one that's only there between trips, and only through a charger. With fewer chargers than vans, the chargers become the bottleneck at the hours that pay most: here, a third charger would be worth 1.34 a day, which is what you'd weigh against its cost. Every example so far planned against a single future; to plan against uncertain prices or trips, see [Several scenarios](../user_guide/uncertainty/scenarios.md) and [Risk (CVaR)](../user_guide/uncertainty/risk.md).

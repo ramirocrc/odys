@@ -57,8 +57,8 @@ from odys import (
 logger = logging.getLogger(__name__)
 
 
-def run_flexible_load_market() -> OptimalDispatchResults:
-    """Run the flexible load market example and return the optimization results."""
+def run_demand_response() -> OptimalDispatchResults:
+    """Run the industrial demand response example and return the optimization results."""
     market = EnergyMarket(
         name="market",
         max_trading_volume_per_step=80,
@@ -98,7 +98,7 @@ def run_flexible_load_market() -> OptimalDispatchResults:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logging.getLogger("linopy").setLevel(logging.WARNING)
-    result = run_flexible_load_market()
+    result = run_demand_response()
 
     logger.info("Load adjustment (MW)")
     logger.info(result.flexible_loads.load_adjustment)

@@ -24,19 +24,19 @@ import plotly.graph_objects as go
 from plotly.offline import get_plotlyjs_version
 from plotly.subplots import make_subplots
 
-from examples.basic_dispatch import run_basic_dispatch  # pyrefly: ignore
-from examples.battery_dispatch import LOAD_PROFILE, run_battery_dispatch  # pyrefly: ignore
-from examples.cvar_market_risk import run_cvar_market_risk  # pyrefly: ignore
-from examples.ev_fleet_optimization import (  # pyrefly: ignore
+from examples.day_ahead_or_intraday import run_day_ahead_or_intraday  # pyrefly: ignore
+from examples.demand_response import run_demand_response  # pyrefly: ignore
+from examples.depot_charging import (  # pyrefly: ignore
     CHARGERS,
     EV_FINAL_STATES,
     EV_INITIAL_STATES,
     EVS,
     MARKET_PRICES,
-    run_ev_fleet_optimization,
+    run_depot_charging,
 )
-from examples.flexible_load_market import run_flexible_load_market  # pyrefly: ignore
-from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
+from examples.make_or_buy import run_make_or_buy  # pyrefly: ignore
+from examples.merit_order_dispatch import run_merit_order_dispatch  # pyrefly: ignore
+from examples.solar_storage import LOAD_PROFILE, run_solar_storage  # pyrefly: ignore
 from odys import Charger, OptimalDispatchResults, Trip
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 
@@ -187,9 +187,9 @@ def _save_figure(fig: go.Figure, name: str) -> None:
     print(f"  \u2713 {path.name}")
 
 
-def generate_basic_dispatch() -> None:
+def generate_merit_order_dispatch() -> None:
     """Stacked bar chart of generator dispatch with load overlay."""
-    result = run_basic_dispatch()
+    result = run_merit_order_dispatch()
     df = result.generators.to_dataframe()["power"].unstack("generator")
     steps = list(range(len(df)))
 
@@ -245,12 +245,12 @@ def generate_basic_dispatch() -> None:
         margin=dict(l=40, r=20, t=40, b=40),
     )
 
-    _save_figure(fig, "basic_dispatch")
+    _save_figure(fig, "merit_order_dispatch")
 
 
-def generate_battery_dispatch() -> None:
+def generate_solar_storage() -> None:
     """Two-panel chart: generator dispatch with battery + battery SOC."""
-    result = run_battery_dispatch()
+    result = run_solar_storage()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
     battery_df = result.stationary_storages.to_dataframe().droplevel("stationary_storage")
     steps = list(range(len(gen_df)))
@@ -360,12 +360,12 @@ def generate_battery_dispatch() -> None:
     fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[-80, 200])
     fig.update_yaxes(title="State of Charge (%)", row=2, col=1, range=[0, 100])
 
-    _save_figure(fig, "battery_dispatch")
+    _save_figure(fig, "solar_storage")
 
 
-def generate_market_arbitrage() -> None:
+def generate_make_or_buy() -> None:
     """Two-panel chart: stacked dispatch bars + market prices."""
-    result = run_market_arbitrage()
+    result = run_make_or_buy()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
     bought = -result.markets.net_volume.xs("market", level="market")
     steps = list(range(len(gen_df)))
@@ -452,12 +452,12 @@ def generate_market_arbitrage() -> None:
     fig.update_yaxes(title="Power (MW)", row=1, col=1)
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
-    _save_figure(fig, "market_arbitrage")
+    _save_figure(fig, "make_or_buy")
 
 
-def generate_flexible_load_market() -> None:
+def generate_demand_response() -> None:
     """Two-panel chart: load consumption + market prices."""
-    result = run_flexible_load_market()
+    result = run_demand_response()
     actual_load = result.flexible_loads.actual_load
     steps = list(range(len(actual_load)))
 
@@ -533,12 +533,12 @@ def generate_flexible_load_market() -> None:
     fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 100])
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
-    _save_figure(fig, "flexible_load_market")
+    _save_figure(fig, "demand_response")
 
 
-def generate_cvar_market_risk() -> None:
+def generate_day_ahead_or_intraday() -> None:
     """Side-by-side grouped bar charts of market allocation for both runs."""
-    result_profit, result_cvar = run_cvar_market_risk()
+    result_profit, result_cvar = run_day_ahead_or_intraday()
 
     sell_profit = result_profit.markets.sell_volume.droplevel("time")
     sell_cvar = result_cvar.markets.sell_volume.droplevel("time")
@@ -621,7 +621,7 @@ def generate_cvar_market_risk() -> None:
     fig.update_xaxes(title="Scenario", row=1, col=2)
     fig.update_yaxes(title="Volume (MW)", row=1, col=1, rangemode="tozero")
 
-    _save_figure(fig, "cvar_market_risk")
+    _save_figure(fig, "day_ahead_or_intraday")
 
 
 EV_COLORS = {"ev_1": EV_1_COLOR, "ev_2": EV_2_COLOR, "ev_3": EV_3_COLOR}
@@ -787,7 +787,7 @@ def _extract_ev_state_intervals(result: OptimalDispatchResults) -> list[tuple[st
     return merged
 
 
-def generate_ev_fleet_setup() -> None:
+def generate_depot_charging_setup() -> None:
     """Price signal and trip obligations the optimizer faces, before any decision is shown."""
     fig = make_subplots(
         rows=2,
@@ -849,10 +849,10 @@ def generate_ev_fleet_setup() -> None:
         margin=dict(l=40, r=40, t=60, b=90),
     )
 
-    _save_figure(fig, "ev_fleet_setup")
+    _save_figure(fig, "depot_charging_setup")
 
 
-def generate_ev_fleet_dispatch_combined(result: OptimalDispatchResults) -> None:
+def generate_depot_charging_dispatch_combined(result: OptimalDispatchResults) -> None:
     """Combined dispatch figure: price, vehicle states, SoC, and charger occupancy with aligned x-axes."""
     fig = make_subplots(
         rows=4,
@@ -1003,7 +1003,7 @@ def generate_ev_fleet_dispatch_combined(result: OptimalDispatchResults) -> None:
         margin=dict(l=90, r=40, t=60, b=100),
     )
 
-    _save_figure(fig, "ev_fleet_dispatch_combined")
+    _save_figure(fig, "depot_charging_dispatch_combined")
 
 
 def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, str, str, bool]]:
@@ -1072,7 +1072,7 @@ def _constraint_check_rows(result: OptimalDispatchResults) -> list[tuple[str, st
     return rows
 
 
-def generate_ev_fleet_verification(result: OptimalDispatchResults) -> None:
+def generate_depot_charging_verification(result: OptimalDispatchResults) -> None:
     """Constraint verification table computed from the solved result, not asserted by hand."""
     rows = _constraint_check_rows(result)
     checks = [row[0] for row in rows]
@@ -1084,7 +1084,7 @@ def generate_ev_fleet_verification(result: OptimalDispatchResults) -> None:
 
     failures = [row[0] for row in rows if not row[3]]
     for failed_check in failures:
-        print(f"WARNING: EV fleet verification check failed: {failed_check}", file=sys.stderr)
+        print(f"WARNING: depot charging verification check failed: {failed_check}", file=sys.stderr)
 
     fig = go.Figure(
         data=[
@@ -1118,10 +1118,10 @@ def generate_ev_fleet_verification(result: OptimalDispatchResults) -> None:
         margin=dict(l=20, r=20, t=50, b=20),
     )
 
-    _save_figure(fig, "ev_fleet_verification")
+    _save_figure(fig, "depot_charging_verification")
 
 
-def generate_ev_fleet_economics(result: OptimalDispatchResults) -> None:
+def generate_depot_charging_economics(result: OptimalDispatchResults) -> None:
     """Market flows showing grid purchases and V2G sales."""
     buy_mwh = np.asarray(result.markets.buy_volume.xs("grid_market", level="market").values, dtype=float)
     sell_mwh = np.asarray(result.markets.sell_volume.xs("grid_market", level="market").values, dtype=float)
@@ -1177,11 +1177,11 @@ def generate_ev_fleet_economics(result: OptimalDispatchResults) -> None:
         margin=dict(l=40, r=40, t=60, b=90),
     )
 
-    _save_figure(fig, "ev_fleet_economics")
+    _save_figure(fig, "depot_charging_economics")
 
 
-def _check_ev_fleet_claims(result: OptimalDispatchResults) -> None:
-    """Fail the docs build if the solve no longer matches what ev_fleet_optimization.md says.
+def _check_depot_charging_claims(result: OptimalDispatchResults) -> None:
+    """Fail the docs build if the solve no longer matches what depot_charging.md says.
 
     Only claims that hold in every optimal solution are checked. Hours with the same price
     are interchangeable, so which of them the solver uses is not checked.
@@ -1209,22 +1209,22 @@ def _check_ev_fleet_claims(result: OptimalDispatchResults) -> None:
     )
 
 
-def generate_ev_fleet_optimization() -> None:
-    """Solve the EV fleet example once and generate all figures."""
-    result = run_ev_fleet_optimization()
-    _check_ev_fleet_claims(result)
-    generate_ev_fleet_setup()
-    generate_ev_fleet_dispatch_combined(result)
-    generate_ev_fleet_verification(result)
-    generate_ev_fleet_economics(result)
+def generate_depot_charging() -> None:
+    """Solve the depot charging example once and generate all figures."""
+    result = run_depot_charging()
+    _check_depot_charging_claims(result)
+    generate_depot_charging_setup()
+    generate_depot_charging_dispatch_combined(result)
+    generate_depot_charging_verification(result)
+    generate_depot_charging_economics(result)
 
 
 if __name__ == "__main__":
     print("Generating example plots...")
-    generate_basic_dispatch()
-    generate_battery_dispatch()
-    generate_flexible_load_market()
-    generate_market_arbitrage()
-    generate_cvar_market_risk()
-    generate_ev_fleet_optimization()
+    generate_merit_order_dispatch()
+    generate_solar_storage()
+    generate_demand_response()
+    generate_make_or_buy()
+    generate_day_ahead_or_intraday()
+    generate_depot_charging()
     print("Done!")
