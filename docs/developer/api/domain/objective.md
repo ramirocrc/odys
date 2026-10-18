@@ -6,22 +6,7 @@ icon: lucide/target
 
 Objective configuration for energy system optimization.
 
-Odys builds the objective as a weighted sum of the terms in `Objective.terms`:
-
-$$
-\max \sum_i w_i\,T_i(model)
-$$
-
-In the current configuration, that is the expected profit term plus an optional CVaR term:
-
-$$
-\max\; w_{\text{profit}} \sum_s \pi_s \Pi_s
-+ w_{\text{risk}} \left(
-\zeta - \frac{1}{1-\alpha} \sum_s \pi_s \xi_s
-\right)
-$$
-
-where $\xi_s \ge \zeta - \Pi_s$. If no CVaR term is configured, the implementation builds only the expected-profit term.
+An `Objective` holds its terms: a required `ProfitTerm` and an optional `CVaRTerm`, at most one of each. The model maximizes the sum of their weighted expressions; without a `CVaRTerm`, that is the expected profit alone. The terms are written out on the [Objective](../../../formulation/objective.md#combined-objective) formulation page, and configuring them on the [Risk (CVaR)](../../../user_guide/uncertainty/risk.md) User Guide page.
 
 See also [optimization.objective_terms](../optimization/objective_terms/index.md) for the implementation-side construction.
 
