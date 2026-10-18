@@ -39,7 +39,7 @@ final = StorageFinalState(
     soc=0.5,
 )
 
-# 12 days of hourly day-ahead prices (€/MWh)
+# 12 scenarios of hourly day-ahead prices (€/MWh)
 price_scenarios = [
     [45, 42, 46, 37, 38, 52, 65, 80, 88, 77, 37, 27, 27, 25, 28, 39, 80, 106, 110, 100, 83, 68, 60, 51],
     [42, 36, 31, 37, 33, 37, 58, 71, 84, 66, 57, 42, 34, 33, 44, 58, 89, 114, 127, 120, 95, 79, 48, 42],
@@ -55,10 +55,10 @@ price_scenarios = [
     [42, 45, 37, 33, 38, 46, 60, 77, 86, 69, 49, 41, 33, 34, 35, 52, 67, 88, 103, 88, 71, 58, 55, 49],
 ]
 
-# One scenario per day, all equally likely
+# One scenario per price series, all equally likely
 scenarios = [
     Scenario(
-        name=f"day_{i}",
+        name=f"scenario_{i}",
         probability=1 / len(price_scenarios),
         profiles=(PriceProfile(market=market, values=prices),),
     )
