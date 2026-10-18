@@ -46,7 +46,7 @@ The linked **Profiles** section of each page shows an example and the validation
 
 ## Putting it all together
 
-Let's add a wind farm to [our system](energy_system.md#basic-usage). Its output depends on the weather, so its `AvailableCapacityProfile` caps what it can produce at each step:
+Let's add a wind farm to [our system](../model/first_model.md#basic-usage). Its output depends on the weather, so its `AvailableCapacityProfile` caps what it can produce at each step:
 
 ```python
 from datetime import timedelta
