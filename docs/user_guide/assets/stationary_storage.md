@@ -39,7 +39,7 @@ Add `bess` to your [AssetPortfolio](../model/first_model.md#the-portfolio), and 
 
 ## Initial and final state
 
-A stationary storage takes a `StorageInitialState`, which is required, and optionally a `StorageFinalState`. Both take the storage and its state of charge, `soc`, as a fraction of capacity. How they shape the plan is on the Battery page, under [State of charge](battery.md#state-of-charge); every field is in [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles).
+A stationary storage takes a `StorageInitialState`, which is required, and optionally a `StorageFinalState`. Both take the storage and its state of charge, `soc`, as a fraction of capacity. How they shape the plan, and their fields, are on the Battery page, under [State of charge](battery.md#state-of-charge).
 
 ## Results
 

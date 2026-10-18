@@ -153,7 +153,9 @@ Starting from 50 MW, with 2 hours already on, the CCGT:
 
 A generator is on whenever its output is above 0. odys asks for an initial state as soon as the start matters: when the generator has a ramp limit, a minimum up or down time, or a start-up or shut-down cost. Without any of these, it starts off. Pick a final output the generator can reach: combined with ramp limits, an exact final output can make the problem infeasible.
 
-See [Initial and final conditions](../concepts/initial_and_final_conditions.md#generators) for every field, including when `time_in_state` is required, and [G-10](../../formulation/generators.md#g-10) for the final output.
+A `GeneratorInitialState` takes the `generator`, its `power` just before the first step, and `time_in_state`: how long it has been on, or off when `power` is 0. The `power` is either 0 or between `min_power` and `nominal_power`; anything else raises an `OdysValidationError`. `time_in_state` is needed when the matching minimum time is set: `min_up_time` for a unit that starts on, `min_down_time` for one that starts off. It has to be a whole number of steps. Leave it out otherwise, and the unit counts as having been in its state long enough. See [G-5](../../formulation/generators.md#g-5) and [G-8](../../formulation/generators.md#g-8).
+
+A `GeneratorFinalState` takes the `generator` and the `power` it ends the run with, in the same range, and within its available capacity at the last step. See [G-10](../../formulation/generators.md#g-10).
 
 ## Profiles
 
