@@ -57,7 +57,8 @@ RECORDED_EXAMPLE_OBJECTIVES = {
     "market_arbitrage": -68_680.0,
     # Re-recorded when the example prices equal to the value of consumption (70) became 72, removing a tie.
     "flexible_load_market": -78_840.0,
-    "ev_fleet_optimization": 5.21,
+    # Re-recorded when ev_2 and ev_3 in the example got V2G discharge, so the vans compete for the chargers.
+    "ev_fleet_optimization": 9.99,
     # Re-recorded when the CVaR example went from one 24-hour step to one hourly step.
     "cvar_market_risk_expected_profit": 18_666.67,
     "cvar_market_risk_penalized_cvar": 36_104.17,
