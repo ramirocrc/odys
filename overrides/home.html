@@ -1,6 +1,6 @@
 {#-
   Landing page (design "G · Orbit"). Used by docs/index.md via `template: home.html`.
-  Static content lives here; charts, code and example thumbnails are filled in by
+  Static content lives here; the hero's chart and code are filled in by
   assets/javascripts/home.js from assets/landing/data.json, which
   tools/docs/generate_landing_data.py writes from real Odys runs.
 -#}
@@ -49,10 +49,10 @@
         <div class="odys-window__tabs" role="tablist" aria-label="Optimization approach">
           <button type="button" role="tab" class="odys-tab" data-tab="deterministic" aria-selected="false"
             data-kicker="Deterministic" data-lead="Optimizes for a single scenario: your forecast."
-            data-rest="One price forecast in, one battery schedule out. It is the best plan only if tomorrow turns out exactly like the forecast.">deterministic.py</button>
+            data-rest="One price forecast in, one schedule out. It is the best plan only if tomorrow turns out exactly like the forecast.">deterministic.py</button>
           <button type="button" role="tab" class="odys-tab" data-tab="stochastic" aria-selected="true"
             data-kicker="Stochastic" data-lead="Optimizes for many scenarios at once."
-            data-rest="Twelve price scenarios in, one battery schedule out. Odys picks the schedule with the highest expected profit across all of them.">stochastic.py</button>
+            data-rest="Multiple price scenarios in, one schedule out. Odys picks the schedule with the highest expected profit across all of them.">stochastic.py</button>
         </div>
         <span class="odys-window__tag" data-tab-tag></span>
       </div>
@@ -67,14 +67,7 @@
         <div class="odys-code" data-code></div>
         <figure class="odys-chart">
           <div class="odys-chart__sticky">
-            <svg viewBox="0 0 600 560" role="img" aria-label="Price scenarios over a day, above the single battery schedule Odys commits to" data-chart></svg>
-            <div class="odys-outcome">
-              <div class="odys-outcome__figure">
-                <span class="odys-outcome__label">Expected profit across the 12 scenarios</span>
-                <span class="odys-outcome__value" data-outcome-value></span>
-              </div>
-              <span class="odys-outcome__verdict" data-outcome-verdict></span>
-            </div>
+            <svg viewBox="0 0 600 560" role="img" aria-label="Price scenarios over a day, above the single schedule Odys commits to" data-chart></svg>
           </div>
         </figure>
       </div>
@@ -90,140 +83,84 @@
     <div class="odys-builton__chips"><span>MIT licence</span><span>Python 3.11–3.14</span><span>Typed, validated inputs</span></div>
   </section>
 
-  <div class="odys-river">
+  <section class="odys-section">
+    <span class="odys-section__label">Planning problems</span>
+    <h2 class="odys-h2">What you can do with Odys.</h2>
+    <div class="odys-grid">
+      {% set problems = [
+        ("merit_order_dispatch", "Generators", "thermal", "Merit-order dispatch", "Merit-order dispatch of solar and gas against a fixed load."),
+        ("solar_storage", "Solar · storage", "solar", "Storing solar for the evening", "Shift midday solar output to later hours with a battery."),
+        ("make_or_buy", "Markets", "market", "Make or buy", "Run the plant or buy from the market, and sell its spare output when the price is high."),
+        ("demand_response", "Flexible load", "flex", "Industrial demand response", "Adjust industrial demand within bounds to follow market prices."),
+        ("depot_charging", "EVs · chargers", "ev", "Depot charging with V2G", "Schedule charging and V2G around trips and shared chargers."),
+        ("day_ahead_or_intraday", "Stochastic · CVaR", "stochastic", "Day-ahead or intraday", "Commit volume day-ahead or keep it for intraday, with a CVaR term."),
+      ] %}
+      {% for slug, tag, tone, title, text in problems %}
+      <a class="odys-card odys-problem{% if tone == 'stochastic' %} odys-card--accent{% endif %}" href="{{ 'examples/' | url }}{{ slug }}/">
+        <span class="odys-problem__tag odys-problem__tag--{{ tone }}">{{ tag }}</span>
+        <span class="odys-problem__title">{{ title }}</span>
+        <span class="odys-problem__text">{{ text }}</span>
+        <span class="odys-problem__more">Open example →</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
 
-    <section class="odys-chapter">
-      <div class="odys-chapter__rail odys-chapter__rail--violet" aria-hidden="true">
-        <span class="odys-chapter__node"><svg viewBox="0 0 24 24"><path d="M3 7h15v10H3zM18 10h3v4h-3"/></svg></span>
-        <span class="odys-chapter__line"></span>
-      </div>
-      <div class="odys-chapter__body">
-        <span class="odys-chapter__label">Components</span>
-        <h2 class="odys-h2">Assets and markets.</h2>
-        <div class="odys-assets">
-          {% set assets = [
-            ("Generator", "Thermal or renewable, with costs, ramps and availability.", "assets/generator/", "M13 2 4 14h7l-1 8 9-12h-7l1-8z"),
-            ("Fixed load", "Inflexible demand the system must always meet.", "assets/fixed_load/", "M3 10.5 12 3l9 7.5M5 9v12h14V9"),
-            ("Flexible load", "Demand that can be adjusted within absolute bounds.", "assets/flexible_load/", "M4 6h16M4 12h16M4 18h16M9 4v4M15 10v4M7 16v4"),
-            ("Stationary storage", "Batteries with efficiencies, SoC limits and self-discharge.", "assets/stationary_storage/", "M3 7h15v10H3zM18 10h3v4h-3M7 10v4M11 10v4"),
-            ("Electric vehicle", "Mobile batteries that leave on trips and come back.", "assets/electric_vehicle/", "M3 16v-4l2-5h14l2 5v4zM6 16v2M18 16v2M7 12h.01M17 12h.01"),
-            ("Charger", "Connects vehicles to the site, with power limits.", "assets/charger/", "M8 3v5M16 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"),
-            ("Market", "Buy, sell or both, with volume limits and stage-fixed bids.", "markets/energy_market/", "M3 20h18M6 16l4-5 3 3 6-7M15 7h4v4"),
-          ] %}
-          {% for name, text, page_path, icon in assets %}
-          <a class="odys-asset" href="{{ guide }}{{ page_path }}">
-            <svg class="odys-asset__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ icon }}"/></svg>
-            <span class="odys-asset__name">{{ name }}</span>
-            <span class="odys-asset__text">{{ text }}</span>
-            <span class="odys-asset__arrow" aria-hidden="true">→</span>
-          </a>
-          {% endfor %}
-        </div>
-      </div>
-    </section>
+  <section class="odys-section">
+    <span class="odys-section__label">Formulation and tooling</span>
+    <h2 class="odys-h2">Open about its math. Strict about its inputs.</h2>
+    <div class="odys-grid">
+      <article class="odys-card">
+        <h3>Documented formulation</h3>
+        <p>Every variable and constraint is written out, with the equation numbers the code uses.</p>
+        <a class="odys-card__link" href="{{ 'formulation/' | url }}">Read the formulation →</a>
+      </article>
+      {% set features = [
+        ("Validated before solving", "Assets, profiles and scenarios are checked when you build them, so a bad input fails with a clear message, not a strange result."),
+        ("Results as pandas", "Dispatch comes back as Series and DataFrames, ready for your reports and plots."),
+        ("Any solver", "HiGHS ships by default. Gurobi, CPLEX and SCIP are optional extras."),
+        ("Typed and tested", "Fully typed public API, checked by four type checkers and tested on Python 3.11 to 3.14."),
+        ("MIT licensed", "Use it in research or in production, and read every line of it on GitHub."),
+      ] %}
+      {% for title, text in features %}
+      <article class="odys-card">
+        <h3>{{ title }}</h3>
+        <p>{{ text }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
 
-    <section class="odys-chapter">
-      <div class="odys-chapter__rail odys-chapter__rail--fade" aria-hidden="true">
-        <span class="odys-chapter__node"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span>
-        <span class="odys-chapter__line"></span>
-      </div>
-      <div class="odys-chapter__body">
-        <span class="odys-chapter__label">Features</span>
-        <h2 class="odys-h2">Formulation and tooling.</h2>
-        <div class="odys-proof">
+  <section class="odys-section">
+    <span class="odys-section__label odys-section__label--violet">Components</span>
+    <h2 class="odys-h2">Assets and markets.</h2>
+    <div class="odys-assets">
+      {% set assets = [
+        ("Generator", "Thermal or renewable, with costs, ramps and availability.", "assets/generator/", "M13 2 4 14h7l-1 8 9-12h-7l1-8z"),
+        ("Fixed load", "Inflexible demand the system must always meet.", "assets/fixed_load/", "M3 10.5 12 3l9 7.5M5 9v12h14V9"),
+        ("Flexible load", "Demand that can be adjusted within absolute bounds.", "assets/flexible_load/", "M4 6h16M4 12h16M4 18h16M9 4v4M15 10v4M7 16v4"),
+        ("Stationary storage", "Batteries with efficiencies, SoC limits and self-discharge.", "assets/stationary_storage/", "M3 7h15v10H3zM18 10h3v4h-3M7 10v4M11 10v4"),
+        ("Electric vehicle", "Mobile batteries that leave on trips and come back.", "assets/electric_vehicle/", "M3 16v-4l2-5h14l2 5v4zM6 16v2M18 16v2M7 12h.01M17 12h.01"),
+        ("Charger", "Connects vehicles to the site, with power limits.", "assets/charger/", "M8 3v5M16 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"),
+        ("Market", "Buy, sell or both, with volume limits and stage-fixed bids.", "markets/energy_market/", "M3 20h18M6 16l4-5 3 3 6-7M15 7h4v4"),
+      ] %}
+      {% for name, text, page_path, icon in assets %}
+      <a class="odys-asset" href="{{ guide }}{{ page_path }}">
+        <svg class="odys-asset__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ icon }}"/></svg>
+        <span class="odys-asset__name">{{ name }}</span>
+        <span class="odys-asset__text">{{ text }}</span>
+        <span class="odys-asset__arrow" aria-hidden="true">→</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
 
-          <article class="odys-card odys-proof__a">
-            <h3>Stochastic and risk-averse objectives</h3>
-            <p>Maximize expected profit over the scenarios, or add a CVaR term to weight the tail. Results from the Day-Ahead or Intraday example.</p>
-            <svg viewBox="0 0 300 180" role="img" aria-label="Expected versus worst-case profit with and without a CVaR term" data-frontier></svg>
-            <ul class="odys-legend" data-frontier-legend></ul>
-          </article>
+  <section class="odys-closing">
+    <h2 class="odys-h2">Plan your first portfolio.</h2>
+    <p class="odys-closing__lead">The User Guide starts from one asset and one market, and takes you to scenarios and risk.</p>
+    <a class="odys-action odys-action--docs" href="{{ guide }}model/first_model/">Start the User Guide</a>
+  </section>
 
-          <article class="odys-card odys-proof__b">
-            <h3>Solver-agnostic</h3>
-            <p>HiGHS is installed by default. Gurobi, CPLEX and SCIP are optional extras.</p>
-            <div class="odys-chips"><span class="odys-chip odys-chip--on">HiGHS</span><span class="odys-chip">Gurobi</span><span class="odys-chip">CPLEX</span><span class="odys-chip">SCIP</span></div>
-            <pre class="odys-pre"><span class="tk-v">config</span> <span class="tk-p">=</span> <span class="tk-c">SolverConfig</span><span class="tk-p">(</span>
-    <span class="tk-k">solver_name</span><span class="tk-p">=</span><span class="tk-c">SolverName</span><span class="tk-p">.</span><span class="tk-n">GUROBI</span><span class="tk-p">,</span>
-<span class="tk-p">)</span>
-<span class="tk-v">system</span><span class="tk-p">.</span><span class="tk-v">optimize</span><span class="tk-p">(</span><span class="tk-v">config</span><span class="tk-p">)</span></pre>
-          </article>
-
-          <article class="odys-card odys-proof__c">
-            <h3>Input validation</h3>
-            <p>Assets, profiles and scenarios are Pydantic models, validated before the model is built.</p>
-            <pre class="odys-pre odys-pre--wrap"><span class="tk-p">&gt;&gt;&gt;</span> <span class="tk-c">Generator</span><span class="tk-p">(</span>
-<span class="tk-p">...</span>     <span class="tk-k">name</span><span class="tk-p">=</span><span class="tk-s">"gas"</span><span class="tk-p">,</span>
-<span class="tk-p">...</span>     <span class="tk-k">nominal_power</span><span class="tk-p">=</span><span class="tk-n">-50.0</span><span class="tk-p">,</span>
-<span class="tk-p">...</span>     <span class="tk-k">variable_cost</span><span class="tk-p">=</span><span class="tk-n">40.0</span><span class="tk-p">,</span>
-<span class="tk-p">... )</span>
-<span class="tk-err">ValidationError</span><span class="tk-p">:</span> <span data-validation-error></span></pre>
-          </article>
-
-          <article class="odys-card odys-proof__d">
-            <h3>Documented formulation</h3>
-            <p>Every variable and constraint is documented. Storage state of charge:</p>
-            <div class="odys-math">
-              <span>soc<sub>k,s,t</sub> = soc<sub>k,s,t−1</sub>(1 − δ<sub>k</sub>Δt)</span><span>+ η<sup>ch</sup><sub>k</sub></span>
-              <span class="odys-frac"><span>Δt</span><span>E<sub>k</sub></span></span>
-              <span>p<sup>ch</sup><sub>k,s,t</sub> −</span>
-              <span class="odys-frac"><span>Δt</span><span>η<sup>dis</sup><sub>k</sub>E<sub>k</sub></span></span>
-              <span>p<sup>dis</sup><sub>k,s,t</sub></span>
-            </div>
-            <a class="odys-link" href="{{ 'formulation/batteries/#b-3' | url }}">See B-3 and the full formulation →</a>
-          </article>
-
-          <article class="odys-card odys-proof__e">
-            <h3>Results as pandas</h3>
-            <p>Dispatch results are returned as pandas Series and DataFrames.</p>
-            <pre class="odys-pre"><span class="tk-p">&gt;&gt;&gt;</span> <span class="tk-v">result</span><span class="tk-p">.</span><span class="tk-v">generators</span><span class="tk-p">.</span><span class="tk-v">power</span>
-<span data-pandas-output></span></pre>
-          </article>
-
-        </div>
-      </div>
-    </section>
-
-    <section class="odys-chapter">
-      <div class="odys-chapter__rail odys-chapter__rail--mint" aria-hidden="true">
-        <span class="odys-chapter__node"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16l4-5 3 3 6-7"/></svg></span>
-      </div>
-      <div class="odys-chapter__body odys-chapter__body--last">
-        <span class="odys-chapter__label odys-chapter__label--mint">Examples</span>
-        <div class="odys-examples__head">
-          <h2 class="odys-h2">Worked examples. <span>From deterministic dispatch to CVaR.</span></h2>
-          <div class="odys-examples__controls">
-            <span class="odys-examples__range" data-carousel-range></span>
-            <button type="button" class="odys-round" data-carousel-prev aria-label="Previous examples"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-            <button type="button" class="odys-round" data-carousel-next aria-label="Next examples"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-          </div>
-        </div>
-        <div class="odys-examples" data-carousel>
-          {% set examples = [
-            ("merit_order_dispatch", "Deterministic · generators", "Merit-order dispatch", "Merit-order dispatch of solar and gas against a fixed load."),
-            ("solar_storage", "Deterministic · storage", "Storing solar for the evening", "Shift midday solar output to later hours with a battery."),
-            ("make_or_buy", "Deterministic · markets", "Make or buy", "Run the plant or buy from the market, and sell its spare output when the price is high."),
-            ("demand_response", "Deterministic · demand response", "Industrial demand response", "Adjust industrial demand within bounds to follow market prices."),
-            ("depot_charging", "Deterministic · EVs and chargers", "Depot charging with V2G", "Schedule charging and V2G around trips and shared chargers."),
-            ("day_ahead_or_intraday", "Stochastic · CVaR", "Day-ahead or intraday", "Commit volume day-ahead or keep it for intraday, with a CVaR term."),
-          ] %}
-          {% for slug, who, title, text in examples %}
-          <a class="odys-card odys-example" href="{{ 'examples/' | url }}{{ slug }}/">
-            <svg class="odys-example__thumb" viewBox="0 0 300 150" aria-hidden="true" data-thumb="{{ slug }}"></svg>
-            <span class="odys-example__body">
-              <span class="odys-example__who">{{ who }}</span>
-              <span class="odys-example__title">{{ title }}</span>
-              <span class="odys-example__text">{{ text }}</span>
-            </span>
-          </a>
-          {% endfor %}
-        </div>
-        <div class="odys-examples__dots" data-carousel-dots></div>
-        <span class="odys-examples__hint">Swipe for all 6 examples →</span>
-      </div>
-    </section>
-
-  </div>
 </div>
 {% endblock %}
 

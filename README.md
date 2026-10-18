@@ -13,13 +13,7 @@
 
 Optimize energy portfolios under uncertainty.
 
----
-
-**[Documentation](https://ramirocrc.github.io/odys/)**
-
-**[Examples](https://ramirocrc.github.io/odys/examples/)**
-
----
+**[Documentation](https://ramirocrc.github.io/odys/)** · **[User Guide](https://ramirocrc.github.io/odys/user_guide/model/first_model/)** · **[Examples](https://ramirocrc.github.io/odys/examples/)** · **[Formulation](https://ramirocrc.github.io/odys/formulation/)**
 
 Odys is a free, open-source Python framework for the short-term operation of energy asset portfolios across electricity markets. Generators, storage, electric vehicles, chargers and loads are scheduled against one or more markets, with uncertainty represented by probability-weighted scenarios.
 
@@ -27,7 +21,9 @@ Features:
 - **Stochastic optimization**: maximize expected profit over a set of scenarios, with optional stage-fixed (non-anticipative) market positions and a CVaR risk term.
 - **Solver choice**: HiGHS by default; Gurobi, CPLEX and SCIP as optional extras. Models are built with [linopy](https://github.com/PyPSA/linopy).
 - **Validated inputs**: assets, profiles and scenarios are Pydantic models, checked before the model is built.
-- **Documented formulation**: every variable, constraint and objective term is written out in the documentation.
+- **Results as pandas**: dispatch comes back as Series and DataFrames.
+- **Documented formulation**: every variable, constraint and objective term is [written out](https://ramirocrc.github.io/odys/formulation/).
+- **Typed and tested**: fully typed public API, tested on Python 3.11 to 3.14.
 
 Scope: Odys models a portfolio on a single bus over a short horizon. It does not model networks, power flow or capacity expansion; for those, see [PyPSA](https://pypsa.org/) or [Calliope](https://calliope.readthedocs.io/).
 
@@ -37,7 +33,13 @@ Scope: Odys models a portfolio on a single bus over a short horizon. It does not
 pip install odys
 ```
 
-Requires Python 3.11+. For commercial solvers (Gurobi, CPLEX, SCIP), see the [solver docs](https://ramirocrc.github.io/odys/user_guide/solving/solvers/).
+Requires Python 3.11+. HiGHS is included. Gurobi, CPLEX and SCIP are optional extras:
+
+```console
+pip install "odys[gurobi]"
+```
+
+See the [solver docs](https://ramirocrc.github.io/odys/user_guide/solving/solvers/) for choosing a solver and passing options.
 
 ## Quick example
 
@@ -46,7 +48,7 @@ Define your assets, describe the scenario, and call `.optimize()`:
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, LoadProfile, EnergySystem, FixedLoad, Generator, Scenario
+from odys import AssetPortfolio, EnergySystem, FixedLoad, Generator, LoadProfile, Scenario
 
 generator = Generator(name="gen", nominal_power=100.0, variable_cost=50.0)
 load = FixedLoad(name="demand")
@@ -77,8 +79,8 @@ See the [documentation](https://ramirocrc.github.io/odys/) for the full workflow
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+See [CONTRIBUTING.md](https://github.com/ramirocrc/odys/blob/main/CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/ramirocrc/odys/blob/main/LICENSE)
