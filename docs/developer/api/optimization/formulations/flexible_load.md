@@ -4,7 +4,7 @@ icon: fontawesome/solid/sliders
 
 # `odys.optimization.formulations.flexible_load`
 
-The flexible-load formulation: the load adjustment variable $\Delta d_{l,t,s}$, its bounds, the load's power injection and the value of consumption in the profit.
+The flexible-load formulation: the load adjustment variable, its bounds, the load's power injection and the value of consumption in the profit.
 
 The variables, constraints and objective terms are written out in the [Flexible loads](../../../../formulation/flexible_loads.md) formulation page.
 

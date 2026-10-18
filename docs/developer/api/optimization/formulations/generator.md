@@ -4,7 +4,7 @@ icon: fontawesome/solid/bolt
 
 # `odys.optimization.formulations.generator`
 
-The generator formulation: power, status, startup and shutdown variables, their constraints, the generators' power injection $\sum_g p_{g,t,s}$ and their cost in the profit.
+The generator formulation: power, status, startup and shutdown variables, their constraints, the generators' power injection and their cost in the profit.
 
 The variables, constraints and objective terms are written out in the [Generators](../../../../formulation/generators.md) formulation page.
 
