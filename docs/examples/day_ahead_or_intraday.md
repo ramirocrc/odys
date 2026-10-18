@@ -2,7 +2,7 @@
 icon: fontawesome/solid/shield
 ---
 
-# CVaR Market Risk
+# Day-Ahead or Intraday
 
 ## Problem Description
 
@@ -18,7 +18,7 @@ flowchart LR
     style Sell fill:none
 ```
 
-**Source**: [`examples/cvar_market_risk.py`](https://github.com/ramirocrc/odys/blob/main/examples/cvar_market_risk.py). The script wraps the steps below in `run_cvar_market_risk()`, which returns both results.
+**Source**: [`examples/day_ahead_or_intraday.py`](https://github.com/ramirocrc/odys/blob/main/examples/day_ahead_or_intraday.py). The script wraps the steps below in `run_day_ahead_or_intraday()`, which returns both results.
 
 ## Walkthrough
 
@@ -119,7 +119,7 @@ result_penalized_cvar = energy_system_penalized_cvar.optimize()
 
 The chart shows what the CCGT sells on each market, in each scenario, for both runs:
 
-<iframe src="../assets/plots/cvar_market_risk.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/day_ahead_or_intraday.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 - **Expected profit only:** all 100 MW goes to intraday, in every scenario. `result_max_expected_profit.objective_value` is 8,667.
 - **With CVaR:** all 100 MW goes day-ahead. The day-ahead volume is the same in every scenario because the market is stage-fixed. `result_penalized_cvar.objective_value` is 15,167: the expected profit plus the CVaR, each with a weight of 1.
@@ -136,4 +136,4 @@ Intraday pays more on average, 206.67 against 200 $/MWh, so the first run sells 
 
 ## Discussion
 
-Maximizing expected profit bets everything on the market with the best average, however badly it can go. Adding CVaR makes the optimizer pay for the worst outcomes, so it commits to the steadier market. Here the two markets move together, and day-ahead pays more than intraday in the worst scenario whatever the split, so the answer is all or nothing: with a CVaR weight above 0.16, everything goes day-ahead; below it, everything goes intraday. A mix would only pay off if the worst scenario changed with the split. The [EV Fleet Optimization](ev_fleet_optimization.md) example returns to a single future, with vehicles, trips and chargers.
+Maximizing expected profit bets everything on the market with the best average, however badly it can go. Adding CVaR makes the optimizer pay for the worst outcomes, so it commits to the steadier market. Here the two markets move together, and day-ahead pays more than intraday in the worst scenario whatever the split, so the answer is all or nothing: with a CVaR weight above 0.16, everything goes day-ahead; below it, everything goes intraday. A mix would only pay off if the worst scenario changed with the split. The [Depot Charging with V2G](depot_charging.md) example returns to a single future, with vehicles, trips and chargers.

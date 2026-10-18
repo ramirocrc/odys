@@ -1,4 +1,4 @@
-"""Basic dispatch optimization.
+"""Merit-order dispatch of solar and gas.
 
 This example shows the simplest possible Odys workflow: use a cheap renewable
 generator first, then fill the remaining demand with a more expensive thermal
@@ -56,8 +56,8 @@ from odys import (
 logger = logging.getLogger(__name__)
 
 
-def run_basic_dispatch() -> OptimalDispatchResults:
-    """Run the basic dispatch example and return the optimization results."""
+def run_merit_order_dispatch() -> OptimalDispatchResults:
+    """Run the merit-order dispatch example and return the optimization results."""
     ccgt = Generator(
         name="ccgt",
         nominal_power=100,
@@ -95,7 +95,7 @@ def run_basic_dispatch() -> OptimalDispatchResults:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logging.getLogger("linopy").setLevel(logging.WARNING)
-    result = run_basic_dispatch()
+    result = run_merit_order_dispatch()
     logger.info("Generators optimal dispatch")
     for gen_dispatch in result.generators:
         logger.info(gen_dispatch.to_dataframe())

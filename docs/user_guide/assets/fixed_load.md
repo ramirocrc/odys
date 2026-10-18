@@ -53,7 +53,7 @@ The profile needs one value per step of the run. Every MW of it has to be served
 
 ## Results
 
-A fixed load has no decisions, so it has no results container: its demand is exactly the `LoadProfile` you gave. What the optimizer decided shows up in the assets and markets that serve it. The [Basic Dispatch example](../../examples/basic_dispatch.md) serves a fixed load with solar and a CCGT.
+A fixed load has no decisions, so it has no results container: its demand is exactly the `LoadProfile` you gave. What the optimizer decided shows up in the assets and markets that serve it. The [Merit-Order Dispatch example](../../examples/merit_order_dispatch.md) serves a fixed load with solar and a CCGT.
 
 ## How it's modelled
 

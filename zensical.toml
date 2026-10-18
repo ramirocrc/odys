@@ -58,12 +58,12 @@ nav = [
   ] },
   { "Examples" = [
     { "Overview" = "examples/index.md" },
-    { "Basic Dispatch" = "examples/basic_dispatch.md" },
-    { "Battery Dispatch" = "examples/battery_dispatch.md" },
-    { "Flexible Load Market" = "examples/flexible_load_market.md" },
+    { "Merit-Order Dispatch" = "examples/merit_order_dispatch.md" },
+    { "Storing Solar for the Evening" = "examples/solar_storage.md" },
+    { "Industrial Demand Response" = "examples/demand_response.md" },
     { "Make or Buy" = "examples/make_or_buy.md" },
-    { "CVaR Market Risk" = "examples/cvar_market_risk.md" },
-    { "EV Fleet" = "examples/ev_fleet_optimization.md" },
+    { "Day-Ahead or Intraday" = "examples/day_ahead_or_intraday.md" },
+    { "Depot Charging with V2G" = "examples/depot_charging.md" },
   ] },
   { "Developer Reference" = [
     { "Overview" = "developer/index.md" },

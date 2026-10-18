@@ -110,7 +110,7 @@ Implemented in [`odys.optimization.formulations.generator`](../developer/api/opt
 
 ## Example page template
 
-An example solves one problem with one script in `examples/`. It explains the problem and its results; the concepts it uses are linked to the User Guide and the math to the formulation (see §10 in [SKILL.md](SKILL.md)).
+An example solves one problem with one script in `examples/`. Name it after the planning problem, in the reader's terms (Merit-Order Dispatch, Make or Buy), never after an odys class or a technique (not Battery Dispatch or CVaR Market Risk). The script, the page and its `run_...()` function share one slug (`examples/make_or_buy.py`, `docs/examples/make_or_buy.md`, `run_make_or_buy()`). It explains the problem and its results; the concepts it uses are linked to the User Guide and the math to the formulation (see §10 in [SKILL.md](SKILL.md)).
 
 ````markdown
 ---
@@ -129,7 +129,7 @@ flowchart LR
     Bus --> Load(["Load<br/>70 MW"])
 ```
 
-**Source**: [`examples/battery_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/battery_dispatch.py)
+**Source**: [`examples/solar_storage.py`](https://github.com/ramirocrc/odys/blob/main/examples/solar_storage.py)
 
 ## Walkthrough
 

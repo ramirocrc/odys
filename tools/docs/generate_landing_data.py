@@ -41,11 +41,11 @@ SHOWN_END = "# --8<-- [end:shown]"
 TABS = ("deterministic", "stochastic")
 
 # Examples and snippets are standalone scripts, not packages, so they are loaded by path.
-_basic = runpy.run_path(str(EXAMPLES_DIR / "basic_dispatch.py"))
-_battery = runpy.run_path(str(EXAMPLES_DIR / "battery_dispatch.py"))
-_cvar = runpy.run_path(str(EXAMPLES_DIR / "cvar_market_risk.py"))
-_ev_fleet = runpy.run_path(str(EXAMPLES_DIR / "ev_fleet_optimization.py"))
-_flexible = runpy.run_path(str(EXAMPLES_DIR / "flexible_load_market.py"))
+_merit_order_dispatch = runpy.run_path(str(EXAMPLES_DIR / "merit_order_dispatch.py"))
+_solar_storage = runpy.run_path(str(EXAMPLES_DIR / "solar_storage.py"))
+_day_ahead_or_intraday = runpy.run_path(str(EXAMPLES_DIR / "day_ahead_or_intraday.py"))
+_depot_charging = runpy.run_path(str(EXAMPLES_DIR / "depot_charging.py"))
+_demand_response = runpy.run_path(str(EXAMPLES_DIR / "demand_response.py"))
 _make_or_buy = runpy.run_path(str(EXAMPLES_DIR / "make_or_buy.py"))
 _snippets = {tab: runpy.run_path(str(SNIPPETS_DIR / f"{tab}.py")) for tab in TABS}
 price_scenarios: list[list[float]] = _snippets["stochastic"]["price_scenarios"]
@@ -142,15 +142,15 @@ def _hero() -> dict[str, object]:
 def _cvar_frontier() -> list[dict[str, float]]:
     """Expected and worst-case profit of the CVaR example, without and with the CVaR term."""
     points = []
-    for weight, result in zip((0, 1), _cvar["run_cvar_market_risk"](), strict=True):
+    for weight, result in zip((0, 1), _day_ahead_or_intraday["run_day_ahead_or_intraday"](), strict=True):
         volumes = result.markets.to_dataframe()["sell_volume"]
-        scenario_prices: dict[str, dict[str, float]] = _cvar["SCENARIO_PRICES"]
+        scenario_prices: dict[str, dict[str, float]] = _day_ahead_or_intraday["SCENARIO_PRICES"]
         generation = float(result.generators.power.sum()) / len(scenario_prices)
         profits = []
         for scenario, prices in scenario_prices.items():
             sold = volumes.xs(scenario, level="scenario").groupby(level="market").sum()
             revenue = sum(price * float(sold[market]) for market, price in prices.items())
-            profits.append(revenue - _cvar["CCGT_VARIABLE_COST"] * generation)
+            profits.append(revenue - _day_ahead_or_intraday["CCGT_VARIABLE_COST"] * generation)
         points.append({"cvar_weight": weight, "expected": round(float(np.mean(profits))), "worst": round(min(profits))})
     return points
 
@@ -184,23 +184,23 @@ def _series(values: object) -> list[float]:
 
 def _example_thumbnails() -> dict[str, dict[str, object]]:
     """Small real series for each example card: `lines` are drawn as paths, `bars` as columns."""
-    basic = _basic["run_basic_dispatch"]().generators.power
-    battery = _hourly(_battery["run_battery_dispatch"]().stationary_storages.net_power)
+    basic = _merit_order_dispatch["run_merit_order_dispatch"]().generators.power
+    battery = _hourly(_solar_storage["run_solar_storage"]().stationary_storages.net_power)
     make_or_buy = _make_or_buy["run_make_or_buy"]()
     make_or_buy_purchases = _hourly(make_or_buy.markets.to_dataframe()["buy_volume"])
-    flexible_frame = _flexible["run_flexible_load_market"]().flexible_loads.to_dataframe()
+    flexible_frame = _demand_response["run_demand_response"]().flexible_loads.to_dataframe()
     flexible_actual = _hourly(flexible_frame["actual_load"])
     flexible_baseline = flexible_actual - _hourly(flexible_frame["load_adjustment"])
-    ev_charging = _hourly(_ev_fleet["run_ev_fleet_optimization"]().electric_vehicles.net_power)
+    ev_charging = _hourly(_depot_charging["run_depot_charging"]().electric_vehicles.net_power)
     return {
-        "basic_dispatch": {
+        "merit_order_dispatch": {
             "lines": [
                 {"values": _series(_hourly(basic, level="generator", key="solar_pv")), "tone": "accent"},
                 {"values": _series(_hourly(basic, level="generator", key="ccgt")), "tone": "primary"},
             ],
         },
-        "battery_dispatch": {
-            "lines": [{"values": _series(_battery["SOLAR_PROFILE"]), "tone": "primary"}],
+        "solar_storage": {
+            "lines": [{"values": _series(_solar_storage["SOLAR_PROFILE"]), "tone": "primary"}],
             "bars": _series(-battery),
         },
         "make_or_buy": {
@@ -209,17 +209,17 @@ def _example_thumbnails() -> dict[str, dict[str, object]]:
                 {"values": _series(make_or_buy_purchases.abs()), "tone": "accent"},
             ],
         },
-        "flexible_load_market": {
+        "demand_response": {
             "lines": [
                 {"values": _series(flexible_baseline), "tone": "muted"},
                 {"values": _series(flexible_actual), "tone": "accent"},
             ],
         },
-        "ev_fleet_optimization": {
-            "lines": [{"values": _series(_ev_fleet["MARKET_PRICES"]), "tone": "primary"}],
+        "depot_charging": {
+            "lines": [{"values": _series(_depot_charging["MARKET_PRICES"]), "tone": "primary"}],
             "bars": _series(ev_charging),
         },
-        "cvar_market_risk": {"ranges": _cvar_frontier()},
+        "day_ahead_or_intraday": {"ranges": _cvar_frontier()},
     }
 
 

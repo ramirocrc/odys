@@ -179,7 +179,7 @@ Every row has a single 1: the charger serves one van at a time. `van_2` gets it 
 - `assignment`: 1 when a vehicle is connected to a charger, indexed by time, charger and vehicle. The dataframe has one `assignment[...]` column per vehicle.
 - `power`: the charging power drawn through each charger, in MW. It counts charging only: what a vehicle discharges through the charger (V2G) is in that vehicle's `net_power`, not here. That's why `power` is 0 at steps 3, 4 and 8 to 11: the connected van feeds power back then, as its falling state of charge shows.
 
-The [EV Fleet example](../../examples/ev_fleet_optimization.md) runs three vans and two chargers over a full day.
+The [Depot Charging with V2G example](../../examples/depot_charging.md) runs three vans and two chargers over a full day.
 
 ## How it's modelled
 

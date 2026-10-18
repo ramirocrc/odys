@@ -2,11 +2,11 @@
 icon: fontawesome/solid/battery-three-quarters
 ---
 
-# Battery Dispatch
+# Storing Solar for the Evening
 
 ## Problem Description
 
-The site of [Basic Dispatch](basic_dispatch.md) wastes 275 MWh of solar at midday and burns gas all evening. This example adds a 300 MWh battery that can charge or discharge at up to 200 MW, 95 % efficient each way, starting and ending the day empty. The question is how much of the midday surplus is worth storing, and how much gas it saves in the evening.
+The site of [Merit-Order Dispatch](merit_order_dispatch.md) wastes 275 MWh of solar at midday and burns gas all evening. This example adds a 300 MWh battery that can charge or discharge at up to 200 MW, 95 % efficient each way, starting and ending the day empty. The question is how much of the midday surplus is worth storing, and how much gas it saves in the evening.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
@@ -22,13 +22,13 @@ flowchart LR
     style Load fill:none
 ```
 
-**Source**: [`examples/battery_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/battery_dispatch.py). The script wraps the steps below in `run_battery_dispatch()`, which returns the results.
+**Source**: [`examples/solar_storage.py`](https://github.com/ramirocrc/odys/blob/main/examples/solar_storage.py). The script wraps the steps below in `run_solar_storage()`, which returns the results.
 
 ## Walkthrough
 
 ### 1. Define the assets
 
-The two [generators](../user_guide/assets/generator.md) and the [fixed load](../user_guide/assets/fixed_load.md) of Basic Dispatch, plus a [stationary storage](../user_guide/assets/stationary_storage.md) holding a [battery](../user_guide/assets/battery.md). Its [efficiencies](../user_guide/assets/battery.md#efficiency) mean that of every MWh stored, about 0.9 MWh comes back:
+The two [generators](../user_guide/assets/generator.md) and the [fixed load](../user_guide/assets/fixed_load.md) of Merit-Order Dispatch, plus a [stationary storage](../user_guide/assets/stationary_storage.md) holding a [battery](../user_guide/assets/battery.md). Its [efficiencies](../user_guide/assets/battery.md#efficiency) mean that of every MWh stored, about 0.9 MWh comes back:
 
 ```python
 from datetime import timedelta
@@ -76,7 +76,7 @@ portfolio = AssetPortfolio([ccgt, solar_pv, load, battery])
 
 ### 2. Describe the day
 
-The same day as in Basic Dispatch: the solar farm's [available capacity](../user_guide/model/scenario.md#each-one-is-a-profile) follows the sun, and the load is 70 MW throughout. The battery takes no profile:
+The same day as in Merit-Order Dispatch: the solar farm's [available capacity](../user_guide/model/scenario.md#each-one-is-a-profile) follows the sun, and the load is 70 MW throughout. The battery takes no profile:
 
 ```python
 SOLAR_PROFILE: list[float] = [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0]
@@ -111,9 +111,9 @@ result = energy_system.optimize()
 
 The top chart shows the dispatch, with the battery's discharge as positive bars and its charging as negative ones. The bottom chart shows its state of charge:
 
-<iframe src="../assets/plots/battery_dispatch.html" style="width:100%; height:1000px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/solar_storage.html" style="width:100%; height:1000px; border:none;" loading="lazy"></iframe>
 
-- **Steps 0 to 8:** the battery is empty and stays so. The CCGT and the rising sun serve the load, as in Basic Dispatch. Charging from the CCGT would only lose energy, since gas costs the same at every hour.
+- **Steps 0 to 8:** the battery is empty and stays so. The CCGT and the rising sun serve the load, as in Merit-Order Dispatch. Charging from the CCGT would only lose energy, since gas costs the same at every hour.
 - **Steps 9 to 15:** solar exceeds the load, and the battery stores all of the surplus, up to 55 MW at step 12. It fills to 87 % of its capacity, and no solar is curtailed.
 - **Steps 16 to 23:** the battery returns what it stored, and the CCGT covers the rest of the load until the battery is empty again at the end of the day.
 
@@ -121,4 +121,4 @@ The battery stores 275 MWh and gives back 248 MWh; the other 27 MWh is lost to i
 
 ## Discussion
 
-Storage links one hour to the next: the battery moves the midday surplus into the evening, and the losses are worth paying because the energy it replaces costs 50 $/MWh. Since the CCGT costs the same at every hour, it doesn't matter when in the evening the battery discharges. The [Flexible Load Market](flexible_load_market.md) example replaces the generators with a market whose price changes through the day, and a load that adjusts its consumption to it.
+Storage links one hour to the next: the battery moves the midday surplus into the evening, and the losses are worth paying because the energy it replaces costs 50 $/MWh. Since the CCGT costs the same at every hour, it doesn't matter when in the evening the battery discharges. The [Industrial Demand Response](demand_response.md) example replaces the generators with a market whose price changes through the day, and a load that adjusts its consumption to it.

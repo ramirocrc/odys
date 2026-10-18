@@ -62,8 +62,8 @@ SCENARIO_PRICES: dict[str, dict[str, float]] = {
 }
 
 
-def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
-    """Run the CVaR market risk example and return both optimization results."""
+def run_day_ahead_or_intraday() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
+    """Run the day-ahead or intraday example and return both optimization results."""
     ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=CCGT_VARIABLE_COST)
 
     portfolio = AssetPortfolio([ccgt])
@@ -123,7 +123,7 @@ def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResul
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logging.getLogger("linopy").setLevel(logging.WARNING)
-    result_max_expected_profit, result_penalized_cvar = run_cvar_market_risk()
+    result_max_expected_profit, result_penalized_cvar = run_day_ahead_or_intraday()
     logger.info("optimal solution for max expected profit")
     logger.info(result_max_expected_profit.markets.sell_volume)
 

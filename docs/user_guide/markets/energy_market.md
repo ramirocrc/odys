@@ -179,7 +179,7 @@ The market's results are in `result.markets`, one `pandas.Series` per series, in
 - `buy_volume` and `sell_volume`: the power bought and sold, in MW.
 - `net_volume`: sell minus buy, so negative when the site buys.
 
-The [Make or Buy example](../../examples/make_or_buy.md) buys from a market instead of running a CCGT, and the [CVaR Market Risk example](../../examples/cvar_market_risk.md) trades under price uncertainty.
+The [Make or Buy example](../../examples/make_or_buy.md) buys from a market instead of running a CCGT, and the [Day-Ahead or Intraday example](../../examples/day_ahead_or_intraday.md) trades under price uncertainty.
 
 ## How it's modelled
 
