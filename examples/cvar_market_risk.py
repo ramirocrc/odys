@@ -6,14 +6,15 @@ once bad outcomes are weighed in, a commitment to the steadier market wins.
 
 ## Assets
 
-- **ccgt**: 100 MW gas turbine, variable cost of 20 $/MWh.
+- **ccgt**: 100 MW gas turbine, variable cost of 120 $/MWh.
 
 ## Markets
 
 - **day_ahead**: Sell-only market (SDAC), bid before the scenario is known
-  (stage_fixed=True). Prices by scenario: 190, 200, 210 $/MWh.
+  (stage_fixed=True). Prices by scenario: 210 (high), 200 (mid), 190 (low) $/MWh.
 - **intraday**: Sell-only market (SIDC), traded once the scenario is known.
-  Prices by scenario: 280 (high), 200 (mid), 140 (low) $/MWh.
+  Prices by scenario: 280 (high), 200 (mid), 140 (low) $/MWh. Both markets move
+  together; intraday moves further.
 
 ## Problem
 
@@ -24,14 +25,14 @@ ccgt's 100 MW between the two markets, in two runs:
 
 ## Expected Results
 
-| Allocation (day-ahead / intraday) | high   | mid    | low    | Expected | CVaR   |
-|-----------------------------------|--------|--------|--------|----------|--------|
-| 100 / 0                           | 17,000 | 18,000 | 19,000 | 18,000   | 17,167 |
-| 0 / 100                           | 26,000 | 18,000 | 12,000 | 18,667   | 13,000 |
-| 87.5 / 12.5                       | 18,125 | 18,000 | 18,125 | 18,083   | 18,021 |
+| Allocation (day-ahead / intraday) | high   | mid   | low   | Expected | CVaR  |
+|-----------------------------------|--------|-------|-------|----------|-------|
+| 100 / 0                           | 9,000  | 8,000 | 7,000 | 8,000    | 7,167 |
+| 0 / 100                           | 16,000 | 8,000 | 2,000 | 8,667    | 3,000 |
+| 50 / 50                           | 12,500 | 8,000 | 4,500 | 8,333    | 5,083 |
 
-1. Expected profit only: 100 MW intraday, objective 18,667.
-2. With CVaR: 87.5 MW day-ahead and 12.5 MW intraday, objective 36,104.
+1. Expected profit only: 100 MW intraday, objective 8,667.
+2. With CVaR: 100 MW day-ahead, objective 15,167.
 """
 
 import logging
@@ -53,11 +54,11 @@ from odys import (
 
 logger = logging.getLogger(__name__)
 
-CCGT_VARIABLE_COST = 20.0
+CCGT_VARIABLE_COST = 120.0
 SCENARIO_PRICES: dict[str, dict[str, float]] = {
-    "high": {"day_ahead": 190, "intraday": 280},
+    "high": {"day_ahead": 210, "intraday": 280},
     "mid": {"day_ahead": 200, "intraday": 200},
-    "low": {"day_ahead": 210, "intraday": 140},
+    "low": {"day_ahead": 190, "intraday": 140},
 }
 
 

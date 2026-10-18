@@ -10,7 +10,7 @@ It starts from a base profile, and at every step the optimizer decides how far t
 
 ## Basic usage
 
-Let's add the flexible process of the [running example](../index.md#the-running-example): it normally draws 30 MW, can run 20 MW higher or 10 MW lower, and each MWh it consumes is worth 60 $/MWh to the site.
+Let's add a flexible process to the site: it normally draws 30 MW, can run 20 MW higher or 10 MW lower, and each MWh it consumes is worth 60 $/MWh to the site.
 
 ```python
 from odys import FlexibleLoad
@@ -43,7 +43,7 @@ process = FlexibleLoad(
 - When it's above what one more MWh costs, from your generators or the market, the optimizer raises the load.
 - When it's below, the optimizer lowers the load, and uses or sells that power elsewhere.
 
-The process of the running example is worth 60 $/MWh. When the CCGT at 50 $/MWh is the most expensive supply running, the process runs as high as it can. With `value_of_consumption=0.0`, cutting the load costs nothing, so the optimizer cuts it whenever power costs anything at all.
+The process above is worth 60 $/MWh. When the CCGT at 50 $/MWh is the most expensive supply running, the process runs as high as it can. With `value_of_consumption=0.0`, cutting the load costs nothing, so the optimizer cuts it whenever power costs anything at all.
 
 The cost of the extra power never appears on the load itself: it shows up in the generators and markets that supply it. See [the objective contribution](../../formulation/flexible_loads.md#objective-contribution).
 

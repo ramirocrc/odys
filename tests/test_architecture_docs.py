@@ -1,7 +1,7 @@
 """Tests that the hand-written diagrams in the docs stay true to the code in src/odys.
 
-Covers the class diagrams of docs/developer/data_model.md, the sequence diagram of
-docs/developer/sequences.md, and the composition flowchart of docs/user_guide/index.md.
+Covers the class diagrams of docs/developer/data_model.md and the sequence diagram of
+docs/developer/sequences.md.
 """
 
 import ast
@@ -20,7 +20,6 @@ REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_ROOT = REPOSITORY_ROOT / "src" / "odys"
 DATA_MODEL_PAGE = REPOSITORY_ROOT / "docs" / "developer" / "data_model.md"
 SEQUENCES_PAGE = REPOSITORY_ROOT / "docs" / "developer" / "sequences.md"
-USER_GUIDE_PAGE = REPOSITORY_ROOT / "docs" / "user_guide" / "index.md"
 
 EXTENSION_POINT_BASES = (
     "EnergyEntity",
@@ -61,13 +60,6 @@ PARTICIPANT = re.compile(r"^participant\s+(\w+)(?:\s+as\s+(\w+))?$")
 ACTOR = re.compile(r"^actor\s+(\w+)$")
 CALL = re.compile(r"^(\w+)\s*->>\s*(\w+)\s*:\s*(\w+)\(([^)]*)\)")
 IGNORED_SEQUENCE_LINE = re.compile(r"^(?:\w+\s*-->>\s*\w+\s*:.*|Note\s.*|%%.*)?$")
-
-FLOWCHART_NODE = re.compile(r'^(\w+)\["([^"]*)"\]$')
-SUBGRAPH = re.compile(r"^subgraph\s+(\w+)")
-IGNORED_FLOWCHART_LINE = re.compile(
-    r"^(?:\w+\s*(?:-->|-\.->|<-->)\s*\w+|end|direction\s+\w+|style\s.*|%%.*)?$",
-)
-HTML_TAG = re.compile(r"<[^>]+>")
 
 
 class SourceClass(NamedTuple):
@@ -115,20 +107,6 @@ class SequenceDiagrams(NamedTuple):
 
     participants: frozenset[str]
     calls: tuple[Call, ...]
-    unparsed: tuple[str, ...]
-
-
-class FlowchartNode(NamedTuple):
-    """A `Id["label"]` node of a flowchart: its label without markup or `(s)`, and its enclosing subgraph."""
-
-    label: str
-    subgraph: str | None
-
-
-class Flowcharts(NamedTuple):
-    """The labelled nodes of the flowcharts of a page."""
-
-    nodes: tuple[FlowchartNode, ...]
     unparsed: tuple[str, ...]
 
 
@@ -341,37 +319,9 @@ def parse_sequence_diagrams(markdown: str) -> SequenceDiagrams:
     return SequenceDiagrams(participants=frozenset(participants), calls=tuple(calls), unparsed=tuple(unparsed))
 
 
-def parse_flowcharts(markdown: str) -> Flowcharts:
-    """Collect the `Id["label"]` nodes of every flowchart block with their enclosing subgraph.
-
-    Labels lose their HTML tags and a trailing `(s)`, so `<b>EnergyMarket(s)</b>` reads `EnergyMarket`. Edges
-    between ids, `style`, `direction` and `%%` lines are ignored; any other line is returned in `unparsed`.
-    """
-    nodes: list[FlowchartNode] = []
-    unparsed: list[str] = []
-    for lines in _mermaid_blocks(markdown, "flowchart"):
-        subgraph: str | None = None
-        for line in lines:
-            if node := FLOWCHART_NODE.match(line):
-                label = HTML_TAG.sub("", node.group(2)).strip().removesuffix("(s)")
-                nodes.append(FlowchartNode(label=label, subgraph=subgraph))
-            elif opened := SUBGRAPH.match(line):
-                subgraph = opened.group(1)
-            elif line == "end":
-                subgraph = None
-            elif not IGNORED_FLOWCHART_LINE.match(line):
-                unparsed.append(line)
-    return Flowcharts(nodes=tuple(nodes), unparsed=tuple(unparsed))
-
-
 @cache
 def _page_sequence_diagrams() -> SequenceDiagrams:
     return parse_sequence_diagrams(SEQUENCES_PAGE.read_text(encoding="utf-8"))
-
-
-@cache
-def _user_guide_flowcharts() -> Flowcharts:
-    return parse_flowcharts(USER_GUIDE_PAGE.read_text(encoding="utf-8"))
 
 
 def _call_parameters(call: Call) -> tuple[str, ...] | None:
@@ -380,12 +330,6 @@ def _call_parameters(call: Call) -> tuple[str, ...] | None:
     if call.name == call.target:
         return _source_functions().get(call.target)
     return None
-
-
-def _concrete_assets() -> frozenset[str]:
-    descendants = {name for name in _source_classes() if "Asset" in _ancestors(name)}
-    bases = {base for name in descendants for base in _source_classes()[name].bases}
-    return frozenset(descendants - bases)
 
 
 def test_source_class_names_are_unique() -> None:
@@ -513,29 +457,6 @@ def test_sequence_call_arguments_are_parameters() -> None:
     assert not wrong, f"These call arguments are not parameters of the callee: {wrong}"
 
 
-def test_user_guide_diagram_uses_only_syntax_the_check_understands() -> None:
-    unparsed = _user_guide_flowcharts().unparsed
-
-    assert not unparsed, (
-        f"Rewrite these lines of the {USER_GUIDE_PAGE.name} diagram in a form the check parses: {list(unparsed)}"
-    )
-
-
-def test_user_guide_diagram_names_public_classes() -> None:
-    unknown = sorted({node.label for node in _user_guide_flowcharts().nodes} - set(odys.__all__))
-
-    assert not unknown, f"These {USER_GUIDE_PAGE.name} diagram nodes are not public odys classes: {unknown}"
-
-
-def test_user_guide_diagram_shows_every_asset_type() -> None:
-    drawn = {node.label for node in _user_guide_flowcharts().nodes if node.subgraph == "Assets"}
-
-    assert drawn == _concrete_assets(), (
-        f"The Assets subgraph of {USER_GUIDE_PAGE.name} must list every asset type: "
-        f"missing {sorted(_concrete_assets() - drawn)}, unexpected {sorted(drawn - _concrete_assets())}"
-    )
-
-
 @pytest.mark.parametrize(
     ("markdown", "expected"),
     [
@@ -566,34 +487,3 @@ def test_user_guide_diagram_shows_every_asset_type() -> None:
 )
 def test_parse_sequence_diagrams_reads_participants_and_calls(markdown: str, expected: SequenceDiagrams) -> None:
     assert parse_sequence_diagrams(markdown) == expected
-
-
-@pytest.mark.parametrize(
-    ("markdown", "expected"),
-    [
-        (
-            '```mermaid\n%%{init: {"theme": "base"}}%%\nflowchart TD\n    ES["<b>EnergySystem</b>"]\n'
-            '    subgraph Assets [ ]\n        direction LR\n        GEN["Generator(s)"]\n    end\n'
-            '    MKT["<b>EnergyMarket(s)</b>"]\n    ES --> MKT\n    ES --> Assets\n```\n',
-            Flowcharts(
-                (
-                    FlowchartNode("EnergySystem", None),
-                    FlowchartNode("Generator", "Assets"),
-                    FlowchartNode("EnergyMarket", None),
-                ),
-                (),
-            ),
-        ),
-        (
-            '```mermaid\nflowchart LR\n    A(["rounded"]) --> B\n```\n',
-            Flowcharts((), ('A(["rounded"]) --> B',)),
-        ),
-        (
-            '```mermaid\nsequenceDiagram\n    ES["Ignored"]\n```\n',
-            Flowcharts((), ()),
-        ),
-    ],
-    ids=["labels-subgraphs-and-init", "unknown-syntax-reported", "other-diagram-ignored"],
-)
-def test_parse_flowcharts_reads_labelled_nodes(markdown: str, expected: Flowcharts) -> None:
-    assert parse_flowcharts(markdown) == expected

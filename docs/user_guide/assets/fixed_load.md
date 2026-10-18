@@ -4,7 +4,7 @@ icon: fontawesome/solid/plug
 
 # FixedLoad
 
-A `FixedLoad` models demand that has to be served exactly as given: a building, a process that can't move, a site's base consumption, like the factory of the [running example](../index.md#the-running-example). The optimizer can't change it. It decides how your generators, batteries and markets cover it.
+A `FixedLoad` models demand that has to be served exactly as given: a building, a process that can't move, a site's base consumption, like the factory in [Your first model](../model/first_model.md). The optimizer can't change it. It decides how your generators, batteries and markets cover it.
 
 For demand the optimizer may move up or down, use a [FlexibleLoad](flexible_load.md) instead.
 

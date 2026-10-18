@@ -59,7 +59,7 @@ portfolio = AssetPortfolio([ccgt, solar_pv, load])
 
 ### 2. Describe the day
 
-The solar farm's [available capacity](../user_guide/model/profiles.md) follows the sun: zero at night, up to 125 MW at noon, below its 150 MW rating all day. The CCGT has no profile, so it can run up to its nominal power at every step. The load is 70 MW throughout:
+The solar farm's [available capacity](../user_guide/model/scenario.md#each-one-is-a-profile) follows the sun: zero at night, up to 125 MW at noon, below its 150 MW rating all day. The CCGT has no profile, so it can run up to its nominal power at every step. The load is 70 MW throughout:
 
 ```python
 scenario = Scenario(

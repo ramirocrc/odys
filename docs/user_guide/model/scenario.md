@@ -2,15 +2,19 @@
 icon: lucide/file-text
 ---
 
-# Profiles
+# Scenario
 
-A plan needs to know what tomorrow looks like: how much the factory will draw, how much the wind will blow, what the market will pay. A `Scenario` holds that best guess, as a set of **profiles**: one time series per asset or market, with one value per step. A deterministic plan takes a single `Scenario`.
+An asset holds its technical specifications, the things that stay the same whatever happens tomorrow: a thermal plant's nominal power, a battery's capacity. A `Scenario` holds what the system faces over the horizon: what each unit can produce, the demand to serve and the prices on offer. A deterministic plan takes a single `Scenario`, your best guess of tomorrow.
 
-## Assets and profiles
+## What a scenario describes
 
-An asset holds its intrinsic specifications, the things that stay the same whatever happens tomorrow: a thermal plant's nominal power, a battery's capacity. A profile sets the conditions you plan the system under, step by step: the demand to serve, the prices on offer, what a unit can produce at each step.
+Keeping the two apart means the same assets can be planned under very different circumstances. A scenario describes three things, step by step:
 
-So the same CCGT can be planned under very different conditions. Say half of it is in maintenance from the third hour: its `nominal_power` stays 100 MW, and an `AvailableCapacityProfile` caps what it can produce while the work lasts:
+- **Availability**: what a generator can produce. A wind or solar farm follows the weather forecast, and a unit in planned maintenance can only run part of its capacity.
+- **Demand**: what each load draws.
+- **Prices**: what each market is forecast to pay.
+
+Say half of the CCGT is in maintenance from the third hour. Its `nominal_power` stays 100 MW, and the scenario caps what it can produce while the work lasts:
 
 ```python
 from odys import AvailableCapacityProfile, FixedLoad, Generator, LoadProfile, Scenario
@@ -26,9 +30,11 @@ tomorrow = Scenario(
 )
 ```
 
-Each profile holds the asset or market itself, not its name, so it can't be attached to the wrong kind of object.
+Where an asset starts, such as the battery's charge at midnight, isn't part of a scenario: you know it when you plan, so it's the same in every future. It goes to the `EnergySystem`, see [Initial and final conditions](first_model.md#initial-and-final-conditions).
 
-## Profile types
+## Each one is a profile
+
+A scenario holds its availability, demand and prices as **profiles**: one time series per asset or market, with one value per step. Each profile holds the asset or market itself, not its name, so it can't be attached to the wrong kind of object.
 
 | Profile                    | References   | Unit         | Required                   | Meaning                                                                                                                              |
 | -------------------------- | ------------ | ------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -76,8 +82,10 @@ time
 
 The wind is free, so the optimizer uses all of it it can, and the CCGT covers the rest. At step 2 the wind could produce 60 MW, but the factory only needs 40, so 20 MW of wind goes unused.
 
-A best guess is one future. To plan against several, each with its own probability, see [Scenarios](../uncertainty/scenarios.md); a single `Scenario` is named `"base"` and has a probability of 1.
+## One scenario, or several
+
+A single `Scenario` is one possible future, named `"base"` with a probability of 1. Tomorrow may be calm or windy, though, and the prices move with the wind. To plan against several futures, each with its own probability, pass a list of scenarios: see [Several scenarios](../uncertainty/scenarios.md).
 
 ## Next steps
 
-The model has its time series. Next, meet the assets one by one, starting with the [Generator](../assets/generator.md).
+The model knows what it faces. Next, meet the assets one by one, starting with the [Generator](../assets/generator.md).

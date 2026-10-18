@@ -6,7 +6,7 @@ icon: fontawesome/solid/car
 
 An `ElectricVehicle` models a vehicle in a fleet: a [Battery](battery.md) that leaves on trips. While it's parked and plugged in, it charges, and with vehicle-to-grid (V2G) it can also feed power back, always through a [Charger](charger.md). The optimizer decides when each vehicle charges and discharges, so that every trip leaves with enough charge at the lowest cost.
 
-A fleet is a much smaller scale than the site of the [running example](../index.md#the-running-example), so this page and the [Charger](charger.md) page use a depot of two delivery vans over a 12-hour shift, in hourly steps from 06:00. Powers and energies are still in MW and MWh, so a 22 kW charger is `0.022`.
+A fleet is a much smaller scale than the site the other pages build, so this page and the [Charger](charger.md) page use a depot of two delivery vans over a 12-hour shift, in hourly steps from 06:00. Powers and energies are still in MW and MWh, so a 22 kW charger is `0.022`.
 
 ## Basic usage
 

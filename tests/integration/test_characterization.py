@@ -54,14 +54,15 @@ RECORDED_EXAMPLE_OBJECTIVES = {
     # Re-recorded when the example battery got 95 % efficiency each way (it was lossless before).
     "battery_dispatch": -37_090.625,
     # Re-recorded when the example market started selling too, and its prices equal to the ccgt cost (50) became 52.
-    "market_arbitrage": -68_680.0,
+    "make_or_buy": -68_680.0,
     # Re-recorded when the example prices equal to the value of consumption (70) became 72, removing a tie.
     "flexible_load_market": -78_840.0,
     # Re-recorded when ev_2 and ev_3 in the example got V2G discharge, so the vans compete for the chargers.
     "ev_fleet_optimization": 9.99,
-    # Re-recorded when the CVaR example went from one 24-hour step to one hourly step.
-    "cvar_market_risk_expected_profit": 18_666.67,
-    "cvar_market_risk_penalized_cvar": 36_104.17,
+    # Re-recorded when the CVaR example's day-ahead and intraday prices started moving together
+    # (they moved in opposite directions) and the ccgt cost went from 20 to 120.
+    "cvar_market_risk_expected_profit": 8_666.67,
+    "cvar_market_risk_penalized_cvar": 15_166.67,
 }
 RECORDED_UNIT_COMMITMENT_OBJECTIVE = -46_960.0
 # Re-recorded when self-discharge started applying at the first step (it was skipped there before).
@@ -96,7 +97,7 @@ def _assert_optimal_with_objective(result: OptimalDispatchResults, expected: flo
 
 @pytest.mark.parametrize(
     "module_name",
-    ["basic_dispatch", "battery_dispatch", "market_arbitrage", "flexible_load_market", "ev_fleet_optimization"],
+    ["basic_dispatch", "battery_dispatch", "make_or_buy", "flexible_load_market", "ev_fleet_optimization"],
 )
 def test_example_objective_is_unchanged(module_name: str) -> None:
     result = _single_example_result(module_name)

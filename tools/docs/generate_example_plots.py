@@ -36,7 +36,7 @@ from examples.ev_fleet_optimization import (  # pyrefly: ignore
     run_ev_fleet_optimization,
 )
 from examples.flexible_load_market import run_flexible_load_market  # pyrefly: ignore
-from examples.market_arbitrage import run_market_arbitrage  # pyrefly: ignore
+from examples.make_or_buy import run_make_or_buy  # pyrefly: ignore
 from odys import Charger, OptimalDispatchResults, Trip
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 
@@ -363,9 +363,9 @@ def generate_battery_dispatch() -> None:
     _save_figure(fig, "battery_dispatch")
 
 
-def generate_market_arbitrage() -> None:
+def generate_make_or_buy() -> None:
     """Two-panel chart: stacked dispatch bars + market prices."""
-    result = run_market_arbitrage()
+    result = run_make_or_buy()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
     bought = -result.markets.net_volume.xs("market", level="market")
     steps = list(range(len(gen_df)))
@@ -452,7 +452,7 @@ def generate_market_arbitrage() -> None:
     fig.update_yaxes(title="Power (MW)", row=1, col=1)
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
-    _save_figure(fig, "market_arbitrage")
+    _save_figure(fig, "make_or_buy")
 
 
 def generate_flexible_load_market() -> None:
@@ -1224,7 +1224,7 @@ if __name__ == "__main__":
     generate_basic_dispatch()
     generate_battery_dispatch()
     generate_flexible_load_market()
-    generate_market_arbitrage()
+    generate_make_or_buy()
     generate_cvar_market_risk()
     generate_ev_fleet_optimization()
     print("Done!")
