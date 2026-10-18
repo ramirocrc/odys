@@ -191,7 +191,7 @@ def generate_basic_dispatch() -> None:
     """Stacked bar chart of generator dispatch with load overlay."""
     result = run_basic_dispatch()
     df = result.generators.to_dataframe()["power"].unstack("generator")
-    steps = list(range(1, len(df) + 1))
+    steps = list(range(len(df)))
 
     fig = go.Figure()
 
@@ -237,7 +237,7 @@ def generate_basic_dispatch() -> None:
 
     fig.update_layout(
         title=dict(text="Generator Dispatch", x=0.5),
-        xaxis=dict(title="Time Step", range=[0.5, 24.5]),
+        xaxis=dict(title="Time Step", range=[-0.5, 23.5]),
         yaxis=dict(title="Power (MW)", range=[0, 150]),
         barmode="stack",
         hovermode="x unified",

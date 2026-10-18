@@ -8,8 +8,8 @@ generator.
 
 - **solar_pv**: 150 MW solar farm, zero variable cost (free energy), but
   output depends on weather and time of day.
-- **ccgt**: 100 MW gas turbine, variable cost of 50 $/MWh, fully available
-  24/7.
+- **ccgt**: 100 MW gas turbine, variable cost of 50 $/MWh. It has no
+  available capacity profile, so it can run up to its nominal power at every step.
 
 ## Problem
 
@@ -75,7 +75,6 @@ def run_basic_dispatch() -> OptimalDispatchResults:
 
     scenario = Scenario(
         profiles=(
-            AvailableCapacityProfile(generator=ccgt, values=24 * [100]),
             AvailableCapacityProfile(
                 generator=solar_pv,
                 values=[0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
