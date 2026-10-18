@@ -37,7 +37,7 @@ Scope: Odys models a portfolio on a single bus over a short horizon. It does not
 pip install odys
 ```
 
-Requires Python 3.11+. For commercial solvers (Gurobi, CPLEX, SCIP), see the [solver docs](https://ramirocrc.github.io/odys/user_guide/optimization/solvers/).
+Requires Python 3.11+. For commercial solvers (Gurobi, CPLEX, SCIP), see the [solver docs](https://ramirocrc.github.io/odys/user_guide/solving/solvers/).
 
 ## Quick example
 

@@ -4,11 +4,9 @@ icon: fontawesome/solid/car
 
 # ElectricVehicle
 
-An `ElectricVehicle` is an electric vehicle: it has a [Battery](battery.md) and a trip schedule. Trips make the vehicle unavailable for charging while driving and consume energy from the battery.
+An `ElectricVehicle` models a vehicle in a fleet: a [Battery](battery.md) that leaves on trips. While it's parked and plugged in, it charges, and with vehicle-to-grid (V2G) it can also feed power back, always through a [Charger](charger.md). The optimizer decides when each vehicle charges and discharges, so that every trip leaves with enough charge at the lowest cost.
 
-The optimizer decides when each vehicle charges, and when it discharges back to the grid (V2G), so that every trip departs with enough charge at the lowest cost. Unlike a [StationaryStorage](stationary_storage.md), an EV must connect through a [Charger](charger.md) to charge or discharge. With more EVs than chargers, the optimizer assigns vehicles to chargers dynamically.
-
-EVs are a much smaller scale than the site of the [running example](../index.md#the-running-example), so this page and the [Charger](charger.md) page use a depot of two delivery vans over a 12-hour day shift in hourly steps, from 06:00. Powers and energies are still in MW and MWh, so a 22 kW charger is `0.022`.
+A fleet is a much smaller scale than the site of the [running example](../index.md#the-running-example), so this page and the [Charger](charger.md) page use a depot of two delivery vans over a 12-hour shift, in hourly steps from 06:00. Powers and energies are still in MW and MWh, so a 22 kW charger is `0.022`.
 
 ## Basic usage
 
@@ -40,35 +38,33 @@ initial_conditions = (ElectricVehicleInitialState(vehicle=van_1, soc=0.5),)
 final_conditions = (ElectricVehicleFinalState(vehicle=van_1, soc=0.5),)
 ```
 
-The van starts the shift half charged, must leave at 08:00 with at least 80%, and must be back at 50% at the end of the shift. Pass the states to the `EnergySystem` (`initial_conditions=...`, `final_conditions=...`); see [Initial and final state](#initial-and-final-state).
+`van_1` starts the shift half charged, has to leave at 08:00 with at least 80 %, and has to be back at 50 % at the end of the shift. Both states go to the `EnergySystem`, with `initial_conditions=...` and `final_conditions=...` (see [Initial and final state](#initial-and-final-state)).
 
 ## Fields
 
-| Field     | Type               | Required | Default | Description                                              |
-| --------- | ------------------ | -------- | ------- | -------------------------------------------------------- |
-| `name`    | `str`              | Yes      | -       | Unique identifier for the EV                             |
-| `battery` | `Battery`          | Yes      | -       | The vehicle's battery; see [Battery](battery.md#fields)  |
-| `trips`   | `tuple[Trip, ...]` | Yes      | -       | Trip schedule. Can be empty if the EV stays at the depot |
+| Field     | Type               | Required | Default | Description                                                      |
+| --------- | ------------------ | -------- | ------- | ---------------------------------------------------------------- |
+| `name`    | `str`              | Yes      | -       | Unique name of the vehicle                                       |
+| `battery` | `Battery`          | Yes      | -       | Its capacity, ratings and losses; see [Battery](battery.md#fields) |
+| `trips`   | `tuple[Trip, ...]` | Yes      | -       | Its trips over the run; `()` for a vehicle that stays at the depot |
 
 ## Vehicle-to-grid (V2G)
 
-The battery's `max_discharge_power` is what enables V2G. With `max_discharge_power=0`, the vehicle can only charge. Like charging, discharging only happens through a [Charger](charger.md).
-
-See the [formulation](battery.md#math-power-limits).
+The battery's `max_discharge_power` decides whether a vehicle can feed power back. Above 0, it can discharge, at up to that power; at `0.0`, it can only charge. Either way, power flows only while the vehicle is connected to a charger, so V2G goes through the charger too. `van_1` above can give back up to 11 kW. See [B-2](../../formulation/batteries.md#b-2) and [CH-4](../../formulation/electric_vehicles.md#ch-4).
 
 ## Trips
 
-A `Trip` defines when the vehicle is driving, how much energy it consumes, and the minimum state of charge required at departure:
+A `Trip` says when the vehicle is away, how much energy it uses, and how full it has to be when it leaves:
 
-| Field                  | Type    | Required | Default | Description                                                                 |
-| ---------------------- | ------- | -------- | ------- | --------------------------------------------------------------------------- |
-| `name`                 | `str`   | Yes      | -       | Unique trip name within the vehicle                                         |
-| `start_time`           | `timedelta` | Yes  | -       | Time from the start of the horizon at which the vehicle leaves              |
-| `end_time`             | `timedelta` | Yes  | -       | Time from the start of the horizon at which it is back (`end_time > start_time`) |
-| `energy_consumption`   | `float` | Yes      | -       | Battery-side energy consumed during the trip (MWh)                          |
-| `min_soc_at_departure` | `float` | No       | `0.0`   | Minimum state of charge required at departure, before trip energy is consumed |
+| Field                  | Type        | Required | Default | Description                                                              |
+| ---------------------- | ----------- | -------- | ------- | ------------------------------------------------------------------------ |
+| `name`                 | `str`       | Yes      | -       | Name of the trip                                                          |
+| `start_time`           | `timedelta` | Yes      | -       | When the vehicle leaves, counted from the start of the run               |
+| `end_time`             | `timedelta` | Yes      | -       | When it's back, counted from the start of the run; after `start_time`    |
+| `energy_consumption`   | `float`     | Yes      | -       | Energy the battery provides for the trip, after drivetrain losses, above 0 (MWh) |
+| `min_soc_at_departure` | `float`     | No       | `0.0`   | Lowest state of charge when the vehicle leaves, as a fraction of capacity |
 
-Trip times are measured from the start of the horizon and must fall on a timestep. The vehicle is away for every step from `start_time` until `end_time`, and back at the depot for the step that starts at `end_time`. With the horizon starting at 06:00, a second van's afternoon route from 12:00 to 15:00 starts 6 hours in and ends 9 hours in:
+Trip times count from the start of the run, not from a clock time. With the shift starting at 06:00, a second van's afternoon route from 12:00 to 15:00 starts 6 hours in and ends 9 hours in:
 
 ```python
 van_2 = ElectricVehicle(
@@ -92,134 +88,31 @@ van_2 = ElectricVehicle(
 )
 ```
 
-While a trip is active, the EV cannot charge, discharge, or be assigned to a charger. Trip energy is spread evenly over the trip's timesteps and subtracted from the battery's state of charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip.
+Here's what a trip means for the plan:
 
-Building an `ElectricVehicle` raises an `OdysValidationError` if two of its trips overlap. Creating the `EnergySystem` also checks that every trip starts and ends on a timestep and ends within the horizon. With 15-minute steps, a trip can leave at `timedelta(minutes=45)` but not at `timedelta(minutes=50)`.
+- The vehicle is away from `start_time` until `end_time`. In that time it can't charge, discharge, or hold a charger, and it can charge again from the step that starts at `end_time`.
+- The trip's energy leaves the battery evenly over the steps it's away: `van_2`'s 40 kWh over three steps is 0.133 of its capacity per step.
+- The battery has at least `min_soc_at_departure` when the vehicle leaves, before the trip uses any energy. It also stays above `soc_min` while driving, so a trip has to fit in the charge the vehicle can leave with.
+- Trips of one vehicle can't overlap; building the vehicle raises an `OdysValidationError` if they do. Trip times also have to fall on a step and end within the run, which is checked when you create the `EnergySystem`: with 15-minute steps, a trip can leave at 45 minutes but not at 50.
 
-See the [formulation](#math-trips).
+See [EV-1](../../formulation/electric_vehicles.md#ev-1) to [EV-3](../../formulation/electric_vehicles.md#ev-3) and [CH-3](../../formulation/electric_vehicles.md#ch-3).
 
 ## Initial and final state
 
-Where the vehicle's battery starts and ends belongs to the run. Pass an `ElectricVehicleInitialState` (required) and, optionally, an `ElectricVehicleFinalState` to the `EnergySystem`. Both take the vehicle and a `soc`, as a fraction of capacity.
+A vehicle takes an `ElectricVehicleInitialState`, which is required, and optionally an `ElectricVehicleFinalState`. They work like any battery's, under [State of charge](battery.md#state-of-charge).
 
-Building the `ElectricVehicleInitialState` raises an `OdysValidationError` if a trip departing at the start of the horizon (`start_time=timedelta(0)`) cannot be served from the starting charge. That happens when the trip needs a higher `min_soc_at_departure` than the initial `soc`, or more energy than the battery holds above `soc_min` at the start (`(soc − soc_min) × capacity`). There is no earlier step to charge in, and the vehicle cannot charge while driving.
+One check is particular to vehicles: a trip that leaves at the very start of the run (`start_time=timedelta(0)`) has no step before it to charge in. So creating the `ElectricVehicleInitialState` raises an `OdysValidationError` when the starting charge can't serve that trip, because it's below the trip's `min_soc_at_departure`, or holds less energy above `soc_min` than the trip uses.
 
-See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field, and the [formulation](battery.md#math-soc).
+Their fields are on the Battery page, under [State of charge](battery.md#state-of-charge).
 
 ## Results
 
-Let's put both vans in a depot with one 22 kW [Charger](charger.md) and a grid connection whose price changes through the day (see [EnergyMarket](../markets/energy_market.md)), and read their results through `result.electric_vehicles`:
+A vehicle's results are in `result.electric_vehicles`: `net_power`, `soc` and `charge_mode`, one `pandas.Series` each, indexed by vehicle and time. They read like any battery's, under [Results](battery.md#results). The vans can't charge yet, so the depot is solved on the [Charger](charger.md#results) page, once it has one. The [EV Fleet example](../../examples/ev_fleet_optimization.md) runs three vans and two chargers over a full day.
 
-```python
-from datetime import timedelta
+## How it's modelled
 
-from odys import AssetPortfolio, Charger, EnergyMarket, EnergySystem, PriceProfile, Scenario
-
-charger = Charger(name="charger", max_power=0.022)
-grid = EnergyMarket(name="grid", max_trading_volume_per_step=1.0)
-
-energy_system = EnergySystem(
-    portfolio=AssetPortfolio([van_1, van_2, charger]),
-    markets=grid,
-    scenarios=Scenario(
-        profiles=(PriceProfile(market=grid, values=[60, 45, 70, 90, 80, 55, 50, 60, 85, 120, 110, 90]),),
-    ),
-    timestep=timedelta(hours=1),
-    number_of_steps=12,
-    initial_conditions=(
-        ElectricVehicleInitialState(vehicle=van_1, soc=0.5),
-        ElectricVehicleInitialState(vehicle=van_2, soc=0.5),
-    ),
-    final_conditions=(
-        ElectricVehicleFinalState(vehicle=van_1, soc=0.5),
-        ElectricVehicleFinalState(vehicle=van_2, soc=0.5),
-    ),
-)
-
-result = energy_system.optimize()
-print(result.electric_vehicles.soc.unstack().round(2))
-```
-
-```text
-ev    van_1  van_2
-time
-0      0.71   0.50
-1      0.92   0.50
-2      0.77   0.71
-3      0.62   0.69
-4      0.55   0.69
-5      0.55   0.90
-6      0.75   0.77
-7      0.96   0.63
-8      0.85   0.50
-9      0.73   0.50
-10     0.62   0.50
-11     0.50   0.50
-```
-
-`net_power` is in MW, positive when charging and negative when discharging. `soc` is the state of charge at the end of each step, as a fraction of capacity, and `charge_mode` is 1 when the battery may charge. Each is a `pandas.Series` indexed by vehicle and time (and scenario, when there is more than one).
-
-Notice how the trips shape the day:
-
-- `van_1` charges in the first two hours and leaves at step 2 with 92%, above the required 80%, because it can sell the extra back at 80 $/MWh when it returns at step 4.
-- The vans share one charger: `van_2` uses it at steps 2 and 3, while `van_1` is away, and again at step 5, just before its own route.
-- Each trip lowers the state of charge evenly over its steps: 0.15 per step for `van_1`'s 30 kWh over two steps.
-- After charging again at steps 6 and 7, `van_1` discharges at 11 kW (V2G) through the afternoon price peak, down to the required 50%.
-
-See the [EV Fleet example](../../examples/ev_fleet_optimization.md) for three vans, two chargers and a full day of trips.
-
-## Mathematical formulation
-
-An electric vehicle $e$ has all the variables and constraints of the [Battery formulation](battery.md#mathematical-formulation), with $b = e$. The trip schedule adds the constraints below. Charger coupling is on the [Charger](charger.md#mathematical-formulation) page. See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
-### Variables
-
-Those of the [Battery](battery.md#variables). Trips add no variables: $\omega_{e,t}$, $\Delta SOC^{trip}_{e,t}$ and $SOC^{dep}_{e,t}$ are parameters derived from the trip schedule.
-
-### Constraints
-
-#### Trips {#math-trips}
-
-For a trip $k$ of vehicle $e$ consuming $E^{trip}_k$, $t^{start}_k$ and $t^{end}_k$ are its `start_time` and `end_time` divided by the timestep, so they count steps. At every step $t^{start}_k \le t < t^{end}_k$:
-
-$$
-\omega_{e,t} = 1, \qquad
-\Delta SOC^{trip}_{e,t} = \frac{E^{trip}_k}{\left(t^{end}_k - t^{start}_k\right) E_e}
-$$
-
-and both are 0 outside trips. The trip energy is subtracted in the battery's SOC dynamics:
-
-$$
-SOC_{e,t,s} = SOC_{e,t-1,s} \left(1 - \delta_e \Delta t\right)
-+ \eta^{ch}_e \frac{\Delta t}{E_e} p^{ch}_{e,t,s}
-- \frac{\Delta t}{\eta^{dis}_e E_e} p^{dis}_{e,t,s}
-- \Delta SOC^{trip}_{e,t}
-$$
-
-(and likewise at $t = 0$, starting from $SOC^{start}_e$).
-
-#### Driving unavailability {#math-driving}
-
-$$
-p^{ch}_{e,t,s} + p^{dis}_{e,t,s} \le \left(P^{ch,\max}_e + P^{dis,\max}_e\right)\left(1 - \omega_{e,t}\right)
-$$
-
-#### Departure SoC {#math-departure}
-
-$$
-SOC_{e,t,s} \ge SOC^{dep}_{e,t+1}
-$$
-
-where $SOC^{dep}_{e,t}$ is the trip's `min_soc_at_departure` at its start step $t^{start}_k$, and 0 elsewhere. The SoC must be reached by the end of the step before departure.
-
-### Objective contribution
-
-The battery degradation cost; see [Battery](battery.md#math-objective).
-
-### Power balance contribution
-
-Discharging (V2G) is supply ($+\sum_e p^{dis}_{e,t,s}$) and charging is demand ($\sum_e p^{ch}_{e,t,s}$). See [Power balance](../concepts/power_balance.md).
+A vehicle is a battery, [B-1](../../formulation/batteries.md#b-1) to [B-7](../../formulation/batteries.md#b-7), plus its trips: [EV-1](../../formulation/electric_vehicles.md#ev-1) takes the trip's energy out of the battery, [EV-2](../../formulation/electric_vehicles.md#ev-2) stops charging on the road, and [EV-3](../../formulation/electric_vehicles.md#ev-3) checks the charge at departure. Its power reaches the bus only through a charger ([CH-1](../../formulation/electric_vehicles.md#ch-1) to [CH-4](../../formulation/electric_vehicles.md#ch-4)). Every rule and its limitations are on the [Electric vehicles and chargers](../../formulation/electric_vehicles.md) formulation page.
 
 ## Next steps
 
-EVs need chargers to connect to the grid. Next, see [Charger](charger.md) for how vehicles share them.
+The vans can't charge yet: they need a charger. Next, see how a [Charger](charger.md) connects them to the grid, and solve the depot's day.

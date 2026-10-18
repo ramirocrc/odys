@@ -1,38 +1,28 @@
-"""EV fleet optimization with V2G and market arbitrage.
+"""EV fleet optimization with V2G and shared chargers.
 
 A commercial depot operates 3 delivery EVs with 2 chargers and access to a
-wholesale market with time-of-use pricing. The optimizer decides when to charge,
-when to discharge to the grid via vehicle-to-grid (V2G), and how to share
-chargers, while guaranteeing every trip departs on time.
+wholesale market with time-of-use pricing. The optimizer decides when each van
+charges, when it sells power back to the grid (V2G), and which charger it
+uses, while every trip departs with enough charge.
 
 ## Assets
 
-- **ev_1**: 100 kWh battery, 22 kW charging, 11 kW V2G discharge. Starts at 80%
-  SoC, must end at 30% SoC. 3 delivery trips throughout the day.
-- **ev_2**: 60 kWh battery, 22 kW charging (no V2G). Starts at 50% SoC, must
-  end at 60% SoC. 3 delivery trips.
-- **ev_3**: 40 kWh battery, 7 kW charging (no V2G). Starts at 50% SoC, must end
-  at 50% SoC. 2 delivery trips.
+- **ev_1**: 100 kWh battery, 22 kW charging, 11 kW V2G. Starts at 80% SoC,
+  must end at 30% SoC. 3 delivery trips.
+- **ev_2**: 60 kWh battery, 22 kW charging, 11 kW V2G. Starts at 50% SoC,
+  must end at 60% SoC. 3 delivery trips.
+- **ev_3**: 40 kWh battery, 7 kW charging, 7 kW V2G. Starts at 50% SoC,
+  must end at 50% SoC. 2 delivery trips.
 - **charger_dc**: 50 kW DC fast charger. Serves one EV at a time.
-- **charger_ac**: 22 kW AC charger. Serves one EV at a time. Shared by ev_2 and
-  ev_3, creating charger competition.
+- **charger_ac**: 22 kW AC charger. Serves one EV at a time.
 - **grid_market**: Buy-and-sell market with time-of-use pricing (5-100 $/MWh)
   and 100 kW max trading volume.
 
-## Scenario
-
-Prices swing from 5 $/MWh overnight to 100 $/MWh during the evening peak. The
-fleet must complete staggered trips throughout the day while the optimizer
-exploits these price differences: buying cheap overnight energy and selling it
-back during expensive peaks through ev_1's V2G capability.
-
 ## Expected Results
 
-ev_1 acts as a flexible generator during expensive hours, discharging via V2G
-whenever it is parked and prices are high. ev_2 and ev_3 charge only during the
-cheapest hours. With 2 chargers and 3 EVs, the optimizer dynamically assigns
-vehicles to chargers based on trip deadlines and price signals, which means
-charger assignments shift throughout the day to resolve contention.
+The vans charge at 5 and 10 $/MWh and sell back at the morning and evening
+peaks. At every evening peak step, both chargers are discharging a van; when
+all three vans are parked, one of them waits. The day's profit is 9.99.
 
 ## Understanding the Output
 
@@ -41,16 +31,12 @@ The script prints:
 - Charger assignment over time (shows which EV is connected to which charger)
 - Market buy and sell volumes
 - Objective value (profit, positive = revenue)
-
-Next: see the CVaR Market Risk example to add risk-aware optimization, or the
-Stochastic Optimization guide to model uncertain trip schedules.
 """
 
 import logging
 from datetime import timedelta
 
 from odys import (
-    AllowedTradeDirection,
     AssetPortfolio,
     Battery,
     Charger,
@@ -69,27 +55,31 @@ logger = logging.getLogger(__name__)
 
 ev_1 = ElectricVehicle(
     name="ev_1",
-    battery=Battery(capacity=0.100, max_charge_power=0.022, max_discharge_power=0.011),
+    battery=Battery(
+        capacity=0.100,  # 100 kWh
+        max_charge_power=0.022,  # 22 kW
+        max_discharge_power=0.011,  # 11 kW V2G
+    ),
     trips=(
         Trip(
             name="morning_delivery",
             start_time=timedelta(hours=7),
             end_time=timedelta(hours=9),
-            energy_consumption=0.015,
+            energy_consumption=0.015,  # 15 kWh
             min_soc_at_departure=0.6,
         ),
         Trip(
             name="midday_delivery",
             start_time=timedelta(hours=11),
             end_time=timedelta(hours=12),
-            energy_consumption=0.010,
+            energy_consumption=0.010,  # 10 kWh
             min_soc_at_departure=0.4,
         ),
         Trip(
             name="afternoon_delivery",
             start_time=timedelta(hours=14),
             end_time=timedelta(hours=16),
-            energy_consumption=0.012,
+            energy_consumption=0.012,  # 12 kWh
             min_soc_at_departure=0.3,
         ),
     ),
@@ -97,27 +87,31 @@ ev_1 = ElectricVehicle(
 
 ev_2 = ElectricVehicle(
     name="ev_2",
-    battery=Battery(capacity=0.060, max_charge_power=0.022, max_discharge_power=0.0),
+    battery=Battery(
+        capacity=0.060,  # 60 kWh
+        max_charge_power=0.022,  # 22 kW
+        max_discharge_power=0.011,  # 11 kW V2G
+    ),
     trips=(
         Trip(
             name="morning_route",
             start_time=timedelta(hours=8),
             end_time=timedelta(hours=10),
-            energy_consumption=0.008,
+            energy_consumption=0.008,  # 8 kWh
             min_soc_at_departure=0.5,
         ),
         Trip(
             name="midday_route",
             start_time=timedelta(hours=12),
             end_time=timedelta(hours=13),
-            energy_consumption=0.006,
+            energy_consumption=0.006,  # 6 kWh
             min_soc_at_departure=0.35,
         ),
         Trip(
             name="evening_route",
             start_time=timedelta(hours=17),
             end_time=timedelta(hours=19),
-            energy_consumption=0.007,
+            energy_consumption=0.007,  # 7 kWh
             min_soc_at_departure=0.25,
         ),
     ),
@@ -125,20 +119,24 @@ ev_2 = ElectricVehicle(
 
 ev_3 = ElectricVehicle(
     name="ev_3",
-    battery=Battery(capacity=0.040, max_charge_power=0.007, max_discharge_power=0.0),
+    battery=Battery(
+        capacity=0.040,  # 40 kWh
+        max_charge_power=0.007,  # 7 kW
+        max_discharge_power=0.007,  # 7 kW V2G
+    ),
     trips=(
         Trip(
             name="delivery_1",
             start_time=timedelta(hours=9),
             end_time=timedelta(hours=11),
-            energy_consumption=0.005,
+            energy_consumption=0.005,  # 5 kWh
             min_soc_at_departure=0.5,
         ),
         Trip(
             name="delivery_2",
             start_time=timedelta(hours=14),
             end_time=timedelta(hours=15),
-            energy_consumption=0.003,
+            energy_consumption=0.003,  # 3 kWh
             min_soc_at_departure=0.3,
         ),
     ),
@@ -159,35 +157,18 @@ EV_FINAL_STATES: tuple[ElectricVehicleFinalState, ...] = (
 )
 
 CHARGERS: tuple[Charger, ...] = (
-    Charger(name="charger_dc", max_power=0.050),
-    Charger(name="charger_ac", max_power=0.022),
+    Charger(name="charger_dc", max_power=0.050),  # 50 kW
+    Charger(name="charger_ac", max_power=0.022),  # 22 kW
 )
 
 MARKET_PRICES: list[float] = [
-    5.0,
-    5.0,
-    5.0,
-    5.0,
-    5.0,
-    5.0,
-    20.0,
-    20.0,
-    80.0,
-    80.0,
-    10.0,
-    10.0,
-    10.0,
-    10.0,
-    10.0,
-    25.0,
-    25.0,
-    100.0,
-    100.0,
-    100.0,
-    100.0,
-    5.0,
-    5.0,
-    5.0,
+    *6 * [5.0],  # overnight: cheap
+    *2 * [20.0],  # morning ramp
+    *2 * [80.0],  # morning peak
+    *5 * [10.0],  # midday: cheap
+    *2 * [25.0],  # evening ramp
+    *4 * [100.0],  # evening peak
+    *3 * [5.0],  # late evening: cheap
 ]
 
 
@@ -195,11 +176,10 @@ def run_ev_fleet_optimization() -> OptimalDispatchResults:
     """Run the EV fleet optimization example and return the optimization results."""
     market = EnergyMarket(
         name="grid_market",
-        max_trading_volume_per_step=0.100,
-        allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
+        max_trading_volume_per_step=0.100,  # 100 kW
     )
 
-    portfolio = AssetPortfolio(assets=[*EVS, *CHARGERS])
+    portfolio = AssetPortfolio([*EVS, *CHARGERS])
 
     scenario = Scenario(profiles=(PriceProfile(market=market, values=MARKET_PRICES),))
 

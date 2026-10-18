@@ -54,6 +54,7 @@ Step-by-step checklists for recurring tasks live in `.agents/skills/<name>/SKILL
 | Fix a bug | [`fix-bug`](.agents/skills/fix-bug/SKILL.md) |
 | Check the Definition of Done before saying a change is done | [`verify`](.agents/skills/verify/SKILL.md) |
 | Self-review the diff and its tests before opening a PR | [`review`](.agents/skills/review/SKILL.md) |
+| Write or change a docs page | [`write-docs`](.agents/skills/write-docs/SKILL.md) |
 
 ## Code Style Guidelines
 
@@ -260,5 +261,5 @@ Releases are made by the maintainers. Never run `just publish` or `just build-an
 
 ## Documentation Style
 
-- When working on docs, read `DOCS_GUIDELINES.md` (repo root) first
+- When working on docs, follow the `write-docs` playbook (see Playbooks) first
 - Use **relative paths** for assets (images, iframes) in markdown files — never absolute paths starting with `/`. The site is served from `https://ramirocrc.github.io/odys/`, so absolute paths break on GitHub Pages. Example: use `../assets/examples/plot.html` instead of `/assets/examples/plot.html`

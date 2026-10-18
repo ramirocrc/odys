@@ -6,32 +6,32 @@ icon: fontawesome/solid/shield
 
 ## Problem Description
 
-This example asks a more realistic market question: how should the optimizer allocate limited generation capacity across markets when prices are uncertain?
+A 100 MW CCGT at 20 $/MWh sells one hour's output on two markets: day-ahead (SDAC), where it bids before it knows the prices, and intraday (SIDC), where it sells once they're known. Three futures are equally likely. Day-ahead prices move little, from 190 to 210 $/MWh, while intraday prices swing from 140 to 280. The question is how much to commit day-ahead, first to maximize expected profit, then when a bad outcome weighs more than a good one.
 
-Imagine we are right before the day-ahead market. We have a single gas turbine with 100 MW of available capacity, and we need to decide how much of that capacity to sell in the day-ahead market, `sdac`.
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
+flowchart LR
+    Bid(["📝 Bid day-ahead<br/>same in every future"]) --> Reveal(["🎲 Prices known<br/>high, mid or low"])
+    Reveal --> Sell(["📈 Sell the rest intraday<br/>per future"])
+    style Bid fill:none
+    style Reveal fill:none
+    style Sell fill:none
+```
 
-Because this decision has to be made now, we set `stage_fixed=True` for `sdac`. That means the committed volume must be the same across all scenarios.
-
-We consider three equally likely scenarios. Both market prices vary across scenarios: `sdac` has modest price uncertainty (190, 200, 210 $/MWh), while `sidc` has wider price swings (280, 200, 140 $/MWh). This creates two markets with different risk profiles.
-
-The example is built as a single 24-hour timestep because the main decision is one commitment: how much capacity should go to `sdac` before the uncertainty is resolved?
-
-![CVaR decision timeline](../assets/examples/cvar_timeline.svg)
-
-**Source**: [`examples/cvar_market_risk.py`](https://github.com/ramirocrc/odys/blob/main/examples/cvar_market_risk.py)
+**Source**: [`examples/cvar_market_risk.py`](https://github.com/ramirocrc/odys/blob/main/examples/cvar_market_risk.py). The script wraps the steps below in `run_cvar_market_risk()`, which returns both results.
 
 ## Walkthrough
 
-### 1. Define the generator and markets
+### 1. Define the plant and the markets
 
-The generator produces the energy, and the two markets represent different ways of selling it.
+A [generator](../user_guide/assets/generator.md) and two sell-only [markets](../user_guide/markets/energy_market.md#trade-direction). Day-ahead is [stage-fixed](../user_guide/markets/energy_market.md#stage-fixed-markets): its volume is decided before the uncertainty, so it's the same in every scenario. Intraday adapts to each one:
 
 ```python
 from datetime import timedelta
 
 from odys import (
+    AllowedTradeDirection,
     AssetPortfolio,
-    AvailableCapacityProfile,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
@@ -40,106 +40,71 @@ from odys import (
     PriceProfile,
     ProfitTerm,
     Scenario,
-    AllowedTradeDirection,
 )
 
-ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=20.0)
-portfolio = AssetPortfolio(assets=[ccgt])
+CCGT_VARIABLE_COST = 20.0
+SCENARIO_PRICES: dict[str, dict[str, float]] = {
+    "high": {"day_ahead": 190, "intraday": 280},
+    "mid": {"day_ahead": 200, "intraday": 200},
+    "low": {"day_ahead": 210, "intraday": 140},
+}
 
-sdac = EnergyMarket(
-    name="sdac",
+ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=CCGT_VARIABLE_COST)
+
+portfolio = AssetPortfolio([ccgt])
+
+day_ahead = EnergyMarket(
+    name="day_ahead",
     max_trading_volume_per_step=150,
     stage_fixed=True,
     allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
-sidc = EnergyMarket(
-    name="sidc",
-    stage_fixed=False,
+intraday = EnergyMarket(
+    name="intraday",
     max_trading_volume_per_step=100,
     allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
 )
 ```
 
-The difference between the markets is the whole point. `sdac` is the market we must commit to now, so it is stage-fixed. `sidc` is the flexible market, so its volume can adapt after the scenario is known.
+### 2. Describe the three futures
 
-### 2. Create the scenarios
-
-The three scenarios represent three possible price outcomes:
-
-- `high`: the intraday market is attractive (280 $/MWh), so keeping capacity
-  for `sidc` pays off.
-- `mid`: both markets are similarly priced around 200 $/MWh.
-- `low`: the intraday market is less attractive (140 $/MWh), but still profitable.
-
-That spread is what creates the risk tradeoff. `sdac` has modest price variation
-(190-210 $/MWh), while `sidc` swings more widely (140-280 $/MWh).
+One [scenario](../user_guide/uncertainty/scenarios.md) per future, each with a probability of 1/3 and its own price for each market. The scenarios are named after the intraday price:
 
 ```python
 scenarios = [
     Scenario(
-        name="high",
-        probability=1 / 3,
+        name=name,
+        probability=1 / len(SCENARIO_PRICES),
         profiles=(
-            AvailableCapacityProfile(generator=ccgt, values=[100]),
-            PriceProfile(market=sdac, values=[190]),
-            PriceProfile(market=sidc, values=[280]),
+            PriceProfile(market=day_ahead, values=[prices["day_ahead"]]),
+            PriceProfile(market=intraday, values=[prices["intraday"]]),
         ),
-    ),
-    Scenario(
-        name="mid",
-        probability=1 / 3,
-        profiles=(
-            AvailableCapacityProfile(generator=ccgt, values=[100]),
-            PriceProfile(market=sdac, values=[200]),
-            PriceProfile(market=sidc, values=[200]),
-        ),
-    ),
-    Scenario(
-        name="low",
-        probability=1 / 3,
-        profiles=(
-            AvailableCapacityProfile(generator=ccgt, values=[100]),
-            PriceProfile(market=sdac, values=[210]),
-            PriceProfile(market=sidc, values=[140]),
-        ),
-    ),
+    )
+    for name, prices in SCENARIO_PRICES.items()
 ]
 ```
 
-These scenarios are what introduce risk. Both markets have uncertainty, but
-`sidc` has much higher variance, which is where the risk tradeoff comes from.
+### 3. Solve with and without CVaR
 
-### 3. Compare profit only with profit plus CVaR
-
-We first solve the model with profit only. This gives us the baseline: what the
-optimizer would do if it cared only about average return.
+The same system twice, with one hourly step. The first run maximizes expected profit only. The second adds a [CVaR term](../user_guide/uncertainty/risk.md) with a weight of 1 and a confidence level of 0.6:
 
 ```python
-energy_system = EnergySystem(
+energy_system_max_expected_profit = EnergySystem(
     portfolio=portfolio,
-    markets=[sdac, sidc],
+    markets=[day_ahead, intraday],
     scenarios=scenarios,
     number_of_steps=1,
-    timestep=timedelta(hours=24),
+    timestep=timedelta(hours=1),
     objective=Objective(terms=(ProfitTerm(weight=1),)),
 )
+result_max_expected_profit = energy_system_max_expected_profit.optimize()
 
-result_profit = energy_system.optimize()
-```
-
-This version should prefer `sidc`, because the high-price scenario pulls up the
-average return enough to outweigh the weaker outcomes.
-
-Now we add CVaR. This keeps the same market setup, but changes the objective so
-the downside matters too.
-
-```python
-energy_system = EnergySystem(
+energy_system_penalized_cvar = EnergySystem(
     portfolio=portfolio,
-    markets=[sdac, sidc],
+    markets=[day_ahead, intraday],
     scenarios=scenarios,
     number_of_steps=1,
-    timestep=timedelta(hours=24),
+    timestep=timedelta(hours=1),
     objective=Objective(
         terms=(
             ProfitTerm(weight=1),
@@ -147,88 +112,28 @@ energy_system = EnergySystem(
         ),
     ),
 )
-
-result_cvar = energy_system.optimize()
+result_penalized_cvar = energy_system_penalized_cvar.optimize()
 ```
-
-This is the key modeling move. Profit alone rewards the best average outcome, but CVaR puts weight on the lower tail and makes bad outcomes more expensive.
 
 ## Results
 
-The chart below compares the optimal allocation across scenarios for both the
-profit-only and CVaR-penalized runs. With profit alone, the optimizer sends
-capacity to the riskier sidc market. Adding CVaR shifts most capacity to sdac,
-with a small position in sidc to capture upside.
+The chart shows what the CCGT sells on each market, in each scenario, for both runs:
 
 <iframe src="../assets/plots/cvar_market_risk.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
-Profit-only result:
+- **Expected profit only:** all 100 MW goes to intraday, in every scenario. `result_max_expected_profit.objective_value` is 18,667.
+- **With CVaR:** 87.5 MW goes day-ahead and 12.5 MW to intraday. The day-ahead volume is the same in every scenario because the market is stage-fixed, and here the intraday volume is too. `result_penalized_cvar.objective_value` is 36,104: the expected profit plus the CVaR, each with a weight of 1.
 
-```text
-scenario  time  market
-high      0     sdac        0.0
-                sidc      100.0
-mid       0     sdac       -0.0
-                sidc      100.0
-low       0     sdac       -0.0
-                sidc      100.0
-```
+The profit of each allocation in each scenario shows why:
 
-This makes sense: the optimizer sends all 100 MW to `sidc` because it has slightly higher expected profit (18,667 vs 18,000).
+| Day-ahead / intraday | high   | mid    | low    | Expected profit | CVaR   | Objective with CVaR |
+| -------------------- | ------ | ------ | ------ | --------------- | ------ | ------------------- |
+| 100 / 0 MW           | 17,000 | 18,000 | 19,000 | 18,000          | 17,167 | 35,167              |
+| 0 / 100 MW           | 26,000 | 18,000 | 12,000 | 18,667          | 13,000 | 31,667              |
+| 87.5 / 12.5 MW       | 18,125 | 18,000 | 18,125 | 18,083          | 18,021 | 36,104              |
 
-Expected profit confirms that choice:
-
-- `sdac`: `(190 - 20) × 100 = 17,000` in `high`, `(200 - 20) × 100 = 18,000`
-  in `mid`, `(210 - 20) × 100 = 19,000` in `low`, so the expected profit is
-  `(17,000 + 18,000 + 19,000) / 3 = 18,000`
-- `sidc`: `(280 - 20) × 100 = 26,000` in `high`, `(200 - 20) × 100 = 18,000`
-  in `mid`, `(140 - 20) × 100 = 12,000` in `low`, so the expected profit is
-  `(26,000 + 18,000 + 12,000) / 3 = 18,667`
-
-So `sidc` has the higher expected profit, which is why the profit-only model chooses it.
-
-With CVaR added:
-
-```text
-scenario  time  market
-high      0     sdac       87.5
-                sidc       12.5
-mid       0     sdac       87.5
-                sidc       12.5
-low       0     sdac       87.5
-                sidc       12.5
-```
-
-This is the key change: once downside risk is penalized, the optimizer commits most capacity (~87.5 MW) to `sdac` across all scenarios, with a meaningful position (~12.5 MW) in `sidc` to capture upside in favorable scenarios.
-
-The math backs this up. For the optimal mix (87.5 MW sdac + 12.5 MW sidc):
-
-- **Scenario profits**: `high` = 18,125, `mid` = 18,000, `low` = 18,125
-- **Expected profit**: (18,125 + 18,000 + 18,125) / 3 = 18,083
-- **VaR (60th percentile)**: 18,125 (the optimizer pushes η to the maximum profit)
-- **Shortfalls**: `high` = 0, `mid` = 125, `low` = 0
-- **E[shortfall]**: (0 + 125 + 0) / 3 ≈ 41.67
-- **CVaR**: 18,125 - 2.5 × 41.67 ≈ 18,021
-- **Objective**: 18,083 + 18,021 = 36,104
-
-Compare this to pure strategies:
-
-- **100% sdac**: E[profit] = 18,000, CVaR ≈ 17,167, Objective ≈ 35,167
-- **100% sidc**: E[profit] = 18,667, CVaR = 13,000, Objective ≈ 31,667
-
-The mixed strategy (87.5/12.5) achieves a higher objective (36,104) than either pure strategy, demonstrating how CVaR creates value through diversification.
-
-The important comparison is this:
-
-- with profit only, the optimizer prefers `sidc` (100% allocation)
-- with profit plus CVaR, the optimizer prefers `sdac` (~87.5% allocation)
-
-The first result makes sense because `sidc` has the higher expected profit. The second result makes sense because CVaR makes the low-price case matter, and that makes the lower-variance `sdac` commitment more attractive. The more balanced allocation (87.5/12.5 instead of 95/5) reflects that `sidc` is still profitable in all scenarios, just with more variance.
+All intraday has the highest expected profit, so the first run picks it. With a confidence level of 0.6, the CVaR is the average profit over the worst 40 % of outcomes, so it's dominated by the worst scenario. All intraday's 12,000 in the low scenario drags its CVaR down to 13,000. The 87.5 / 12.5 mix is where high and low come out equal, which lifts its worst outcomes highest. It gives up 584 of expected profit, but no scenario earns less than 18,000. See [Risk (CVaR)](../user_guide/uncertainty/risk.md#choosing-the-confidence-level-and-the-weight) for how the confidence level and weight change this, and the [formulation](../formulation/objective.md#conditional-value-at-risk) for how CVaR is computed.
 
 ## Discussion
 
-This is the most advanced example in the set because it combines uncertainty, market participation, and risk aversion.
-
-The useful intuition here is that expected value and risk are not the same thing. A decision that looks best on average can still be unattractive once you account for the bad tail outcomes. CVaR gives the optimizer a way to say, "I care about avoiding the painful scenarios, not just chasing the average."
-
-In this example, both markets have uncertainty, but with very different profiles. `sdac` has modest price variation while `sidc` has wider swings. The profit-only objective goes all-in on the higher-variance market, while the CVaR-penalized objective favors the lower-variance option but still maintains a meaningful position in the riskier market. This is the core value of risk-aware optimization: it lets the model balance upside potential against downside exposure, resulting in more diversified allocations rather than extreme bets.
+Maximizing expected profit bets everything on the market with the best average, however badly it can go. Adding CVaR makes the optimizer pay for the worst outcomes, so it hedges: a mix of the two markets beats either one alone, because their prices move in opposite directions across the scenarios. The [EV Fleet Optimization](ev_fleet_optimization.md) example returns to a single future, with vehicles, trips and chargers.

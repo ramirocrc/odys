@@ -4,9 +4,9 @@ icon: fontawesome/solid/plug
 
 # FixedLoad
 
-A `FixedLoad` represents inelastic demand that must be met exactly, like the factory of the [running example](../index.md#the-running-example). The optimizer cannot adjust it; it must dispatch generators, batteries, and markets to match.
+A `FixedLoad` models demand that has to be served exactly as given: a building, a process that can't move, a site's base consumption, like the factory of the [running example](../index.md#the-running-example). The optimizer can't change it. It decides how your generators, batteries and markets cover it.
 
-Need demand the optimizer can shift up or down? See [FlexibleLoad](flexible_load.md).
+For demand the optimizer may move up or down, use a [FlexibleLoad](flexible_load.md) instead.
 
 ## Basic usage
 
@@ -16,17 +16,17 @@ from odys import FixedLoad
 factory = FixedLoad(name="factory")
 ```
 
-The actual demand values are specified later in the `Scenario` as a `LoadProfile`. We separate the load definition from its time series because the same load can appear in multiple scenarios with different profiles.
+A fixed load is just a name. Its demand lives in each `Scenario`, as a `LoadProfile` (see [Profiles](#profiles)), because the same factory can draw differently in different futures.
 
 ## Fields
 
-| Field  | Type  | Required | Default | Description                    |
-| ------ | ----- | -------- | ------- | ------------------------------ |
-| `name` | `str` | Yes      | -       | Unique identifier for the load |
+| Field  | Type  | Required | Default | Description               |
+| ------ | ----- | -------- | ------- | ------------------------- |
+| `name` | `str` | Yes      | -       | Unique name of the load   |
 
 ## Profiles
 
-Every fixed load needs a `LoadProfile` in every scenario. It holds the demand at each timestep:
+Every fixed load needs a `LoadProfile` in every scenario, with its demand in MW at each step:
 
 ```python
 from odys import LoadProfile, Scenario
@@ -36,7 +36,7 @@ scenario = Scenario(
 )
 ```
 
-For multiple fixed loads, add one `LoadProfile` per load:
+With several fixed loads, give each one its own profile:
 
 ```python
 offices = FixedLoad(name="offices")
@@ -49,32 +49,16 @@ scenario = Scenario(
 )
 ```
 
+The profile needs one value per step of the run. Every MW of it has to be served: there is no unserved energy, so if your assets and markets can't cover the demand at some step, the problem is infeasible. odys catches the obvious cases before solving, when even all your supply together falls short, and raises an `OdysValidationError`. See [PB-1](../../formulation/power_balance.md#pb-1).
+
 ## Results
 
-Fixed loads have no decision variables, so they have no results container. Their demand is exactly the `LoadProfile` you provided.
+A fixed load has no decisions, so it has no results container: its demand is exactly the `LoadProfile` you gave. What the optimizer decided shows up in the assets and markets that serve it. The [Basic Dispatch example](../../examples/basic_dispatch.md) serves a fixed load with solar and a CCGT.
 
-See the [Basic Dispatch example](../../examples/basic_dispatch.md) for a fixed load served by solar and a CCGT.
+## How it's modelled
 
-## Mathematical formulation
-
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
-### Variables
-
-None. The demand $d^{\text{fixed}}_{l,t,s}$ is a parameter taken from the `LoadProfile`.
-
-### Constraints
-
-None.
-
-### Objective contribution
-
-None. The cost of serving the load comes from the generators and markets that supply it.
-
-### Power balance contribution
-
-Demand side: $\sum_l d^{\text{fixed}}_{l,t,s}$. See [Power balance](../concepts/power_balance.md).
+A fixed load adds its demand to the [power balance](../../formulation/power_balance.md#fixed-loads), and nothing else: no variables, no constraints of its own, and no term in the objective. Serving it costs whatever the energy that covers it costs.
 
 ## Next steps
 
-Next, let's give the optimizer demand it can shift: see [FlexibleLoad](flexible_load.md).
+Some demand can bend when prices do. Next, see how a [FlexibleLoad](flexible_load.md) lets the optimizer move it.
