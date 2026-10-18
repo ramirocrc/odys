@@ -1,6 +1,6 @@
 [project]
 name = "odys"
-version = "0.2.1"
+version = "0.3.0"
 description = "Stochastic optimization of energy asset portfolios across electricity markets."
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
