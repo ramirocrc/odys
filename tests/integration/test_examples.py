@@ -10,9 +10,9 @@ from odys import OptimalDispatchResults
 EXAMPLES_DIR = Path(__file__).parents[2] / "examples"
 
 
-def test_battery_dispatch_supply_meets_load_at_every_timestep() -> None:
-    namespace = runpy.run_path(str(EXAMPLES_DIR / "battery_dispatch.py"))
-    result = namespace["run_battery_dispatch"]()
+def test_solar_storage_supply_meets_load_at_every_timestep() -> None:
+    namespace = runpy.run_path(str(EXAMPLES_DIR / "solar_storage.py"))
+    result = namespace["run_solar_storage"]()
     assert isinstance(result, OptimalDispatchResults)
 
     generation = result.generators.to_dataframe()["power"].unstack("generator").sum(axis=1).to_numpy()

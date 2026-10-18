@@ -16,11 +16,10 @@ extra_css = ["assets/stylesheets/brand.css", "assets/stylesheets/extra.css"]
 nav = [
   { "Home" = "index.md" },
   { "User Guide" = [
-    { "Overview" = "user_guide/index.md" },
     { "Building a model" = [
       { "Your first model" = "user_guide/model/first_model.md" },
+      { "Scenario" = "user_guide/model/scenario.md" },
       { "Time and units" = "user_guide/model/time_and_units.md" },
-      { "Profiles" = "user_guide/model/profiles.md" },
     ] },
     { "Assets" = [
       { "Generator" = "user_guide/assets/generator.md" },
@@ -40,7 +39,7 @@ nav = [
       { "Validation and errors" = "user_guide/solving/validation.md" },
     ] },
     { "Uncertainty and risk" = [
-      { "Scenarios" = "user_guide/uncertainty/scenarios.md" },
+      { "Several scenarios" = "user_guide/uncertainty/scenarios.md" },
       { "Risk (CVaR)" = "user_guide/uncertainty/risk.md" },
     ] },
   ] },
@@ -59,12 +58,12 @@ nav = [
   ] },
   { "Examples" = [
     { "Overview" = "examples/index.md" },
-    { "Basic Dispatch" = "examples/basic_dispatch.md" },
-    { "Battery Dispatch" = "examples/battery_dispatch.md" },
-    { "Flexible Load Market" = "examples/flexible_load_market.md" },
-    { "Market Arbitrage" = "examples/market_arbitrage.md" },
-    { "CVaR Market Risk" = "examples/cvar_market_risk.md" },
-    { "EV Fleet" = "examples/ev_fleet_optimization.md" },
+    { "Merit-Order Dispatch" = "examples/merit_order_dispatch.md" },
+    { "Storing Solar for the Evening" = "examples/solar_storage.md" },
+    { "Industrial Demand Response" = "examples/demand_response.md" },
+    { "Make or Buy" = "examples/make_or_buy.md" },
+    { "Day-Ahead or Intraday" = "examples/day_ahead_or_intraday.md" },
+    { "Depot Charging with V2G" = "examples/depot_charging.md" },
   ] },
   { "Developer Reference" = [
     { "Overview" = "developer/index.md" },

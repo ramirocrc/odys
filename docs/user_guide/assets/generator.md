@@ -10,7 +10,7 @@ That's enough for a wind farm. A thermal plant usually needs a few more fields: 
 
 ## Basic usage
 
-Let's create the CCGT of the [running example](../index.md#the-running-example): a 100 MW gas plant whose fuel costs 50 $/MWh.
+Let's create the CCGT of the site from [Your first model](../model/first_model.md): a 100 MW gas plant whose fuel costs 50 $/MWh.
 
 ```python
 from odys import Generator
@@ -159,7 +159,7 @@ A `GeneratorFinalState` takes the `generator` and the `power` it ends the run wi
 
 ## Profiles
 
-The wind doesn't always blow. In a `Scenario`, an `AvailableCapacityProfile` caps a generator's output at every step. Use it for wind and solar, like the wind farm of the running example, or for planned maintenance:
+The wind doesn't always blow. In a `Scenario`, an `AvailableCapacityProfile` caps a generator's output at every step. Use it for wind and solar, like a wind farm, or for planned maintenance:
 
 ```python
 from odys import AvailableCapacityProfile
@@ -174,7 +174,7 @@ scenario = Scenario(
 )
 ```
 
-The profile references the generator object, and each value lies between 0 and its `nominal_power`; anything else raises an `OdysValidationError`. A generator without a profile can always produce up to its `nominal_power`. Each scenario can have its own profile, which is how a windy and a calm tomorrow differ (see [Scenarios](../uncertainty/scenarios.md)). See [G-4](../../formulation/generators.md#g-4).
+The profile references the generator object, and each value lies between 0 and its `nominal_power`; anything else raises an `OdysValidationError`. A generator without a profile can always produce up to its `nominal_power`. Each scenario can have its own profile, which is how a windy and a calm tomorrow differ (see [Several scenarios](../uncertainty/scenarios.md)). See [G-4](../../formulation/generators.md#g-4).
 
 ## Results
 

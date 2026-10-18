@@ -2,7 +2,7 @@
 icon: fontawesome/solid/chart-line
 ---
 
-# Market Arbitrage
+# Make or Buy
 
 ## Problem Description
 
@@ -20,7 +20,7 @@ flowchart LR
     style Load fill:none
 ```
 
-**Source**: [`examples/market_arbitrage.py`](https://github.com/ramirocrc/odys/blob/main/examples/market_arbitrage.py). The script wraps the steps below in `run_market_arbitrage()`, which returns the results.
+**Source**: [`examples/make_or_buy.py`](https://github.com/ramirocrc/odys/blob/main/examples/make_or_buy.py). The script wraps the steps below in `run_make_or_buy()`, which returns the results.
 
 ## Walkthrough
 
@@ -95,7 +95,7 @@ result = energy_system.optimize()
 
 The top chart shows the CCGT's output and the market trades, with purchases as positive bars and sales as negative ones. The bottom chart shows the market price against the CCGT's 50 $/MWh:
 
-<iframe src="../assets/plots/market_arbitrage.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/make_or_buy.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
 
 At each step, the optimizer compares the price with the CCGT's cost:
 
@@ -106,4 +106,4 @@ Over the day, the CCGT produces 1,700 MWh at a cost of 85,000. The site sells 51
 
 ## Discussion
 
-A market sets a price on every MWh at every step, so a unit's cost is weighed against that price rather than against the load: the CCGT runs flat out whenever it earns more than it costs, whatever the site needs. Each step is still decided on its own. The [CVaR Market Risk](cvar_market_risk.md) example plans against several possible price futures, and weighs how bad the worst ones could be.
+A market sets a price on every MWh at every step, so a unit's cost is weighed against that price rather than against the load: the CCGT runs flat out whenever it earns more than it costs, whatever the site needs. Each step is still decided on its own. The [Day-Ahead or Intraday](day_ahead_or_intraday.md) example plans against several possible price futures, and weighs how bad the worst ones could be.

@@ -8,7 +8,7 @@ Every odys model is built from two objects. An `AssetPortfolio` holds what you o
 
 ## Basic usage
 
-Let's build the first system of the [running example](../index.md#the-running-example): a 100 MW CCGT serving a factory over four hours.
+Let's build a first system, a small industrial site: a 100 MW CCGT serving a factory over four hours.
 
 ```python
 from datetime import timedelta
@@ -48,7 +48,13 @@ print(result.objective_value)
 -13000.0
 ```
 
-The rest of the User Guide adds to this system one piece at a time.
+The rest of the User Guide adds to this site one piece at a time.
+
+## Units
+
+odys doesn't convert units. Powers are in MW and held for the whole step, energies are in MWh, and prices and variable costs are per MWh, in whatever currency your prices are in. For a small asset, convert to MW yourself: a 22 kW charger is `0.022`.
+
+A few fields depend on the step length, such as ramp limits and self-discharge. [Time and units](time_and_units.md) lists how each one reads it.
 
 ## The portfolio
 
@@ -84,7 +90,7 @@ portfolio.assets  # every asset, keyed by name, read-only
 
 Each one is covered on its own page:
 
-- **`scenarios`**: a single [Scenario](profiles.md) holds the time series of one future. A list of them plans against [several futures](../uncertainty/scenarios.md).
+- **`scenarios`**: a single [Scenario](scenario.md) holds the time series of one future. A list of them plans against [several futures](../uncertainty/scenarios.md).
 - **`timestep`** and **`number_of_steps`**: see [Time and units](time_and_units.md).
 - **`markets`**: see [EnergyMarket](../markets/energy_market.md).
 - **`objective`**: see [Risk (CVaR)](../uncertainty/risk.md), to weigh profit against risk.
@@ -106,10 +112,25 @@ Conditions go to the `EnergySystem`, not to a `Scenario`, because they're the sa
 
 Final conditions are always optional. Loads, chargers and markets carry no state, so they take none. Each asset page shows its conditions in code.
 
+## One bus
+
+odys connects every asset and every market to a single bus. At every step and in every scenario, the power fed in equals the power taken out:
+
+| Feeds the bus | Draws from the bus |
+| ------------- | ------------------ |
+| [Generator](../assets/generator.md) output | [FixedLoad](../assets/fixed_load.md) demand |
+| [Battery](../assets/battery.md) discharge, from stationary storage and vehicles with V2G | [FlexibleLoad](../assets/flexible_load.md) demand, after its adjustment |
+| [EnergyMarket](../markets/energy_market.md) purchases | Battery charging |
+| | EnergyMarket sales |
+
+There's no network: no lines, no congestion and no losses between assets, so power fed in anywhere serves demand anywhere. [Chargers](../assets/charger.md) aren't on the bus themselves: the vehicles plugged into them are.
+
+There's no unserved energy either. All demand has to be met, so a system whose supply can't cover it has no solution. odys catches the obvious cases when you create the `EnergySystem` (see [Validation and errors](../solving/validation.md)). See [PB-1](../../formulation/power_balance.md#pb-1).
+
 ## Optimizing
 
 `.optimize()` builds the model as a mixed-integer linear program and solves it with HiGHS, unless you choose another solver with a `SolverConfig` (see [Solvers](../solving/solvers.md)). It returns the results, one container per asset type; see [Results](../solving/results.md). The exact model is written out in the [Mathematical Formulation](../../formulation/index.md).
 
 ## Next steps
 
-Every value in this model was a power, a price or a step length. Next, see how odys reads each of them, in [Time and units](time_and_units.md).
+The factory's demand was a list of four numbers in a `Scenario`. Next, see what a [Scenario](scenario.md) describes: the availability, demand and prices your system faces at each step.

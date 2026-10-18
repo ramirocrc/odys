@@ -12,6 +12,7 @@ Principles for writing and improving the Odys documentation. The voice is the sa
 - [ ] Find the page's place in the [information architecture](#information-architecture) and the question it answers (§2).
 - [ ] Start from the matching template in [templates.md](templates.md): an asset or market page, a formulation page, or an example page.
 - [ ] Check which section owns each fact (§10). Link to facts another page owns instead of explaining them again.
+- [ ] On anything about markets, bidding, scenarios or `stage_fixed`, follow the [energy-markets](../energy-markets/SKILL.md) playbook: every timing and every "what is known when" checked against it.
 - [ ] Write in the voice of §13. On formulation pages, explain every rule by what the optimizer would get away with without it (§11).
 - [ ] Equations only in `docs/formulation/`, in the constraint rhythm of §4. User Guide and Examples pages link to the constraint instead.
 - [ ] User Guide code runs in order and shows its exact output (§3). Reuse the running example's names.
@@ -72,7 +73,7 @@ The same holds inside each section. Every page ends with the question it leaves 
 
 Every page contains executable code. Not pseudocode. Real code. Not every page has to solve, though: a page that builds only part of a system (vehicles without chargers, say) shows runnable code and leaves the solve to the page that completes it, linking there. The code blocks of a page run in order, from its first block, without names from other pages. A block that shows output is followed by a `text` block with exactly what it prints. `just docs-build` runs `tools/docs/check_user_guide.py`, which executes every User Guide page and fails on an error or an output that differs (column spacing and the sign of zero aside). Avoid ties: when several dispatches are equally optimal, the solver may print another one, so change the data until the optimum is unique, and round what you print.
 
-The User Guide builds on one running example, described on `user_guide/index.md`: reuse its names and numbers (`ccgt`, `wind`, `factory`, `process`, `bess`, `day_ahead`) rather than inventing a new system on each page.
+The User Guide builds one running example, a small industrial site that grows page by page from `user_guide/model/first_model.md`: reuse its names and numbers (`ccgt`, `wind`, `factory`, `process`, `bess`, `day_ahead`) rather than inventing a new system on each page.
 
 Pattern:
 
@@ -201,7 +202,7 @@ Someone working in energy optimization immediately recognizes the problem.
 
 Mermaid diagrams clarify system structure and data flow. Use them for:
 
-**Asset topology** (as in `basic_dispatch.md`):
+**Asset topology** (as in `merit_order_dispatch.md`):
 
 ```mermaid
 flowchart LR
@@ -328,8 +329,8 @@ Every page links forward. The reader never wonders where to go next. End with a 
 Examples:
 
 - End of `assets/generator.md`: "Next, see how [FixedLoad](fixed_load.md) defines the demand your system must serve."
-- End of `model/profiles.md`: "The model has its time series. Next, meet the assets one by one, starting with the [Generator](../assets/generator.md)."
-- End of an example: "This example used deterministic scenarios. The [CVaR Market Risk](../examples/cvar_market_risk.md) example adds risk-aware optimization."
+- End of `model/scenario.md`: "The model knows what it faces. Next, meet the assets one by one, starting with the [Generator](../assets/generator.md)."
+- End of an example: "This example used deterministic scenarios. The [Day-Ahead or Intraday](../examples/day_ahead_or_intraday.md) example adds risk-aware optimization."
 - End of `formulation/generators.md`: "Power made now is used now, unless you can store it. See [Batteries](batteries.md)."
 
 ## 16. Visual consistency
@@ -358,8 +359,8 @@ Readers quickly learn the pattern.
 Pages are not read in isolation. Link to related pages wherever a concept is introduced:
 
 - "The profile references a [Generator](../assets/generator.md) of your portfolio."
-- "See [Scenarios](../uncertainty/scenarios.md) for more details."
-- "Market prices are specified in the [Scenario](../model/profiles.md), not on the market object."
+- "See [Several scenarios](../uncertainty/scenarios.md) for more details."
+- "Market prices are specified in the [Scenario](../model/scenario.md), not on the market object."
 
 Internal links are the connective tissue of the documentation.
 
@@ -378,11 +379,10 @@ docs/
 ├── index.md                  # Landing page + quickstart
 │
 ├── user_guide/               # Tutorials and concept pages
-│   ├── index.md              # Overview: what odys solves, object diagram, one bus, running example, reading order
-│   ├── model/                # Building a model, read in order
-│   │   ├── first_model.md    # EnergySystem and AssetPortfolio: the first solve
-│   │   ├── time_and_units.md # The horizon, units, and how each field reads time
-│   │   └── profiles.md       # One future's time series: load, capacity, price
+│   ├── model/                # Building a model: first_model and scenario read in order, then a reference page
+│   │   ├── first_model.md    # Where the User Guide opens: the first solve, the portfolio, EnergySystem, one bus
+│   │   ├── scenario.md       # What the system faces: availability, demand, prices, as profiles
+│   │   └── time_and_units.md # Reference: the horizon, units, and how each field reads time
 │   ├── assets/               # One page per asset, all with the same template
 │   │   ├── generator.md
 │   │   ├── fixed_load.md
@@ -398,7 +398,7 @@ docs/
 │   │   ├── solvers.md        # Solver choice and options
 │   │   └── validation.md     # Checks before solving, and errors
 │   └── uncertainty/
-│       ├── scenarios.md      # Several futures, stage-fixed decisions, results per scenario
+│       ├── scenarios.md      # Several scenarios: several futures, stage-fixed decisions, results per scenario
 │       └── risk.md           # Objective, ProfitTerm and CVaRTerm: weighing bad outcomes
 │
 ├── formulation/              # Mathematical Formulation: the exact MILP, one page per model part
@@ -416,12 +416,12 @@ docs/
 │
 ├── examples/                 # End-to-end worked examples
 │   ├── index.md
-│   ├── basic_dispatch.md
-│   ├── battery_dispatch.md
-│   ├── flexible_load_market.md
-│   ├── market_arbitrage.md
-│   ├── cvar_market_risk.md
-│   └── ev_fleet_optimization.md
+│   ├── merit_order_dispatch.md
+│   ├── solar_storage.md
+│   ├── demand_response.md
+│   ├── make_or_buy.md
+│   ├── day_ahead_or_intraday.md
+│   └── depot_charging.md
 │
 └── developer/                # Developer Reference
     ├── index.md              # Overview and package layers

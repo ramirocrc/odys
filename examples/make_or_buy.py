@@ -1,4 +1,4 @@
-"""Market arbitrage with a gas plant and a two-way market.
+"""Make or buy: a gas plant next to a two-way market.
 
 This example adds a market to the dispatch problem. The site can buy power
 instead of producing it, and sell what its gas plant produces beyond the
@@ -49,8 +49,8 @@ from odys import (
 logger = logging.getLogger(__name__)
 
 
-def run_market_arbitrage() -> OptimalDispatchResults:
-    """Run the market arbitrage example and return the optimization results."""
+def run_make_or_buy() -> OptimalDispatchResults:
+    """Run the make-or-buy example and return the optimization results."""
     ccgt = Generator(
         name="ccgt",
         nominal_power=100,
@@ -90,6 +90,6 @@ def run_market_arbitrage() -> OptimalDispatchResults:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logging.getLogger("linopy").setLevel(logging.WARNING)
-    result = run_market_arbitrage()
+    result = run_make_or_buy()
     logger.info(result.generators.to_dataframe())
     logger.info(result.markets.net_volume)

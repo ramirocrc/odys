@@ -134,7 +134,7 @@
 
           <article class="odys-card odys-proof__a">
             <h3>Stochastic and risk-averse objectives</h3>
-            <p>Maximize expected profit over the scenarios, or add a CVaR term to weight the tail. Results from the CVaR market-risk example.</p>
+            <p>Maximize expected profit over the scenarios, or add a CVaR term to weight the tail. Results from the Day-Ahead or Intraday example.</p>
             <svg viewBox="0 0 300 180" role="img" aria-label="Expected versus worst-case profit with and without a CVaR term" data-frontier></svg>
             <ul class="odys-legend" data-frontier-legend></ul>
           </article>
@@ -200,12 +200,12 @@
         </div>
         <div class="odys-examples" data-carousel>
           {% set examples = [
-            ("basic_dispatch", "Deterministic · generators", "Basic dispatch", "Merit-order dispatch of solar and gas against a fixed load."),
-            ("battery_dispatch", "Deterministic · storage", "Battery dispatch", "Shift midday solar output to later hours with a battery."),
-            ("market_arbitrage", "Deterministic · markets", "Market arbitrage", "Sell the plant's spare output when the price is high, and buy when it's low."),
-            ("flexible_load_market", "Deterministic · demand response", "Flexible load", "Adjust industrial demand within bounds to follow market prices."),
-            ("ev_fleet_optimization", "Deterministic · EVs and chargers", "EV fleet", "Schedule charging and V2G around trips and shared chargers."),
-            ("cvar_market_risk", "Stochastic · CVaR", "CVaR market risk", "Allocate volume between markets with stage-fixed bids and a CVaR term."),
+            ("merit_order_dispatch", "Deterministic · generators", "Merit-order dispatch", "Merit-order dispatch of solar and gas against a fixed load."),
+            ("solar_storage", "Deterministic · storage", "Storing solar for the evening", "Shift midday solar output to later hours with a battery."),
+            ("make_or_buy", "Deterministic · markets", "Make or buy", "Run the plant or buy from the market, and sell its spare output when the price is high."),
+            ("demand_response", "Deterministic · demand response", "Industrial demand response", "Adjust industrial demand within bounds to follow market prices."),
+            ("depot_charging", "Deterministic · EVs and chargers", "Depot charging with V2G", "Schedule charging and V2G around trips and shared chargers."),
+            ("day_ahead_or_intraday", "Stochastic · CVaR", "Day-ahead or intraday", "Commit volume day-ahead or keep it for intraday, with a CVaR term."),
           ] %}
           {% for slug, who, title, text in examples %}
           <a class="odys-card odys-example" href="{{ 'examples/' | url }}{{ slug }}/">

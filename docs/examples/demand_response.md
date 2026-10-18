@@ -2,7 +2,7 @@
 icon: fontawesome/solid/bolt
 ---
 
-# Flexible Load Market
+# Industrial Demand Response
 
 ## Problem Description
 
@@ -18,7 +18,7 @@ flowchart LR
     style Load fill:none
 ```
 
-**Source**: [`examples/flexible_load_market.py`](https://github.com/ramirocrc/odys/blob/main/examples/flexible_load_market.py). The script wraps the steps below in `run_flexible_load_market()`, which returns the results.
+**Source**: [`examples/demand_response.py`](https://github.com/ramirocrc/odys/blob/main/examples/demand_response.py). The script wraps the steps below in `run_demand_response()`, which returns the results.
 
 ## Walkthrough
 
@@ -92,7 +92,7 @@ result = energy_system.optimize()
 
 The top chart shows the process's consumption against its 60 MW base. The bottom chart shows the market price against the 70 $/MWh the process's consumption is worth:
 
-<iframe src="../assets/plots/flexible_load_market.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/demand_response.html" style="width:100%; height:700px; border:none;" loading="lazy"></iframe>
 
 At each step, the optimizer compares the price with the [value of consumption](../user_guide/assets/flexible_load.md#value-of-consumption):
 
@@ -103,4 +103,4 @@ Over the day, the process consumes 1,520 MWh, 80 MWh more than its base of 1,440
 
 ## Discussion
 
-A flexible load is dispatched like a generator in reverse: it consumes whenever power is worth more to it than it costs, within its range and what the market can deliver. Each step is decided on its own, so energy cut in the evening isn't made up at midday. The [Market Arbitrage](market_arbitrage.md) example adds a CCGT next to the market, so the site chooses at each hour between producing and buying.
+A flexible load is dispatched like a generator in reverse: it consumes whenever power is worth more to it than it costs, within its range and what the market can deliver. Each step is decided on its own, so energy cut in the evening isn't made up at midday. The [Make or Buy](make_or_buy.md) example adds a CCGT next to the market, so the site chooses at each hour between producing and buying.

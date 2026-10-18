@@ -1,4 +1,4 @@
-"""Battery dispatch with solar and storage.
+"""Storing solar for the evening with a battery.
 
 This example shows how storage changes the dispatch problem. Instead of using
 solar as soon as it is available and then falling back to gas, the optimizer
@@ -69,8 +69,8 @@ SOLAR_PROFILE: list[float] = [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 1
 LOAD_PROFILE: list[float] = 24 * [70.0]
 
 
-def run_battery_dispatch() -> OptimalDispatchResults:
-    """Run the battery dispatch example and return the optimization results."""
+def run_solar_storage() -> OptimalDispatchResults:
+    """Run the solar storage example and return the optimization results."""
     ccgt = Generator(
         name="ccgt",
         nominal_power=100,
@@ -118,7 +118,7 @@ def run_battery_dispatch() -> OptimalDispatchResults:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logging.getLogger("linopy").setLevel(logging.WARNING)
-    result = run_battery_dispatch()
+    result = run_solar_storage()
     logger.info("generators power")
     logger.info(result.generators.power)
 

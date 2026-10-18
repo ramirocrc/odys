@@ -4,7 +4,7 @@ icon: fontawesome/solid/plug
 
 # FixedLoad
 
-A `FixedLoad` models demand that has to be served exactly as given: a building, a process that can't move, a site's base consumption, like the factory of the [running example](../index.md#the-running-example). The optimizer can't change it. It decides how your generators, batteries and markets cover it.
+A `FixedLoad` models demand that has to be served exactly as given: a building, a process that can't move, a site's base consumption, like the factory in [Your first model](../model/first_model.md). The optimizer can't change it. It decides how your generators, batteries and markets cover it.
 
 For demand the optimizer may move up or down, use a [FlexibleLoad](flexible_load.md) instead.
 
@@ -53,7 +53,7 @@ The profile needs one value per step of the run. Every MW of it has to be served
 
 ## Results
 
-A fixed load has no decisions, so it has no results container: its demand is exactly the `LoadProfile` you gave. What the optimizer decided shows up in the assets and markets that serve it. The [Basic Dispatch example](../../examples/basic_dispatch.md) serves a fixed load with solar and a CCGT.
+A fixed load has no decisions, so it has no results container: its demand is exactly the `LoadProfile` you gave. What the optimizer decided shows up in the assets and markets that serve it. The [Merit-Order Dispatch example](../../examples/merit_order_dispatch.md) serves a fixed load with solar and a CCGT.
 
 ## How it's modelled
 

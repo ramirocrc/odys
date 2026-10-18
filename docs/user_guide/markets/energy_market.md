@@ -10,7 +10,7 @@ Markets aren't assets. Pass them to the `EnergySystem` with `markets=...`, not t
 
 ## Basic usage
 
-Let's connect the site of the [running example](../index.md#the-running-example) to a day-ahead market, trading up to 150 MW per step:
+Let's connect the site to a day-ahead market, trading up to 150 MW per step:
 
 ```python
 from odys import EnergyMarket
@@ -70,11 +70,11 @@ intraday = EnergyMarket(name="intraday", max_trading_volume_per_step=50.0)
 markets = [day_ahead, intraday]  # EnergySystem(markets=markets, ...)
 ```
 
-Each market has its own price, and the optimizer trades on whichever pays best at each step. When two markets have different prices at the same step, it also buys on the cheaper one and sells on the dearer one, up to the smaller of the two limits. If that isn't a trade you'd make, set the limits to what you'd really trade, or make one of the markets one-way. See [M-1](../../formulation/markets.md#m-1).
+Each market has its own price, and the optimizer trades on whichever pays best at each step. When two markets have different prices at the same step, it also buys on the cheaper one and sells on the dearer one, up to the smaller of the two limits. With a single scenario, both prices are taken as known, so the plan books that spread as certain. If that isn't a trade you'd make, set the limits to what you'd really trade, or make one of the markets one-way. See [M-1](../../formulation/markets.md#m-1).
 
 ## Stage-fixed markets
 
-Some markets clear before you know which future happens. You place day-ahead bids before you know tomorrow's wind, and you're held to them whatever the wind does. Mark such a market with `stage_fixed=True`, and the optimizer commits to the same trades, and the same direction, in every [scenario](../uncertainty/scenarios.md):
+Some markets take your bids before you know which future happens. You place day-ahead bids before the market clears, so before you know its prices or tomorrow's wind, and you're held to them whatever happens. Mark such a market with `stage_fixed=True`, and the optimizer commits to the same trades, and the same direction, in every [scenario](../uncertainty/scenarios.md):
 
 ```python
 day_ahead_bids = EnergyMarket(
@@ -84,7 +84,7 @@ day_ahead_bids = EnergyMarket(
 )
 ```
 
-A market you can still trade on once the uncertainty is resolved, like intraday, keeps the default and adapts in each scenario. With a single scenario, `stage_fixed` changes nothing. See [Scenarios](../uncertainty/scenarios.md#whats-decided-before-the-uncertainty) for how it shapes a stochastic run, and [NA-1](../../formulation/non_anticipativity.md#na-1).
+A market you trade on later, like intraday, keeps the default and adapts in each scenario, as if you traded it knowing which future happened. A stage-fixed market commits one volume per step, whatever price the market clears at: a price-independent bid, not a price-quantity curve. With a single scenario, `stage_fixed` changes nothing. See [Several scenarios](../uncertainty/scenarios.md#whats-decided-before-the-uncertainty) for how it shapes a stochastic run, and [NA-1](../../formulation/non_anticipativity.md#na-1).
 
 ## Profiles
 
@@ -108,7 +108,7 @@ The same price applies to buying and selling. Prices can be negative: then selli
 
 ## Results
 
-The market is the last piece of the site. Let's put the whole running example together: the CCGT, the wind farm, the battery, the factory and the flexible process, trading on the day-ahead market:
+The market is the last piece of the site. Let's put the whole site together: the CCGT, the wind farm, the battery, the factory and the flexible process, trading on the day-ahead market:
 
 ```python
 from datetime import timedelta
@@ -179,7 +179,7 @@ The market's results are in `result.markets`, one `pandas.Series` per series, in
 - `buy_volume` and `sell_volume`: the power bought and sold, in MW.
 - `net_volume`: sell minus buy, so negative when the site buys.
 
-The [Market Arbitrage example](../../examples/market_arbitrage.md) buys from a market instead of running a CCGT, and the [CVaR Market Risk example](../../examples/cvar_market_risk.md) trades under price uncertainty.
+The [Make or Buy example](../../examples/make_or_buy.md) buys from a market instead of running a CCGT, and the [Day-Ahead or Intraday example](../../examples/day_ahead_or_intraday.md) trades under price uncertainty.
 
 ## How it's modelled
 
