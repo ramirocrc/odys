@@ -191,4 +191,4 @@ Charger sharing is not vehicles waiting their turn. It is the optimizer reassign
 
 This example used deterministic prices and fixed trip schedules. In practice, both are uncertain: a delayed delivery changes when the vehicle is available to charge, and real-time prices deviate from day-ahead forecasts.
 
-See [Stochastic Optimization](../user_guide/optimization/stochastic.md) to model uncertain trip schedules, or [CVaR Market Risk](cvar_market_risk.md) to learn how to hedge against price uncertainty.
+See [Scenarios](../user_guide/uncertainty/scenarios.md) to model uncertain trip schedules, or [CVaR Market Risk](cvar_market_risk.md) to learn how to hedge against price uncertainty.

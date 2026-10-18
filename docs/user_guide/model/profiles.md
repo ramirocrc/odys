@@ -76,7 +76,7 @@ time
 
 The wind is free, so the optimizer uses all of it it can, and the CCGT covers the rest. At step 2 the wind could produce 60 MW, but the factory only needs 40, so 20 MW of wind goes unused.
 
-A best guess is one future. To plan against several, each with its own probability, see [Stochastic optimization](../optimization/stochastic.md); a single `Scenario` is named `"base"` and has a probability of 1.
+A best guess is one future. To plan against several, each with its own probability, see [Scenarios](../uncertainty/scenarios.md); a single `Scenario` is named `"base"` and has a probability of 1.
 
 ## Next steps
 

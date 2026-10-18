@@ -174,7 +174,7 @@ scenario = Scenario(
 )
 ```
 
-The profile references the generator object, and each value lies between 0 and its `nominal_power`; anything else raises an `OdysValidationError`. A generator without a profile can always produce up to its `nominal_power`. Each scenario can have its own profile, which is how a windy and a calm tomorrow differ (see [Stochastic optimization](../optimization/stochastic.md)). See [G-4](../../formulation/generators.md#g-4).
+The profile references the generator object, and each value lies between 0 and its `nominal_power`; anything else raises an `OdysValidationError`. A generator without a profile can always produce up to its `nominal_power`. Each scenario can have its own profile, which is how a windy and a calm tomorrow differ (see [Scenarios](../uncertainty/scenarios.md)). See [G-4](../../formulation/generators.md#g-4).
 
 ## Results
 

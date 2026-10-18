@@ -74,7 +74,7 @@ Each market has its own price, and the optimizer trades on whichever pays best a
 
 ## Stage-fixed markets
 
-Some markets clear before you know which future happens. You place day-ahead bids before you know tomorrow's wind, and you're held to them whatever the wind does. Mark such a market with `stage_fixed=True`, and the optimizer commits to the same trades, and the same direction, in every [scenario](../optimization/stochastic.md#multiple-scenarios):
+Some markets clear before you know which future happens. You place day-ahead bids before you know tomorrow's wind, and you're held to them whatever the wind does. Mark such a market with `stage_fixed=True`, and the optimizer commits to the same trades, and the same direction, in every [scenario](../uncertainty/scenarios.md):
 
 ```python
 day_ahead_bids = EnergyMarket(
@@ -84,7 +84,7 @@ day_ahead_bids = EnergyMarket(
 )
 ```
 
-A market you can still trade on once the uncertainty is resolved, like intraday, keeps the default and adapts in each scenario. With a single scenario, `stage_fixed` changes nothing. See [Stochastic optimization](../optimization/stochastic.md#what-is-decided-before-and-after-the-uncertainty) for how it shapes a stochastic run, and [NA-1](../../formulation/non_anticipativity.md#na-1).
+A market you can still trade on once the uncertainty is resolved, like intraday, keeps the default and adapts in each scenario. With a single scenario, `stage_fixed` changes nothing. See [Scenarios](../uncertainty/scenarios.md#whats-decided-before-the-uncertainty) for how it shapes a stochastic run, and [NA-1](../../formulation/non_anticipativity.md#na-1).
 
 ## Profiles
 
