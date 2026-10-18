@@ -70,7 +70,7 @@ Every model simplifies. These are the simplifications odys makes, each with the 
 
 ## Checked before solving
 
-Some properties hold not because a constraint enforces them, but because `EnergySystem` refuses inputs that would break them. They're listed here so you don't look for a constraint that isn't there:
+Some properties hold not because a constraint enforces them, but because `EnergySystem` refuses inputs that would break them. They're listed here so you don't look for a constraint that isn't there. When each check runs, and which error it raises, is in the User Guide's [Validation and errors](../user_guide/solving/validation.md):
 
 - **Probabilities add up to 1**, and scenario names are unique (`ScenarioSet`).
 - **Profiles fit the run.** Every profile has one value per step, references an asset or market of the system, and each market has a price in every scenario (`EnergySystem`).
