@@ -4,28 +4,28 @@ icon: fontawesome/solid/car
 
 # EV Fleet Optimization
 
-Optimize a fleet of delivery EVs with vehicle-to-grid (V2G) capability, trip schedules, and limited charger infrastructure. The optimizer decides when to charge, when to discharge to the grid, and how to share chargers, while guaranteeing every trip departs on time.
-
 ## Problem Description
 
-A commercial depot operates 3 delivery EVs with 2 chargers and access to a wholesale market with time-of-use pricing. The fleet must complete staggered trips throughout the day while the optimizer exploits price differences: buying cheap overnight energy and selling it back during expensive peaks through the V2G-capable vehicle.
+A delivery depot runs three electric vans on staggered trips through the day, with two chargers between them. It buys power from the grid at a time-of-use price, from 5 $/MWh overnight to 100 $/MWh at the evening peak, and every van can sell power back (V2G). Each van has to leave on every trip with enough charge, and end the day at a set state of charge. The question is when each van charges, when it sells, and which charger it uses, when three vans share two chargers.
 
-- **ev_1**: V2G-capable (100 kWh, 22 kW charge / 11 kW discharge), 3 trips, starts at 80% SoC, must end at 30%
-- **ev_2**: Charge-only (60 kWh, 22 kW), 3 trips, starts at 50% SoC, must end at 60%
-- **ev_3**: Charge-only (40 kWh, 7 kW), 2 trips, starts at 50% SoC, must end at 50%
+| Van    | Battery | Charge / V2G | Trips | Start → end of day |
+| ------ | ------- | ------------ | ----- | ------------------ |
+| `ev_1` | 100 kWh | 22 / 11 kW   | 3     | 80 % → 30 %        |
+| `ev_2` | 60 kWh  | 22 / 11 kW   | 3     | 50 % → 60 %        |
+| `ev_3` | 40 kWh  | 7 / 7 kW     | 2     | 50 % → 50 %        |
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
 flowchart LR
-    Market(["📈 Market<br/>BUY_AND_SELL<br/>100 kW limit"]) --> Bus(["⚡ Bus"])
-    Bus --> Charger1(["🔌 Charger DC<br/>50 kW"])
-    Bus --> Charger2(["🔌 Charger AC<br/>22 kW"])
-    Charger1 -.-> EV1(["🚗 EV 1<br/>100 kWh<br/>V2G"])
-    Charger1 -.-> EV2(["🚗 EV 2<br/>60 kWh"])
-    Charger1 -.-> EV3(["🚗 EV 3<br/>40 kWh"])
-    Charger2 -.-> EV1
-    Charger2 -.-> EV2
-    Charger2 -.-> EV3
+    Market(["📈 Grid<br/>buy and sell · 100 kW<br/>5–100 \$/MWh"]) <--> Bus(["⚡ Bus"])
+    Bus <--> Charger1(["🔌 Charger DC<br/>50 kW"])
+    Bus <--> Charger2(["🔌 Charger AC<br/>22 kW"])
+    Charger1 -.- EV1(["🚐 ev_1<br/>100 kWh"])
+    Charger1 -.- EV2(["🚐 ev_2<br/>60 kWh"])
+    Charger1 -.- EV3(["🚐 ev_3<br/>40 kWh"])
+    Charger2 -.- EV1
+    Charger2 -.- EV2
+    Charger2 -.- EV3
     style Market fill:none
     style Bus fill:none
     style Charger1 fill:none
@@ -35,21 +35,20 @@ flowchart LR
     style EV3 fill:none
 ```
 
-The dashed lines show all possible charger-to-EV connections. The optimizer dynamically assigns EVs to chargers at each timestep (one EV per charger, one charger per EV), and assignments shift throughout the day based on trip schedules and price signals.
+The dashed lines are the possible connections. At each step, a charger serves at most one van.
 
-**Source**: [`examples/ev_fleet_optimization.py`](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py)
+**Source**: [`examples/ev_fleet_optimization.py`](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py). The script defines the fleet at module level, and wraps the rest in `run_ev_fleet_optimization()`, which returns the results.
 
 ## Walkthrough
 
-### 1. Define the EV fleet and chargers
+### 1. Define the vans
 
-Each EV is an [ElectricVehicle](../developer/api/domain/entities/electric_vehicle.md) with trip schedules and optional V2G capability. Trips consume energy and make the vehicle unavailable for charging during the trip window. The key fields for ev_1:
+Each van is an [electric vehicle](../user_guide/assets/electric_vehicle.md) with a battery and its [trips](../user_guide/assets/electric_vehicle.md#trips). A `max_discharge_power` above 0 lets it sell power back ([V2G](../user_guide/assets/electric_vehicle.md#vehicle-to-grid-v2g)). odys works in MW and MWh, so 22 kW is `0.022` (see [Time and units](../user_guide/model/time_and_units.md)):
 
 ```python
 from datetime import timedelta
 
 from odys import (
-    AllowedTradeDirection,
     AssetPortfolio,
     Battery,
     Charger,
@@ -94,60 +93,126 @@ ev_1 = ElectricVehicle(
         ),
     ),
 )
-ev_1_starts = ElectricVehicleInitialState(vehicle=ev_1, soc=0.8)
-ev_1_ends = ElectricVehicleFinalState(vehicle=ev_1, soc=0.3)
+
+ev_2 = ElectricVehicle(
+    name="ev_2",
+    battery=Battery(
+        capacity=0.060,  # 60 kWh
+        max_charge_power=0.022,  # 22 kW
+        max_discharge_power=0.011,  # 11 kW V2G
+    ),
+    trips=(
+        Trip(
+            name="morning_route",
+            start_time=timedelta(hours=8),
+            end_time=timedelta(hours=10),
+            energy_consumption=0.008,  # 8 kWh
+            min_soc_at_departure=0.5,
+        ),
+        Trip(
+            name="midday_route",
+            start_time=timedelta(hours=12),
+            end_time=timedelta(hours=13),
+            energy_consumption=0.006,  # 6 kWh
+            min_soc_at_departure=0.35,
+        ),
+        Trip(
+            name="evening_route",
+            start_time=timedelta(hours=17),
+            end_time=timedelta(hours=19),
+            energy_consumption=0.007,  # 7 kWh
+            min_soc_at_departure=0.25,
+        ),
+    ),
+)
+
+ev_3 = ElectricVehicle(
+    name="ev_3",
+    battery=Battery(
+        capacity=0.040,  # 40 kWh
+        max_charge_power=0.007,  # 7 kW
+        max_discharge_power=0.007,  # 7 kW V2G
+    ),
+    trips=(
+        Trip(
+            name="delivery_1",
+            start_time=timedelta(hours=9),
+            end_time=timedelta(hours=11),
+            energy_consumption=0.005,  # 5 kWh
+            min_soc_at_departure=0.5,
+        ),
+        Trip(
+            name="delivery_2",
+            start_time=timedelta(hours=14),
+            end_time=timedelta(hours=15),
+            energy_consumption=0.003,  # 3 kWh
+            min_soc_at_departure=0.3,
+        ),
+    ),
+)
+
+EVS: tuple[ElectricVehicle, ...] = (ev_1, ev_2, ev_3)
 ```
 
-ev_1 starts the day at 80% and must end it at 30%. These [initial and final conditions](../user_guide/model/first_model.md#initial-and-final-conditions) belong to the run, so they are passed to the energy system in step 4. `max_discharge_power` is what enables V2G. Without it, the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip. The [Charger](../developer/api/domain/entities/charger.md) objects are plain power limits:
+### 2. Set the start and end of the day
+
+Where each van's state of charge starts, and where it has to end, are [initial and final conditions](../user_guide/model/first_model.md#initial-and-final-conditions) of the run:
 
 ```python
-charger_dc = Charger(name="charger_dc", max_power=0.050)  # 50 kW
-charger_ac = Charger(name="charger_ac", max_power=0.022)  # 22 kW
+EV_INITIAL_STATES: tuple[ElectricVehicleInitialState, ...] = (
+    ElectricVehicleInitialState(vehicle=ev_1, soc=0.8),
+    ElectricVehicleInitialState(vehicle=ev_2, soc=0.5),
+    ElectricVehicleInitialState(vehicle=ev_3, soc=0.5),
+)
+
+EV_FINAL_STATES: tuple[ElectricVehicleFinalState, ...] = (
+    ElectricVehicleFinalState(vehicle=ev_1, soc=0.3),
+    ElectricVehicleFinalState(vehicle=ev_2, soc=0.6),
+    ElectricVehicleFinalState(vehicle=ev_3, soc=0.5),
+)
 ```
 
-Unlike [StationaryStorage](../user_guide/assets/stationary_storage.md), EVs must be assigned to chargers, and each charger serves at most one EV at a time. With 2 chargers and 3 EVs, there is charger competition.
+### 3. Add the chargers and the grid
 
-ev_2 (60 kWh, charge-only, 3 trips) and ev_3 (40 kWh, charge-only, 2 trips) follow the same pattern, with their own initial and final states (`ev_2_starts`, `ev_3_ends`, ...). See the [full source](https://github.com/ramirocrc/odys/blob/main/examples/ev_fleet_optimization.py).
-
-### 2. Add the market with buy-and-sell capability
+Two [chargers](../user_guide/assets/charger.md) for three vans, and a [market](../user_guide/markets/energy_market.md) that buys and sells. The chargers go in the portfolio with the vans; the market doesn't:
 
 ```python
+CHARGERS: tuple[Charger, ...] = (
+    Charger(name="charger_dc", max_power=0.050),  # 50 kW
+    Charger(name="charger_ac", max_power=0.022),  # 22 kW
+)
+
 market = EnergyMarket(
     name="grid_market",
     max_trading_volume_per_step=0.100,  # 100 kW
-    allowed_trade_direction=AllowedTradeDirection.BUY_AND_SELL,
 )
 
-portfolio = AssetPortfolio(
-    assets=[ev_1, ev_2, ev_3, charger_dc, charger_ac],
-)
+portfolio = AssetPortfolio([*EVS, *CHARGERS])
 ```
 
-The [buy-and-sell market](../user_guide/markets/energy_market.md) is what enables V2G arbitrage. ev_1 can discharge back to the grid during expensive peak hours.
+### 4. Describe the day's prices
 
-### 3. Define the scenario with price signals
+The grid's [price profile](../user_guide/markets/energy_market.md#profiles), one value per hour:
 
 ```python
-market_prices = [
-    5.0, 5.0, 5.0, 5.0, 5.0, 5.0,        # overnight: cheap
-    20.0, 20.0,                            # morning ramp
-    80.0, 80.0,                            # morning peak: expensive
-    10.0, 10.0, 10.0, 10.0, 10.0,         # midday: cheap
-    25.0, 25.0,                            # evening ramp
-    100.0, 100.0, 100.0, 100.0,           # evening peak: very expensive
-    5.0, 5.0, 5.0,                         # late evening: cheap
+MARKET_PRICES: list[float] = [
+    *6 * [5.0],  # overnight: cheap
+    *2 * [20.0],  # morning ramp
+    *2 * [80.0],  # morning peak
+    *5 * [10.0],  # midday: cheap
+    *2 * [25.0],  # evening ramp
+    *4 * [100.0],  # evening peak
+    *3 * [5.0],  # late evening: cheap
 ]
 
-scenario = Scenario(
-    profiles=(PriceProfile(market=market, values=market_prices),),
-)
+scenario = Scenario(profiles=(PriceProfile(market=market, values=MARKET_PRICES),))
 ```
 
-The chart below shows the price signal with trip schedules shaded, so you can see which vehicles are on the road and unavailable for charging at each timestep.
+The chart shows the prices, with each van's trips shaded:
 
 <iframe src="../assets/plots/ev_fleet_setup.html" style="width:100%; height:520px; border:none;" loading="lazy"></iframe>
 
-### 4. Solve and inspect the results
+### 5. Solve
 
 ```python
 energy_system = EnergySystem(
@@ -156,39 +221,32 @@ energy_system = EnergySystem(
     timestep=timedelta(hours=1),
     number_of_steps=24,
     scenarios=scenario,
-    initial_conditions=(ev_1_starts, ev_2_starts, ev_3_starts),
-    final_conditions=(ev_1_ends, ev_2_ends, ev_3_ends),
+    initial_conditions=EV_INITIAL_STATES,
+    final_conditions=EV_FINAL_STATES,
 )
 
 result = energy_system.optimize()
 ```
 
-The [objective](../user_guide/solving/results.md#what-the-objective-adds-up) maximizes expected profit, so `result.objective_value` is the depot's profit over the day (positive = revenue).
-
 ## Results
 
-One shared time axis, four views: the price signal, every charge/discharge decision, its consequence on each battery, and the physical charger that delivered it.
+The chart shows, on one time axis, the price, each van's charging and discharging, its state of charge, and the charger it's connected to:
 
 <iframe src="../assets/plots/ev_fleet_dispatch_combined.html" style="width:100%; height:1200px; border:none;" loading="lazy"></iframe>
 
-Notice how the optimizer responds to the price signal:
+The vans buy cheap and sell dear, between their trips:
 
-- **ev_1 discharges during every peak it can access.** It sells into the morning ramp at 20 $/MWh (t6), the morning peak at 80 $/MWh (t9), the evening ramp at 25 $/MWh (t16), and across the full evening peak at 100 $/MWh (t17–t20). That is V2G arbitrage: buy at 5 $/MWh overnight, sell at 20–100 $/MWh during peaks.
-- **ev_2 and ev_3 charge only at the cheapest hours.** Every kWh they take is bought at 5 $/MWh, overnight (t0–t5) or in the late evening (t21–t23). ev_2 needs 27 kWh in total to cover its trips and reach its 60% end-of-day target; ev_3 tops up just enough to meet its 50% target. Because all these hours cost the same, the solver is free to choose which of them to use, and that choice can change between solver versions without changing the cost.
-- **The optimal solution requires switching EVs to different chargers during the day.** This is not practical in real operations, and can be avoided by setting constraints (to be implemented soon).
+- **Charging:** only at 5 $/MWh, overnight and late in the evening, and at 10 $/MWh around midday, to refill before the afternoon and evening sales.
+- **Selling:** at the morning ramp and peak (20 and 80 $/MWh), the evening ramp (25 $/MWh), and the evening peak (100 $/MWh), as far as the chargers allow.
+- **The evening peak, steps 17 to 20:** both chargers are discharging a van at every step. At steps 19 and 20 all three vans are parked, but only two can sell, so `ev_3` waits with 15 % of its charge left. With a third charger, the day's profit would rise from 9.99 to 11.33.
+- **End of day:** each van finishes exactly at its target. `ev_1` sells down to empty during the peak, then buys back its 30 % at 5 $/MWh.
 
-The economics chart below shows the market transactions that drive the profit.
+Over the day, the depot sells 178 kWh for 11.24 and buys 200 kWh for 1.25, so `result.objective_value` is 9.99. It buys 22 kWh more than it sells: the trips use 66 kWh, and the vans end with 44 kWh less than they started with. Many hours have the same price, so other plans earn the same 9.99, and the solver returns one of them. The same goes for the charger connections: a van can switch chargers from one step to the next at no cost, and a van that's connected but idle could as well be on the other charger. See [Results](../user_guide/assets/charger.md#results) on the Charger page for how to read `result.chargers`.
+
+The market chart shows what the depot buys and sells at each hour:
 
 <iframe src="../assets/plots/ev_fleet_economics.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 ## Discussion
 
-V2G arbitrage is the profit driver. ev_1 is the only vehicle that can discharge back to the grid, and the optimizer uses it as a flexible generator during expensive hours. The end-of-day SoC constraint is part of the trading strategy: the optimizer drains ev_1 to 0% during the evening peak, then repurchases exactly the 30% target at the cheapest price left on the clock. Every SoC constraint binds with zero margin: ev_1 ends at exactly 0.30, ev_2 at exactly 0.60, ev_3 at exactly 0.50. The optimizer spends no more than necessary to meet the requirements.
-
-Charger sharing is not vehicles waiting their turn. It is the optimizer reassigning a vehicle to a different physical charger for exactly as long as needed. Three vehicles but only two chargers means the optimizer must decide who charges when, based on trip deadlines and price signals. The result is a schedule where charger assignments shift dynamically to resolve contention.
-
-## Next steps
-
-This example used deterministic prices and fixed trip schedules. In practice, both are uncertain: a delayed delivery changes when the vehicle is available to charge, and real-time prices deviate from day-ahead forecasts.
-
-See [Scenarios](../user_guide/uncertainty/scenarios.md) to model uncertain trip schedules, or [CVaR Market Risk](cvar_market_risk.md) to learn how to hedge against price uncertainty.
+A fleet with V2G trades like a battery, but one that's only there between trips, and only through a charger. With fewer chargers than vans, the chargers become the bottleneck at the hours that pay most: here, a third charger would be worth 1.34 a day, which is what you'd weigh against its cost. Every example so far planned against a single future; to plan against uncertain prices or trips, see [Scenarios](../user_guide/uncertainty/scenarios.md) and [Risk (CVaR)](../user_guide/uncertainty/risk.md).

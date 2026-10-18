@@ -648,6 +648,7 @@ HOUR_CENTERS = [t + 0.5 for t in range(NUMBER_OF_HOURS)]
 
 
 ONE_HOUR = timedelta(hours=1)
+MIDDAY_PRICE = 10.0
 
 
 class TripHours(NamedTuple):
@@ -1187,30 +1188,25 @@ def _check_ev_fleet_claims(result: OptimalDispatchResults) -> None:
     """
     ev_dataset = result.electric_vehicles.to_dataset()
     prices = np.array(MARKET_PRICES)
-    cheapest = prices == prices.min()
 
     end_soc = {ev.name: float(ev_dataset.sel(ev=ev.name).soc.values[-1]) for ev in EVS}
     np.testing.assert_allclose(list(end_soc.values()), [0.3, 0.6, 0.5], atol=1e-6, err_msg=str(end_soc))
 
-    ev_1_power = ev_dataset.sel(ev="ev_1").net_power.values
-    ev_1_discharge_hours = np.flatnonzero(ev_1_power < -ACTIVE_POWER_TOLERANCE).tolist()
-    np.testing.assert_array_equal(ev_1_discharge_hours, [6, 9, 16, 17, 18, 19, 20])
-    np.testing.assert_allclose(
-        ev_dataset.sel(ev="ev_1").soc.values[20],
-        0,
-        atol=1e-6,
-        err_msg="ev_1 should be empty after the evening peak",
+    net_power = ev_dataset.net_power.transpose(ElectricVehicleFormulation.dimension, ...).values
+    discharging = (net_power < -ACTIVE_POWER_TOLERANCE).sum(axis=0)
+    evening_peak = prices == prices.max()
+    np.testing.assert_array_equal(
+        discharging[evening_peak],
+        len(CHARGERS),
+        err_msg="every charger should be discharging a van at each evening peak step",
     )
 
-    for name in ("ev_2", "ev_3"):
-        charging = ev_dataset.sel(ev=name).net_power.values > ACTIVE_POWER_TOLERANCE
-        np.testing.assert_array_equal(
-            np.flatnonzero(charging & ~cheapest),
-            [],
-            err_msg=f"{name} charges outside the cheapest hours",
-        )
-    ev_2_energy_kwh = float(ev_dataset.sel(ev="ev_2").net_power.values.sum()) * 1000
-    np.testing.assert_allclose(ev_2_energy_kwh, 27, atol=1e-6)
+    charging = (net_power > ACTIVE_POWER_TOLERANCE).any(axis=0)
+    np.testing.assert_array_equal(
+        np.flatnonzero(charging & (prices > MIDDAY_PRICE)),
+        [],
+        err_msg="the vans should charge only at the overnight and midday prices",
+    )
 
 
 def generate_ev_fleet_optimization() -> None:
