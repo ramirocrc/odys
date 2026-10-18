@@ -100,4 +100,4 @@ $$
 
 ## Next steps
 
-Next, see [Results](results.md) to read what the optimizer decided.
+Next, see [Results](../solving/results.md) to read what the optimizer decided.

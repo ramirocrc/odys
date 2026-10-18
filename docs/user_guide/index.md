@@ -79,7 +79,7 @@ The guide starts with a stretch to read in order, then turns into pages to look 
 
 1. **Building a model**: [Your first model](model/first_model.md) sets up and solves a first system, [Time and units](model/time_and_units.md) say how odys reads every value, and [Profiles](model/profiles.md) add its time series. Read these in order.
 2. **Assets** and **Markets**: one page per type, all with the same structure. They also build the running example step by step, from the [Generator](assets/generator.md) to the [EnergyMarket](markets/energy_market.md), but each one stands on its own.
-3. **Solving and results**: how to read the [Results](optimization/results.md), choose a [solver](optimization/solvers.md), and what odys checks before solving, in [Validation and errors](solving/validation.md).
+3. **Solving and results**: how to read the [Results](solving/results.md), choose a [solver](optimization/solvers.md), and what odys checks before solving, in [Validation and errors](solving/validation.md).
 4. **Uncertainty and risk**: planning against several futures with [Stochastic optimization](optimization/stochastic.md), and weighing bad outcomes in the [Objective](optimization/objective.md).
 
 The exact model odys builds is written out in the [Mathematical Formulation](../formulation/index.md) section.

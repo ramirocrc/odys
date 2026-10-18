@@ -4,7 +4,7 @@ icon: lucide/table
 
 # Results
 
-`energy_system.optimize()` returns an `OptimalDispatchResults` object with the solver status and one results container per asset type.
+`.optimize()` returns an `OptimalDispatchResults`: one container per asset type and for the markets, with every decision as a `pandas.Series`, plus the objective value and the solver's status.
 
 ## Basic usage
 
@@ -88,39 +88,16 @@ The CCGT only runs when the market price is above its 50 $/MWh cost, and the win
 
     Solvers work in floating point, so a value that is exactly zero in theory can print as `-0.0` or as a tiny number such as `1e-12`. Round before comparing or displaying, as this page does with `.round(2)`.
 
-## Solver status
-
-```python
-result.solver_status  # SolveStatus.OK ("ok") when the solver finished normally
-result.termination_condition  # "optimal" when the solution is proven optimal
-result.objective_value  # value of the objective; see Objective
-```
-
-`solver_status` is one of `ok`, `warning`, `error`, `aborted` or `unknown`. `termination_condition` says why the solver stopped, for example `"optimal"`, `"infeasible"` or `"time_limit"`. A solve that hits its time limit can still return a feasible, not proven optimal, solution.
-
-When the run found no solution, for example because the problem is infeasible, reading any result raises an `OdysSolverError` naming the termination condition. Catch it where a run may fail:
-
-```python
-from odys import OdysSolverError
-
-try:
-    result.generators.power
-except OdysSolverError as error:
-    print(f"No solution: {error}")
-```
-
-`objective_value` is the value of the whole objective: the expected profit, or the weighted profit and CVaR when the objective has a CVaR term. See [Objective](objective.md).
-
 ## Results containers
 
-Each asset type and the markets have their own container. Its attributes are listed on the linked page:
+Each asset type and the markets have their own container. What each series means is on the linked page:
 
-| Container                    | Attributes                                 | Details                                                       |
+| Container                    | Series                                     | Details                                                       |
 | ---------------------------- | ------------------------------------------ | ------------------------------------------------------------- |
 | `result.generators`          | `power`, `status`, `startup`, `shutdown`   | [Generator](../assets/generator.md#results)                   |
 | `result.flexible_loads`      | `load_adjustment`, `actual_load`           | [FlexibleLoad](../assets/flexible_load.md#results)            |
-| `result.stationary_storages` | `net_power`, `soc`, `charge_mode`          | [StationaryStorage](../assets/stationary_storage.md#results)  |
-| `result.electric_vehicles`   | `net_power`, `soc`, `charge_mode`          | [ElectricVehicle](../assets/electric_vehicle.md#results)      |
+| `result.stationary_storages` | `net_power`, `soc`, `charge_mode`          | [Battery](../assets/battery.md#results)                       |
+| `result.electric_vehicles`   | `net_power`, `soc`, `charge_mode`          | [Battery](../assets/battery.md#results)                       |
 | `result.chargers`            | `assignment`, `power`                      | [Charger](../assets/charger.md#results)                       |
 | `result.markets`             | `sell_volume`, `buy_volume`, `net_volume`  | [EnergyMarket](../markets/energy_market.md#results)           |
 
@@ -151,37 +128,18 @@ Name: power, dtype: float64
 140.0
 ```
 
-Selecting one asset drops the asset level, so its series is indexed by time only (and scenario, when there is more than one).
-
-## Rolling horizon
-
-Conditions let you chain runs: optimize today, then start tomorrow from where today ended.
-
-```python
-from odys import GeneratorInitialState
-
-today = result
-
-tomorrow_starts_from = (
-    GeneratorInitialState(generator=ccgt, power=round(today.generators["ccgt"].power.iloc[-1], 6)),
-    StorageInitialState(storage=bess, soc=round(today.stationary_storages["bess"].soc.iloc[-1], 6)),
-)
-```
-
-Round the solved values: the solver can return 29.9999999 MW for a generator at its 30 MW minimum, and Odys checks that a condition's output is either 0 or at least `min_power`.
-
-This works for a single scenario. With several scenarios, each series has a scenario level and the last step can differ between scenarios, so pick the scenario you will actually follow, for example `today.generators["ccgt"].power.xs("high_wind", level="scenario").iloc[-1]`.
+Selecting one asset drops the asset level, so its series is indexed by time only, and by scenario when there's more than one.
 
 ## Data formats
 
-All of these attributes are `pandas.Series` objects, indexed by time and asset (and scenario, when there is more than one). Each container also exposes `.to_dataframe()`, with one column per attribute, and `.to_dataset()`, an `xarray.Dataset`. A charger's `assignment` has one value per vehicle, so its dataframe has one `assignment[...]` column per vehicle:
+Every series is a `pandas.Series`, indexed by time and asset, and by scenario when there's more than one. Each container also has `.to_dataframe()`, with one column per series, and `.to_dataset()`, an `xarray.Dataset`. A charger's `assignment` has one value per vehicle, so its dataframe has one `assignment[...]` column per vehicle:
 
 ```python
 result.stationary_storages.to_dataframe()
 result.markets.to_dataset()
 ```
 
-For the full raw solution, with every model variable, as an xarray Dataset:
+For the full raw solution, with every model variable, as an `xarray.Dataset`:
 
 ```python
 result.to_dataset()
@@ -189,8 +147,89 @@ result.to_dataset()
 
 !!! tip
 
-    If you're working in a notebook, `result.generators.to_dataframe()` is usually the quickest way to see what the optimizer did. You can export it with `.to_csv()` or plot it directly.
+    In a notebook, `result.generators.to_dataframe()` is usually the quickest way to see what the optimizer did. Export it with `.to_csv()`, or plot it directly.
+
+## What the objective adds up
+
+`result.objective_value` is what the optimizer maximized. By default, that's the profit, and in each scenario the profit adds up:
+
+- the [market revenue](../../formulation/markets.md#objective-contribution): what you sell, minus what you buy, at each step's price;
+- minus the [generation costs](../../formulation/generators.md#objective-contribution): variable costs, plus start-up and shut-down costs;
+- plus the [value of flexible consumption](../../formulation/flexible_loads.md#objective-contribution): what each MWh a flexible load moves up is worth, minus what each MWh it gives up was worth;
+- minus the [battery wear](../../formulation/batteries.md#objective-contribution), from `degradation_cost`.
+
+```python
+print(round(result.objective_value, 2))
+```
+
+```text
+-7313.43
+```
+
+Here the CCGT burns 10,000 of fuel. Trading earns back about 1,487 net, and the process's 20 MWh of net extra consumption is worth 1,200 at 60 $/MWh, so the profit is −7,313. Fixed loads add nothing: serving them costs whatever the energy that covers them costs.
+
+With several scenarios, `objective_value` is the expected profit, weighted by the scenarios' probabilities. With a CVaR term, it's the weighted sum of the expected profit and the CVaR, not a profit you can book; see [Objective](../optimization/objective.md).
+
+## Clock time
+
+The horizon has no start date, so the time labels count steps from `"0"` (see [Time and units](../model/time_and_units.md#the-horizon)). To show a series against clock time, map each step to its start:
+
+```python
+from datetime import datetime
+
+start = datetime(2026, 10, 19)  # midnight, the start of the run
+timestep = timedelta(hours=1)
+
+power = result.generators.power.round(2)
+print(power.rename(lambda step: start + int(step) * timestep, level="time").unstack())
+```
+
+```text
+generator             ccgt  wind
+time
+2026-10-19 00:00:00    0.0  40.0
+2026-10-19 01:00:00  100.0  10.0
+2026-10-19 02:00:00    0.0  60.0
+2026-10-19 03:00:00  100.0  30.0
+```
+
+## Chaining runs
+
+A rolling horizon chains runs: you optimize today, then start tomorrow from where today ended. Read each asset's last step, and pass it as tomorrow's initial state:
+
+```python
+from odys import GeneratorInitialState
+
+tomorrow_starts_from = (
+    GeneratorInitialState(generator=ccgt, power=round(result.generators["ccgt"].power.iloc[-1], 6)),
+    StorageInitialState(storage=bess, soc=round(result.stationary_storages["bess"].soc.iloc[-1], 6)),
+)
+```
+
+Round the solved values. The solver can return 29.9999999 MW for a generator at its 30 MW minimum, and a generator's initial `power` has to be either 0 or at least `min_power`.
+
+A generator with a minimum up or down time also needs its `time_in_state`: count back through its `status` from the last step to see how long it has been on or off. With several scenarios, the last step can differ between them, so pick the scenario you'll actually follow, for example `result.generators["ccgt"].power.xs("high_wind", level="scenario").iloc[-1]`.
+
+## Solver status
+
+```python
+result.solver_status  # SolveStatus.OK ("ok") when the solver finished normally
+result.termination_condition  # "optimal" when the solution is proven optimal
+```
+
+`solver_status` is one of `ok`, `warning`, `error`, `aborted` or `unknown`. `termination_condition` says why the solver stopped, for example `"optimal"`, `"infeasible"` or `"time_limit"`. A solve that hits its time limit can still return a feasible solution that isn't proven optimal.
+
+When the run found no solution, for example because the problem is infeasible, reading any result raises an `OdysSolverError` naming the termination condition. Catch it where a run may fail:
+
+```python
+from odys import OdysSolverError
+
+try:
+    result.generators.power
+except OdysSolverError as error:
+    print(f"No solution: {error}")
+```
 
 ## Next steps
 
-So far every system had a single, known future. Next, see [Stochastic optimization](stochastic.md) to decide under uncertainty.
+Every run so far used HiGHS with its default settings. Next, see how to choose and tune the [Solvers](../optimization/solvers.md) behind `.optimize()`.

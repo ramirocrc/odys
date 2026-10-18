@@ -394,10 +394,10 @@ docs/
 │   ├── markets/
 │   │   └── energy_market.md
 │   ├── solving/
+│   │   ├── results.md        # Reading results, the objective value, clock time, chaining runs
 │   │   └── validation.md     # Checks before solving, and errors
 │   └── optimization/
 │       ├── objective.md      # Profit and CVaR
-│       ├── results.md        # Reading results
 │       ├── stochastic.md     # Stochastic optimization
 │       └── solvers.md        # Solver choice and options
 │
