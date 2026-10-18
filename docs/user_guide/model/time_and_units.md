@@ -54,4 +54,4 @@ The model grows with the number of steps times the number of scenarios. Generato
 
 ## Next steps
 
-Next, see how [Scenarios & Profiles](../concepts/scenario.md) give each asset and market its time series, one value per step.
+Next, see how [Profiles](profiles.md) give each asset and market its time series, one value per step.

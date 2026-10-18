@@ -328,7 +328,7 @@ Every page links forward. The reader never wonders where to go next. End with a 
 Examples:
 
 - End of `assets/generator.md`: "Next, see how [FixedLoad](fixed_load.md) defines the demand your system must serve."
-- End of `concepts/scenario.md`: "See [Initial and final conditions](initial_and_final_conditions.md) to set where each asset starts and ends a run."
+- End of `model/profiles.md`: "The model has its time series. Next, meet the assets one by one, starting with the [Generator](../assets/generator.md)."
 - End of an example: "This example used deterministic scenarios. The [CVaR Market Risk](../examples/cvar_market_risk.md) example adds risk-aware optimization."
 - End of `formulation/generators.md`: "Power made now is used now, unless you can store it. See [Batteries](batteries.md)."
 
@@ -359,7 +359,7 @@ Pages are not read in isolation. Link to related pages wherever a concept is int
 
 - "The profile references a [Generator](../assets/generator.md) of your portfolio."
 - "See [Stochastic optimization](../optimization/stochastic.md) for more details."
-- "Market prices are specified in the [Scenario](../concepts/scenario.md), not on the market object."
+- "Market prices are specified in the [Scenario](../model/profiles.md), not on the market object."
 
 Internal links are the connective tissue of the documentation.
 
@@ -381,9 +381,9 @@ docs/
 │   ├── index.md              # Overview: what odys solves, object diagram, one bus, running example, reading order
 │   ├── model/                # Building a model, read in order
 │   │   ├── first_model.md    # EnergySystem and AssetPortfolio: the first solve
-│   │   └── time_and_units.md # The horizon, units, and how each field reads time
+│   │   ├── time_and_units.md # The horizon, units, and how each field reads time
+│   │   └── profiles.md       # One future's time series: load, capacity, price
 │   ├── concepts/
-│   │   ├── scenario.md       # Scenarios and profiles
 │   │   └── initial_and_final_conditions.md
 │   ├── assets/               # One page per asset, all with the same template
 │   │   ├── generator.md
