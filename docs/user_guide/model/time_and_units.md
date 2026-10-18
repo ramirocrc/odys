@@ -4,7 +4,7 @@ icon: lucide/clock
 
 # Time and units
 
-odys plans over a horizon of equal steps, and it doesn't convert units: every value you give it is read in the units on this page. Getting these right is what makes the costs, the energy and the ramps come out as you expect.
+odys plans over a horizon of equal steps, and it doesn't convert units: every value you give it is read in the units on this page. Look here when you change the step length or set a field that depends on it.
 
 ## The horizon
 
@@ -13,7 +13,7 @@ The horizon is set by two parameters of the `EnergySystem`:
 - `timestep`, a `timedelta` above zero: the length of every step, such as `timedelta(hours=1)` or `timedelta(minutes=15)`.
 - `number_of_steps`, an integer of at least 1: how many steps the horizon has.
 
-A day-ahead plan in quarter-hours is `timestep=timedelta(minutes=15)` with `number_of_steps=96`. All steps have the same length.
+A day-ahead plan in quarter-hours is `timestep=timedelta(minutes=15)` with `number_of_steps=96`, or 92 and 100 on the days the clocks change. All steps have the same length.
 
 The horizon has no start date. Time labels count steps from the start of the run: `"0"`, `"1"`, `"2"` and so on, in the results too. Every time you give odys, such as a trip's departure, is measured from that start. To show results against clock time, see [Results](../solving/results.md#clock-time).
 
@@ -37,7 +37,7 @@ Most fields are a power, an energy or a price. A few depend on the step length, 
 
 | Field | Read as | With 15-minute steps |
 | ----- | ------- | -------------------- |
-| [`ramp_up`, `ramp_down`](../assets/generator.md#ramp-limits) | MW per step | 40 MW is 40 MW per quarter-hour, 160 MW per hour |
+| [`ramp_up`, `ramp_down`](../assets/generator.md#ramp-limits) | MW per step ([G-7](../../formulation/generators.md#g-7)) | 40 MW is 40 MW per quarter-hour, 160 MW per hour |
 | [`self_discharge_rate`](../assets/battery.md#self-discharge) | Fraction per hour | 0.004 loses 0.1 % of the charge per step |
 | [`variable_cost`](../assets/generator.md), [`value_of_consumption`](../assets/flexible_load.md#value-of-consumption), [`degradation_cost`](../assets/battery.md#degradation-cost), prices | Currency per MWh | 50 per MWh at 60 MW is 750 per step |
 | [`startup_cost`, `shutdown_cost`](../assets/generator.md#startup-and-shutdown-cost) | Currency per event | Charged once per start, whatever the step length |
@@ -46,7 +46,7 @@ Most fields are a power, an energy or a price. A few depend on the step length, 
 
 Every `timedelta` has to be a whole number of steps: `timedelta(minutes=50)` with 15-minute steps raises an `OdysValidationError` when you create the `EnergySystem`.
 
-When you change the step length, check the per-step fields: a ramp limit written for hourly steps allows four times as much per hour with 15-minute steps.
+When you change the step length, check the per-step fields: a ramp limit written for hourly steps allows four times as much per hour with 15-minute steps. See [G-7](../../formulation/generators.md#g-7).
 
 ## Horizon and problem size
 
@@ -54,4 +54,4 @@ The model grows with the number of steps times the number of scenarios. Generato
 
 ## Next steps
 
-Next, see how [Profiles](profiles.md) give each asset and market its time series, one value per step.
+Next, meet the assets one by one, starting with the [Generator](../assets/generator.md).

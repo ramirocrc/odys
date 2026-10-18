@@ -6,7 +6,7 @@ icon: fontawesome/solid/shield
 
 ## Problem Description
 
-A 100 MW CCGT at 20 $/MWh sells one hour's output on two markets: day-ahead (SDAC), where it bids before it knows the prices, and intraday (SIDC), where it sells once they're known. Three futures are equally likely. Day-ahead prices move little, from 190 to 210 $/MWh, while intraday prices swing from 140 to 280. The question is how much to commit day-ahead, first to maximize expected profit, then when a bad outcome weighs more than a good one.
+A 100 MW CCGT at 120 $/MWh sells one hour's output on two markets: day-ahead (SDAC), where it bids before it knows the prices, and intraday (SIDC), where it sells once they're known. Intraday is simplified to one trade made with the prices known. Three futures are equally likely. Both markets rise and fall together, but day-ahead moves little, from 190 to 210 $/MWh, while intraday swings from 140 to 280. The question is how much to commit day-ahead, first to maximize expected profit, then when a bad outcome weighs more than a good one.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
@@ -42,11 +42,11 @@ from odys import (
     Scenario,
 )
 
-CCGT_VARIABLE_COST = 20.0
+CCGT_VARIABLE_COST = 120.0
 SCENARIO_PRICES: dict[str, dict[str, float]] = {
-    "high": {"day_ahead": 190, "intraday": 280},
+    "high": {"day_ahead": 210, "intraday": 280},
     "mid": {"day_ahead": 200, "intraday": 200},
-    "low": {"day_ahead": 210, "intraday": 140},
+    "low": {"day_ahead": 190, "intraday": 140},
 }
 
 ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=CCGT_VARIABLE_COST)
@@ -121,19 +121,19 @@ The chart shows what the CCGT sells on each market, in each scenario, for both r
 
 <iframe src="../assets/plots/cvar_market_risk.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
-- **Expected profit only:** all 100 MW goes to intraday, in every scenario. `result_max_expected_profit.objective_value` is 18,667.
-- **With CVaR:** 87.5 MW goes day-ahead and 12.5 MW to intraday. The day-ahead volume is the same in every scenario because the market is stage-fixed, and here the intraday volume is too. `result_penalized_cvar.objective_value` is 36,104: the expected profit plus the CVaR, each with a weight of 1.
+- **Expected profit only:** all 100 MW goes to intraday, in every scenario. `result_max_expected_profit.objective_value` is 8,667.
+- **With CVaR:** all 100 MW goes day-ahead. The day-ahead volume is the same in every scenario because the market is stage-fixed. `result_penalized_cvar.objective_value` is 15,167: the expected profit plus the CVaR, each with a weight of 1.
 
 The profit of each allocation in each scenario shows why:
 
-| Day-ahead / intraday | high   | mid    | low    | Expected profit | CVaR   | Objective with CVaR |
-| -------------------- | ------ | ------ | ------ | --------------- | ------ | ------------------- |
-| 100 / 0 MW           | 17,000 | 18,000 | 19,000 | 18,000          | 17,167 | 35,167              |
-| 0 / 100 MW           | 26,000 | 18,000 | 12,000 | 18,667          | 13,000 | 31,667              |
-| 87.5 / 12.5 MW       | 18,125 | 18,000 | 18,125 | 18,083          | 18,021 | 36,104              |
+| Day-ahead / intraday | high   | mid   | low   | Expected profit | CVaR  | Objective with CVaR |
+| -------------------- | ------ | ----- | ----- | --------------- | ----- | ------------------- |
+| 100 / 0 MW           | 9,000  | 8,000 | 7,000 | 8,000           | 7,167 | 15,167              |
+| 0 / 100 MW           | 16,000 | 8,000 | 2,000 | 8,667           | 3,000 | 11,667              |
+| 50 / 50 MW           | 12,500 | 8,000 | 4,500 | 8,333           | 5,083 | 13,417              |
 
-All intraday has the highest expected profit, so the first run picks it. With a confidence level of 0.6, the CVaR is the average profit over the worst 40 % of outcomes, so it's dominated by the worst scenario. All intraday's 12,000 in the low scenario drags its CVaR down to 13,000. The 87.5 / 12.5 mix is where high and low come out equal, which lifts its worst outcomes highest. It gives up 584 of expected profit, but no scenario earns less than 18,000. See [Risk (CVaR)](../user_guide/uncertainty/risk.md#choosing-the-confidence-level-and-the-weight) for how the confidence level and weight change this, and the [formulation](../formulation/objective.md#conditional-value-at-risk) for how CVaR is computed.
+Intraday pays more on average, 206.67 against 200 $/MWh, so the first run sells everything there. But it also falls further: in the low scenario it pays 140, where day-ahead still pays 190. With a confidence level of 0.6, the CVaR is the average profit over the worst 40 % of outcomes: all of the low scenario and part of the mid one. Each MW moved from intraday to day-ahead loses 6.67 of expected profit and adds 50 to the low scenario's profit, so the second run moves all of it. It gives up 667 of expected profit, and its worst scenario earns 7,000 instead of 2,000. See [Risk (CVaR)](../user_guide/uncertainty/risk.md#choosing-the-confidence-level-and-the-weight) for how the confidence level and weight change this, and the [formulation](../formulation/objective.md#conditional-value-at-risk) for how CVaR is computed.
 
 ## Discussion
 
-Maximizing expected profit bets everything on the market with the best average, however badly it can go. Adding CVaR makes the optimizer pay for the worst outcomes, so it hedges: a mix of the two markets beats either one alone, because their prices move in opposite directions across the scenarios. The [EV Fleet Optimization](ev_fleet_optimization.md) example returns to a single future, with vehicles, trips and chargers.
+Maximizing expected profit bets everything on the market with the best average, however badly it can go. Adding CVaR makes the optimizer pay for the worst outcomes, so it commits to the steadier market. Here the two markets move together, and day-ahead pays more than intraday in the worst scenario whatever the split, so the answer is all or nothing: with a CVaR weight above 0.16, everything goes day-ahead; below it, everything goes intraday. A mix would only pay off if the worst scenario changed with the split. The [EV Fleet Optimization](ev_fleet_optimization.md) example returns to a single future, with vehicles, trips and chargers.

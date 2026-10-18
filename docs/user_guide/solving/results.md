@@ -8,9 +8,9 @@ icon: lucide/table
 
 ## Basic usage
 
-Let's solve the complete [running example](../index.md#the-running-example), the site the [EnergyMarket](../markets/energy_market.md#results) page put together:
+Let's solve the complete site, the one the [EnergyMarket](../markets/energy_market.md#results) page put together:
 
-??? example "The running example"
+??? example "The complete site"
 
     ```python
     from datetime import timedelta

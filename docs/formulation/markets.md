@@ -78,7 +78,7 @@ flowchart LR
 
 Read aloud: pick a direction for this market at this step; trading the other way is closed until the next step.
 
-**Why it looks like this.** Buying and selling on the same market at the same step would be a strange plan to send: you'd be trading with yourself. The binary picks one direction, and the two inequalities switch the other one off. The cap is a natural big-M: it's always finite, and it's the tightest value that doesn't cut off a real trade. The code writes the buy side as $p^{buy}_{m,s,t} + y^{trade}_{m,s,t}\,\overline{V}_m \le \overline{V}_m$, the same inequality rearranged.
+**Why it looks like this.** In odys, a market has one price for both directions and no fees, so buying 50 MW and selling 30 MW at the same step is worth exactly as much as buying the net 20 MW. The binary makes the plan report that net position, one direction per step. The two inequalities switch the other direction off. The cap is a natural big-M: it's always finite, and it's the tightest value that doesn't cut off a real trade. The code writes the buy side as $p^{buy}_{m,s,t} + y^{trade}_{m,s,t}\,\overline{V}_m \le \overline{V}_m$, the same inequality rearranged.
 
 **Good to know.**
 
@@ -110,7 +110,7 @@ Read aloud: if the market only sells to you, you can't sell back to it, and the 
 
 ### Stage-fixed markets
 
-Some markets, like day-ahead, clear before you know which future happens. Mark them with `stage_fixed=True`, and odys gives their buy volume, sell volume and trade mode the same value in every scenario. That rule has its own page: see [NA-1](non_anticipativity.md#na-1).
+Some markets, like day-ahead, take your bids before you know which future happens. Mark them with `stage_fixed=True`, and odys gives their buy volume, sell volume and trade mode the same value in every scenario. That rule has its own page: see [NA-1](non_anticipativity.md#na-1).
 
 ## Power balance contribution
 

@@ -10,7 +10,7 @@ A risk term only matters with [several scenarios](scenarios.md): with a single s
 
 ## Basic usage
 
-Let's take the calm and windy site of the [Scenarios](scenarios.md) page:
+Let's take the calm and windy site of the [Several scenarios](scenarios.md) page:
 
 ??? example "The site, with a calm and a windy tomorrow"
 
@@ -57,7 +57,7 @@ Let's take the calm and windy site of the [Scenarios](scenarios.md) page:
             LoadProfile(load=factory, values=[60, 90, 40, 70]),
             LoadProfile(load=process, values=[30, 30, 30, 30]),
             AvailableCapacityProfile(generator=wind, values=[20, 5, 30, 15]),
-            PriceProfile(market=day_ahead, values=[40, 75, 30, 65]),
+            PriceProfile(market=day_ahead, values=[45, 80, 35, 68]),
             PriceProfile(market=intraday, values=[55, 90, 45, 70]),
         ),
     )
@@ -68,8 +68,8 @@ Let's take the calm and windy site of the [Scenarios](scenarios.md) page:
             LoadProfile(load=factory, values=[60, 90, 40, 70]),
             LoadProfile(load=process, values=[30, 30, 30, 30]),
             AvailableCapacityProfile(generator=wind, values=[60, 40, 80, 50]),
-            PriceProfile(market=day_ahead, values=[40, 75, 30, 65]),
-            PriceProfile(market=intraday, values=[30, 60, 20, 45]),
+            PriceProfile(market=day_ahead, values=[35, 65, 25, 55]),
+            PriceProfile(market=intraday, values=[30, 58, 20, 45]),
         ),
     )
     ```
@@ -118,11 +118,11 @@ print(pd.DataFrame({"risk_neutral": day_ahead_bids(neutral_result), "risk_averse
 time
 0            -4.09      -104.09
 1            70.00       -25.00
-2            15.00       -85.00
+2           -35.00       -85.00
 3           100.00       100.00
 ```
 
-The bids are the same in both scenarios, so we read them from one. Here the worst future is the calm one: the CCGT has to run, and intraday power is dear. The risk-neutral plan sells on day-ahead and buys back on intraday, which pays off on the likelier windy day. The risk-averse plan does the opposite at steps 0 to 2: it buys on day-ahead and sells the surplus on intraday. That earns money on a calm day, when intraday pays more than day-ahead, and costs money on a windy day, when it pays less. The plan gives up some of the windy day's profit to lift the calm day's.
+The bids are the same in both scenarios, so we read them from one. Here the worst future is the calm one: the CCGT has to run, and intraday power is dear. The risk-neutral plan sells most of its volume day-ahead and buys back on intraday, which pays off on the likelier windy day, when intraday is cheaper than day-ahead. The risk-averse plan does the opposite at steps 0 to 2: it buys on day-ahead and sells the surplus on intraday. That earns money on a calm day, when intraday pays more than day-ahead, and costs money on a windy day, when it pays less. The plan gives up some of the windy day's profit to lift the calm day's.
 
 ## Fields
 
@@ -151,7 +151,7 @@ print(round(averse_result.objective_value, 2))
 ```
 
 ```text
--10322.65
+-10872.2
 ```
 
 The risk term adds no binaries: one threshold, plus one shortfall per scenario.

@@ -2,13 +2,13 @@
 icon: lucide/trending-up
 ---
 
-# Scenarios
+# Several scenarios
 
 So far every plan was built on a best guess: one forecast of tomorrow, treated as certain. But tomorrow may be calm or windy, and the prices move with it. Planning against several scenarios, each with a probability, gives you the plan that does best across all of them, instead of one that only works if the forecast is right.
 
 ## From a best guess to several futures
 
-Let's take the complete site of the [running example](../index.md#the-running-example) and replace its single forecast with two futures. Tomorrow is calm with probability 0.3, or windy with probability 0.7. The site still bids on the day-ahead market tonight, before it knows which, and can rebalance on an intraday market tomorrow, whose prices follow the wind:
+Let's take the complete site, as the [EnergyMarket](../markets/energy_market.md#results) page put it together, and replace its single forecast with two futures. Tomorrow is calm with probability 0.3, or windy with probability 0.7, and the prices on both markets follow the wind. The site bids on the day-ahead market the day before delivery, before the market clears: it doesn't know yet which future will happen, nor the prices its bids will clear at. Once it knows, it can rebalance on an intraday market:
 
 ```python
 from datetime import timedelta
@@ -53,7 +53,7 @@ calm = Scenario(
         LoadProfile(load=factory, values=[60, 90, 40, 70]),
         LoadProfile(load=process, values=[30, 30, 30, 30]),
         AvailableCapacityProfile(generator=wind, values=[20, 5, 30, 15]),
-        PriceProfile(market=day_ahead, values=[40, 75, 30, 65]),
+        PriceProfile(market=day_ahead, values=[45, 80, 35, 68]),
         PriceProfile(market=intraday, values=[55, 90, 45, 70]),
     ),
 )
@@ -64,13 +64,13 @@ windy = Scenario(
         LoadProfile(load=factory, values=[60, 90, 40, 70]),
         LoadProfile(load=process, values=[30, 30, 30, 30]),
         AvailableCapacityProfile(generator=wind, values=[60, 40, 80, 50]),
-        PriceProfile(market=day_ahead, values=[40, 75, 30, 65]),
-        PriceProfile(market=intraday, values=[30, 60, 20, 45]),
+        PriceProfile(market=day_ahead, values=[35, 65, 25, 55]),
+        PriceProfile(market=intraday, values=[30, 58, 20, 45]),
     ),
 )
 ```
 
-Each scenario holds a full set of profiles, and any of them can differ: here the wind and the intraday prices do. The day-ahead prices are already known tonight, so they're the same in both. Then pass the list of scenarios where a single `Scenario` went before:
+Each scenario holds a full set of profiles, and any of them can differ: here the wind and the prices of both markets do. Wind pushes prices down, so both markets are cheaper when it's windy. Then pass the list of scenarios where a single `Scenario` went before:
 
 ```python
 energy_system = EnergySystem(
@@ -92,23 +92,23 @@ time market
 0    day_ahead   -4.09   -4.09
      intraday    10.00  -50.00
 1    day_ahead   70.00   70.00
-     intraday   -50.00  -15.00
-2    day_ahead   15.00   15.00
-     intraday   -50.00  -50.00
+     intraday   -50.00  -45.00
+2    day_ahead  -35.00  -35.00
+     intraday   -50.00    0.00
 3    day_ahead  100.00  100.00
      intraday   -50.00  -50.00
 ```
 
-The day-ahead trades are the same in both scenarios: the site places one set of bids tonight. Intraday, it rebalances once it knows the weather:
+The day-ahead trades are the same in both scenarios: the site sends one set of bids before it knows which future happens. On its own, a calm day would buy day-ahead at steps 0 to 2, where day-ahead is cheaper than intraday, and a windy day would sell at steps 1 to 3. The one bid has to work for both, so it buys at steps 0 and 2 and sells at steps 1 and 3. Intraday, the site rebalances to the future that happens:
 
-- **Calm:** the CCGT runs at full output whenever intraday costs more than it does, and the site buys back on intraday the rest of what it sold day-ahead. At step 0, intraday pays 55 $/MWh, above the CCGT's cost, so the site sells 10 MW there too. At step 2 it costs only 45, so the site buys the full 50 MW and runs the CCGT at half.
-- **Windy:** intraday power is cheap, so the site buys as much as the market allows at steps 0, 2 and 3, and runs the CCGT less, or not at all.
+- **Calm:** intraday power is dear, so the CCGT runs at full output whenever intraday costs more than its 50 $/MWh, at steps 0, 1 and 3, and the site buys back on intraday the rest of what it sold day-ahead. At step 0, intraday pays 55 $/MWh, so the site sells 10 MW there too. At step 2 it costs only 45, so the CCGT stays off and the site buys the full 50 MW.
+- **Windy:** the wind and cheap intraday power replace the CCGT: it's off at step 0, and the site buys on intraday at steps 0, 1 and 3. At step 2, the wind and the day-ahead purchase cover the site, so it doesn't trade intraday.
 
 Scenario names have to be unique, and the probabilities have to add up to 1, within floating-point tolerance: 49 scenarios of `1 / 49` each are accepted. A generator without an `AvailableCapacityProfile` in a scenario can produce up to its `nominal_power` in that scenario.
 
 ## What's decided before the uncertainty
 
-The bids go in tonight; the wind is known tomorrow morning. Everything you can still change once you know it adapts to each scenario. The decisions you can't wait on are the same in all of them:
+The day-ahead bids go in before the market clears, and the wind and the prices are known only later. Everything you can still change once you know them adapts to each scenario. The decisions you can't wait on are the same in all of them:
 
 | Decision | Same in every scenario |
 | -------- | ---------------------- |
@@ -120,9 +120,10 @@ The bids go in tonight; the wind is known tomorrow morning. Everything you can s
 
 Mark a market `stage_fixed` when you commit to it before you know the outcome, like day-ahead; see [Stage-fixed markets](../markets/energy_market.md#stage-fixed-markets) and [NA-1](../../formulation/non_anticipativity.md#na-1). Initial and final conditions are the same in every scenario too, because they're inputs.
 
-Two consequences to keep in mind:
+Three consequences to keep in mind:
 
 - **Without a stage-fixed market or a risk term, the scenarios don't interact.** Each scenario gets the plan that's best for it alone, as if the optimizer knew in advance which future would happen. The result is the same as solving each one on its own. See [When scenarios are solved on their own](../../formulation/scenarios.md#when-scenarios-are-solved-on-their-own).
+- **Intraday is traded knowing the whole day.** Once a scenario happens, its intraday trades and dispatch are planned with all of that scenario's wind and prices known. In practice, intraday is traded while forecasts keep improving, so the plan's intraday profit is optimistic. See [Two stages](../../formulation/non_anticipativity.md#two-stages).
 - **Generator commitment adapts to each scenario.** The CCGT above is on at step 0 when it's calm and off when it's windy. A unit that has to be scheduled in advance isn't modelled as such today; see [NA-1](../../formulation/non_anticipativity.md#na-1).
 
 ## Results per scenario
@@ -161,7 +162,7 @@ time  generator
       wind          48.0
 1     ccgt         100.0
       wind          29.5
-2     ccgt          15.0
+2     ccgt           0.0
       wind          65.0
 3     ccgt          96.5
       wind          39.5

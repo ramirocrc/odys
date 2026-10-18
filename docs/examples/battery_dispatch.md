@@ -76,7 +76,7 @@ portfolio = AssetPortfolio([ccgt, solar_pv, load, battery])
 
 ### 2. Describe the day
 
-The same day as in Basic Dispatch: the solar farm's [available capacity](../user_guide/model/profiles.md) follows the sun, and the load is 70 MW throughout. The battery takes no profile:
+The same day as in Basic Dispatch: the solar farm's [available capacity](../user_guide/model/scenario.md#each-one-is-a-profile) follows the sun, and the load is 70 MW throughout. The battery takes no profile:
 
 ```python
 SOLAR_PROFILE: list[float] = [0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0]

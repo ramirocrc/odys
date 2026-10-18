@@ -249,4 +249,4 @@ The market chart shows what the depot buys and sells at each hour:
 
 ## Discussion
 
-A fleet with V2G trades like a battery, but one that's only there between trips, and only through a charger. With fewer chargers than vans, the chargers become the bottleneck at the hours that pay most: here, a third charger would be worth 1.34 a day, which is what you'd weigh against its cost. Every example so far planned against a single future; to plan against uncertain prices or trips, see [Scenarios](../user_guide/uncertainty/scenarios.md) and [Risk (CVaR)](../user_guide/uncertainty/risk.md).
+A fleet with V2G trades like a battery, but one that's only there between trips, and only through a charger. With fewer chargers than vans, the chargers become the bottleneck at the hours that pay most: here, a third charger would be worth 1.34 a day, which is what you'd weigh against its cost. Every example so far planned against a single future; to plan against uncertain prices or trips, see [Several scenarios](../user_guide/uncertainty/scenarios.md) and [Risk (CVaR)](../user_guide/uncertainty/risk.md).

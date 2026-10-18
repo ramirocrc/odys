@@ -46,7 +46,7 @@ _battery = runpy.run_path(str(EXAMPLES_DIR / "battery_dispatch.py"))
 _cvar = runpy.run_path(str(EXAMPLES_DIR / "cvar_market_risk.py"))
 _ev_fleet = runpy.run_path(str(EXAMPLES_DIR / "ev_fleet_optimization.py"))
 _flexible = runpy.run_path(str(EXAMPLES_DIR / "flexible_load_market.py"))
-_arbitrage = runpy.run_path(str(EXAMPLES_DIR / "market_arbitrage.py"))
+_make_or_buy = runpy.run_path(str(EXAMPLES_DIR / "make_or_buy.py"))
 _snippets = {tab: runpy.run_path(str(SNIPPETS_DIR / f"{tab}.py")) for tab in TABS}
 price_scenarios: list[list[float]] = _snippets["stochastic"]["price_scenarios"]
 
@@ -186,8 +186,8 @@ def _example_thumbnails() -> dict[str, dict[str, object]]:
     """Small real series for each example card: `lines` are drawn as paths, `bars` as columns."""
     basic = _basic["run_basic_dispatch"]().generators.power
     battery = _hourly(_battery["run_battery_dispatch"]().stationary_storages.net_power)
-    arbitrage = _arbitrage["run_market_arbitrage"]()
-    arbitrage_buy = _hourly(arbitrage.markets.to_dataframe()["buy_volume"])
+    make_or_buy = _make_or_buy["run_make_or_buy"]()
+    make_or_buy_purchases = _hourly(make_or_buy.markets.to_dataframe()["buy_volume"])
     flexible_frame = _flexible["run_flexible_load_market"]().flexible_loads.to_dataframe()
     flexible_actual = _hourly(flexible_frame["actual_load"])
     flexible_baseline = flexible_actual - _hourly(flexible_frame["load_adjustment"])
@@ -203,10 +203,10 @@ def _example_thumbnails() -> dict[str, dict[str, object]]:
             "lines": [{"values": _series(_battery["SOLAR_PROFILE"]), "tone": "primary"}],
             "bars": _series(-battery),
         },
-        "market_arbitrage": {
+        "make_or_buy": {
             "lines": [
-                {"values": _series(_hourly(arbitrage.generators.power)), "tone": "primary"},
-                {"values": _series(arbitrage_buy.abs()), "tone": "accent"},
+                {"values": _series(_hourly(make_or_buy.generators.power)), "tone": "primary"},
+                {"values": _series(make_or_buy_purchases.abs()), "tone": "accent"},
             ],
         },
         "flexible_load_market": {

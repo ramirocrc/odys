@@ -4,7 +4,7 @@ icon: lucide/lock
 
 # Non-anticipativity
 
-Some decisions can't wait. Take the day-ahead market: you send your bids today, and the market clears before you see tomorrow's prices. So how much should you bid, without knowing the price?
+Some decisions can't wait. Take the day-ahead market: you send your bids the day before delivery, and you only see tomorrow's prices once the market clears. So how much should you bid, without knowing the price?
 
 The simple answer is a **point forecast**: take the price you expect, and bid what would be best at that price. That works as long as the forecast is right, and the bid is only as good as that one guess.
 
@@ -37,6 +37,8 @@ flowchart LR
 
 In odys, you choose the first stage per market, with `EnergyMarket(stage_fixed=True)`. Today, market trades are the only decisions that can be stage-fixed.
 
+The second stage sees its scenario's whole future at once: intraday trades, for instance, are planned knowing every price and every wind value of the day. Real intraday trading happens while forecasts keep improving, so the second stage is optimistic. Two stages are the simplest model of "commit now, adapt later"; a model with more stages would add a decision point for each update.
+
 ## NA-1 · Stage-fixed trades are the same in every scenario {#na-1}
 
 Every trade on a stage-fixed market takes the same value in all scenarios.
@@ -57,6 +59,7 @@ You could write the same thing with a single variable shared by all scenarios. o
 
 - odys also writes the row for $s_0$ itself, where it simply reads $x = x$. These rows do nothing ([#154](https://github.com/ramirocrc/odys/issues/154)).
 - The trade mode $y^{trade}$ is tied too, so a stage-fixed market also picks "buy" or "sell" once for all futures. The trade mode only removes plans that are worth the same profit; see [#140](https://github.com/ramirocrc/odys/issues/140).
+- A stage-fixed trade is a **price-independent bid**: one volume per step, accepted whatever price the market clears at. Real day-ahead bids are price-quantity curves, whose accepted volume depends on the clearing price. odys doesn't model them, so in a scenario with a low price the plan still buys or sells the same volume as in one with a high price.
 - Generator commitment is second-stage: a unit can be on in one scenario and off in another at the same step. If a unit has to be scheduled in advance, model that commitment through a stage-fixed market position. First-stage commitment is proposed in [#153](https://github.com/ramirocrc/odys/issues/153).
 
 `Added: always (empty without a stage-fixed market) · Binds: on markets with stage_fixed=True · Names: non_anticipativity_market_buy_volume_constraint, non_anticipativity_market_sell_volume_constraint, non_anticipativity_market_trade_mode_constraint`

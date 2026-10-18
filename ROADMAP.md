@@ -100,7 +100,7 @@ User guide, API reference, and worked examples to help users learn and use Odys.
 **Current:**
 - User guide (13 pages covering all major features)
 - API reference (comprehensive documentation of all public classes)
-- 6 worked examples (basic dispatch, battery, flexible load, market arbitrage, CVaR, EV fleet)
+- 6 worked examples (basic dispatch, battery, flexible load, make or buy, CVaR, EV fleet)
 - Mathematical notation reference
 
 **Coming soon:**
