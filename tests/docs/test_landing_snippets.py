@@ -49,14 +49,13 @@ def _expected_profit(schedule: np.ndarray) -> float:
     return float((_prices("stochastic", "price_scenarios") @ schedule).mean())
 
 
-@pytest.mark.parametrize("snippet", ["deterministic", "stochastic", "risk_aware"])
+@pytest.mark.parametrize("snippet", ["deterministic", "stochastic"])
 def test_snippet_solves_to_optimality(snippet: str) -> None:
     assert _run(snippet).termination_condition == "optimal"
 
 
-@pytest.mark.parametrize("snippet", ["stochastic", "risk_aware"])
-def test_snippet_commits_to_one_schedule_for_every_scenario(snippet: str) -> None:
-    schedules = _schedules(_run(snippet))
+def test_stochastic_snippet_commits_to_one_schedule_for_every_scenario() -> None:
+    schedules = _schedules(_run("stochastic"))
 
     assert len(schedules) == NUMBER_OF_SCENARIOS
     np.testing.assert_allclose(
@@ -72,10 +71,6 @@ def test_stochastic_schedule_beats_the_point_forecast_in_expectation() -> None:
 
     assert not np.allclose(deterministic, stochastic)
     assert _expected_profit(stochastic) > _expected_profit(deterministic)
-
-
-def test_risk_aware_snippet_uses_the_stochastic_price_scenarios() -> None:
-    np.testing.assert_array_equal(_prices("risk_aware", "price_scenarios"), _prices("stochastic", "price_scenarios"))
 
 
 def test_deterministic_forecast_is_one_of_the_price_scenarios() -> None:

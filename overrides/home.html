@@ -48,16 +48,17 @@
       <div class="odys-window__bar">
         <div class="odys-window__tabs" role="tablist" aria-label="Optimization approach">
           <button type="button" role="tab" class="odys-tab" data-tab="deterministic" aria-selected="false"
-            data-lead="One forecast in, one schedule out." data-rest="Only as good as the forecast.">deterministic.py</button>
+            data-kicker="Deterministic" data-lead="Optimizes for a single scenario: your forecast."
+            data-rest="One price forecast in, one battery schedule out. It is the best plan only if tomorrow turns out exactly like the forecast.">deterministic.py</button>
           <button type="button" role="tab" class="odys-tab" data-tab="stochastic" aria-selected="true"
-            data-lead="Twelve scenarios in, one schedule out." data-rest="It maximizes expected profit across all of them.">stochastic.py</button>
-          <button type="button" role="tab" class="odys-tab" data-tab="risk_aware" aria-selected="false"
-            data-lead="Same scenarios, safer schedule." data-rest="A CVaR term gives up a little expected profit for a better worst case.">risk_aware.py</button>
+            data-kicker="Stochastic" data-lead="Optimizes for many scenarios at once."
+            data-rest="Twelve price scenarios in, one battery schedule out. Odys picks the schedule with the highest expected profit across all of them.">stochastic.py</button>
         </div>
         <span class="odys-window__tag" data-tab-tag></span>
       </div>
       <div class="odys-caption">
         <div class="odys-caption__text" aria-live="polite">
+          <span class="odys-caption__kicker" data-caption-kicker></span>
           <span class="odys-caption__lead" data-caption-lead></span>
           <span class="odys-caption__rest" data-caption-rest></span>
         </div>
@@ -67,6 +68,13 @@
         <figure class="odys-chart">
           <div class="odys-chart__sticky">
             <svg viewBox="0 0 600 560" role="img" aria-label="Price scenarios over a day, above the single battery schedule Odys commits to" data-chart></svg>
+            <div class="odys-outcome">
+              <div class="odys-outcome__figure">
+                <span class="odys-outcome__label">Expected profit across the 12 scenarios</span>
+                <span class="odys-outcome__value" data-outcome-value></span>
+              </div>
+              <span class="odys-outcome__verdict" data-outcome-verdict></span>
+            </div>
           </div>
         </figure>
       </div>

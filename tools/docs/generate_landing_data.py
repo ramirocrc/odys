@@ -38,7 +38,7 @@ OUTPUT_PATH = REPOSITORY_ROOT / "docs" / "assets" / "landing" / "data.json"
 
 SHOWN_START = "# --8<-- [start:shown]"
 SHOWN_END = "# --8<-- [end:shown]"
-TABS = ("deterministic", "stochastic", "risk_aware")
+TABS = ("deterministic", "stochastic")
 
 # Examples and snippets are standalone scripts, not packages, so they are loaded by path.
 _basic = runpy.run_path(str(EXAMPLES_DIR / "basic_dispatch.py"))
@@ -91,10 +91,9 @@ def _market_schedule(result: OptimalDispatchResults) -> list[float]:
     return _series(_hourly(net_volume, level="scenario", key=first_scenario))
 
 
-def _profit_across_scenarios(schedule: list[float]) -> tuple[float, float]:
-    """Return expected and worst-case profit of a schedule over all price scenarios."""
-    profits = [float(p) for p in np.asarray(price_scenarios) @ np.asarray(schedule)]
-    return round(sum(profits) / len(profits)), round(min(profits))
+def _scenario_profits(schedule: list[float]) -> list[float]:
+    """Return the market profit of a schedule in each price scenario."""
+    return [float(p) for p in np.asarray(price_scenarios) @ np.asarray(schedule)]
 
 
 def _changed_lines(lines: list[str], reference: list[str]) -> list[int]:
@@ -116,36 +115,25 @@ def _data_fold(lines: list[str], name: str) -> dict[str, int]:
     return {"start": start, "end": end + 1}
 
 
-def _scenarios_fold(lines: list[str]) -> dict[str, int]:
-    """Fold the price data and ``scenarios = [...]`` blocks, which risk_aware.py shares with stochastic.py."""
-    start = next(i for i, line in enumerate(lines) if line.startswith("price_scenarios = [")) - 1
-    end = lines.index("]", next(i for i, line in enumerate(lines) if line.startswith("scenarios = [")))
-    return {"start": start, "end": end + 1}
-
-
 def _hero() -> dict[str, object]:
     shown = {tab: _shown_lines(tab) for tab in TABS}
     references = {"deterministic": shown["stochastic"], "stochastic": shown["deterministic"]}
-    references["risk_aware"] = shown["stochastic"]
+    price_data = {"deterministic": "forecast", "stochastic": "price_scenarios"}
     tabs: dict[str, object] = {}
     for tab in TABS:
         schedule = _market_schedule(_snippet_result(tab))
-        expected, worst = _profit_across_scenarios(schedule)
-        folds = [{**_setup_fold(shown[tab]), "kind": "setup"}]
-        match tab:
-            case "deterministic":
-                folds.append({**_data_fold(shown[tab], "forecast"), "kind": "forecast"})
-            case "stochastic":
-                folds.append({**_data_fold(shown[tab], "price_scenarios"), "kind": "price_scenarios"})
-            case _:
-                folds.append({**_scenarios_fold(shown[tab]), "kind": "scenarios"})
+        profits = _scenario_profits(schedule)
+        folds = [
+            {**_setup_fold(shown[tab]), "kind": "setup"},
+            {**_data_fold(shown[tab], price_data[tab]), "kind": price_data[tab]},
+        ]
         tabs[tab] = {
             "code": shown[tab],
             "changed": _changed_lines(shown[tab], references[tab]),
             "folds": folds,
             "schedule": schedule,
-            "expected_profit": expected,
-            "worst_profit": worst,
+            "expected_profit": round(sum(profits) / len(profits)),
+            "scenario_profits": [round(p) for p in profits],
         }
     deterministic_forecast = _snippets["deterministic"]["forecast"]
     return {"price_scenarios": price_scenarios, "forecast": deterministic_forecast, "tabs": tabs}
