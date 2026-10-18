@@ -1,9 +1,15 @@
 # Landing page
 
 The docs home page is a custom landing page rendered by a zensical template
-override. It implements design **G · Orbit** from the design canvas
+override. Its hero comes from design **G · Orbit**
 (<https://claude.ai/artifact/46TRjeDJLGnbeJPeFtNwmn>, board "G · Orbit";
-the "G · Mobile" board shows the phone layout).
+the "G · Mobile" board shows the phone layout). The sections below it use the
+cards and section labels of board "A · Orbit (refined current)" on the
+prototype canvas (<https://claude.ai/artifact/ALu2XjJhQg6iJmRFTJYh99>).
+
+The page reads top to bottom: hero and "Built on" strip, planning problems
+(one card per example), formulation and tooling, assets and markets, and a
+closing call to action into the User Guide.
 
 ## Decisions
 
@@ -19,8 +25,9 @@ the "G · Mobile" board shows the phone layout).
 - **Page-scoped assets.** `home.css` and `home.js` are linked from the
   template, not from `extra_css`/`extra_javascript`, so no docs page loads
   them.
-- **Real data only.** Every number and chart on the page comes from an Odys
-  run at docs build time. Nothing is hand-drawn.
+- **Real data only.** Every number and chart in the hero comes from an Odys
+  run at docs build time. Nothing is hand-drawn. The sections below the hero
+  are static copy with no numbers.
 
 ## How it fits together
 
@@ -28,7 +35,7 @@ the "G · Mobile" board shows the phone layout).
 |---|---|
 | Template (all static markup and copy) | `overrides/home.html` |
 | Styles | `docs/assets/stylesheets/home.css` |
-| Behaviour (tabs, code folds, charts, copy button, carousel) | `docs/assets/javascripts/home.js` |
+| Behaviour (hero tabs, code folds, chart, copy button) | `docs/assets/javascripts/home.js` |
 | Selects the template | `docs/index.md` (front matter only) |
 | Hero code snippets, run as written | `tools/docs/landing/snippets/{deterministic,stochastic}.py` |
 | Data generation | `tools/docs/generate_landing_data.py` → `docs/assets/landing/data.json` (git-ignored) |
@@ -69,10 +76,12 @@ median. Expected profit is linear in prices and the market is
 stage-fixed, so optimizing against the mean reproduces the stochastic
 schedule exactly, and the two tabs would look identical. The snippet test
 checks that the stochastic schedule differs from the deterministic one and
-earns more in expectation. Under the chart, each tab shows its expected
-profit across the twelve scenarios and in how many scenarios it beats the
-other tab's schedule, from the `expected_profit` and `scenario_profits` the
-generator writes per tab.
+earns more in expectation.
+
+The hero copy names neither the asset nor the number of scenarios: the
+caption says "multiple price scenarios" and the chart's output label says
+"1 schedule", because the point is one schedule for every scenario, for any
+asset.
 
 Snippets are formatted by ruff with magic trailing commas. Keep outer calls
 exploded (one argument per line, trailing comma), and keep short inner calls
@@ -83,24 +92,19 @@ scenario per line, under the 120-character limit.
 ### Data in `data.json`
 
 - `hero`: price scenarios, the point forecast and, per tab, the shown code,
-  changed lines, folds, battery schedule, and expected and worst-case profit
-- `cvar_frontier`: expected and worst-case profit of the CVaR example, with
-  and without the CVaR term (prices from `SCENARIO_PRICES` in
-  `examples/day_ahead_or_intraday.py`)
-- `pandas_output`: the README quick example's printed result
-- `validation_error`: the real Pydantic message for a negative nominal power
-- `examples`: small series for the six example thumbnails
+  changed lines, folds and committed schedule
 
 ## Editing the page
 
-- **Copy, assets list, proof cards, example cards:** edit
-  `overrides/home.html`.
+- **Copy, planning-problem cards, feature cards, assets list:** edit
+  `overrides/home.html`. Each problem card links to `examples/<slug>/`; its
+  tag colour is a `odys-problem__tag--<tone>` modifier in `home.css`.
 - **Hero captions:** the `data-lead` / `data-rest` attributes on the tab
   buttons in `overrides/home.html`.
 - **Hero code:** edit the snippet files, then run `just docs-assets` and
   `just test`.
-- **Breakpoints:** 1060px (code and chart stack), 1000px (proof grid in two
-  columns), 760px (phone layout), 700px (vertical line hidden, one column).
+- **Breakpoints:** 1060px (code and chart stack), 760px (phone layout). The
+  card grids wrap on their own (`auto-fit`, 340px minimum).
 
 ## Brand
 
@@ -122,6 +126,10 @@ the brand mint, and load is a dashed ink line. Each role reaches 3:1 on its
 scheme's background, apart from roles marked `fill`, which are only used for
 areas. One light value always maps to one dark value.
 
+The landing page's planning-problem tags reuse the same hues: `thermal-400`,
+`solar-400`, `flex-400` and `ev-400` in `color` are the dark values of the
+`thermal`, `solar`, `flexible_load` and `ev_2` chart roles. Change them together.
+
 The charts are drawn with the light colours on a transparent background.
 `_save_figure` derives the dark figure by swapping each light colour for its
 dark counterpart and writes both into the chart page. A small script picks
@@ -137,7 +145,7 @@ the iframe in dark mode.
   about 900px and phone widths, in light, dark and system mode. The home page
   should stay dark; docs pages should follow the toggle.
 - Switching tabs replays the chart and swaps the code without changing the
-  window's height. Folds open and close. The carousel arrows and dots work on
-  desktop, and swiping works on phones.
+  window's height. Folds open and close. The card grids drop to one column
+  on phones, and every card links to its page.
 - Spot-check docs pages (user guide, API reference) for unchanged styling.
 - `just docs-build` (strict), `just test` and `just check` pass.
