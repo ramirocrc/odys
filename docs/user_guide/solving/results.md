@@ -232,4 +232,4 @@ except OdysSolverError as error:
 
 ## Next steps
 
-Every run so far used HiGHS with its default settings. Next, see how to choose and tune the [Solvers](../optimization/solvers.md) behind `.optimize()`.
+Every run so far used HiGHS with its default settings. Next, see how to choose and tune the [Solvers](solvers.md) behind `.optimize()`.
