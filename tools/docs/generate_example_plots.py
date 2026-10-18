@@ -252,7 +252,7 @@ def generate_solar_storage() -> None:
     """Two-panel chart: generator dispatch with battery + battery SOC."""
     result = run_solar_storage()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
-    battery_df = result.stationary_storages.to_dataframe().droplevel("stationary_storage")
+    battery_df = result.battery_storages.to_dataframe().droplevel("battery_storage")
     steps = list(range(len(gen_df)))
 
     fig = make_subplots(

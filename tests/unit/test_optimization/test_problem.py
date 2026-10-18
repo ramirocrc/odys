@@ -7,6 +7,7 @@ import pytest
 from odys.domain.conditions import ElectricVehicleInitialState, StorageInitialState
 from odys.domain.entities.base import Asset, EnergyEntity
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
@@ -14,20 +15,19 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysError, OdysValidationError
 from odys.domain.profiles import LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations import FORMULATIONS, validate_entities_supported
 from odys.optimization.formulations.base import Formulation
+from odys.optimization.formulations.battery_storage import BatteryStorageFormulation
 from odys.optimization.formulations.charging import ChargingFormulation
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 from odys.optimization.formulations.energy_market import EnergyMarketFormulation
 from odys.optimization.formulations.fixed_load import FixedLoadFormulation
 from odys.optimization.formulations.flexible_load import FlexibleLoadFormulation
 from odys.optimization.formulations.generator import GeneratorFormulation
-from odys.optimization.formulations.stationary_storage import StationaryStorageFormulation
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.objective_terms.profit import ProfitTermFormulation
 from odys.optimization.problem import OptimizationProblem
@@ -41,7 +41,7 @@ FIXED_LOAD = FixedLoad(name="load")
 FLEXIBLE_LOAD = FlexibleLoad(name="flex", max_increase=5.0, max_decrease=5.0, value_of_consumption=40.0)
 BATTERY = Battery(capacity=10.0, max_charge_power=5.0, max_discharge_power=5.0)
 SOC_START = 0.5
-STORAGE = StationaryStorage(name="storage", battery=BATTERY)
+STORAGE = BatteryStorage(name="storage", battery=BATTERY)
 ELECTRIC_VEHICLE = ElectricVehicle(name="ev", battery=BATTERY, trips=())
 ONE_OF_EACH_ENTITY: tuple[EnergyEntity, ...] = (
     GENERATOR,
@@ -78,7 +78,7 @@ def test_formulations_follow_the_power_balance_order() -> None:
         EnergyMarketFormulation,
         FixedLoadFormulation,
         FlexibleLoadFormulation,
-        StationaryStorageFormulation,
+        BatteryStorageFormulation,
         ElectricVehicleFormulation,
         ChargingFormulation,
     ) == FORMULATIONS

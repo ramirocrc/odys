@@ -6,12 +6,12 @@ import pytest
 
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysValidationError
 
 MARKET_VOLUME = 50.0
@@ -38,9 +38,9 @@ def sample_generator_2() -> Generator:
 
 
 @pytest.fixture
-def sample_battery() -> StationaryStorage:
+def sample_battery() -> BatteryStorage:
     """Create a sample battery for testing."""
-    return StationaryStorage(
+    return BatteryStorage(
         name="test_battery",
         battery=Battery(
             capacity=100.0,
@@ -56,7 +56,7 @@ def sample_battery() -> StationaryStorage:
 def portfolio_with_assets(
     sample_generator_1: Generator,
     sample_generator_2: Generator,
-    sample_battery: StationaryStorage,
+    sample_battery: BatteryStorage,
 ) -> AssetPortfolio:
     """Create a portfolio with sample assets for testing."""
     return AssetPortfolio(assets=[sample_generator_1, sample_generator_2, sample_battery])
@@ -72,7 +72,7 @@ def test_empty_portfolio(sample_generator_1: Generator) -> None:
     ("asset_name", "expected_asset_type"),
     [
         ("test_generator_1", Generator),
-        ("test_battery", StationaryStorage),
+        ("test_battery", BatteryStorage),
     ],
 )
 def test_get_asset_returns_correct_asset(
@@ -95,17 +95,17 @@ def test_get_asset_raises_key_error_for_nonexistent_asset(portfolio_with_assets:
 def test_assets_of_returns_assets_of_requested_type_in_insertion_order(
     sample_generator_1: Generator,
     sample_generator_2: Generator,
-    sample_battery: StationaryStorage,
+    sample_battery: BatteryStorage,
 ) -> None:
     portfolio = AssetPortfolio(assets=[sample_generator_1, sample_generator_2, sample_battery])
 
     generators = portfolio.assets_of(Generator)
-    stationary_storages = portfolio.assets_of(StationaryStorage)
+    battery_storages = portfolio.assets_of(BatteryStorage)
     assert sample_generator_1 is generators[0]
     assert sample_generator_2 is generators[1]
-    assert sample_battery is stationary_storages[0]
+    assert sample_battery is battery_storages[0]
 
-    assert (generators + stationary_storages) == (sample_generator_1, sample_generator_2, sample_battery)
+    assert (generators + battery_storages) == (sample_generator_1, sample_generator_2, sample_battery)
 
 
 def test_constructor_raises_error_for_duplicate_names_in_iterable() -> None:

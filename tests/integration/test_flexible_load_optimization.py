@@ -9,6 +9,7 @@ from odys import (
     AssetPortfolio,
     AvailableCapacityProfile,
     Battery,
+    BatteryStorage,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
@@ -20,7 +21,6 @@ from odys import (
     PriceProfile,
     ProfitTerm,
     Scenario,
-    StationaryStorage,
     StorageFinalState,
     StorageInitialState,
 )
@@ -346,7 +346,7 @@ def test_flexible_load_with_storage() -> None:
         nominal_power=150.0,
         variable_cost=50.0,
     )
-    battery = StationaryStorage(
+    battery = BatteryStorage(
         name="battery",
         battery=Battery(
             capacity=100.0,
@@ -386,13 +386,13 @@ def test_flexible_load_with_storage() -> None:
     flex_dispatch = results.flexible_loads
     assert flex_dispatch.load_adjustment.sum().item() > 0
 
-    storage_dispatch = results.stationary_storages
+    storage_dispatch = results.battery_storages
     assert len(storage_dispatch.soc) > 0
 
     solution = results.to_dataset()
     gen_power = solution["generator_power"]
-    storage_out = solution["stationary_storage_power_out"]
-    storage_in = solution["stationary_storage_power_in"]
+    storage_out = solution["battery_storage_power_out"]
+    storage_in = solution["battery_storage_power_in"]
     market_buy = solution["market_buy_volume"]
     market_sell = solution["market_sell_volume"]
 

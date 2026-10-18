@@ -6,13 +6,13 @@ import pytest
 
 from odys.domain.entities.base import EnergyEntity
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.horizon import Horizon, OperatingConditions
 
 NUMBER_OF_STEPS = 3
@@ -38,7 +38,7 @@ def _battery() -> Battery:
 
 
 GENERATOR = Generator(name="gen", nominal_power=NOMINAL_POWER, variable_cost=10.0)
-STORAGE = StationaryStorage(name="storage", battery=_battery())
+STORAGE = BatteryStorage(name="storage", battery=_battery())
 ELECTRIC_VEHICLE = ElectricVehicle(name="ev", battery=_battery(), trips=())
 MARKET = EnergyMarket(name="market", max_trading_volume_per_step=MAX_TRADING_VOLUME)
 FIXED_LOAD = FixedLoad(name="load")

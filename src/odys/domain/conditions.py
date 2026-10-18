@@ -23,9 +23,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.horizon import Horizon, OperatingConditions
 
@@ -231,11 +231,11 @@ class GeneratorFinalState(FinalCondition):
 
 
 class StorageInitialState(InitialCondition):
-    """State of charge of a stationary storage just before the first timestep. Always required."""
+    """State of charge of a battery storage just before the first timestep. Always required."""
 
-    entity_types: ClassVar[tuple[type[Asset], ...]] = (StationaryStorage,)
+    entity_types: ClassVar[tuple[type[Asset], ...]] = (BatteryStorage,)
 
-    storage: StationaryStorage
+    storage: BatteryStorage
     soc: float = Field(strict=True, ge=0, le=1, description="State of charge as a fraction of capacity (0-1).")
 
     @model_validator(mode="after")
@@ -245,23 +245,23 @@ class StorageInitialState(InitialCondition):
 
     @classmethod
     def required_for(cls, entity: Asset) -> str | None:
-        """Return why a stationary storage needs an initial state: its charge carries over between timesteps."""
-        if not isinstance(entity, StationaryStorage):
+        """Return why a battery storage needs an initial state: its charge carries over between timesteps."""
+        if not isinstance(entity, BatteryStorage):
             return None
         return "its state of charge carries over from one timestep to the next"
 
     @property
-    def entity(self) -> StationaryStorage:
-        """Return the stationary storage this state belongs to."""
+    def entity(self) -> BatteryStorage:
+        """Return the battery storage this state belongs to."""
         return self.storage
 
 
 class StorageFinalState(FinalCondition):
-    """State of charge a stationary storage must have at the last timestep."""
+    """State of charge a battery storage must have at the last timestep."""
 
-    entity_types: ClassVar[tuple[type[Asset], ...]] = (StationaryStorage,)
+    entity_types: ClassVar[tuple[type[Asset], ...]] = (BatteryStorage,)
 
-    storage: StationaryStorage
+    storage: BatteryStorage
     soc: float = Field(strict=True, ge=0, le=1, description="State of charge as a fraction of capacity (0-1).")
 
     @model_validator(mode="after")
@@ -270,8 +270,8 @@ class StorageFinalState(FinalCondition):
         return self
 
     @property
-    def entity(self) -> StationaryStorage:
-        """Return the stationary storage this state belongs to."""
+    def entity(self) -> BatteryStorage:
+        """Return the battery storage this state belongs to."""
         return self.storage
 
 

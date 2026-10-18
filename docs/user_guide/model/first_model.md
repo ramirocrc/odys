@@ -58,7 +58,7 @@ A few fields depend on the step length, such as ramp limits and self-discharge. 
 
 ## The portfolio
 
-An `AssetPortfolio` takes the assets you own and operate: [generators](../assets/generator.md), [fixed](../assets/fixed_load.md) and [flexible](../assets/flexible_load.md) loads, [stationary storage](../assets/stationary_storage.md), [electric vehicles](../assets/electric_vehicle.md) and [chargers](../assets/charger.md). Building it checks two rules, and raises an `OdysValidationError` when one fails:
+An `AssetPortfolio` takes the assets you own and operate: [generators](../assets/generator.md), [fixed](../assets/fixed_load.md) and [flexible](../assets/flexible_load.md) loads, [battery storage](../assets/battery_storage.md), [electric vehicles](../assets/electric_vehicle.md) and [chargers](../assets/charger.md). Building it checks two rules, and raises an `OdysValidationError` when one fails:
 
 - Asset names are unique within the portfolio.
 - Chargers and electric vehicles come together: a portfolio with vehicles but no charger, or chargers but no vehicle, is rejected.
@@ -107,7 +107,7 @@ Conditions go to the `EnergySystem`, not to a `Scenario`, because they're the sa
 | Asset | Initial condition | Final condition | Initial condition required |
 | ----- | ----------------- | --------------- | -------------------------- |
 | [Generator](../assets/generator.md#initial-and-final-state) | `GeneratorInitialState` | `GeneratorFinalState` | When its start matters: ramp limits, minimum up or down times, start-up or shut-down costs |
-| [StationaryStorage](../assets/stationary_storage.md#initial-and-final-state) | `StorageInitialState` | `StorageFinalState` | Always |
+| [BatteryStorage](../assets/battery_storage.md#initial-and-final-state) | `StorageInitialState` | `StorageFinalState` | Always |
 | [ElectricVehicle](../assets/electric_vehicle.md#initial-and-final-state) | `ElectricVehicleInitialState` | `ElectricVehicleFinalState` | Always |
 
 Final conditions are always optional. Loads, chargers and markets carry no state, so they take none. Each asset page shows its conditions in code.
@@ -119,7 +119,7 @@ odys connects every asset and every market to a single bus. At every step and in
 | Feeds the bus | Draws from the bus |
 | ------------- | ------------------ |
 | [Generator](../assets/generator.md) output | [FixedLoad](../assets/fixed_load.md) demand |
-| [Battery](../assets/battery.md) discharge, from stationary storage and vehicles with V2G | [FlexibleLoad](../assets/flexible_load.md) demand, after its adjustment |
+| [Battery](../assets/battery.md) discharge, from battery storage and vehicles with V2G | [FlexibleLoad](../assets/flexible_load.md) demand, after its adjustment |
 | [EnergyMarket](../markets/energy_market.md) purchases | Battery charging |
 | | EnergyMarket sales |
 

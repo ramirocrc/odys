@@ -6,11 +6,11 @@ import xarray as xr
 
 from odys.domain.conditions import StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.domain.profiles import LoadProfile
 from odys.domain.scenario import Scenario
@@ -36,7 +36,7 @@ def energy_system_sample() -> EnergySystem:
         nominal_power=150.0,
         variable_cost=25.0,
     )
-    battery_1 = StationaryStorage(
+    battery_1 = BatteryStorage(
         name="battery_1",
         battery=Battery(
             max_charge_power=200.0,

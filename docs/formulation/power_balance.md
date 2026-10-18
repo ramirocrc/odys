@@ -66,8 +66,8 @@ Read aloud: what your generators make, plus what you buy, plus what your batteri
 | $p_{g,s,t}$ | `generator_power` · `results.generators.power` | Variable · Result | MW |
 | $p^{buy}_{m,s,t}$ | `market_buy_volume` · `results.markets.buy_volume` | Variable · Result | MW |
 | $p^{sell}_{m,s,t}$ | `market_sell_volume` · `results.markets.sell_volume` | Variable · Result | MW |
-| $p^{ch}_{k,s,t}$ | `stationary_storage_power_in`, `ev_power_in` | Variable | MW |
-| $p^{dis}_{k,s,t}$ | `stationary_storage_power_out`, `ev_power_out` | Variable | MW |
+| $p^{ch}_{k,s,t}$ | `battery_storage_power_in`, `ev_power_in` | Variable | MW |
+| $p^{dis}_{k,s,t}$ | `battery_storage_power_out`, `ev_power_out` | Variable | MW |
 | $p^{adj}_{l,s,t}$ | `load_adjustment` · `results.flexible_loads.load_adjustment` | Variable · Result | MW |
 
 Who fills the gap? First, the outside world. See [Markets](markets.md).

@@ -25,7 +25,7 @@ from odys import (
     LoadProfile,
     PriceProfile,
     Scenario,
-    StationaryStorage,
+    BatteryStorage,
     StorageInitialState,
 )
 
@@ -33,7 +33,7 @@ ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
 wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
 factory = FixedLoad(name="factory")
 process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
-bess = StationaryStorage(
+bess = BatteryStorage(
     name="bess",
     battery=Battery(
         capacity=50.0,
