@@ -80,7 +80,7 @@ initial_conditions = (StorageInitialState(storage=bounded_bess, soc=0.5),)
 final_conditions = (StorageFinalState(storage=bounded_bess, soc=0.5),)
 ```
 
-Both states go to the [EnergySystem](../concepts/energy_system.md), and both have to lie within `[soc_min, soc_max]`, or creating them raises an `OdysValidationError`. A final state is an exact value: the battery ends at exactly that charge, in every scenario. An electric vehicle uses `ElectricVehicleInitialState` and `ElectricVehicleFinalState` instead, which work the same way.
+Both states go to the [EnergySystem](../model/first_model.md#initial-and-final-conditions), and both have to lie within `[soc_min, soc_max]`, or creating them raises an `OdysValidationError`. A final state is an exact value: the battery ends at exactly that charge, in every scenario. An electric vehicle uses `ElectricVehicleInitialState` and `ElectricVehicleFinalState` instead, which work the same way.
 
 See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field, and [B-3](../../formulation/batteries.md#b-3) to [B-5](../../formulation/batteries.md#b-5).
 

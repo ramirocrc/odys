@@ -18,8 +18,7 @@ nav = [
   { "User Guide" = [
     { "Overview" = "user_guide/index.md" },
     { "Building a model" = [
-      { "EnergySystem" = "user_guide/concepts/energy_system.md" },
-      { "AssetPortfolio" = "user_guide/concepts/asset_portfolio.md" },
+      { "Your first model" = "user_guide/model/first_model.md" },
       { "Scenarios & Profiles" = "user_guide/concepts/scenario.md" },
       { "Initial and final conditions" = "user_guide/concepts/initial_and_final_conditions.md" },
     ] },
@@ -38,6 +37,7 @@ nav = [
     { "Solving and results" = [
       { "Results" = "user_guide/optimization/results.md" },
       { "Solvers" = "user_guide/optimization/solvers.md" },
+      { "Validation and errors" = "user_guide/solving/validation.md" },
     ] },
     { "Uncertainty and risk" = [
       { "Stochastic optimization" = "user_guide/optimization/stochastic.md" },

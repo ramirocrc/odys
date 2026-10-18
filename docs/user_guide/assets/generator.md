@@ -111,7 +111,7 @@ Each cost is paid once per event, however long the step. With them, keeping the 
 
 ## Initial and final state
 
-Say you're optimizing tomorrow's dispatch, starting at midnight, and the CCGT is running tonight: by midnight, it will have been producing 50 MW for 2 hours. Tomorrow's plan has to pick up from there, so you pass that state as a `GeneratorInitialState`. If tomorrow also has to hand over to the day after, a `GeneratorFinalState` sets the output the CCGT ends with. Both go to the [EnergySystem](../concepts/energy_system.md). Here we plan tomorrow's first four hours:
+Say you're optimizing tomorrow's dispatch, starting at midnight, and the CCGT is running tonight: by midnight, it will have been producing 50 MW for 2 hours. Tomorrow's plan has to pick up from there, so you pass that state as a `GeneratorInitialState`. If tomorrow also has to hand over to the day after, a `GeneratorFinalState` sets the output the CCGT ends with. Both go to the [EnergySystem](../model/first_model.md#initial-and-final-conditions). Here we plan tomorrow's first four hours:
 
 ```python
 from odys import (

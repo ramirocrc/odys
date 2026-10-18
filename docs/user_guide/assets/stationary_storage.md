@@ -28,7 +28,7 @@ bess = StationaryStorage(
 starts_half_full = StorageInitialState(storage=bess, soc=0.5)
 ```
 
-Add `bess` to your [AssetPortfolio](../concepts/asset_portfolio.md), and pass `starts_half_full` to the `EnergySystem` with `initial_conditions=(starts_half_full,)`.
+Add `bess` to your [AssetPortfolio](../model/first_model.md#the-portfolio), and pass `starts_half_full` to the `EnergySystem` with `initial_conditions=(starts_half_full,)`.
 
 ## Fields
 

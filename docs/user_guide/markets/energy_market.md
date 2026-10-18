@@ -6,7 +6,7 @@ icon: fontawesome/solid/chart-line
 
 An `EnergyMarket` models a market your portfolio trades on: a day-ahead or intraday market, a supply contract you buy from, or an offtake agreement you sell to. At every step the optimizer decides how much to buy or sell on it, at the price of that step. Your trades never move the price.
 
-Markets aren't assets. Pass them to the `EnergySystem` with `markets=...`, not to the [AssetPortfolio](../concepts/asset_portfolio.md).
+Markets aren't assets. Pass them to the `EnergySystem` with `markets=...`, not to the [AssetPortfolio](../model/first_model.md#the-portfolio).
 
 ## Basic usage
 

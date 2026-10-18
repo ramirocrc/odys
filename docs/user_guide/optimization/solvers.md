@@ -43,7 +43,7 @@ You only need to install the solvers you plan to use. If you request a solver th
 
 ## Selecting a solver
 
-The snippets on this page solve the first system of the [EnergySystem](../concepts/energy_system.md#basic-usage) page:
+The snippets on this page solve the first system of [Your first model](../model/first_model.md#basic-usage):
 
 ??? example "The system"
 

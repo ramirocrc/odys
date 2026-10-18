@@ -23,7 +23,7 @@ Principles for writing and improving the Odys documentation. The voice is the sa
 
 This is the most important page. Someone should be able to install the package, copy 20-30 lines of code, see a useful result, and understand why it works -- within 5 minutes.
 
-The quickstart lives on `index.md` as the "Quick example" section. The "Get started" button links to `user_guide/concepts/energy_system.md`, which expands on the same workflow.
+The quickstart lives on `index.md` as the "Quick example" section. The "Get started" button links to `user_guide/model/first_model.md`, which expands on the same workflow.
 
 The smallest example that makes someone think "now I get it" is not a toy. It is a realistic dispatch problem with a generator, a load, and a visible result:
 
@@ -53,7 +53,7 @@ print(result.generators.power)
 Follow the user's journey. Each page answers the next question a user naturally has:
 
 1. What is this and how do I install it? (`index.md`)
-2. How do I set up my first system? (`user_guide/concepts/`)
+2. How do I set up my first system? (`user_guide/model/`)
 3. What assets can I model? (`user_guide/assets/`)
 4. Where can I buy and sell energy? (`user_guide/markets/`)
 5. What does the optimizer maximize, and how do I read the results? (`user_guide/optimization/`)
@@ -379,9 +379,9 @@ docs/
 │
 ├── user_guide/               # Tutorials and concept pages
 │   ├── index.md              # Overview: what odys solves, object diagram, one bus, running example, reading order
+│   ├── model/                # Building a model, read in order
+│   │   └── first_model.md    # EnergySystem and AssetPortfolio: the first solve
 │   ├── concepts/
-│   │   ├── energy_system.md  # Main entry point
-│   │   ├── asset_portfolio.md
 │   │   ├── scenario.md       # Scenarios and profiles
 │   │   └── initial_and_final_conditions.md
 │   ├── assets/               # One page per asset, all with the same template
@@ -394,6 +394,8 @@ docs/
 │   │   └── charger.md
 │   ├── markets/
 │   │   └── energy_market.md
+│   ├── solving/
+│   │   └── validation.md     # Checks before solving, and errors
 │   └── optimization/
 │       ├── objective.md      # Profit and CVaR
 │       ├── results.md        # Reading results
