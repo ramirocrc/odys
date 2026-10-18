@@ -8,13 +8,13 @@ import xarray as xr
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.parameters.dimensions import ModelDimension
 from odys.results.dispatch import (
+    BatteryStorageDispatch,
     ChargerDispatch,
     Dispatch,
     ElectricVehicleDispatch,
     FlexibleLoadDispatch,
     GeneratorDispatch,
     MarketDispatch,
-    StationaryStorageDispatch,
 )
 from odys.solvers.outcome import SolveOutcome, SolveStatus
 
@@ -93,9 +93,9 @@ class OptimalDispatchResults:
         return self._dispatch_of(GeneratorDispatch)
 
     @property
-    def stationary_storages(self) -> StationaryStorageDispatch:
-        """Get stationary storage dispatch results."""
-        return self._dispatch_of(StationaryStorageDispatch)
+    def battery_storages(self) -> BatteryStorageDispatch:
+        """Get battery storage dispatch results."""
+        return self._dispatch_of(BatteryStorageDispatch)
 
     @property
     def electric_vehicles(self) -> ElectricVehicleDispatch:

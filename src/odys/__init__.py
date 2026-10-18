@@ -17,6 +17,7 @@ from odys.domain.conditions import (
 )
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
@@ -24,7 +25,6 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysError, OdysNoResultsError, OdysSolverError, OdysValidationError
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
@@ -43,6 +43,7 @@ __all__ = [
     "AssetPortfolio",
     "AvailableCapacityProfile",
     "Battery",
+    "BatteryStorage",
     "CVaRTerm",
     "Charger",
     "ElectricVehicle",
@@ -68,7 +69,6 @@ __all__ = [
     "SolveStatus",
     "SolverConfig",
     "SolverName",
-    "StationaryStorage",
     "StorageFinalState",
     "StorageInitialState",
     "Trip",

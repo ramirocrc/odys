@@ -5,12 +5,12 @@ import pytest
 
 from odys.domain.conditions import ElectricVehicleInitialState, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysError
 from odys.domain.profiles import LoadProfile
 from odys.domain.scenario import Scenario
@@ -29,8 +29,8 @@ def load1() -> FixedLoad:
 
 
 @pytest.fixture
-def battery1() -> StationaryStorage:
-    return StationaryStorage(
+def battery1() -> BatteryStorage:
+    return BatteryStorage(
         name="battery1",
         battery=Battery(
             max_charge_power=200.0,
@@ -43,7 +43,7 @@ def battery1() -> StationaryStorage:
 
 
 @pytest.fixture
-def asset_portfolio_sample(load1: FixedLoad, battery1: StationaryStorage) -> AssetPortfolio:
+def asset_portfolio_sample(load1: FixedLoad, battery1: BatteryStorage) -> AssetPortfolio:
     return AssetPortfolio(
         assets=[
             Generator(
@@ -66,7 +66,7 @@ def asset_portfolio_sample(load1: FixedLoad, battery1: StationaryStorage) -> Ass
 def energy_system_sample(
     asset_portfolio_sample: AssetPortfolio,
     load1: FixedLoad,
-    battery1: StationaryStorage,
+    battery1: BatteryStorage,
 ) -> EnergySystem:
     demand_profile = [150, 200, 150]
     return EnergySystem(
@@ -88,22 +88,22 @@ def test_model_build_components(
     # Variables
     variable_names = set(linopy_model.variables)
     assert "generator_power" in variable_names
-    assert "stationary_storage_power_in" in variable_names
-    assert "stationary_storage_power_out" in variable_names
-    assert "stationary_storage_soc" in variable_names
-    assert "stationary_storage_charge_mode" in variable_names
+    assert "battery_storage_power_in" in variable_names
+    assert "battery_storage_power_out" in variable_names
+    assert "battery_storage_soc" in variable_names
+    assert "battery_storage_charge_mode" in variable_names
     assert "charger_ev_assignment" not in variable_names
 
     # Constraints
     constraint_names = set(linopy_model.constraints)
     assert "power_balance_constraint" in constraint_names
     assert "generator_max_power_constraint" in constraint_names
-    assert "stationary_storage_max_charge_constraint" in constraint_names
-    assert "stationary_storage_max_discharge_constraint" in constraint_names
-    assert "stationary_storage_soc_dynamics_constraint" in constraint_names
-    assert "stationary_storage_capacity_constraint" in constraint_names
-    assert "stationary_storage_soc_end_constraint" in constraint_names
-    assert "stationary_storage_soc_start_constraint" in constraint_names
+    assert "battery_storage_max_charge_constraint" in constraint_names
+    assert "battery_storage_max_discharge_constraint" in constraint_names
+    assert "battery_storage_soc_dynamics_constraint" in constraint_names
+    assert "battery_storage_capacity_constraint" in constraint_names
+    assert "battery_storage_soc_end_constraint" in constraint_names
+    assert "battery_storage_soc_start_constraint" in constraint_names
 
     # Objective
     assert linopy_model.objective is not None

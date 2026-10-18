@@ -18,6 +18,7 @@ from odys import (
     AssetPortfolio,
     AvailableCapacityProfile,
     Battery,
+    BatteryStorage,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
@@ -29,7 +30,6 @@ from odys import (
     PriceProfile,
     Scenario,
     SolverConfig,
-    StationaryStorage,
     StorageFinalState,
     StorageInitialState,
 )
@@ -156,7 +156,7 @@ def _unit_commitment_system() -> EnergySystem:
 
 
 def _storage_and_market_system() -> EnergySystem:
-    battery = StationaryStorage(
+    battery = BatteryStorage(
         name="battery",
         battery=Battery(
             capacity=40.0,

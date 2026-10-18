@@ -21,9 +21,9 @@ from odys.domain.conditions import (
     StorageFinalState,
     StorageInitialState,
 )
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
 from odys.parameters.vectorize import EntityArrays, vectorize
@@ -58,7 +58,7 @@ class GeneratorStateArrays(EntityArrays):
 
 
 class BatteryArrays(EntityArrays):
-    """Battery parameters of stationary storages or electric vehicles, along their dimension."""
+    """Battery parameters of battery storages or electric vehicles, along their dimension."""
 
     capacity: xr.DataArray
     max_charge_power: xr.DataArray
@@ -172,15 +172,15 @@ def generator_state_arrays(
     )
 
 
-def stationary_storage_state_arrays(
-    storages: Sequence[StationaryStorage],
+def battery_storage_state_arrays(
+    storages: Sequence[BatteryStorage],
     coordinates: Coordinates,
     context: ModelContext,
 ) -> BatteryStateArrays:
-    """Build the initial and final state of charge of the stationary storages.
+    """Build the initial and final state of charge of the battery storages.
 
     Args:
-        storages: The stationary storages, in coordinate order.
+        storages: The battery storages, in coordinate order.
         coordinates: The labels of the storages along their dimension.
         context: The shared indexing of the problem, with its conditions.
 
@@ -198,7 +198,7 @@ FinalSocT = TypeVar("FinalSocT", StorageFinalState, ElectricVehicleFinalState)
 def _battery_state_arrays(
     initial_kind: type[InitialSocT],
     final_kind: type[FinalSocT],
-    assets: Sequence[StationaryStorage] | Sequence[ElectricVehicle],
+    assets: Sequence[BatteryStorage] | Sequence[ElectricVehicle],
     coordinates: Coordinates,
     context: ModelContext,
 ) -> BatteryStateArrays:

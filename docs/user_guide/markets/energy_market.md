@@ -120,14 +120,14 @@ from odys import (
     EnergySystem,
     FlexibleLoad,
     Generator,
-    StationaryStorage,
+    BatteryStorage,
     StorageInitialState,
 )
 
 ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
 wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
 process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
-bess = StationaryStorage(
+bess = BatteryStorage(
     name="bess",
     battery=Battery(
         capacity=50.0,
@@ -167,7 +167,7 @@ time market
 3    day_ahead         65.0        0.00       65.00
 ```
 
-The price now drives every asset. Print `result.generators`, `result.stationary_storages` and `result.flexible_loads` the same way to see it:
+The price now drives every asset. Print `result.generators`, `result.battery_storages` and `result.flexible_loads` the same way to see it:
 
 - **Steps 0 and 2, at 40 and 30 $/MWh:** buying is cheaper than the CCGT's 50 $/MWh, so the CCGT stays off and the site buys. The battery charges, and the process takes its full 20 MW extra, because power costs less than the 60 $/MWh its consumption is worth.
 - **Steps 1 and 3, at 75 and 65 $/MWh:** the CCGT runs at full output, the battery discharges at 25 MW, and the process cuts 10 MW, because the power is worth more on the market. The surplus is sold.

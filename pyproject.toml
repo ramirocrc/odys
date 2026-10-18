@@ -166,7 +166,7 @@ modules = [
   "odys.optimization.formulations.fixed_load",
   "odys.optimization.formulations.flexible_load",
   "odys.optimization.formulations.generator",
-  "odys.optimization.formulations.stationary_storage",
+  "odys.optimization.formulations.battery_storage",
 ]
 ignore_imports = [
   "odys.optimization.formulations.charging -> odys.optimization.formulations.electric_vehicle",

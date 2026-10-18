@@ -27,7 +27,7 @@ Let's solve the complete site, the one the [EnergyMarket](../markets/energy_mark
         LoadProfile,
         PriceProfile,
         Scenario,
-        StationaryStorage,
+        BatteryStorage,
         StorageInitialState,
     )
 
@@ -35,7 +35,7 @@ Let's solve the complete site, the one the [EnergyMarket](../markets/energy_mark
     wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
     factory = FixedLoad(name="factory")
     process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
-    bess = StationaryStorage(
+    bess = BatteryStorage(
         name="bess",
         battery=Battery(
             capacity=50.0,
@@ -96,7 +96,7 @@ Each asset type and the markets have their own container. What each series means
 | ---------------------------- | ------------------------------------------ | ------------------------------------------------------------- |
 | `result.generators`          | `power`, `status`, `startup`, `shutdown`   | [Generator](../assets/generator.md#results)                   |
 | `result.flexible_loads`      | `load_adjustment`, `actual_load`           | [FlexibleLoad](../assets/flexible_load.md#results)            |
-| `result.stationary_storages` | `net_power`, `soc`, `charge_mode`          | [Battery](../assets/battery.md#results)                       |
+| `result.battery_storages` | `net_power`, `soc`, `charge_mode`          | [Battery](../assets/battery.md#results)                       |
 | `result.electric_vehicles`   | `net_power`, `soc`, `charge_mode`          | [Battery](../assets/battery.md#results)                       |
 | `result.chargers`            | `assignment`, `power`                      | [Charger](../assets/charger.md#results)                       |
 | `result.markets`             | `sell_volume`, `buy_volume`, `net_volume`  | [EnergyMarket](../markets/energy_market.md#results)           |
@@ -135,7 +135,7 @@ Selecting one asset drops the asset level, so its series is indexed by time only
 Every series is a `pandas.Series`, indexed by time and asset, and by scenario when there's more than one. Each container also has `.to_dataframe()`, with one column per series, and `.to_dataset()`, an `xarray.Dataset`. A charger's `assignment` has one value per vehicle, so its dataframe has one `assignment[...]` column per vehicle:
 
 ```python
-result.stationary_storages.to_dataframe()
+result.battery_storages.to_dataframe()
 result.markets.to_dataset()
 ```
 
@@ -202,7 +202,7 @@ from odys import GeneratorInitialState
 
 tomorrow_starts_from = (
     GeneratorInitialState(generator=ccgt, power=round(result.generators["ccgt"].power.iloc[-1], 6)),
-    StorageInitialState(storage=bess, soc=round(result.stationary_storages["bess"].soc.iloc[-1], 6)),
+    StorageInitialState(storage=bess, soc=round(result.battery_storages["bess"].soc.iloc[-1], 6)),
 )
 ```
 

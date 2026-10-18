@@ -1,7 +1,7 @@
 """Battery value object.
 
 This module provides the Battery class: the physics of storing electrical
-energy, shared by assets that have a battery (stationary storage, electric
+energy, shared by assets that have a battery (battery storage, electric
 vehicles).
 """
 
@@ -16,7 +16,7 @@ class Battery(BaseModel):
     """Physics of a battery: capacity, power limits, efficiencies, and state of charge limits.
 
     A battery has no name and no identity of its own. It is a value object that
-    an asset (`StationaryStorage`, `ElectricVehicle`) owns. Its state of charge at
+    an asset (`BatteryStorage`, `ElectricVehicle`) owns. Its state of charge at
     the start and end of an optimization belongs to that run, not to the battery,
     and is given as an initial or final condition of the `EnergySystem`.
     """

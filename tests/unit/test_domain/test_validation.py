@@ -12,6 +12,7 @@ from odys.domain.conditions import (
     StorageInitialState,
 )
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
@@ -19,7 +20,6 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.horizon import Horizon
@@ -71,8 +71,8 @@ def generator() -> Generator:
 
 
 @pytest.fixture
-def storage() -> StationaryStorage:
-    return StationaryStorage(
+def storage() -> BatteryStorage:
+    return BatteryStorage(
         name="bat1",
         battery=Battery(
             capacity=STORAGE_CAPACITY,
@@ -85,7 +85,7 @@ def storage() -> StationaryStorage:
 
 
 @pytest.fixture
-def storage_initial_state(storage: StationaryStorage) -> StorageInitialState:
+def storage_initial_state(storage: BatteryStorage) -> StorageInitialState:
     return StorageInitialState(storage=storage, soc=SOC_START)
 
 
@@ -105,7 +105,7 @@ def flexible_load() -> FlexibleLoad:
 
 
 @pytest.fixture
-def portfolio(generator: Generator, storage: StationaryStorage, load: FixedLoad) -> AssetPortfolio:
+def portfolio(generator: Generator, storage: BatteryStorage, load: FixedLoad) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator, storage, load])
 
 
@@ -170,12 +170,12 @@ class TestValidateEnergySystemInputs:
             validate_energy_system_inputs(portfolio, ScenarioSet(scenarios=(scenario,)), (), HORIZON, conditions)
 
     def test_checks_the_conditions(self, portfolio: AssetPortfolio, scenario: Scenario) -> None:
-        with pytest.raises(OdysValidationError, match="StationaryStorage 'bat1' needs a StorageInitialState"):
+        with pytest.raises(OdysValidationError, match="BatteryStorage 'bat1' needs a StorageInitialState"):
             validate_energy_system_inputs(portfolio, ScenarioSet(scenarios=(scenario,)), (), HORIZON, ConditionSet())
 
     def test_energy_check_is_skipped_with_markets(
         self,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         load: FixedLoad,
         storage_initial_state: StorageInitialState,
     ) -> None:
@@ -236,7 +236,7 @@ class TestValidateRequiredInitialConditionsPresent:
     def test_storage_without_initial_state_is_rejected(self, portfolio: AssetPortfolio) -> None:
         with pytest.raises(
             OdysValidationError,
-            match="StationaryStorage 'bat1' needs a StorageInitialState because its state of charge carries over",
+            match="BatteryStorage 'bat1' needs a StorageInitialState because its state of charge carries over",
         ):
             validate_required_initial_conditions_present(ConditionSet(), portfolio)
 
@@ -440,7 +440,7 @@ class TestValidateProfilesReferenceSystemEntities:
         self,
         portfolio: AssetPortfolio,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
     ) -> None:
         impostor = generator.model_copy(update={"name": storage.name})
         scenario = Scenario(
@@ -553,19 +553,19 @@ class TestValidateHasLoadOrMarket:
 
 
 class TestValidateEnoughPowerToMeetDemand:
-    def test_valid(self, generator: Generator, storage: StationaryStorage, load: FixedLoad, scenario: Scenario) -> None:
+    def test_valid(self, generator: Generator, storage: BatteryStorage, load: FixedLoad, scenario: Scenario) -> None:
         validate_enough_power_to_meet_demand(scenario, (generator, storage, load), HORIZON)
 
     def test_market_only_no_loads_is_valid(
         self,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         market: EnergyMarket,
     ) -> None:
         scenario = Scenario(profiles=(PriceProfile(market=market, values=MARKET_PRICES),))
         validate_enough_power_to_meet_demand(scenario, (generator, storage, market), HORIZON)
 
-    def test_demand_exceeds_capacity(self, generator: Generator, storage: StationaryStorage, load: FixedLoad) -> None:
+    def test_demand_exceeds_capacity(self, generator: Generator, storage: BatteryStorage, load: FixedLoad) -> None:
         scenario = Scenario(name="s1", profiles=(LoadProfile(load=load, values=[80.0, 200.0, 90.0, 100.0]),))
         with pytest.raises(
             OdysValidationError,
@@ -576,7 +576,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_demand_is_summed_over_loads(
         self,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         load: FixedLoad,
     ) -> None:
         other_load = load.model_copy(update={"name": "load2"})
@@ -594,7 +594,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_feasible_after_decrease(
         self,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 150.0, 90.0, 100.0]),))
@@ -603,7 +603,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_feasible_with_decrease_at_the_limit(
         self,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 155.0, 90.0, 100.0]),))
@@ -612,7 +612,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_flexible_load_infeasible_even_with_decrease(
         self,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
         scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 200.0, 90.0, 100.0]),))
@@ -622,7 +622,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_market_volume_counted_toward_available_power(
         self,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         market: EnergyMarket,
         load: FixedLoad,
     ) -> None:
@@ -632,7 +632,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_infeasible_even_with_market(
         self,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         market: EnergyMarket,
         load: FixedLoad,
     ) -> None:
@@ -643,7 +643,7 @@ class TestValidateEnoughPowerToMeetDemand:
     def test_uses_available_capacity_profile_per_timestep(
         self,
         generator: Generator,
-        storage: StationaryStorage,
+        storage: BatteryStorage,
         load: FixedLoad,
     ) -> None:
         scenario = Scenario(
@@ -665,13 +665,13 @@ class TestValidateEnoughPowerToMeetDemand:
 
 
 class TestValidateEnoughEnergyToMeetDemand:
-    def test_no_loads(self, generator: Generator, storage: StationaryStorage) -> None:
+    def test_no_loads(self, generator: Generator, storage: BatteryStorage) -> None:
         validate_enough_energy_to_meet_demand(Scenario(), (generator, storage), HORIZON)
 
-    def test_valid(self, generator: Generator, storage: StationaryStorage, load: FixedLoad, scenario: Scenario) -> None:
+    def test_valid(self, generator: Generator, storage: BatteryStorage, load: FixedLoad, scenario: Scenario) -> None:
         validate_enough_energy_to_meet_demand(scenario, (generator, storage, load), HORIZON)
 
-    def test_infeasible_energy_but_feasible_power(self, storage: StationaryStorage, load: FixedLoad) -> None:
+    def test_infeasible_energy_but_feasible_power(self, storage: BatteryStorage, load: FixedLoad) -> None:
         scenario = Scenario(name="s1", profiles=(LoadProfile(load=load, values=[20.0, 20.0, 20.0, 20.0]),))
         validate_enough_power_to_meet_demand(scenario, (storage, load), HORIZON)
 
