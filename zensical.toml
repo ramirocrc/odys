@@ -35,7 +35,7 @@ nav = [
       { "EnergyMarket" = "user_guide/markets/energy_market.md" },
     ] },
     { "Solving and results" = [
-      { "Results" = "user_guide/optimization/results.md" },
+      { "Results" = "user_guide/solving/results.md" },
       { "Solvers" = "user_guide/optimization/solvers.md" },
       { "Validation and errors" = "user_guide/solving/validation.md" },
     ] },

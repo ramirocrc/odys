@@ -187,4 +187,4 @@ A market has a buy volume, a sell volume and a trade mode at every step, in ever
 
 ## Next steps
 
-The site is complete. Next, see how to read everything the optimizer decided, in [Results](../optimization/results.md).
+The site is complete. Next, see how to read everything the optimizer decided, in [Results](../solving/results.md).

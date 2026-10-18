@@ -108,7 +108,7 @@ Final conditions are always optional. Loads, chargers and markets carry no state
 
 ## Optimizing
 
-`.optimize()` builds the model as a mixed-integer linear program and solves it with HiGHS, unless you choose another solver with a `SolverConfig` (see [Solvers](../optimization/solvers.md)). It returns the results, one container per asset type; see [Results](../optimization/results.md). The exact model is written out in the [Mathematical Formulation](../../formulation/index.md).
+`.optimize()` builds the model as a mixed-integer linear program and solves it with HiGHS, unless you choose another solver with a `SolverConfig` (see [Solvers](../optimization/solvers.md)). It returns the results, one container per asset type; see [Results](../solving/results.md). The exact model is written out in the [Mathematical Formulation](../../formulation/index.md).
 
 ## Next steps
 

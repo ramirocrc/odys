@@ -15,7 +15,7 @@ The horizon is set by two parameters of the `EnergySystem`:
 
 A day-ahead plan in quarter-hours is `timestep=timedelta(minutes=15)` with `number_of_steps=96`. All steps have the same length.
 
-The horizon has no start date. Time labels count steps from the start of the run: `"0"`, `"1"`, `"2"` and so on, in the results too. Every time you give odys, such as a trip's departure, is measured from that start. To show results against clock time, see [Results](../optimization/results.md).
+The horizon has no start date. Time labels count steps from the start of the run: `"0"`, `"1"`, `"2"` and so on, in the results too. Every time you give odys, such as a trip's departure, is measured from that start. To show results against clock time, see [Results](../solving/results.md#clock-time).
 
 ## Units
 
