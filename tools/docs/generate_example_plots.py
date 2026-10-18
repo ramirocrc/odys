@@ -253,7 +253,7 @@ def generate_battery_dispatch() -> None:
     result = run_battery_dispatch()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
     battery_df = result.stationary_storages.to_dataframe().droplevel("stationary_storage")
-    steps = list(range(1, len(gen_df) + 1))
+    steps = list(range(len(gen_df)))
 
     fig = make_subplots(
         rows=2,
@@ -355,8 +355,8 @@ def generate_battery_dispatch() -> None:
         margin=dict(l=40, r=20, t=40, b=40),
     )
 
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=2, col=1)
     fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[-80, 200])
     fig.update_yaxes(title="State of Charge (%)", row=2, col=1, range=[0, 100])
 
