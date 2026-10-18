@@ -46,6 +46,7 @@ odys builds a **mixed-integer linear program** (MILP) and **maximizes** it. Ever
 
 - Every count grows with the number of scenarios: each scenario gets its own copy of every decision.
 - Only $u$ carries a real choice for a generator. Once the status is known, [G-5](generators.md#g-5) and [G-6](generators.md#g-6) fix the start-ups and shut-downs exactly.
+- Every generator gets all three, even one with no `min_power`, no start or stop costs, no minimum times and no ramps, for which they decide nothing ([#174](https://github.com/ramirocrc/odys/issues/174)).
 - The market trade mode removes only plans with the same payoff, because buying and selling use the same price ([#140](https://github.com/ramirocrc/odys/issues/140)).
 - The charger assignment is often the largest block in a fleet model.
 - The risk term adds no binaries: just one $\zeta$ and one $\xi_s$ per scenario ([CV-1](objective.md#cv-1)).
