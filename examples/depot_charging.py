@@ -1,4 +1,4 @@
-"""EV fleet optimization with V2G and shared chargers.
+"""Depot charging: an EV fleet with V2G and shared chargers.
 
 A commercial depot operates 3 delivery EVs with 2 chargers and access to a
 wholesale market with time-of-use pricing. The optimizer decides when each van
@@ -172,8 +172,8 @@ MARKET_PRICES: list[float] = [
 ]
 
 
-def run_ev_fleet_optimization() -> OptimalDispatchResults:
-    """Run the EV fleet optimization example and return the optimization results."""
+def run_depot_charging() -> OptimalDispatchResults:
+    """Run the depot charging example and return the optimization results."""
     market = EnergyMarket(
         name="grid_market",
         max_trading_volume_per_step=0.100,  # 100 kW
@@ -199,7 +199,7 @@ def run_ev_fleet_optimization() -> OptimalDispatchResults:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logging.getLogger("linopy").setLevel(logging.WARNING)
-    result = run_ev_fleet_optimization()
+    result = run_depot_charging()
 
     logger.info("EV charging/discharging schedules and SoC")
     for ev_name in ["ev_1", "ev_2", "ev_3"]:

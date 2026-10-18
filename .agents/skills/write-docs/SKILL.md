@@ -202,7 +202,7 @@ Someone working in energy optimization immediately recognizes the problem.
 
 Mermaid diagrams clarify system structure and data flow. Use them for:
 
-**Asset topology** (as in `basic_dispatch.md`):
+**Asset topology** (as in `merit_order_dispatch.md`):
 
 ```mermaid
 flowchart LR
@@ -330,7 +330,7 @@ Examples:
 
 - End of `assets/generator.md`: "Next, see how [FixedLoad](fixed_load.md) defines the demand your system must serve."
 - End of `model/scenario.md`: "The model knows what it faces. Next, meet the assets one by one, starting with the [Generator](../assets/generator.md)."
-- End of an example: "This example used deterministic scenarios. The [CVaR Market Risk](../examples/cvar_market_risk.md) example adds risk-aware optimization."
+- End of an example: "This example used deterministic scenarios. The [Day-Ahead or Intraday](../examples/day_ahead_or_intraday.md) example adds risk-aware optimization."
 - End of `formulation/generators.md`: "Power made now is used now, unless you can store it. See [Batteries](batteries.md)."
 
 ## 16. Visual consistency
@@ -416,12 +416,12 @@ docs/
 │
 ├── examples/                 # End-to-end worked examples
 │   ├── index.md
-│   ├── basic_dispatch.md
-│   ├── battery_dispatch.md
-│   ├── flexible_load_market.md
+│   ├── merit_order_dispatch.md
+│   ├── solar_storage.md
+│   ├── demand_response.md
 │   ├── make_or_buy.md
-│   ├── cvar_market_risk.md
-│   └── ev_fleet_optimization.md
+│   ├── day_ahead_or_intraday.md
+│   └── depot_charging.md
 │
 └── developer/                # Developer Reference
     ├── index.md              # Overview and package layers

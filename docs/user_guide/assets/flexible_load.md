@@ -129,7 +129,7 @@ time flexible_load
 
 Every MWh of the process is worth 60 $/MWh and the most expensive supply, the CCGT, costs 50 $/MWh, so the optimizer runs the process 20 MW above its base whenever it can. At step 1 the factory needs 90 MW and only 110 MW of supply is available, so the process drops 10 MW below its base instead.
 
-See the [Flexible Load Market example](../../examples/flexible_load_market.md) for a full day of demand response against market prices.
+The [Industrial Demand Response](../../examples/demand_response.md) example follows a process through a full day of market prices.
 
 ## How it's modelled
 

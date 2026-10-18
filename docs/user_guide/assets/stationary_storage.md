@@ -43,7 +43,7 @@ A stationary storage takes a `StorageInitialState`, which is required, and optio
 
 ## Results
 
-A stationary storage's results are in `result.stationary_storages`: `net_power`, `soc` and `charge_mode`, one `pandas.Series` each. The Battery page solves the site with its battery and shows how to read them, under [Results](battery.md#results). The [Battery Dispatch example](../../examples/battery_dispatch.md) stores solar for the evening over a full day.
+A stationary storage's results are in `result.stationary_storages`: `net_power`, `soc` and `charge_mode`, one `pandas.Series` each. The Battery page solves the site with its battery and shows how to read them, under [Results](battery.md#results). The [Storing Solar for the Evening](../../examples/solar_storage.md) example runs a battery through a full day of solar.
 
 ## How it's modelled
 

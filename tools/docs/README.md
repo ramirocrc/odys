@@ -86,7 +86,7 @@ scenario per line, under the 120-character limit.
   changed lines, folds, battery schedule, and expected and worst-case profit
 - `cvar_frontier`: expected and worst-case profit of the CVaR example, with
   and without the CVaR term (prices from `SCENARIO_PRICES` in
-  `examples/cvar_market_risk.py`)
+  `examples/day_ahead_or_intraday.py`)
 - `pandas_output`: the README quick example's printed result
 - `validation_error`: the real Pydantic message for a negative nominal power
 - `examples`: small series for the six example thumbnails

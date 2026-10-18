@@ -2,7 +2,7 @@
 icon: lucide/play
 ---
 
-# Basic Dispatch
+# Merit-Order Dispatch
 
 ## Problem Description
 
@@ -20,7 +20,7 @@ flowchart LR
     style Load fill:none
 ```
 
-**Source**: [`examples/basic_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/basic_dispatch.py). The script wraps the steps below in `run_basic_dispatch()`, which returns the results.
+**Source**: [`examples/merit_order_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/merit_order_dispatch.py). The script wraps the steps below in `run_merit_order_dispatch()`, which returns the results.
 
 ## Walkthrough
 
@@ -92,7 +92,7 @@ result = energy_system.optimize()
 
 The chart shows the dispatch as stacked bars, with the available solar capacity and the load as dashed lines:
 
-<iframe src="../assets/plots/basic_dispatch.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
+<iframe src="../assets/plots/merit_order_dispatch.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
 Solar runs first whenever the sun is up, because it's free, and the CCGT covers the rest:
 
@@ -104,4 +104,4 @@ Over the day, solar delivers 690 MWh of the 965 MWh it could have produced, so 2
 
 ## Discussion
 
-The dispatch follows the merit order, step by step: each hour is solved on its own terms, because nothing links one hour to the next. That's also why 275 MWh of free energy goes to waste at midday while the CCGT burns gas every evening. The [Battery Dispatch](battery_dispatch.md) example adds storage to move that surplus into the evening.
+The dispatch follows the merit order, step by step: each hour is solved on its own terms, because nothing links one hour to the next. That's also why 275 MWh of free energy goes to waste at midday while the CCGT burns gas every evening. The [Storing Solar for the Evening](solar_storage.md) example adds storage to move that surplus into the evening.

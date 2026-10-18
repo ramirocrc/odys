@@ -158,4 +158,4 @@ The risk term adds no binaries: one threshold, plus one shortfall per scenario.
 
 ## Next steps
 
-The [CVaR Market Risk example](../../examples/cvar_market_risk.md) works through trading under price risk, from the scenarios to the hedged plan, and the [Examples](../../examples/index.md) solve full problems end to end.
+The [Day-Ahead or Intraday example](../../examples/day_ahead_or_intraday.md) works through trading under price risk, from the scenarios to the hedged plan, and the [Examples](../../examples/index.md) solve full problems end to end.

@@ -106,4 +106,4 @@ Over the day, the CCGT produces 1,700 MWh at a cost of 85,000. The site sells 51
 
 ## Discussion
 
-A market sets a price on every MWh at every step, so a unit's cost is weighed against that price rather than against the load: the CCGT runs flat out whenever it earns more than it costs, whatever the site needs. Each step is still decided on its own. The [CVaR Market Risk](cvar_market_risk.md) example plans against several possible price futures, and weighs how bad the worst ones could be.
+A market sets a price on every MWh at every step, so a unit's cost is weighed against that price rather than against the load: the CCGT runs flat out whenever it earns more than it costs, whatever the site needs. Each step is still decided on its own. The [Day-Ahead or Intraday](day_ahead_or_intraday.md) example plans against several possible price futures, and weighs how bad the worst ones could be.

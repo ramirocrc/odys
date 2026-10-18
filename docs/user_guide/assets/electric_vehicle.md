@@ -107,7 +107,7 @@ Their fields are on the Battery page, under [State of charge](battery.md#state-o
 
 ## Results
 
-A vehicle's results are in `result.electric_vehicles`: `net_power`, `soc` and `charge_mode`, one `pandas.Series` each, indexed by vehicle and time. They read like any battery's, under [Results](battery.md#results). The vans can't charge yet, so the depot is solved on the [Charger](charger.md#results) page, once it has one. The [EV Fleet example](../../examples/ev_fleet_optimization.md) runs three vans and two chargers over a full day.
+A vehicle's results are in `result.electric_vehicles`: `net_power`, `soc` and `charge_mode`, one `pandas.Series` each, indexed by vehicle and time. They read like any battery's, under [Results](battery.md#results). The vans can't charge yet, so the depot is solved on the [Charger](charger.md#results) page, once it has one. The [Depot Charging with V2G example](../../examples/depot_charging.md) runs three vans and two chargers over a full day.
 
 ## How it's modelled
 

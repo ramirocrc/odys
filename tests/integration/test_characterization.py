@@ -50,19 +50,19 @@ STORAGE_PRICES = [20.0, 15.0, 40.0, 90.0, 110.0, 60.0, 25.0, 20.0]
 FLEXIBLE_BASE = [20.0, 20.0, 25.0, 25.0, 25.0, 25.0, 20.0, 20.0]
 
 RECORDED_EXAMPLE_OBJECTIVES = {
-    "basic_dispatch": -49_500.0,
+    "merit_order_dispatch": -49_500.0,
     # Re-recorded when the example battery got 95 % efficiency each way (it was lossless before).
-    "battery_dispatch": -37_090.625,
+    "solar_storage": -37_090.625,
     # Re-recorded when the example market started selling too, and its prices equal to the ccgt cost (50) became 52.
     "make_or_buy": -68_680.0,
     # Re-recorded when the example prices equal to the value of consumption (70) became 72, removing a tie.
-    "flexible_load_market": -78_840.0,
+    "demand_response": -78_840.0,
     # Re-recorded when ev_2 and ev_3 in the example got V2G discharge, so the vans compete for the chargers.
-    "ev_fleet_optimization": 9.99,
+    "depot_charging": 9.99,
     # Re-recorded when the CVaR example's day-ahead and intraday prices started moving together
     # (they moved in opposite directions) and the ccgt cost went from 20 to 120.
-    "cvar_market_risk_expected_profit": 8_666.67,
-    "cvar_market_risk_penalized_cvar": 15_166.67,
+    "day_ahead_or_intraday_expected_profit": 8_666.67,
+    "day_ahead_or_intraday_penalized_cvar": 15_166.67,
 }
 RECORDED_UNIT_COMMITMENT_OBJECTIVE = -46_960.0
 # Re-recorded when self-discharge started applying at the first step (it was skipped there before).
@@ -81,8 +81,8 @@ def _single_example_result(module_name: str) -> OptimalDispatchResults:
     return result
 
 
-def _cvar_example_results() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
-    results = _run_example("cvar_market_risk", "run_cvar_market_risk")
+def _day_ahead_or_intraday_example_results() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
+    results = _run_example("day_ahead_or_intraday", "run_day_ahead_or_intraday")
     assert isinstance(results, tuple)
     expected_profit, penalized_cvar = results
     assert isinstance(expected_profit, OptimalDispatchResults)
@@ -97,23 +97,23 @@ def _assert_optimal_with_objective(result: OptimalDispatchResults, expected: flo
 
 @pytest.mark.parametrize(
     "module_name",
-    ["basic_dispatch", "battery_dispatch", "make_or_buy", "flexible_load_market", "ev_fleet_optimization"],
+    ["merit_order_dispatch", "solar_storage", "make_or_buy", "demand_response", "depot_charging"],
 )
 def test_example_objective_is_unchanged(module_name: str) -> None:
     result = _single_example_result(module_name)
     _assert_optimal_with_objective(result, RECORDED_EXAMPLE_OBJECTIVES[module_name], rel=DEFAULT_MIP_GAP)
 
 
-def test_cvar_example_objectives_are_unchanged() -> None:
-    expected_profit, penalized_cvar = _cvar_example_results()
+def test_day_ahead_or_intraday_example_objectives_are_unchanged() -> None:
+    expected_profit, penalized_cvar = _day_ahead_or_intraday_example_results()
     _assert_optimal_with_objective(
         expected_profit,
-        RECORDED_EXAMPLE_OBJECTIVES["cvar_market_risk_expected_profit"],
+        RECORDED_EXAMPLE_OBJECTIVES["day_ahead_or_intraday_expected_profit"],
         rel=DEFAULT_MIP_GAP,
     )
     _assert_optimal_with_objective(
         penalized_cvar,
-        RECORDED_EXAMPLE_OBJECTIVES["cvar_market_risk_penalized_cvar"],
+        RECORDED_EXAMPLE_OBJECTIVES["day_ahead_or_intraday_penalized_cvar"],
         rel=DEFAULT_MIP_GAP,
     )
 

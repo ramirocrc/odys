@@ -171,7 +171,7 @@ A battery's results are read through the asset that owns it, `result.stationary_
 - `soc`: the state of charge at the end of the step, as a fraction of capacity.
 - `charge_mode`: 1 when the battery may charge, 0 when it may discharge. At a step where it's idle, either value can show up ([B-1](../../formulation/batteries.md#b-1)).
 
-The [Battery Dispatch example](../../examples/battery_dispatch.md) stores solar for the evening over a full day.
+The [Storing Solar for the Evening](../../examples/solar_storage.md) example runs a battery through a full day of solar.
 
 ## How it's modelled
 
