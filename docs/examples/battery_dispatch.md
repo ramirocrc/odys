@@ -62,7 +62,7 @@ starts_empty = StorageInitialState(storage=battery, soc=0.0)
 ends_empty = StorageFinalState(storage=battery, soc=0.0)
 ```
 
-The battery starts and ends the day empty. These are [initial and final conditions](../user_guide/concepts/initial_and_final_conditions.md) of the run, passed to the energy system below. The battery is what turns this into a scheduling problem. A generator can only produce when it is needed, but a battery can move energy across time.
+The battery starts and ends the day empty. These are [initial and final conditions](../user_guide/model/first_model.md#initial-and-final-conditions) of the run, passed to the energy system below. The battery is what turns this into a scheduling problem. A generator can only produce when it is needed, but a battery can move energy across time.
 
 ### 2. Describe the scenario
 

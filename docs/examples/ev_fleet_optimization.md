@@ -98,7 +98,7 @@ ev_1_starts = ElectricVehicleInitialState(vehicle=ev_1, soc=0.8)
 ev_1_ends = ElectricVehicleFinalState(vehicle=ev_1, soc=0.3)
 ```
 
-ev_1 starts the day at 80% and must end it at 30%. These [initial and final conditions](../user_guide/concepts/initial_and_final_conditions.md) belong to the run, so they are passed to the energy system in step 4. `max_discharge_power` is what enables V2G. Without it, the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip. The [Charger](../developer/api/domain/entities/charger.md) objects are plain power limits:
+ev_1 starts the day at 80% and must end it at 30%. These [initial and final conditions](../user_guide/model/first_model.md#initial-and-final-conditions) belong to the run, so they are passed to the energy system in step 4. `max_discharge_power` is what enables V2G. Without it, the vehicle can only charge. `min_soc_at_departure` guarantees the vehicle has enough charge before each trip. The [Charger](../developer/api/domain/entities/charger.md) objects are plain power limits:
 
 ```python
 charger_dc = Charger(name="charger_dc", max_power=0.050)  # 50 kW

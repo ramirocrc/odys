@@ -383,8 +383,6 @@ docs/
 │   │   ├── first_model.md    # EnergySystem and AssetPortfolio: the first solve
 │   │   ├── time_and_units.md # The horizon, units, and how each field reads time
 │   │   └── profiles.md       # One future's time series: load, capacity, price
-│   ├── concepts/
-│   │   └── initial_and_final_conditions.md
 │   ├── assets/               # One page per asset, all with the same template
 │   │   ├── generator.md
 │   │   ├── fixed_load.md

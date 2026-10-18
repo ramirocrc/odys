@@ -103,7 +103,7 @@ A vehicle takes an `ElectricVehicleInitialState`, which is required, and optiona
 
 One check is particular to vehicles: a trip that leaves at the very start of the run (`start_time=timedelta(0)`) has no step before it to charge in. So creating the `ElectricVehicleInitialState` raises an `OdysValidationError` when the starting charge can't serve that trip, because it's below the trip's `min_soc_at_departure`, or holds less energy above `soc_min` than the trip uses.
 
-See [Initial and final conditions](../concepts/initial_and_final_conditions.md#storage-and-electric-vehicles) for every field.
+Their fields are on the Battery page, under [State of charge](battery.md#state-of-charge).
 
 ## Results
 

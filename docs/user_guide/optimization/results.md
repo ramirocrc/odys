@@ -153,6 +153,25 @@ Name: power, dtype: float64
 
 Selecting one asset drops the asset level, so its series is indexed by time only (and scenario, when there is more than one).
 
+## Rolling horizon
+
+Conditions let you chain runs: optimize today, then start tomorrow from where today ended.
+
+```python
+from odys import GeneratorInitialState
+
+today = result
+
+tomorrow_starts_from = (
+    GeneratorInitialState(generator=ccgt, power=round(today.generators["ccgt"].power.iloc[-1], 6)),
+    StorageInitialState(storage=bess, soc=round(today.stationary_storages["bess"].soc.iloc[-1], 6)),
+)
+```
+
+Round the solved values: the solver can return 29.9999999 MW for a generator at its 30 MW minimum, and Odys checks that a condition's output is either 0 or at least `min_power`.
+
+This works for a single scenario. With several scenarios, each series has a scenario level and the last step can differ between scenarios, so pick the scenario you will actually follow, for example `today.generators["ccgt"].power.xs("high_wind", level="scenario").iloc[-1]`.
+
 ## Data formats
 
 All of these attributes are `pandas.Series` objects, indexed by time and asset (and scenario, when there is more than one). Each container also exposes `.to_dataframe()`, with one column per attribute, and `.to_dataset()`, an `xarray.Dataset`. A charger's `assignment` has one value per vehicle, so its dataframe has one `assignment[...]` column per vehicle:

@@ -21,7 +21,6 @@ nav = [
       { "Your first model" = "user_guide/model/first_model.md" },
       { "Time and units" = "user_guide/model/time_and_units.md" },
       { "Profiles" = "user_guide/model/profiles.md" },
-      { "Initial and final conditions" = "user_guide/concepts/initial_and_final_conditions.md" },
     ] },
     { "Assets" = [
       { "Generator" = "user_guide/assets/generator.md" },
