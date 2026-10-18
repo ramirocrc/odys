@@ -553,16 +553,16 @@ def generate_cvar_market_risk() -> None:
     )
 
     for i, scenario in enumerate(scenarios):
-        sdac_profit = sell_profit.loc[(scenario, "sdac")]
-        sidc_profit = sell_profit.loc[(scenario, "sidc")]
-        sdac_cvar = sell_cvar.loc[(scenario, "sdac")]
-        sidc_cvar = sell_cvar.loc[(scenario, "sidc")]
+        sdac_profit = sell_profit.loc[(scenario, "day_ahead")]
+        sidc_profit = sell_profit.loc[(scenario, "intraday")]
+        sdac_cvar = sell_cvar.loc[(scenario, "day_ahead")]
+        sidc_cvar = sell_cvar.loc[(scenario, "intraday")]
 
         fig.add_trace(
             go.Bar(
                 x=[scenario],
                 y=[sdac_profit],
-                name="sdac",
+                name="Day-ahead",
                 marker=dict(color=SDAC_COLOR),
                 legendgroup="sdac",
                 showlegend=(i == 0),
@@ -575,7 +575,7 @@ def generate_cvar_market_risk() -> None:
             go.Bar(
                 x=[scenario],
                 y=[sidc_profit],
-                name="sidc",
+                name="Intraday",
                 marker=dict(color=SIDC_COLOR),
                 legendgroup="sidc",
                 showlegend=(i == 0),
@@ -588,7 +588,7 @@ def generate_cvar_market_risk() -> None:
             go.Bar(
                 x=[scenario],
                 y=[sdac_cvar],
-                name="sdac",
+                name="Day-ahead",
                 marker=dict(color=SDAC_COLOR),
                 legendgroup="sdac",
                 showlegend=False,
@@ -601,7 +601,7 @@ def generate_cvar_market_risk() -> None:
             go.Bar(
                 x=[scenario],
                 y=[sidc_cvar],
-                name="sidc",
+                name="Intraday",
                 marker=dict(color=SIDC_COLOR),
                 legendgroup="sidc",
                 showlegend=False,

@@ -1,119 +1,37 @@
 """Risk-aware market allocation with CVaR.
 
-This example shows how Odys can trade off expected profit against downside
-risk. The same generation can look attractive in expectation but still be a bad
-choice once uncertain market prices are taken into account.
+This example shows how Odys trades off expected profit against downside risk.
+Selling a gas plant's output on the riskier market pays more on average, but
+once bad outcomes are weighed in, a commitment to the steadier market wins.
 
 ## Assets
 
-- **ccgt**: 100 MW gas turbine, variable cost of 20 $/MWh, fully available
-  across all scenarios.
+- **ccgt**: 100 MW gas turbine, variable cost of 20 $/MWh.
 
 ## Markets
 
-- **sdac**: Sell-only market with non-anticipative decisions (stage_fixed=True).
-  Prices vary slightly by scenario: 190, 200, 210 $/MWh.
-- **sidc**: Sell-only market with uncertain prices (stage_fixed=False).
-  Prices vary by scenario: 280 (high), 200 (mid), 140 (low) $/MWh.
+- **day_ahead**: Sell-only market (SDAC), bid before the scenario is known
+  (stage_fixed=True). Prices by scenario: 190, 200, 210 $/MWh.
+- **intraday**: Sell-only market (SIDC), traded once the scenario is known.
+  Prices by scenario: 280 (high), 200 (mid), 140 (low) $/MWh.
 
 ## Problem
 
-We simulate a single 24-hour timestep with three equally likely scenarios.
-The optimizer allocates the ccgt's 100 MW generation between two markets,
-both with uncertain prices but different risk profiles.
+One hourly step with three equally likely scenarios. The optimizer splits the
+ccgt's 100 MW between the two markets, in two runs:
+1. **Expected profit only.**
+2. **Expected profit plus CVaR** (weight 1, confidence level 0.6).
 
-Two optimizations are run:
-1. **Expected profit only**: Maximize expected profit without CVaR penalty.
-2. **With CVaR penalty (weight = 1)**: Penalize risk (downside exposure).
+## Expected Results
 
-## Scenario Data
+| Allocation (day-ahead / intraday) | high   | mid    | low    | Expected | CVaR   |
+|-----------------------------------|--------|--------|--------|----------|--------|
+| 100 / 0                           | 17,000 | 18,000 | 19,000 | 18,000   | 17,167 |
+| 0 / 100                           | 26,000 | 18,000 | 12,000 | 18,667   | 13,000 |
+| 87.5 / 12.5                       | 18,125 | 18,000 | 18,125 | 18,083   | 18,021 |
 
-| Scenario | Probability | sdac Price | sidc Price | sdac Profit | sidc Profit |
-|----------|-------------|------------|------------|-------------|-------------|
-| high     | 1/3         | 190 $/MWh  | 280 $/MWh  | 17,000      | 26,000      |
-| mid      | 1/3         | 200 $/MWh  | 200 $/MWh  | 18,000      | 18,000      |
-| low      | 1/3         | 210 $/MWh  | 140 $/MWh  | 19,000      | 12,000      |
-
-(Profit = (price - 20) * 100 MW)
-
-## Expected Profit Analysis
-
-**sdac (uncertain, but non-anticipative):**
-- E[profit] = (17,000 + 18,000 + 19,000) / 3 = 18,000
-
-**sidc (uncertain):**
-- Allocating to sidc, the optimizer sells in all scenarios (all prices > 20)
-- High: 100 MW at 280 → 26,000
-- Mid: 100 MW at 200 → 18,000
-- Low: 100 MW at 140 → 12,000
-- **E[profit] = (26,000 + 18,000 + 12,000) / 3 = 18,667**
-- **sidc has 667 higher expected profit than sdac**
-
-## CVaR Analysis (confidence_level = 0.6)
-
-The objective uses: CVaR_expr = VaR - 2.5 x E[shortfall]
-(with 2.5 = 1 / (1 - 0.6))
-
-**For sdac:** Profits: [17,000, 18,000, 19,000]
-- VaR (60th percentile) = 18,000
-- Shortfalls: z_low = 18,000 - 17,000 = 1,000, z_mid = 0, z_high = 0
-- E[shortfall] = (1,000 + 0 + 0) / 3 ≈ 333
-- CVaR_expr = 18,000 - 2.5 x 333 ≈ **17,167**
-
-**For sidc:** Profits: [12,000, 18,000, 26,000]
-- VaR (60th percentile) = 18,000
-- Shortfalls: z_low = 18,000 - 12,000 = 6,000, z_mid = 0, z_high = 0
-- E[shortfall] = (6,000 + 0 + 0) / 3 = 2,000
-- CVaR_expr = 18,000 - 2.5 x 2,000 = **13,000**
-
-## Objective Function
-
-Objective = profit_weight x E[profit] + cvar_weight x CVaR_expr
-
-### Run 1: Expected Profit Only (no CVaR)
-
-| Market | E[Profit] | Objective Value |
-|--------|-----------|-----------------|
-| sdac   | 18,000    | 18,000          |
-| sidc   | 18,667    | 18,667          |
-
-**Result:** sidc wins (18,667 > 18,000)
-- sidc has 667 higher expected profit than sdac
-- Optimizer sells 100 MW to sidc in all scenarios
-
-### Run 2: With CVaR Penalty (weight = 1)
-
-The optimizer now finds an optimal mix rather than a pure allocation, since both
-markets have uncertainty:
-
-- **sdac**: ~87.5 MW in all scenarios (non-anticipative)
-- **sidc**: ~12.5 MW in all scenarios
-
-**Result:** sdac dominates the allocation (~87.5% vs ~12.5%)
-- The CVaR penalty favors the lower-variance market
-- A meaningful sidc position captures upside in favorable scenarios
-- Lower variance becomes more valuable than higher (but riskier) expected profit
-
-## Critical CVaR Weight
-
-There exists a critical CVaR weight above which the optimizer shifts from
-primarily sidc to primarily sdac. Below this threshold, the higher expected
-profit of sidc dominates; above it, the lower downside risk of sdac wins.
-
-- **No CVaR (w = 0)**: Optimizer chooses **sidc** (higher expected profit)
-- **Low CVaR weight**: Optimizer still prefers **sidc** (expected profit dominates)
-- **High CVaR weight**: Optimizer shifts to **sdac** (downside risk dominates)
-
-With the reduced sidc variance, the transition is more gradual. Both solutions
-show meaningful allocations to both markets, making the tradeoff clearer.
-
-## Key Insight
-
-This example is really about the shape of the decision, not just the final
-profit number. A purely expected-value objective prefers the riskier market,
-but once downside risk is penalized, the lower-variance market becomes more
-attractive. That is the core value of CVaR: it makes the optimizer care about
-bad outcomes, not only the average one.
+1. Expected profit only: 100 MW intraday, objective 18,667.
+2. With CVaR: 87.5 MW day-ahead and 12.5 MW intraday, objective 36,104.
 """
 
 import logging
@@ -122,7 +40,6 @@ from datetime import timedelta
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
-    AvailableCapacityProfile,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
@@ -138,9 +55,9 @@ logger = logging.getLogger(__name__)
 
 CCGT_VARIABLE_COST = 20.0
 SCENARIO_PRICES: dict[str, dict[str, float]] = {
-    "high": {"sdac": 190, "sidc": 280},
-    "mid": {"sdac": 200, "sidc": 200},
-    "low": {"sdac": 210, "sidc": 140},
+    "high": {"day_ahead": 190, "intraday": 280},
+    "mid": {"day_ahead": 200, "intraday": 200},
+    "low": {"day_ahead": 210, "intraday": 140},
 }
 
 
@@ -148,17 +65,16 @@ def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResul
     """Run the CVaR market risk example and return both optimization results."""
     ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=CCGT_VARIABLE_COST)
 
-    portfolio = AssetPortfolio(assets=[ccgt])
+    portfolio = AssetPortfolio([ccgt])
 
-    sdac = EnergyMarket(
-        name="sdac",
+    day_ahead = EnergyMarket(
+        name="day_ahead",
         max_trading_volume_per_step=150,
         stage_fixed=True,
         allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
     )
-    sidc = EnergyMarket(
-        name="sidc",
-        stage_fixed=False,
+    intraday = EnergyMarket(
+        name="intraday",
         max_trading_volume_per_step=100,
         allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
     )
@@ -168,9 +84,8 @@ def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResul
             name=name,
             probability=1 / len(SCENARIO_PRICES),
             profiles=(
-                AvailableCapacityProfile(generator=ccgt, values=[100]),
-                PriceProfile(market=sdac, values=[prices["sdac"]]),
-                PriceProfile(market=sidc, values=[prices["sidc"]]),
+                PriceProfile(market=day_ahead, values=[prices["day_ahead"]]),
+                PriceProfile(market=intraday, values=[prices["intraday"]]),
             ),
         )
         for name, prices in SCENARIO_PRICES.items()
@@ -178,20 +93,20 @@ def run_cvar_market_risk() -> tuple[OptimalDispatchResults, OptimalDispatchResul
 
     energy_system_max_expected_profit = EnergySystem(
         portfolio=portfolio,
-        markets=[sdac, sidc],
+        markets=[day_ahead, intraday],
         scenarios=scenarios,
         number_of_steps=1,
-        timestep=timedelta(hours=24),
+        timestep=timedelta(hours=1),
         objective=Objective(terms=(ProfitTerm(weight=1),)),
     )
     result_max_expected_profit = energy_system_max_expected_profit.optimize()
 
     energy_system_penalized_cvar = EnergySystem(
         portfolio=portfolio,
-        markets=[sdac, sidc],
+        markets=[day_ahead, intraday],
         scenarios=scenarios,
         number_of_steps=1,
-        timestep=timedelta(hours=24),
+        timestep=timedelta(hours=1),
         objective=Objective(
             terms=(
                 ProfitTerm(weight=1),
