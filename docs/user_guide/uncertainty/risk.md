@@ -29,7 +29,7 @@ Let's take the calm and windy site of the [Several scenarios](scenarios.md) page
         LoadProfile,
         PriceProfile,
         Scenario,
-        StationaryStorage,
+        BatteryStorage,
         StorageInitialState,
     )
 
@@ -37,7 +37,7 @@ Let's take the calm and windy site of the [Several scenarios](scenarios.md) page
     wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
     factory = FixedLoad(name="factory")
     process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
-    bess = StationaryStorage(
+    bess = BatteryStorage(
         name="bess",
         battery=Battery(
             capacity=50.0,

@@ -6,19 +6,19 @@ icon: fontawesome/solid/battery-three-quarters
 
 A `Battery` describes the physics of an energy store: how much it holds, how fast it charges and discharges, what it loses on the way, and how full it may get. Two assets have one:
 
-- a [StationaryStorage](stationary_storage.md) is a battery at a site, such as a grid-scale BESS;
+- a [BatteryStorage](battery_storage.md) is a battery at a site, such as a grid-scale BESS;
 - an [ElectricVehicle](electric_vehicle.md) is a battery that drives away on trips.
 
 Everything on this page applies to both. A `Battery` has no name and is never added to a portfolio on its own: the asset that owns it is.
 
 ## Basic usage
 
-Let's build the site's battery: 50 MWh that charges and discharges at up to 25 MW, and loses 5 % each way. It sits at the site, so it goes into a `StationaryStorage`:
+Let's build the site's battery: 50 MWh that charges and discharges at up to 25 MW, and loses 5 % each way. It sits at the site, so it goes into a `BatteryStorage`:
 
 ```python
-from odys import Battery, StationaryStorage, StorageInitialState
+from odys import Battery, BatteryStorage, StorageInitialState
 
-bess = StationaryStorage(
+bess = BatteryStorage(
     name="bess",
     battery=Battery(
         capacity=50.0,  # MWh of storage
@@ -64,7 +64,7 @@ The state of charge is how full the battery is, as a fraction of its capacity: 0
 ```python
 from odys import StorageFinalState
 
-bounded_bess = StationaryStorage(
+bounded_bess = BatteryStorage(
     name="bess",
     battery=Battery(
         capacity=50.0,
@@ -84,7 +84,7 @@ Each asset that has a battery takes its own pair of states:
 
 | Asset | Initial state | Final state | Fields |
 | ----- | ------------- | ----------- | ------ |
-| [StationaryStorage](stationary_storage.md) | `StorageInitialState` | `StorageFinalState` | `storage`, `soc` |
+| [BatteryStorage](battery_storage.md) | `StorageInitialState` | `StorageFinalState` | `storage`, `soc` |
 | [ElectricVehicle](electric_vehicle.md) | `ElectricVehicleInitialState` | `ElectricVehicleFinalState` | `vehicle`, `soc` |
 
 The `soc` is a fraction of capacity: the charge just before the first step for an initial state, and at the last step for a final one. Both states go to the [EnergySystem](../model/first_model.md#initial-and-final-conditions), and both have to lie within `[soc_min, soc_max]`, or creating them raises an `OdysValidationError`. A final state is an exact value: the battery ends at exactly that charge, in every scenario. See [B-3](../../formulation/batteries.md#b-3) to [B-5](../../formulation/batteries.md#b-5).
@@ -151,12 +151,12 @@ energy_system = EnergySystem(
 )
 
 result = energy_system.optimize()
-print(result.stationary_storages.to_dataframe()[["net_power", "soc"]].round(3))
+print(result.battery_storages.to_dataframe()[["net_power", "soc"]].round(3))
 ```
 
 ```text
                          net_power   soc
-time stationary_storage
+time battery_storage
 0    bess                     0.00  0.00
 1    bess                     0.00  0.00
 2    bess                    20.00  0.38
@@ -165,7 +165,7 @@ time stationary_storage
 
 With no market to trade on, the battery stores the 20 MW of wind the factory can't use at step 2, and gives it back at step 3 in place of CCGT output. Only 95 % of the charged energy reaches the battery, and 95 % of that comes back out, so 20 MW charged raises the charge by 0.38 and returns 18.05 MW. Charging from the CCGT to discharge later would only lose energy, so the rest of the time the battery stays idle.
 
-A battery's results are read through the asset that owns it, `result.stationary_storages` or `result.electric_vehicles`, with the same three series. Each is a `pandas.Series` indexed by asset and time, and by scenario when there's more than one:
+A battery's results are read through the asset that owns it, `result.battery_storages` or `result.electric_vehicles`, with the same three series. Each is a `pandas.Series` indexed by asset and time, and by scenario when there's more than one:
 
 - `net_power`: charging minus discharging, in MW, so positive while the battery charges.
 - `soc`: the state of charge at the end of the step, as a fraction of capacity.
@@ -175,8 +175,8 @@ The [Storing Solar for the Evening](../../examples/solar_storage.md) example run
 
 ## How it's modelled
 
-A battery has a charging power, a discharging power and a state of charge at every step, in every scenario, plus a mode that lets it do only one of the two at a time. Stationary storages and electric vehicles share the same rules, written once on the [Batteries](../../formulation/batteries.md) formulation page, from [B-1](../../formulation/batteries.md#b-1) to [B-7](../../formulation/batteries.md#b-7). An electric vehicle adds the energy of its trips ([EV-1](../../formulation/electric_vehicles.md#ev-1)).
+A battery has a charging power, a discharging power and a state of charge at every step, in every scenario, plus a mode that lets it do only one of the two at a time. Battery storages and electric vehicles share the same rules, written once on the [Batteries](../../formulation/batteries.md) formulation page, from [B-1](../../formulation/batteries.md#b-1) to [B-7](../../formulation/batteries.md#b-7). An electric vehicle adds the energy of its trips ([EV-1](../../formulation/electric_vehicles.md#ev-1)).
 
 ## Next steps
 
-A battery needs an asset to live in. Next, see how a [StationaryStorage](stationary_storage.md) puts one at your site.
+A battery needs an asset to live in. Next, see how a [BatteryStorage](battery_storage.md) puts one at your site.

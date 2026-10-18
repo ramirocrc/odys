@@ -17,6 +17,7 @@ from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
     Battery,
+    BatteryStorage,
     Charger,
     CVaRTerm,
     ElectricVehicle,
@@ -34,7 +35,6 @@ from odys import (
     PriceProfile,
     ProfitTerm,
     Scenario,
-    StationaryStorage,
     StorageFinalState,
     StorageInitialState,
     Trip,
@@ -45,7 +45,7 @@ FORMULATION_DIR = Path(__file__).parents[2] / "docs" / "formulation"
 
 DOCUMENTED_PAGES: dict[str, tuple[str, ...]] = {
     "batteries.md": (
-        "stationary_storage_",
+        "battery_storage_",
         "ev_power_",
         "ev_net_power",
         "ev_charge_mode",
@@ -89,7 +89,7 @@ CONDITIONAL_CONSTRAINTS = (
     "generator_initial_min_uptime_constraint",
     "generator_initial_min_downtime_constraint",
     "generator_final_power_constraint",
-    "stationary_storage_soc_end_constraint",
+    "battery_storage_soc_end_constraint",
     "ev_soc_end_constraint",
     "market_buy_only_constraint",
     "non_anticipativity_market_sell_volume_constraint",
@@ -114,7 +114,7 @@ def _reference_system() -> EnergySystem:
         variable_cost=90.0,
         min_down_time=PEAKER_MIN_DOWN_TIME,
     )
-    storage = StationaryStorage(
+    storage = BatteryStorage(
         name="bess",
         battery=Battery(capacity=BATTERY_CAPACITY, max_charge_power=BATTERY_POWER, max_discharge_power=BATTERY_POWER),
     )

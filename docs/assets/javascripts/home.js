@@ -13,7 +13,7 @@
     stochastic: "12 scenarios",
   };
   const FOLD_LABELS = {
-    setup: "battery = StationaryStorage(…)  market = EnergyMarket(…)",
+    setup: "battery = BatteryStorage(…)  market = EnergyMarket(…)",
     forecast: "forecast = […]",
     price_scenarios: "price_scenarios = [[…], …]",
   };

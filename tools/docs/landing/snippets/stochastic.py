@@ -5,17 +5,17 @@ from datetime import timedelta
 from odys import (
     AssetPortfolio,
     Battery,
+    BatteryStorage,
     EnergyMarket,
     EnergySystem,
     PriceProfile,
     Scenario,
-    StationaryStorage,
     StorageFinalState,
     StorageInitialState,
 )
 
 # --8<-- [start:shown]
-battery = StationaryStorage(
+battery = BatteryStorage(
     name="bess",
     battery=Battery(
         capacity=100,

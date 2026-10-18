@@ -15,9 +15,9 @@ from odys.domain.conditions import (
     StorageInitialState,
 )
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 
@@ -42,7 +42,7 @@ TRIP_WITHIN_STARTING_CHARGE = 52.0
 PLAIN_GENERATOR = Generator(name="plain", nominal_power=NOMINAL_POWER, variable_cost=VARIABLE_COST)
 GENERATOR = Generator(name="gen", nominal_power=NOMINAL_POWER, variable_cost=VARIABLE_COST, min_power=MIN_POWER)
 BATTERY = Battery(capacity=CAPACITY, max_charge_power=22.0, max_discharge_power=11.0, soc_min=SOC_MIN, soc_max=SOC_MAX)
-STORAGE = StationaryStorage(name="bess", battery=BATTERY)
+STORAGE = BatteryStorage(name="bess", battery=BATTERY)
 VEHICLE = ElectricVehicle(name="ev", battery=BATTERY, trips=())
 
 
@@ -178,7 +178,7 @@ def test_generator_initial_state_required_reason_lists_every_time_coupling_field
 )
 def test_initial_state_is_not_required_for_another_asset_type(
     condition_type: type[GeneratorInitialState | StorageInitialState | ElectricVehicleInitialState],
-    asset: Generator | StationaryStorage,
+    asset: Generator | BatteryStorage,
 ) -> None:
     assert condition_type.required_for(asset) is None
 
@@ -190,7 +190,7 @@ def test_initial_state_is_not_required_for_another_asset_type(
 )
 def test_initial_state_of_charge_is_always_required(
     condition_type: type[StorageInitialState | ElectricVehicleInitialState],
-    asset: StationaryStorage | ElectricVehicle,
+    asset: BatteryStorage | ElectricVehicle,
 ) -> None:
     assert condition_type.required_for(asset) == "its state of charge carries over from one timestep to the next"
 
@@ -347,7 +347,7 @@ def test_ev_initial_state_accepts_a_long_trip_after_t0() -> None:
 )
 def test_condition_entity_is_its_asset(
     condition: GeneratorInitialState | GeneratorFinalState | StorageInitialState,
-    entity: Generator | StationaryStorage | ElectricVehicle,
+    entity: Generator | BatteryStorage | ElectricVehicle,
 ) -> None:
     assert condition.entity == entity
 

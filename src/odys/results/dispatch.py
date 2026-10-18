@@ -127,11 +127,11 @@ class BatteryDispatch(Dispatch):
         return self._series("charge_mode")
 
 
-class StationaryStorageDispatch(BatteryDispatch):
-    """Dispatch results for stationary storages in the portfolio."""
+class BatteryStorageDispatch(BatteryDispatch):
+    """Dispatch results for battery storages in the portfolio."""
 
     __slots__ = ()
-    label = "stationary storage"
+    label = "battery storage"
 
 
 class ElectricVehicleDispatch(BatteryDispatch):

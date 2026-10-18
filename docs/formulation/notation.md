@@ -15,7 +15,7 @@ Everything odys models lives in a few sets. A lowercase letter picks one element
 | $\mathcal{T} = \{0, \dots, T-1\}$ | The timesteps of the run | $t$ | `number_of_steps` $= T$ |
 | $\mathcal{S}$ | The scenarios | $s$ | the `Scenario`s of the `EnergySystem` |
 | $\mathcal{G}$ | Generators | $g$ | `Generator` |
-| $\mathcal{B}$ | Stationary storages | $b$ | `StationaryStorage` |
+| $\mathcal{B}$ | Battery storages | $b$ | `BatteryStorage` |
 | $\mathcal{E}$ | Electric vehicles | $e$ | `ElectricVehicle` |
 | $\mathcal{K} = \mathcal{B} \cup \mathcal{E}$ | Every battery, at a fixed site or on wheels | $k$ | `Battery` |
 | $\mathcal{C}$ | Chargers | $c$ | `Charger` |
@@ -97,7 +97,7 @@ You don't always have to say where an asset starts:
 | ----- | ---------------------------- |
 | Generator | Starts off ($P^{init}_g = 0$), as if it had been off forever ($N^{init}_g = \infty$), so no minimum time carries over. odys asks for a `GeneratorInitialState` as soon as the start matters: when `ramp_up`, `ramp_down`, `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost` is set. |
 | Generator with an initial state but no `time_in_state` | As if it had been in that state forever ($N^{init}_g = \infty$). odys only allows this when the matching minimum time is unset. |
-| Stationary storage, electric vehicle | No default: a `StorageInitialState` or `ElectricVehicleInitialState` is always required, because the charge carries over from step to step. |
+| Battery storage, electric vehicle | No default: a `StorageInitialState` or `ElectricVehicleInitialState` is always required, because the charge carries over from step to step. |
 
 Final conditions are always optional.
 
