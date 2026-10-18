@@ -5,34 +5,23 @@ Usage:
 
 Output:
     Writes docs/assets/landing/data.json (git-ignored build output), read by
-    docs/assets/javascripts/home.js. Every number on the landing page comes from a
-    real Odys run here: the hero snippets in tools/docs/landing/snippets/ are executed
+    docs/assets/javascripts/home.js. Every number in the landing page hero comes from
+    a real Odys run here: the hero snippets in tools/docs/landing/snippets/ are executed
     as written, so the code shown on the page is guaranteed to run.
 """
 
 import difflib
 import json
 import runpy
-from datetime import timedelta
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pydantic import ValidationError
 
-from odys import (
-    AssetPortfolio,
-    EnergySystem,
-    FixedLoad,
-    Generator,
-    LoadProfile,
-    OptimalDispatchResults,
-    Scenario,
-)
+from odys import OptimalDispatchResults
 
 TOOLS_DIR = Path(__file__).parent
 REPOSITORY_ROOT = TOOLS_DIR.parent.parent
-EXAMPLES_DIR = REPOSITORY_ROOT / "examples"
 SNIPPETS_DIR = TOOLS_DIR / "landing" / "snippets"
 OUTPUT_PATH = REPOSITORY_ROOT / "docs" / "assets" / "landing" / "data.json"
 
@@ -40,13 +29,7 @@ SHOWN_START = "# --8<-- [start:shown]"
 SHOWN_END = "# --8<-- [end:shown]"
 TABS = ("deterministic", "stochastic")
 
-# Examples and snippets are standalone scripts, not packages, so they are loaded by path.
-_merit_order_dispatch = runpy.run_path(str(EXAMPLES_DIR / "merit_order_dispatch.py"))
-_solar_storage = runpy.run_path(str(EXAMPLES_DIR / "solar_storage.py"))
-_day_ahead_or_intraday = runpy.run_path(str(EXAMPLES_DIR / "day_ahead_or_intraday.py"))
-_depot_charging = runpy.run_path(str(EXAMPLES_DIR / "depot_charging.py"))
-_demand_response = runpy.run_path(str(EXAMPLES_DIR / "demand_response.py"))
-_make_or_buy = runpy.run_path(str(EXAMPLES_DIR / "make_or_buy.py"))
+# Snippets are standalone scripts, not packages, so they are loaded by path.
 _snippets = {tab: runpy.run_path(str(SNIPPETS_DIR / f"{tab}.py")) for tab in TABS}
 price_scenarios: list[list[float]] = _snippets["stochastic"]["price_scenarios"]
 
@@ -91,11 +74,6 @@ def _market_schedule(result: OptimalDispatchResults) -> list[float]:
     return _series(_hourly(net_volume, level="scenario", key=first_scenario))
 
 
-def _scenario_profits(schedule: list[float]) -> list[float]:
-    """Return the market profit of a schedule in each price scenario."""
-    return [float(p) for p in np.asarray(price_scenarios) @ np.asarray(schedule)]
-
-
 def _changed_lines(lines: list[str], reference: list[str]) -> list[int]:
     """Return indices of `lines` that are new or different compared to `reference`."""
     matcher = difflib.SequenceMatcher(a=reference, b=lines, autojunk=False)
@@ -122,7 +100,6 @@ def _hero() -> dict[str, object]:
     tabs: dict[str, object] = {}
     for tab in TABS:
         schedule = _market_schedule(_snippet_result(tab))
-        profits = _scenario_profits(schedule)
         folds = [
             {**_setup_fold(shown[tab]), "kind": "setup"},
             {**_data_fold(shown[tab], price_data[tab]), "kind": price_data[tab]},
@@ -132,105 +109,19 @@ def _hero() -> dict[str, object]:
             "changed": _changed_lines(shown[tab], references[tab]),
             "folds": folds,
             "schedule": schedule,
-            "expected_profit": round(sum(profits) / len(profits)),
-            "scenario_profits": [round(p) for p in profits],
         }
     deterministic_forecast = _snippets["deterministic"]["forecast"]
     return {"price_scenarios": price_scenarios, "forecast": deterministic_forecast, "tabs": tabs}
-
-
-def _cvar_frontier() -> list[dict[str, float]]:
-    """Expected and worst-case profit of the CVaR example, without and with the CVaR term."""
-    points = []
-    for weight, result in zip((0, 1), _day_ahead_or_intraday["run_day_ahead_or_intraday"](), strict=True):
-        volumes = result.markets.to_dataframe()["sell_volume"]
-        scenario_prices: dict[str, dict[str, float]] = _day_ahead_or_intraday["SCENARIO_PRICES"]
-        generation = float(result.generators.power.sum()) / len(scenario_prices)
-        profits = []
-        for scenario, prices in scenario_prices.items():
-            sold = volumes.xs(scenario, level="scenario").groupby(level="market").sum()
-            revenue = sum(price * float(sold[market]) for market, price in prices.items())
-            profits.append(revenue - _day_ahead_or_intraday["CCGT_VARIABLE_COST"] * generation)
-        points.append({"cvar_weight": weight, "expected": round(float(np.mean(profits))), "worst": round(min(profits))})
-    return points
-
-
-def _pandas_output() -> str:
-    """The README quick example, whose printed result appears on the landing page."""
-    generator = Generator(name="gen", nominal_power=100.0, variable_cost=50.0)
-    load = FixedLoad(name="demand")
-    energy_system = EnergySystem(
-        portfolio=AssetPortfolio([generator, load]),
-        scenarios=Scenario(profiles=(LoadProfile(load=load, values=[60, 90, 40, 70]),)),
-        timestep=timedelta(hours=1),
-        number_of_steps=4,
-    )
-    return str(energy_system.optimize().generators.power)
-
-
-def _validation_error() -> str:
-    try:
-        Generator(name="gas", nominal_power=-50.0, variable_cost=40.0)
-    except ValidationError as error:
-        first_lines = str(error).splitlines()[:3]
-        return "\n".join(line.split(" [type=")[0] for line in first_lines)
-    msg = "Expected a ValidationError for a negative nominal power"
-    raise AssertionError(msg)
 
 
 def _series(values: object) -> list[float]:
     return [round(float(v), 2) + 0.0 for v in np.asarray(values, dtype=float)]
 
 
-def _example_thumbnails() -> dict[str, dict[str, object]]:
-    """Small real series for each example card: `lines` are drawn as paths, `bars` as columns."""
-    basic = _merit_order_dispatch["run_merit_order_dispatch"]().generators.power
-    battery = _hourly(_solar_storage["run_solar_storage"]().stationary_storages.net_power)
-    make_or_buy = _make_or_buy["run_make_or_buy"]()
-    make_or_buy_purchases = _hourly(make_or_buy.markets.to_dataframe()["buy_volume"])
-    flexible_frame = _demand_response["run_demand_response"]().flexible_loads.to_dataframe()
-    flexible_actual = _hourly(flexible_frame["actual_load"])
-    flexible_baseline = flexible_actual - _hourly(flexible_frame["load_adjustment"])
-    ev_charging = _hourly(_depot_charging["run_depot_charging"]().electric_vehicles.net_power)
-    return {
-        "merit_order_dispatch": {
-            "lines": [
-                {"values": _series(_hourly(basic, level="generator", key="solar_pv")), "tone": "accent"},
-                {"values": _series(_hourly(basic, level="generator", key="ccgt")), "tone": "primary"},
-            ],
-        },
-        "solar_storage": {
-            "lines": [{"values": _series(_solar_storage["SOLAR_PROFILE"]), "tone": "primary"}],
-            "bars": _series(-battery),
-        },
-        "make_or_buy": {
-            "lines": [
-                {"values": _series(_hourly(make_or_buy.generators.power)), "tone": "primary"},
-                {"values": _series(make_or_buy_purchases.abs()), "tone": "accent"},
-            ],
-        },
-        "demand_response": {
-            "lines": [
-                {"values": _series(flexible_baseline), "tone": "muted"},
-                {"values": _series(flexible_actual), "tone": "accent"},
-            ],
-        },
-        "depot_charging": {
-            "lines": [{"values": _series(_depot_charging["MARKET_PRICES"]), "tone": "primary"}],
-            "bars": _series(ev_charging),
-        },
-        "day_ahead_or_intraday": {"ranges": _cvar_frontier()},
-    }
-
-
 def generate_landing_data() -> None:
     """Run every model behind the landing page and write its data file."""
     data = {
         "hero": _hero(),
-        "cvar_frontier": _cvar_frontier(),
-        "pandas_output": _pandas_output(),
-        "validation_error": _validation_error(),
-        "examples": _example_thumbnails(),
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
