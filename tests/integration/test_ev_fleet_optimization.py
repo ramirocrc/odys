@@ -10,6 +10,7 @@ from odys import (
     AssetPortfolio,
     AvailableCapacityProfile,
     Battery,
+    BatteryStorage,
     Charger,
     ElectricVehicle,
     ElectricVehicleFinalState,
@@ -21,7 +22,6 @@ from odys import (
     LoadProfile,
     PriceProfile,
     Scenario,
-    StationaryStorage,
     StorageInitialState,
     Trip,
 )
@@ -163,10 +163,10 @@ class TestMultipleEvsMultipleChargers:
 
 
 class TestMixedFleet:
-    def test_stationary_storage_independent_of_chargers(self) -> None:
+    def test_battery_storage_independent_of_chargers(self) -> None:
         ev = _create_ev("ev1")
         charger = _create_charger("charger1")
-        storage = StationaryStorage(
+        storage = BatteryStorage(
             name="battery",
             battery=Battery(capacity=STORAGE_CAPACITY, max_charge_power=50.0, max_discharge_power=50.0),
         )
@@ -186,7 +186,7 @@ class TestMixedFleet:
 
         assert result.solver_status == "ok"
 
-        storage_soc = result.stationary_storages.soc.unstack()
+        storage_soc = result.battery_storages.soc.unstack()
         assert (storage_soc >= 0).all().all()
         assert (storage_soc <= 1).all().all()
 

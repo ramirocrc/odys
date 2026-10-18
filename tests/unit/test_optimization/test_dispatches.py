@@ -9,6 +9,7 @@ import xarray as xr
 from odys import (
     AssetPortfolio,
     Battery,
+    BatteryStorage,
     Charger,
     ElectricVehicle,
     ElectricVehicleFinalState,
@@ -21,7 +22,6 @@ from odys import (
     LoadProfile,
     PriceProfile,
     Scenario,
-    StationaryStorage,
     StorageInitialState,
 )
 from odys.optimization.formulations.charging import ChargingFormulation
@@ -31,13 +31,13 @@ from odys.optimization.formulations.flexible_load import FlexibleLoadFormulation
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 from odys.results.dispatch import (
+    BatteryStorageDispatch,
     ChargerDispatch,
     Dispatch,
     ElectricVehicleDispatch,
     FlexibleLoadDispatch,
     GeneratorDispatch,
     MarketDispatch,
-    StationaryStorageDispatch,
 )
 from odys.solvers.solver import solve
 from odys.solvers.solver_config import SolverConfig
@@ -66,7 +66,7 @@ MARKET = EnergyMarket(name="grid", max_trading_volume_per_step=100.0)
 
 EXPECTED_SERIES: dict[type[Dispatch], tuple[str, ...]] = {
     GeneratorDispatch: ("power", "status", "startup", "shutdown"),
-    StationaryStorageDispatch: ("net_power", "soc", "charge_mode"),
+    BatteryStorageDispatch: ("net_power", "soc", "charge_mode"),
     ElectricVehicleDispatch: ("net_power", "soc", "charge_mode"),
     ChargerDispatch: ("assignment", "power"),
     MarketDispatch: ("sell_volume", "buy_volume", "net_volume"),
@@ -76,7 +76,7 @@ EXPECTED_SERIES: dict[type[Dispatch], tuple[str, ...]] = {
 
 @pytest.fixture(scope="module")
 def solved_problem() -> tuple[OptimizationProblem, xr.Dataset]:
-    storage = StationaryStorage(
+    storage = BatteryStorage(
         name="storage",
         battery=Battery(capacity=20.0, max_charge_power=10.0, max_discharge_power=10.0),
     )

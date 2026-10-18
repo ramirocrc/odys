@@ -9,11 +9,11 @@ from linopy.testing import assert_conequal
 
 from odys.domain.conditions import StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
@@ -22,7 +22,7 @@ from odys.optimization.model.model_builder import build_model
 
 logger = logging.getLogger(__name__)
 
-BATTERY1 = StationaryStorage(
+BATTERY1 = BatteryStorage(
     name="batt1",
     battery=Battery(
         max_charge_power=200.0,
@@ -37,7 +37,7 @@ BATTERY1_FINAL_STATE = StorageFinalState(storage=BATTERY1, soc=0.5)
 
 
 @pytest.fixture
-def battery1() -> StationaryStorage:
+def battery1() -> BatteryStorage:
     return BATTERY1
 
 
@@ -45,7 +45,7 @@ def battery1() -> StationaryStorage:
 def asset_portfolio_sample(
     generator1: Generator,
     generator2: Generator,
-    battery1: StationaryStorage,
+    battery1: BatteryStorage,
     load1: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[generator1, generator2, battery1, load1])
@@ -142,8 +142,8 @@ class TestPowerBalanceAndAvailableCapacity:
         actual_constraint = self.linopy_model.constraints["power_balance_constraint"]
 
         generation_total = self.linopy_model.variables["generator_power"].sum("generator")
-        discharge_total = self.linopy_model.variables["stationary_storage_power_out"].sum("stationary_storage")
-        charge_total = self.linopy_model.variables["stationary_storage_power_in"].sum("stationary_storage")
+        discharge_total = self.linopy_model.variables["battery_storage_power_out"].sum("battery_storage")
+        charge_total = self.linopy_model.variables["battery_storage_power_in"].sum("battery_storage")
 
         # Fixed loads are summed over the load dimension, so no load dimension in the constraint
         demand_data = [

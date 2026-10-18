@@ -52,13 +52,13 @@ from odys import (
     AssetPortfolio,
     AvailableCapacityProfile,
     Battery,
+    BatteryStorage,
     EnergySystem,
     FixedLoad,
     Generator,
     LoadProfile,
     OptimalDispatchResults,
     Scenario,
-    StationaryStorage,
     StorageFinalState,
     StorageInitialState,
 )
@@ -85,7 +85,7 @@ def run_solar_storage() -> OptimalDispatchResults:
         name="load",
     )
 
-    battery = StationaryStorage(
+    battery = BatteryStorage(
         name="battery",
         battery=Battery(
             capacity=300,
@@ -123,4 +123,4 @@ if __name__ == "__main__":
     logger.info(result.generators.power)
 
     logger.info("battery net power")
-    logger.info(result.stationary_storages.net_power)
+    logger.info(result.battery_storages.net_power)

@@ -1,4 +1,4 @@
-"""Unit tests for the battery and state of charge arrays of stationary storages."""
+"""Unit tests for the battery and state of charge arrays of battery storages."""
 
 from datetime import timedelta
 
@@ -6,16 +6,16 @@ import pytest
 
 from odys.domain.conditions import ConditionSet, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
-from odys.domain.entities.stationary_storage import StationaryStorage
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.exceptions import OdysError
 from odys.domain.horizon import Horizon
 from odys.domain.scenario import Scenario, ScenarioSet
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
-from odys.parameters.entity_arrays import BatteryArrays, stationary_storage_state_arrays
+from odys.parameters.entity_arrays import BatteryArrays, battery_storage_state_arrays
 from odys.parameters.vectorize import vectorize
 
-STORAGE_DIMENSION = "stationary_storage"
+STORAGE_DIMENSION = "battery_storage"
 
 STANDARD_CAPACITY = 100.0
 STANDARD_MAX_CHARGE_POWER = 50.0
@@ -25,14 +25,14 @@ EXPLICIT_DEGRADATION_COST = 5.0
 EXPLICIT_SOC_END = 0.4
 
 
-def _battery_arrays(storages: list[StationaryStorage]) -> BatteryArrays:
+def _battery_arrays(storages: list[BatteryStorage]) -> BatteryArrays:
     coordinates = Coordinates.of_entities(STORAGE_DIMENSION, storages)
     return vectorize(BatteryArrays, [storage.battery for storage in storages], coordinates)
 
 
 @pytest.fixture
-def storage_with_degradation_cost() -> StationaryStorage:
-    return StationaryStorage(
+def storage_with_degradation_cost() -> BatteryStorage:
+    return BatteryStorage(
         name="storage_with_degradation_cost",
         battery=Battery(
             capacity=STANDARD_CAPACITY,
@@ -44,8 +44,8 @@ def storage_with_degradation_cost() -> StationaryStorage:
 
 
 @pytest.fixture
-def storage_without_degradation_cost() -> StationaryStorage:
-    return StationaryStorage(
+def storage_without_degradation_cost() -> BatteryStorage:
+    return BatteryStorage(
         name="storage_without_degradation_cost",
         battery=Battery(
             capacity=STANDARD_CAPACITY,
@@ -55,18 +55,18 @@ def storage_without_degradation_cost() -> StationaryStorage:
     )
 
 
-def test_degradation_cost_reflects_explicit_value(storage_with_degradation_cost: StationaryStorage) -> None:
+def test_degradation_cost_reflects_explicit_value(storage_with_degradation_cost: BatteryStorage) -> None:
     params = _battery_arrays([storage_with_degradation_cost])
 
-    value = params.degradation_cost.sel(stationary_storage="storage_with_degradation_cost").item()
+    value = params.degradation_cost.sel(battery_storage="storage_with_degradation_cost").item()
 
     assert value == EXPLICIT_DEGRADATION_COST
 
 
-def test_degradation_cost_defaults_to_zero_when_not_set(storage_without_degradation_cost: StationaryStorage) -> None:
+def test_degradation_cost_defaults_to_zero_when_not_set(storage_without_degradation_cost: BatteryStorage) -> None:
     params = _battery_arrays([storage_without_degradation_cost])
 
-    value = params.degradation_cost.sel(stationary_storage="storage_without_degradation_cost").item()
+    value = params.degradation_cost.sel(battery_storage="storage_without_degradation_cost").item()
 
     assert value == 0.0
 
@@ -80,8 +80,8 @@ def _context(condition_set: ConditionSet) -> ModelContext:
 
 
 def test_state_arrays_read_soc_start_and_leave_unset_soc_end_nan(
-    storage_with_degradation_cost: StationaryStorage,
-    storage_without_degradation_cost: StationaryStorage,
+    storage_with_degradation_cost: BatteryStorage,
+    storage_without_degradation_cost: BatteryStorage,
 ) -> None:
     storages = [storage_with_degradation_cost, storage_without_degradation_cost]
     condition_set = ConditionSet(
@@ -89,7 +89,7 @@ def test_state_arrays_read_soc_start_and_leave_unset_soc_end_nan(
         final=(StorageFinalState(storage=storage_with_degradation_cost, soc=EXPLICIT_SOC_END),),
     )
 
-    states = stationary_storage_state_arrays(
+    states = battery_storage_state_arrays(
         storages,
         Coordinates.of_entities(STORAGE_DIMENSION, storages),
         _context(condition_set),
@@ -97,16 +97,16 @@ def test_state_arrays_read_soc_start_and_leave_unset_soc_end_nan(
 
     assert states.soc_start.values.tolist() == pytest.approx([STANDARD_SOC_START, STANDARD_SOC_START])
     assert states.soc_end.dtype.kind == "f"
-    assert states.soc_end.sel(stationary_storage="storage_with_degradation_cost").item() == EXPLICIT_SOC_END
-    assert bool(states.soc_end.sel(stationary_storage="storage_without_degradation_cost").isnull())
+    assert states.soc_end.sel(battery_storage="storage_with_degradation_cost").item() == EXPLICIT_SOC_END
+    assert bool(states.soc_end.sel(battery_storage="storage_without_degradation_cost").isnull())
 
 
-def test_state_arrays_without_initial_state_raise(storage_without_degradation_cost: StationaryStorage) -> None:
+def test_state_arrays_without_initial_state_raise(storage_without_degradation_cost: BatteryStorage) -> None:
     """Validation requires an initial state for every storage, so a missing one is an internal error."""
     storages = [storage_without_degradation_cost]
 
     with pytest.raises(OdysError, match="There is no StorageInitialState for 'storage_without_degradation_cost'"):
-        stationary_storage_state_arrays(
+        battery_storage_state_arrays(
             storages,
             Coordinates.of_entities(STORAGE_DIMENSION, storages),
             _context(ConditionSet()),

@@ -5,16 +5,16 @@ from linopy.testing import assert_linequal
 
 from odys.domain.conditions import GeneratorInitialState, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.profiles import LoadProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.base import per_scenario_profit
+from odys.optimization.formulations.battery_storage import BatteryStorageFormulation
 from odys.optimization.formulations.generator import GeneratorFormulation
-from odys.optimization.formulations.stationary_storage import StationaryStorageFormulation
 from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 from odys.parameters.dimensions import ModelDimension
@@ -69,8 +69,8 @@ def generator_without_shutdown_cost() -> Generator:
 
 
 @pytest.fixture
-def storage_with_degradation_cost() -> StationaryStorage:
-    return StationaryStorage(
+def storage_with_degradation_cost() -> BatteryStorage:
+    return BatteryStorage(
         name="storage_with_degradation_cost",
         battery=Battery(
             capacity=STANDARD_CAPACITY,
@@ -82,8 +82,8 @@ def storage_with_degradation_cost() -> StationaryStorage:
 
 
 @pytest.fixture
-def storage_without_degradation_cost() -> StationaryStorage:
-    return StationaryStorage(
+def storage_without_degradation_cost() -> BatteryStorage:
+    return BatteryStorage(
         name="storage_without_degradation_cost",
         battery=Battery(
             capacity=STANDARD_CAPACITY,
@@ -93,7 +93,7 @@ def storage_without_degradation_cost() -> StationaryStorage:
     )
 
 
-def _built_problem(assets: list[Generator | StationaryStorage], load: FixedLoad) -> OptimizationProblem:
+def _built_problem(assets: list[Generator | BatteryStorage], load: FixedLoad) -> OptimizationProblem:
     """Build the problem with every generator starting off and every storage starting and ending half full."""
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(assets=[*assets, load]),
@@ -109,7 +109,7 @@ def _built_problem(assets: list[Generator | StationaryStorage], load: FixedLoad)
         final_conditions=tuple(
             StorageFinalState(storage=asset, soc=STANDARD_SOC_START)
             for asset in assets
-            if isinstance(asset, StationaryStorage)
+            if isinstance(asset, BatteryStorage)
         ),
     )
     problem = energy_system.build_problem()
@@ -129,14 +129,14 @@ class TestPerScenarioProfitDegradationCost:
         generator1: Generator,
         load1: FixedLoad,
     ) -> None:
-        storage: StationaryStorage = request.getfixturevalue(storage_fixture_name)
+        storage: BatteryStorage = request.getfixturevalue(storage_fixture_name)
         problem = _built_problem([generator1, storage], load1)
 
         actual_profit = per_scenario_profit(problem.formulations)
 
         generators = problem.formulation_of(GeneratorFormulation)
         assert generators is not None
-        storages = problem.formulation_of(StationaryStorageFormulation)
+        storages = problem.formulation_of(BatteryStorageFormulation)
         assert storages is not None
         timestep_hours = TIMESTEP / timedelta(hours=1)
         expected_profit = -(
@@ -147,7 +147,7 @@ class TestPerScenarioProfitDegradationCost:
             (storages.variables.power_in + storages.variables.power_out)
             * timestep_hours
             * storages.storage.battery.degradation_cost
-        ).sum([ModelDimension.Time, StationaryStorageFormulation.dimension])
+        ).sum([ModelDimension.Time, BatteryStorageFormulation.dimension])
 
         assert_linequal(actual_profit, expected_profit)
 

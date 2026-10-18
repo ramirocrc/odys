@@ -46,7 +46,7 @@ classDiagram
         +degradation_cost
         +self_discharge_rate
     }
-    class StationaryStorage {
+    class BatteryStorage {
         +battery: Battery
     }
     class ElectricVehicle {
@@ -145,11 +145,11 @@ classDiagram
         +power: float
     }
     class StorageInitialState {
-        +storage: StationaryStorage
+        +storage: BatteryStorage
         +soc: float
     }
     class StorageFinalState {
-        +storage: StationaryStorage
+        +storage: BatteryStorage
         +soc: float
     }
     class ElectricVehicleInitialState {
@@ -182,12 +182,12 @@ classDiagram
     EnergyEntity <|-- Asset
     EnergyEntity <|-- EnergyMarket
     Asset <|-- Generator
-    Asset <|-- StationaryStorage
+    Asset <|-- BatteryStorage
     Asset <|-- ElectricVehicle
     Asset <|-- Charger
     Asset <|-- FixedLoad
     Asset <|-- FlexibleLoad
-    StationaryStorage *-- Battery
+    BatteryStorage *-- Battery
     ElectricVehicle *-- Battery
     ElectricVehicle *-- "0..*" Trip
     EnergyMarket --> AllowedTradeDirection
@@ -212,8 +212,8 @@ classDiagram
     FinalCondition <|-- ElectricVehicleFinalState
     GeneratorInitialState --> Generator
     GeneratorFinalState --> Generator
-    StorageInitialState --> StationaryStorage
-    StorageFinalState --> StationaryStorage
+    StorageInitialState --> BatteryStorage
+    StorageFinalState --> BatteryStorage
     ElectricVehicleInitialState --> ElectricVehicle
     ElectricVehicleFinalState --> ElectricVehicle
     ConditionSet *-- "0..*" Condition
@@ -286,7 +286,7 @@ classDiagram
     class EnergyMarketFormulation
     class FixedLoadFormulation
     class FlexibleLoadFormulation
-    class StationaryStorageFormulation
+    class BatteryStorageFormulation
     class ElectricVehicleFormulation
     class ChargingFormulation
     class StorageFormulation {
@@ -328,10 +328,10 @@ classDiagram
     VariableFormulation <|-- GeneratorFormulation
     VariableFormulation <|-- EnergyMarketFormulation
     VariableFormulation <|-- FlexibleLoadFormulation
-    VariableFormulation <|-- StationaryStorageFormulation
+    VariableFormulation <|-- BatteryStorageFormulation
     VariableFormulation <|-- ElectricVehicleFormulation
     VariableFormulation <|-- ChargingFormulation
-    StationaryStorageFormulation *-- StorageFormulation
+    BatteryStorageFormulation *-- StorageFormulation
     ElectricVehicleFormulation *-- StorageFormulation
     ChargingFormulation --> ElectricVehicleFormulation
     Formulation --> ModelContext
@@ -410,7 +410,7 @@ classDiagram
         +soc
         +charge_mode
     }
-    class StationaryStorageDispatch
+    class BatteryStorageDispatch
     class ElectricVehicleDispatch
     class ChargerDispatch {
         +assignment
@@ -430,7 +430,7 @@ classDiagram
         +termination_condition: str
         +objective_value: float
         +generators: GeneratorDispatch
-        +stationary_storages: StationaryStorageDispatch
+        +battery_storages: BatteryStorageDispatch
         +electric_vehicles: ElectricVehicleDispatch
         +chargers: ChargerDispatch
         +markets: MarketDispatch
@@ -447,7 +447,7 @@ classDiagram
     OptimalDispatchResults o-- "0..*" Dispatch
     Dispatch <|-- GeneratorDispatch
     Dispatch <|-- BatteryDispatch
-    BatteryDispatch <|-- StationaryStorageDispatch
+    BatteryDispatch <|-- BatteryStorageDispatch
     BatteryDispatch <|-- ElectricVehicleDispatch
     Dispatch <|-- ChargerDispatch
     Dispatch <|-- MarketDispatch

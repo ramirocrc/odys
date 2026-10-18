@@ -15,7 +15,7 @@ Model formulations, one per entity type. A `Formulation` owns, for every entity 
 - `fixed_load`
 - `flexible_load`
 - `generator`
-- `stationary_storage`
+- `battery_storage`
 - `storage`
 
 ::: odys.optimization.formulations
