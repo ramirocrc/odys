@@ -56,8 +56,8 @@ Follow the user's journey. Each page answers the next question a user naturally 
 2. How do I set up my first system? (`user_guide/model/`)
 3. What assets can I model? (`user_guide/assets/`)
 4. Where can I buy and sell energy? (`user_guide/markets/`)
-5. What does the optimizer maximize, and how do I read the results? (`user_guide/optimization/`)
-6. What if the future is uncertain? (`user_guide/uncertainty/`)
+5. How do I read the results, and what if a run fails? (`user_guide/solving/`)
+6. What if the future is uncertain, and how do I weigh risk? (`user_guide/uncertainty/`)
 7. Can I see a full worked example? (`examples/`)
 8. What exactly does odys solve, and why that way? (`formulation/`)
 
@@ -397,10 +397,9 @@ docs/
 │   │   ├── results.md        # Reading results, the objective value, clock time, chaining runs
 │   │   ├── solvers.md        # Solver choice and options
 │   │   └── validation.md     # Checks before solving, and errors
-│   ├── uncertainty/
-│   │   └── scenarios.md      # Several futures, stage-fixed decisions, results per scenario
-│   └── optimization/
-│       └── objective.md      # Profit and CVaR
+│   └── uncertainty/
+│       ├── scenarios.md      # Several futures, stage-fixed decisions, results per scenario
+│       └── risk.md           # Objective, ProfitTerm and CVaRTerm: weighing bad outcomes
 │
 ├── formulation/              # Mathematical Formulation: the exact MILP, one page per model part
 │   ├── index.md              # Overview: problem size, assumptions, compact model

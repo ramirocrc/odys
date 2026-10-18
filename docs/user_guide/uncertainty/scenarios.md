@@ -172,4 +172,4 @@ dtype: float64
 
 ## Next steps
 
-The plan above maximizes the expected profit, so a bad calm day is fine as long as the windy days make up for it. To weigh bad outcomes more heavily, see the [Objective](../optimization/objective.md).
+The plan above maximizes the expected profit, so a bad calm day is fine as long as the windy days make up for it. To weigh bad outcomes more heavily, see [Risk (CVaR)](risk.md).

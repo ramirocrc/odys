@@ -168,7 +168,7 @@ print(round(result.objective_value, 2))
 
 Here the CCGT burns 10,000 of fuel. Trading earns back about 1,487 net, and the process's 20 MWh of net extra consumption is worth 1,200 at 60 $/MWh, so the profit is −7,313. Fixed loads add nothing: serving them costs whatever the energy that covers them costs.
 
-With several scenarios, `objective_value` is the expected profit, weighted by the scenarios' probabilities. With a CVaR term, it's the weighted sum of the expected profit and the CVaR, not a profit you can book; see [Objective](../optimization/objective.md).
+With several scenarios, `objective_value` is the expected profit, weighted by the scenarios' probabilities. With a CVaR term, it's the weighted sum of the expected profit and the CVaR, not a profit you can book; see [Risk (CVaR)](../uncertainty/risk.md#results).
 
 ## Clock time
 

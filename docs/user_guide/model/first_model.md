@@ -87,7 +87,7 @@ Each one is covered on its own page:
 - **`scenarios`**: a single [Scenario](profiles.md) holds the time series of one future. A list of them plans against [several futures](../uncertainty/scenarios.md).
 - **`timestep`** and **`number_of_steps`**: see [Time and units](time_and_units.md).
 - **`markets`**: see [EnergyMarket](../markets/energy_market.md).
-- **`objective`**: see [Objective](../optimization/objective.md), to weigh profit against risk.
+- **`objective`**: see [Risk (CVaR)](../uncertainty/risk.md), to weigh profit against risk.
 - **`initial_conditions`** and **`final_conditions`**: see [below](#initial-and-final-conditions).
 
 Creating the `EnergySystem` checks the whole configuration before anything is solved, and raises an `OdysValidationError` on the first problem. See [Validation and errors](../solving/validation.md).
