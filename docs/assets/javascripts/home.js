@@ -12,13 +12,11 @@
   const TAB_TAGS = {
     deterministic: "1 scenario",
     stochastic: "12 scenarios",
-    risk_aware: "12 scenarios + CVaR",
   };
   const FOLD_LABELS = {
     setup: "battery = StationaryStorage(…)  market = EnergyMarket(…)",
     forecast: "forecast = […]",
     price_scenarios: "price_scenarios = [[…], …]",
-    scenarios: "price_scenarios = [[…], …]  scenarios = [Scenario(…) for …]",
   };
   const KEYWORDS = new Set(["for", "in", "import", "from", "return", "None", "True", "False"]);
   const TOKEN_RE = /("[^"]*")|(\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*)(=(?!=))?|(\s+)|(.)/g;
@@ -46,6 +44,10 @@
 
   function euros(value) {
     return `€${Math.round(value / 1000)}k`;
+  }
+
+  function exactEuros(value) {
+    return `€${Math.round(value).toLocaleString("en-US")}`;
   }
 
   // ---- Code panel ----
@@ -162,10 +164,10 @@
     legend.append(svg("tspan", { fill: TONES.accent }, "▲ discharge"), "  ", svg("tspan", { fill: token("violet-300") }, "▼ charge"));
 
     chart.replaceChildren(
-      svg("text", { x: 0, y: 18, class: "label-strong" }, tab === "deterministic" ? "1 price forecast" : "12 price scenarios"),
+      svg("text", { x: 0, y: 18, class: "label-strong" }, tab === "deterministic" ? "Input · 1 price forecast" : "Input · 12 price scenarios"),
       svg("text", { x: 600, y: 18, "text-anchor": "end", class: "label" }, "€/MWh"),
       fan,
-      svg("text", { x: 0, y: 340, class: "label-strong" }, "1 battery schedule"),
+      svg("text", { x: 0, y: 340, class: "label-strong" }, "Output · 1 battery schedule"),
       legend,
       svg("line", { x1: 0, y1: 440, x2: 600, y2: 440, class: "axis" }),
       ...bars,
@@ -175,14 +177,33 @@
     );
   }
 
+  // Expected profit of the tab's schedule, compared scenario by scenario with the other tab's.
+  function renderOutcome(value, verdict, hero, tab) {
+    const other = tab === "deterministic" ? "stochastic" : "deterministic";
+    const mine = hero.tabs[tab];
+    const theirs = hero.tabs[other];
+    const ahead = mine.scenario_profits.filter((profit, i) => profit > theirs.scenario_profits[i]).length;
+    const total = mine.scenario_profits.length;
+    const gap = mine.expected_profit - theirs.expected_profit;
+    value.textContent = exactEuros(mine.expected_profit);
+    verdict.textContent =
+      gap >= 0
+        ? `+${exactEuros(gap)} vs ${other}, and ahead in ${ahead} of ${total} scenarios.`
+        : `${exactEuros(-gap)} less than ${other}, and ahead in only ${ahead} of ${total} scenarios.`;
+    verdict.classList.toggle("odys-outcome__verdict--ahead", gap >= 0);
+  }
+
   function initHero(root, hero) {
     const tabs = [...root.querySelectorAll("[data-tab]")];
     const code = root.querySelector("[data-code]");
     const chart = root.querySelector("[data-chart]");
     const tag = root.querySelector("[data-tab-tag]");
+    const kicker = root.querySelector("[data-caption-kicker]");
     const lead = root.querySelector("[data-caption-lead]");
     const rest = root.querySelector("[data-caption-rest]");
-    const openFolds = { setup: false, forecast: false, price_scenarios: false, scenarios: false };
+    const outcomeValue = root.querySelector("[data-outcome-value]");
+    const outcomeVerdict = root.querySelector("[data-outcome-verdict]");
+    const openFolds = { setup: false, forecast: false, price_scenarios: false };
     let current = tabs.find((t) => t.getAttribute("aria-selected") === "true")?.dataset.tab ?? "stochastic";
 
     const renderCurrentCode = () => renderCode(code, current, hero.tabs, openFolds, renderCurrentCode);
@@ -192,18 +213,24 @@
       const sizer = document.createElement("div");
       sizer.className = "odys-caption__text odys-caption__text--sizer";
       sizer.setAttribute("aria-hidden", "true");
-      sizer.append(span("odys-caption__lead", button.dataset.lead), span("odys-caption__rest", button.dataset.rest));
+      sizer.append(
+        span("odys-caption__kicker", button.dataset.kicker),
+        span("odys-caption__lead", button.dataset.lead),
+        span("odys-caption__rest", button.dataset.rest),
+      );
       caption.append(sizer);
     }
     const select = (tab) => {
       current = tab;
       for (const button of tabs) button.setAttribute("aria-selected", String(button.dataset.tab === tab));
       const active = tabs.find((t) => t.dataset.tab === tab);
+      kicker.textContent = active.dataset.kicker;
       lead.textContent = active.dataset.lead;
       rest.textContent = active.dataset.rest;
       tag.textContent = TAB_TAGS[tab];
       renderCurrentCode();
       renderChart(chart, hero, tab);
+      renderOutcome(outcomeValue, outcomeVerdict, hero, tab);
     };
     for (const button of tabs) button.addEventListener("click", () => select(button.dataset.tab));
     select(current);
