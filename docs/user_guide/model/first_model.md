@@ -84,7 +84,7 @@ portfolio.assets  # every asset, keyed by name, read-only
 
 Each one is covered on its own page:
 
-- **`scenarios`**: a single [Scenario](profiles.md) holds the time series of one future. A list of them plans against [several futures](../optimization/stochastic.md).
+- **`scenarios`**: a single [Scenario](profiles.md) holds the time series of one future. A list of them plans against [several futures](../uncertainty/scenarios.md).
 - **`timestep`** and **`number_of_steps`**: see [Time and units](time_and_units.md).
 - **`markets`**: see [EnergyMarket](../markets/energy_market.md).
 - **`objective`**: see [Objective](../optimization/objective.md), to weigh profit against risk.

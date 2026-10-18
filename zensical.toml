@@ -40,7 +40,7 @@ nav = [
       { "Validation and errors" = "user_guide/solving/validation.md" },
     ] },
     { "Uncertainty and risk" = [
-      { "Stochastic optimization" = "user_guide/optimization/stochastic.md" },
+      { "Scenarios" = "user_guide/uncertainty/scenarios.md" },
       { "Objective" = "user_guide/optimization/objective.md" },
     ] },
   ] },

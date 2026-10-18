@@ -21,7 +21,7 @@ objective = Objective(
 )
 ```
 
-Pass it to the system with `EnergySystem(..., objective=objective)`. A CVaR term only matters with [several scenarios](stochastic.md): with a single scenario, the worst outcome is the only outcome.
+Pass it to the system with `EnergySystem(..., objective=objective)`. A CVaR term only matters with [several scenarios](../uncertainty/scenarios.md): with a single scenario, the worst outcome is the only outcome.
 
 ## Fields
 

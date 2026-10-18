@@ -110,4 +110,4 @@ To find the cause, relax one of these at a time, for example by dropping a final
 
 ## Next steps
 
-So far every plan faced a single future. Next, see how to plan against several, in [Stochastic optimization](../optimization/stochastic.md).
+So far every plan faced a single future. Next, see how to plan against several, in [Scenarios](../uncertainty/scenarios.md).

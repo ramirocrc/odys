@@ -57,7 +57,7 @@ Follow the user's journey. Each page answers the next question a user naturally 
 3. What assets can I model? (`user_guide/assets/`)
 4. Where can I buy and sell energy? (`user_guide/markets/`)
 5. What does the optimizer maximize, and how do I read the results? (`user_guide/optimization/`)
-6. What if the future is uncertain? (`user_guide/optimization/stochastic.md`)
+6. What if the future is uncertain? (`user_guide/uncertainty/`)
 7. Can I see a full worked example? (`examples/`)
 8. What exactly does odys solve, and why that way? (`formulation/`)
 
@@ -358,7 +358,7 @@ Readers quickly learn the pattern.
 Pages are not read in isolation. Link to related pages wherever a concept is introduced:
 
 - "The profile references a [Generator](../assets/generator.md) of your portfolio."
-- "See [Stochastic optimization](../optimization/stochastic.md) for more details."
+- "See [Scenarios](../uncertainty/scenarios.md) for more details."
 - "Market prices are specified in the [Scenario](../model/profiles.md), not on the market object."
 
 Internal links are the connective tissue of the documentation.
@@ -397,9 +397,10 @@ docs/
 │   │   ├── results.md        # Reading results, the objective value, clock time, chaining runs
 │   │   ├── solvers.md        # Solver choice and options
 │   │   └── validation.md     # Checks before solving, and errors
+│   ├── uncertainty/
+│   │   └── scenarios.md      # Several futures, stage-fixed decisions, results per scenario
 │   └── optimization/
-│       ├── objective.md      # Profit and CVaR
-│       ├── stochastic.md     # Stochastic optimization
+│       └── objective.md      # Profit and CVaR
 │
 ├── formulation/              # Mathematical Formulation: the exact MILP, one page per model part
 │   ├── index.md              # Overview: problem size, assumptions, compact model

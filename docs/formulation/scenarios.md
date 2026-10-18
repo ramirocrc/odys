@@ -6,7 +6,7 @@ icon: lucide/git-branch
 
 Energy systems live with uncertainty. Tomorrow could be windy or calm, sunny or grey. Prices could spike or fall, and demand could come in higher than forecast. A plan built for one assumed future can look great on paper and go wrong as soon as the real day turns out differently. This page shows how odys plans against several possible futures at once.
 
-The User Guide's [Stochastic optimization](../user_guide/optimization/stochastic.md) page shows how to set scenarios up in code. Here we look at what they do to the model.
+The User Guide's [Scenarios](../user_guide/uncertainty/scenarios.md) page shows how to set scenarios up in code. Here we look at what they do to the model.
 
 ## One future, or several
 
