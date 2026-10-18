@@ -4,9 +4,9 @@ icon: fontawesome/solid/charging-station
 
 # Charger
 
-A `Charger` is charging infrastructure for [ElectricVehicle](electric_vehicle.md) assets. The optimizer decides which vehicle each charger serves at every timestep, and the charger caps the power of that connection.
+A `Charger` models a charging point: the plug that connects an [ElectricVehicle](electric_vehicle.md) to the grid. At every step, the optimizer decides which vehicle each charger serves, and the charger's rating caps how fast that vehicle charges or, with V2G, discharges.
 
-Chargers do not take part in the power balance themselves: the vehicles connected to them do.
+Chargers and vehicles come together: a portfolio with electric vehicles needs at least one charger, and a portfolio with chargers needs at least one vehicle. Building the `AssetPortfolio` raises an `OdysValidationError` otherwise.
 
 ## Basic usage
 
@@ -18,7 +18,7 @@ from odys import Charger
 charger = Charger(name="charger", max_power=0.022)  # 22 kW
 ```
 
-Add chargers to the same portfolio as the EVs:
+The charger goes into the same portfolio as the vans:
 
 ```python
 from datetime import timedelta
@@ -69,32 +69,28 @@ portfolio = AssetPortfolio([van_1, van_2, charger])
 
 ## Fields
 
-| Field        | Type    | Required | Default | Description                                             |
-| ------------ | ------- | -------- | ------- | ------------------------------------------------------- |
-| `name`       | `str`   | Yes      | -       | Unique identifier for the charger                       |
-| `max_power`  | `float` | Yes      | -       | Maximum charge/discharge power through the charger (MW) |
-| `efficiency` | `float` | No       | `1.0`   | Charger efficiency (0-1)                                |
+| Field        | Type    | Required | Default | Description                                                     |
+| ------------ | ------- | -------- | ------- | --------------------------------------------------------------- |
+| `name`       | `str`   | Yes      | -       | Unique name of the charger                                      |
+| `max_power`  | `float` | Yes      | -       | Highest power through the charger, charging or discharging, above 0 (MW) |
+| `efficiency` | `float` | No       | `1.0`   | Not used by the model yet; see below                            |
 
-!!! warning
+`efficiency` has no effect today: charging through a charger loses nothing beyond the battery's own efficiencies. Put the charger's losses into the battery's `efficiency_charging` and `efficiency_discharging` instead. See [CH-4](../../formulation/electric_vehicles.md#ch-4).
 
-    `efficiency` is not used by the model yet: charger losses are not modelled, whatever its value. Model losses with the battery's `efficiency_charging` and `efficiency_discharging` instead.
+## Sharing chargers
 
-## Assignment rules
+With fewer chargers than vehicles, the chargers are the bottleneck, and the optimizer decides who charges when, from the trips and the prices. At every step:
 
-The optimizer decides charger-to-EV assignment at each timestep with these rules:
+- a charger serves at most one vehicle, and a vehicle uses at most one charger;
+- a vehicle on a trip isn't connected to any charger;
+- a vehicle without a charger can't charge or discharge;
+- a connected vehicle charges or discharges at most at the charger's `max_power`, and at most at its own battery's ratings.
 
-1. Each charger serves at most one EV at a time
-2. Each EV connects to at most one charger at a time
-3. An EV cannot be assigned to a charger while driving
-4. Without a charger assigned, an EV cannot charge or discharge (including V2G)
-
-That means charger capacity is a hard bottleneck. With one charger and two vans, the optimizer must decide who charges when, based on trip deadlines and price signals.
-
-See the [formulation](#math-assignment).
+A vehicle can move to another charger from one step to the next, at no cost, and any charger lets a vehicle with V2G discharge. See [CH-1](../../formulation/electric_vehicles.md#ch-1) to [CH-4](../../formulation/electric_vehicles.md#ch-4).
 
 ## Results
 
-Let's solve the depot of the [ElectricVehicle](electric_vehicle.md#results) page and read the chargers' results through `result.chargers`:
+The depot is complete now. Let's connect it to the grid, with a price that changes through the shift (see [EnergyMarket](../markets/energy_market.md)), and solve it. First, the vans' state of charge, through `result.electric_vehicles`:
 
 ```python
 from odys import (
@@ -127,6 +123,35 @@ energy_system = EnergySystem(
 )
 
 result = energy_system.optimize()
+print(result.electric_vehicles.soc.unstack().round(2))
+```
+
+```text
+ev    van_1  van_2
+time
+0      0.71   0.50
+1      0.92   0.50
+2      0.77   0.71
+3      0.62   0.69
+4      0.55   0.69
+5      0.55   0.90
+6      0.75   0.77
+7      0.96   0.63
+8      0.85   0.50
+9      0.73   0.50
+10     0.62   0.50
+11     0.50   0.50
+```
+
+The trips shape the vans' day:
+
+- `van_1` charges in the first two hours and leaves at step 2 with 92 %, above the required 80 %, because it can sell the extra back at 80 $/MWh when it returns at step 4.
+- Each trip lowers the state of charge evenly over its steps: 0.15 per step for `van_1`'s 30 kWh over two steps.
+- After charging again at steps 6 and 7, `van_1` discharges at 11 kW (V2G) through the afternoon price peak, down to the required 50 %.
+
+Now the charger, through `result.chargers`:
+
+```python
 print(result.chargers.to_dataframe().round(3))
 ```
 
@@ -147,49 +172,19 @@ time charger
 11   charger                1.0                0.0  0.000
 ```
 
-Every row has a single 1 across the assignment columns: the charger serves one van at a time. `van_2` gets it while `van_1` is on its morning trip (steps 2 and 3) and at step 5, just before its own departure. The rest of the shift it goes to `van_1`, which charges before its trip and sells energy back afterwards.
+Every row has a single 1: the charger serves one van at a time. `van_2` gets it while `van_1` is on its morning trip, at steps 2 and 3, and at step 5, just before its own route. The rest of the shift it goes to `van_1`.
 
-`assignment` is 1 when a vehicle is connected to a charger, indexed by time, charger and vehicle; the dataframe has one `assignment[...]` column per vehicle. `power` is the charging power drawn through each charger (MW), indexed by charger and time. It counts charging only: power a vehicle discharges through the charger (V2G) is in that vehicle's [`net_power`](electric_vehicle.md#results), not in `power`. Both are `pandas.Series`, with a scenario level when there is more than one scenario.
+`result.chargers` has two series, with a scenario level when there's more than one scenario:
 
-See the [EV Fleet example](../../examples/ev_fleet_optimization.md) for V2G arbitrage and charger competition across three vans and two chargers.
+- `assignment`: 1 when a vehicle is connected to a charger, indexed by time, charger and vehicle. The dataframe has one `assignment[...]` column per vehicle.
+- `power`: the charging power drawn through each charger, in MW. It counts charging only: what a vehicle discharges through the charger (V2G) is in that vehicle's `net_power`, not here. That's why `power` is 0 at steps 3, 4 and 8 to 11: the connected van feeds power back then, as its falling state of charge shows.
 
-## Mathematical formulation
+The [EV Fleet example](../../examples/ev_fleet_optimization.md) runs three vans and two chargers over a full day.
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
+## How it's modelled
 
-### Variables
-
-| Symbol | Result attribute | Domain | Meaning |
-| ------ | ---------------- | ------ | ------- |
-| $a_{c,e,t,s}$ | `assignment` | $\{0,1\}$ | 1 when vehicle $e$ is connected to charger $c$ |
-| $\sum_e a_{c,e,t,s} \, p^{ch}_{e,t,s}$ | `power` | - | Charging power drawn through charger $c$, without V2G discharge (reported, not a model variable) |
-
-### Constraints
-
-#### Assignment {#math-assignment}
-
-$$
-\sum_e a_{c,e,t,s} \le 1, \qquad
-\sum_c a_{c,e,t,s} \le 1, \qquad
-a_{c,e,t,s} \le 1 - \omega_{e,t}
-$$
-
-#### Power limit {#math-power-limit}
-
-$$
-p^{ch}_{e,t,s} + p^{dis}_{e,t,s} \le \sum_c P^{\max}_c \, a_{c,e,t,s}
-$$
-
-With no charger assigned, the right-hand side is 0, so the vehicle can neither charge nor discharge.
-
-### Objective contribution
-
-None.
-
-### Power balance contribution
-
-None: the vehicles connected to the chargers carry the power. See [ElectricVehicle](electric_vehicle.md#power-balance-contribution).
+A charger adds one decision per vehicle and step: whether that vehicle is connected to it. [CH-1](../../formulation/electric_vehicles.md#ch-1) to [CH-3](../../formulation/electric_vehicles.md#ch-3) decide who may connect, and [CH-4](../../formulation/electric_vehicles.md#ch-4) caps the vehicle's power at the rating of its charger, or 0 without one. A charger has no term of its own in the power balance or the objective. The rules and their limitations are on the [Electric vehicles and chargers](../../formulation/electric_vehicles.md) formulation page.
 
 ## Next steps
 
-That completes the assets. The depot above already traded with the grid; next, see [EnergyMarket](../markets/energy_market.md) for how markets work.
+The depot traded with the grid through a market. Next, see how an [EnergyMarket](../markets/energy_market.md) works.

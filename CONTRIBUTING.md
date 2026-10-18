@@ -28,7 +28,7 @@ For non-trivial changes, open an issue first to discuss the approach before subm
 
 ### Improve documentation
 
-Read [DOCS_GUIDELINES.md](DOCS_GUIDELINES.md) before writing. Every page should have runnable examples and follow the Diátaxis framework.
+Read the [docs writing guide](.agents/skills/write-docs/SKILL.md) before writing. Every page should have runnable examples and follow the Diátaxis framework.
 
 ## Development setup
 

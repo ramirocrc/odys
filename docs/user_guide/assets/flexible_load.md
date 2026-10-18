@@ -4,9 +4,9 @@ icon: fontawesome/solid/sliders
 
 # FlexibleLoad
 
-A `FlexibleLoad` gives the optimizer room to adjust demand up or down within bounds. Use this for demand response programs, industrial processes that can shift load, or any consumption that has economic value but timing flexibility.
+A `FlexibleLoad` models demand the optimizer may move up or down within limits: a cold store that can run harder when power is cheap, a process that can slow down when it's expensive, or a site in a demand response programme.
 
-The optimizer starts from a base profile and decides, at every timestep, how much to raise or lower it.
+It starts from a base profile, and at every step the optimizer decides how far to raise or lower it, weighing what the consumption is worth against what the power costs.
 
 ## Basic usage
 
@@ -25,37 +25,33 @@ process = FlexibleLoad(
 
 ## Fields
 
-| Field                  | Type            | Required | Default | Description                                                                          |
-| ---------------------- | --------------- | -------- | ------- | ------------------------------------------------------------------------------------ |
-| `name`                 | `str`           | Yes      | -       | Unique identifier for the load                                                       |
-| `value_of_consumption` | `float`         | Yes      | -       | Economic value of consuming electricity in currency per MWh (must be >= 0)           |
-| `max_increase`         | `float \| None` | No*      | `None`  | Maximum MW the load can increase above the base profile (must be > 0)                |
-| `max_decrease`         | `float \| None` | No*      | `None`  | Maximum MW the load can decrease below the base profile (must be > 0)                |
-| `min_load`             | `float \| None` | No*      | `None`  | Absolute minimum consumption in MW (must be >= 0). Overrides `max_decrease` when set |
-| `max_load`             | `float \| None` | No*      | `None`  | Absolute maximum consumption in MW (must be > 0). Overrides `max_increase` when set  |
+| Field                  | Type            | Required | Default | Description                                                     |
+| ---------------------- | --------------- | -------- | ------- | --------------------------------------------------------------- |
+| `name`                 | `str`           | Yes      | -       | Unique name of the load                                         |
+| `value_of_consumption` | `float`         | Yes      | -       | Value of each MWh consumed, at least 0 (currency/MWh)           |
+| `max_increase`         | `float \| None` | No*      | `None`  | Most the load can rise above its base, above 0 (MW)             |
+| `max_decrease`         | `float \| None` | No*      | `None`  | Most the load can fall below its base, above 0 (MW)             |
+| `min_load`             | `float \| None` | No*      | `None`  | Lowest the load can go, at least 0 (MW). Overrides `max_decrease` |
+| `max_load`             | `float \| None` | No*      | `None`  | Highest the load can go, above 0 (MW). Overrides `max_increase`  |
 
-\* Each side needs at least one bound: `max_decrease` or `min_load` for the lower side, `max_increase` or `max_load` for the upper side. If both are set on a side, the absolute bound wins. `min_load` must not exceed `max_load`.
+\* Each side needs a limit: `max_decrease` or `min_load` for the floor, and `max_increase` or `max_load` for the ceiling. `min_load` can't be above `max_load`.
 
 ## Value of consumption
 
-The optimizer decides whether to increase or decrease load based on economics. Every MWh of extra consumption earns `value_of_consumption`, and every MWh of reduced consumption loses it.
+`value_of_consumption` is what each MWh the load consumes is worth to you. It's what the optimizer weighs against the cost of the power the load would draw:
 
-The procurement cost of adjusting load is captured implicitly through the power balance: when the optimizer increases load, it must procure more energy from generators or markets (whose costs are already in the objective). When it decreases load, it frees up supply for other uses (e.g., selling to markets).
+- When it's above what one more MWh costs, from your generators or the market, the optimizer raises the load.
+- When it's below, the optimizer lowers the load, and uses or sells that power elsewhere.
 
-- When `value_of_consumption` exceeds the marginal supply cost, increasing load is profitable.
-- When the marginal supply cost exceeds `value_of_consumption`, decreasing load saves money.
+The process of the running example is worth 60 $/MWh. When the CCGT at 50 $/MWh is the most expensive supply running, the process runs as high as it can. With `value_of_consumption=0.0`, cutting the load costs nothing, so the optimizer cuts it whenever power costs anything at all.
 
-See the [formulation](#math-objective).
+The cost of the extra power never appears on the load itself: it shows up in the generators and markets that supply it. See [the objective contribution](../../formulation/flexible_loads.md#objective-contribution).
 
-## Relative bounds
+## How far demand can move
 
-`max_increase` and `max_decrease` bound the adjustment relative to the base profile. With the process above and a base of 30 MW, consumption can move between 20 and 50 MW.
+Each side of the range is limited in one of two ways: **relative** to the base profile, or **absolute**. The process above uses relative limits: with a base of 30 MW, `max_increase=20.0` and `max_decrease=10.0` let it run anywhere from 20 to 50 MW.
 
-See the [formulation](#math-bounds).
-
-## Absolute bounds
-
-Use `min_load` and `max_load` when the process has hard physical limits that don't depend on the base profile, for example a process that can run anywhere between 15 and 50 MW:
+Use absolute limits when the process has hard limits that don't depend on the base, for example a process that can run anywhere from 15 to 50 MW:
 
 ```python
 bounded_process = FlexibleLoad(
@@ -66,9 +62,9 @@ bounded_process = FlexibleLoad(
 )
 ```
 
-When set, an absolute bound replaces the relative bound on that side at every timestep.
+You can mix them, one kind per side. When you set both on one side, the absolute limit is used and the relative one is ignored, even when it's the tighter one: with `max_decrease=10.0` and `min_load=15.0`, the floor is 15 MW, not 20 MW.
 
-See the [formulation](#math-bounds).
+Each step stands on its own: energy cut now isn't made up later, and the load can jump across its whole range from one step to the next. See [FL-1](../../formulation/flexible_loads.md#fl-1).
 
 ## Profiles
 
@@ -82,7 +78,7 @@ scenario = Scenario(
 )
 ```
 
-Every base value must lie within the load's bounds, otherwise building the `LoadProfile` raises an `OdysValidationError`:
+Every base value has to fit the load's limits, or building the `LoadProfile` raises an `OdysValidationError`:
 
 - at least `min_load` and at most `max_load`, for whichever of them is set;
 - at least `max_decrease` when `min_load` is not set, so the adjusted load can never go negative.
@@ -126,57 +122,19 @@ time flexible_load
 3    process                   20.0         50.0
 ```
 
-`load_adjustment` is the change from the base profile (MW, positive = increase) and `actual_load` is what the load consumes (MW). Each is a `pandas.Series` indexed by load and time (and scenario, when there is more than one).
+`result.flexible_loads` has two series, each a `pandas.Series` indexed by load and time, and by scenario when there's more than one:
+
+- `load_adjustment`: the change from the base profile, in MW, positive when the load rises.
+- `actual_load`: what the load consumes, the base plus the adjustment, in MW.
 
 Every MWh of the process is worth 60 $/MWh and the most expensive supply, the CCGT, costs 50 $/MWh, so the optimizer runs the process 20 MW above its base whenever it can. At step 1 the factory needs 90 MW and only 110 MW of supply is available, so the process drops 10 MW below its base instead.
 
 See the [Flexible Load Market example](../../examples/flexible_load_market.md) for a full day of demand response against market prices.
 
-## Mathematical formulation
+## How it's modelled
 
-See [Mathematical notation](../mathematical_notation.md) for every symbol.
-
-### Variables
-
-| Symbol | Result attribute | Domain | Meaning |
-| ------ | ---------------- | ------ | ------- |
-| $\Delta d_{l,t,s}$ | `load_adjustment` | $\mathbb{R}$ | Adjustment of the base profile (positive = increase) |
-| $d_{l,t,s} = d^{\text{base}}_{l,t,s} + \Delta d_{l,t,s}$ | `actual_load` | - | Actual consumption |
-
-### Constraints
-
-#### Bounds {#math-bounds}
-
-Lower side, with `min_load` set or not:
-
-$$
-d^{\text{base}}_{l,t,s} + \Delta d_{l,t,s} \ge D^{\min}_l
-\qquad \text{or} \qquad
-\Delta d_{l,t,s} \ge -\Delta d^{\max-}_l
-$$
-
-Upper side, with `max_load` set or not:
-
-$$
-d^{\text{base}}_{l,t,s} + \Delta d_{l,t,s} \le D^{\max}_l
-\qquad \text{or} \qquad
-\Delta d_{l,t,s} \le \Delta d^{\max+}_l
-$$
-
-### Objective contribution {#math-objective}
-
-The value of the adjusted consumption is added to the profit $\Pi_s$:
-
-$$
-+ \sum_{t,l} v_l \, \Delta t \, \Delta d_{l,t,s}
-$$
-
-$v_l$ is per MWh, so the adjustment (in MW) is multiplied by the timestep length $\Delta t$.
-
-### Power balance contribution
-
-Demand side: $\sum_l \left( d^{\text{base}}_{l,t,s} + \Delta d_{l,t,s} \right)$. See [Power balance](../concepts/power_balance.md).
+A flexible load has one decision per step: how far to move away from its base. [FL-1](../../formulation/flexible_loads.md#fl-1) keeps the adjusted load between its floor and its ceiling, and the adjustment is valued at `value_of_consumption` in the objective. The rule, why it's written that way, and its limitations are on the [Flexible loads](../../formulation/flexible_loads.md) formulation page.
 
 ## Next steps
 
-A flexible load shifts *when* energy is consumed. To store energy and use it later, see [StationaryStorage](stationary_storage.md).
+A flexible load changes how much you consume, not when. To move energy from one step to another, store it: see [Battery](battery.md).

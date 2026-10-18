@@ -191,7 +191,7 @@ def generate_basic_dispatch() -> None:
     """Stacked bar chart of generator dispatch with load overlay."""
     result = run_basic_dispatch()
     df = result.generators.to_dataframe()["power"].unstack("generator")
-    steps = list(range(1, len(df) + 1))
+    steps = list(range(len(df)))
 
     fig = go.Figure()
 
@@ -237,7 +237,7 @@ def generate_basic_dispatch() -> None:
 
     fig.update_layout(
         title=dict(text="Generator Dispatch", x=0.5),
-        xaxis=dict(title="Time Step", range=[0.5, 24.5]),
+        xaxis=dict(title="Time Step", range=[-0.5, 23.5]),
         yaxis=dict(title="Power (MW)", range=[0, 150]),
         barmode="stack",
         hovermode="x unified",
@@ -253,7 +253,7 @@ def generate_battery_dispatch() -> None:
     result = run_battery_dispatch()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
     battery_df = result.stationary_storages.to_dataframe().droplevel("stationary_storage")
-    steps = list(range(1, len(gen_df) + 1))
+    steps = list(range(len(gen_df)))
 
     fig = make_subplots(
         rows=2,
@@ -355,8 +355,8 @@ def generate_battery_dispatch() -> None:
         margin=dict(l=40, r=20, t=40, b=40),
     )
 
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=2, col=1)
     fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[-80, 200])
     fig.update_yaxes(title="State of Charge (%)", row=2, col=1, range=[0, 100])
 
@@ -367,10 +367,10 @@ def generate_market_arbitrage() -> None:
     """Two-panel chart: stacked dispatch bars + market prices."""
     result = run_market_arbitrage()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
-    buy_volume = result.markets.buy_volume.xs("market", level="market")
-    steps = list(range(1, len(gen_df) + 1))
+    bought = -result.markets.net_volume.xs("market", level="market")
+    steps = list(range(len(gen_df)))
 
-    market_prices = [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]
+    market_prices = [80, 75, 70, 65, 60, 55, 52, 45, 40, 35, 30, 35, 40, 45, 52, 55, 60, 70, 80, 90, 85, 80, 75, 70]
 
     fig = make_subplots(
         rows=2,
@@ -395,8 +395,8 @@ def generate_market_arbitrage() -> None:
     fig.add_trace(
         go.Bar(
             x=steps,
-            y=buy_volume.values,
-            name="Market Purchases",
+            y=bought.values,
+            name="Market (bought +, sold -)",
             marker=dict(color=MARKET_BUY_COLOR),
         ),
         row=1,
@@ -441,14 +441,14 @@ def generate_market_arbitrage() -> None:
     )
 
     fig.update_layout(
-        barmode="stack",
+        barmode="relative",
         hovermode="x unified",
         legend=dict(x=0.5, y=1.02, xanchor="center", yanchor="bottom", orientation="h"),
         margin=dict(l=40, r=40, t=60, b=40),
     )
 
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=2, col=1)
     fig.update_yaxes(title="Power (MW)", row=1, col=1)
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
@@ -459,9 +459,9 @@ def generate_flexible_load_market() -> None:
     """Two-panel chart: load consumption + market prices."""
     result = run_flexible_load_market()
     actual_load = result.flexible_loads.actual_load
-    steps = list(range(1, len(actual_load) + 1))
+    steps = list(range(len(actual_load)))
 
-    market_prices = [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]
+    market_prices = [80, 75, 72, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 72, 80, 90, 85, 80, 75, 72]
 
     fig = make_subplots(
         rows=2,
@@ -528,8 +528,8 @@ def generate_flexible_load_market() -> None:
         margin=dict(l=40, r=40, t=60, b=40),
     )
 
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=2, col=1)
     fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 100])
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
@@ -553,16 +553,16 @@ def generate_cvar_market_risk() -> None:
     )
 
     for i, scenario in enumerate(scenarios):
-        sdac_profit = sell_profit.loc[(scenario, "sdac")]
-        sidc_profit = sell_profit.loc[(scenario, "sidc")]
-        sdac_cvar = sell_cvar.loc[(scenario, "sdac")]
-        sidc_cvar = sell_cvar.loc[(scenario, "sidc")]
+        sdac_profit = sell_profit.loc[(scenario, "day_ahead")]
+        sidc_profit = sell_profit.loc[(scenario, "intraday")]
+        sdac_cvar = sell_cvar.loc[(scenario, "day_ahead")]
+        sidc_cvar = sell_cvar.loc[(scenario, "intraday")]
 
         fig.add_trace(
             go.Bar(
                 x=[scenario],
                 y=[sdac_profit],
-                name="sdac",
+                name="Day-ahead",
                 marker=dict(color=SDAC_COLOR),
                 legendgroup="sdac",
                 showlegend=(i == 0),
@@ -575,7 +575,7 @@ def generate_cvar_market_risk() -> None:
             go.Bar(
                 x=[scenario],
                 y=[sidc_profit],
-                name="sidc",
+                name="Intraday",
                 marker=dict(color=SIDC_COLOR),
                 legendgroup="sidc",
                 showlegend=(i == 0),
@@ -588,7 +588,7 @@ def generate_cvar_market_risk() -> None:
             go.Bar(
                 x=[scenario],
                 y=[sdac_cvar],
-                name="sdac",
+                name="Day-ahead",
                 marker=dict(color=SDAC_COLOR),
                 legendgroup="sdac",
                 showlegend=False,
@@ -601,7 +601,7 @@ def generate_cvar_market_risk() -> None:
             go.Bar(
                 x=[scenario],
                 y=[sidc_cvar],
-                name="sidc",
+                name="Intraday",
                 marker=dict(color=SIDC_COLOR),
                 legendgroup="sidc",
                 showlegend=False,
@@ -648,6 +648,7 @@ HOUR_CENTERS = [t + 0.5 for t in range(NUMBER_OF_HOURS)]
 
 
 ONE_HOUR = timedelta(hours=1)
+MIDDAY_PRICE = 10.0
 
 
 class TripHours(NamedTuple):
@@ -1187,30 +1188,25 @@ def _check_ev_fleet_claims(result: OptimalDispatchResults) -> None:
     """
     ev_dataset = result.electric_vehicles.to_dataset()
     prices = np.array(MARKET_PRICES)
-    cheapest = prices == prices.min()
 
     end_soc = {ev.name: float(ev_dataset.sel(ev=ev.name).soc.values[-1]) for ev in EVS}
     np.testing.assert_allclose(list(end_soc.values()), [0.3, 0.6, 0.5], atol=1e-6, err_msg=str(end_soc))
 
-    ev_1_power = ev_dataset.sel(ev="ev_1").net_power.values
-    ev_1_discharge_hours = np.flatnonzero(ev_1_power < -ACTIVE_POWER_TOLERANCE).tolist()
-    np.testing.assert_array_equal(ev_1_discharge_hours, [6, 9, 16, 17, 18, 19, 20])
-    np.testing.assert_allclose(
-        ev_dataset.sel(ev="ev_1").soc.values[20],
-        0,
-        atol=1e-6,
-        err_msg="ev_1 should be empty after the evening peak",
+    net_power = ev_dataset.net_power.transpose(ElectricVehicleFormulation.dimension, ...).values
+    discharging = (net_power < -ACTIVE_POWER_TOLERANCE).sum(axis=0)
+    evening_peak = prices == prices.max()
+    np.testing.assert_array_equal(
+        discharging[evening_peak],
+        len(CHARGERS),
+        err_msg="every charger should be discharging a van at each evening peak step",
     )
 
-    for name in ("ev_2", "ev_3"):
-        charging = ev_dataset.sel(ev=name).net_power.values > ACTIVE_POWER_TOLERANCE
-        np.testing.assert_array_equal(
-            np.flatnonzero(charging & ~cheapest),
-            [],
-            err_msg=f"{name} charges outside the cheapest hours",
-        )
-    ev_2_energy_kwh = float(ev_dataset.sel(ev="ev_2").net_power.values.sum()) * 1000
-    np.testing.assert_allclose(ev_2_energy_kwh, 27, atol=1e-6)
+    charging = (net_power > ACTIVE_POWER_TOLERANCE).any(axis=0)
+    np.testing.assert_array_equal(
+        np.flatnonzero(charging & (prices > MIDDAY_PRICE)),
+        [],
+        err_msg="the vans should charge only at the overnight and midday prices",
+    )
 
 
 def generate_ev_fleet_optimization() -> None:

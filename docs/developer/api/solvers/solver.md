@@ -6,6 +6,6 @@ icon: lucide/play-circle
 
 Internal implementation detail. Most users do not need this page directly.
 
-See [Solvers](../../../user_guide/optimization/solvers.md) in the User Guide for the public API.
+See [Solvers](../../../user_guide/solving/solvers.md) in the User Guide for the public API.
 
 ::: odys.solvers.solver

@@ -4,6 +4,6 @@ icon: lucide/shield-alert
 
 # `odys.optimization.objective_terms.cvar`
 
-Internal implementation detail. The CVaR term: $w_{\text{risk}} \left(\zeta - \frac{1}{1-\alpha} \sum_s \pi_s \xi_s\right)$, with $\xi_s \ge \zeta - \Pi_s$ and $\xi_s \ge 0$.
+Internal implementation detail. The CVaR term: the value at risk, the scenarios' shortfalls below it and the shortfall constraint, weighted by the term's weight. See [Conditional value at risk](../../../../formulation/objective.md#conditional-value-at-risk) and [CV-1](../../../../formulation/objective.md#cv-1).
 
 ::: odys.optimization.objective_terms.cvar

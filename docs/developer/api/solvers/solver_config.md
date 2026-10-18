@@ -6,6 +6,6 @@ icon: lucide/settings
 
 Solver configuration passed to `EnergySystem.optimize()`. Wraps common options (time limit, MIP gap, threads, presolve) and solver-specific passthrough.
 
-See [Solvers](../../../user_guide/optimization/solvers.md) in the User Guide for installation and usage.
+See [Solvers](../../../user_guide/solving/solvers.md) in the User Guide for installation and usage.
 
 ::: odys.solvers.solver_config

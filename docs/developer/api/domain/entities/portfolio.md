@@ -6,6 +6,6 @@ icon: lucide/briefcase
 
 Collection of energy assets (generators, storages, loads). Validates unique asset names and provides typed accessors by asset class.
 
-See [AssetPortfolio](../../../../user_guide/concepts/asset_portfolio.md) in the User Guide.
+See [AssetPortfolio](../../../../user_guide/model/first_model.md#the-portfolio) in the User Guide.
 
 ::: odys.domain.entities.portfolio
