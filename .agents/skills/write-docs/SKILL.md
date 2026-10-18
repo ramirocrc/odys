@@ -380,7 +380,8 @@ docs/
 ├── user_guide/               # Tutorials and concept pages
 │   ├── index.md              # Overview: what odys solves, object diagram, one bus, running example, reading order
 │   ├── model/                # Building a model, read in order
-│   │   └── first_model.md    # EnergySystem and AssetPortfolio: the first solve
+│   │   ├── first_model.md    # EnergySystem and AssetPortfolio: the first solve
+│   │   └── time_and_units.md # The horizon, units, and how each field reads time
 │   ├── concepts/
 │   │   ├── scenario.md       # Scenarios and profiles
 │   │   └── initial_and_final_conditions.md

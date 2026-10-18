@@ -73,29 +73,11 @@ Most pages build on one small industrial site, so you can watch a single system 
 
 Electric vehicles and chargers are a different scale of problem, a depot rather than a site, so their pages use a small van fleet instead.
 
-## Units and time
-
-Odys does not convert units. Use these throughout:
-
-| Quantity                  | Unit           | Examples                                                                 |
-| ------------------------- | -------------- | ------------------------------------------------------------------------ |
-| Power                     | MW             | `nominal_power`, `max_charge_power`, load and capacity profiles          |
-| Energy                    | MWh            | `capacity`, `energy_consumption`                                         |
-| Prices and variable costs | currency / MWh | `variable_cost`, `value_of_consumption`, `PriceProfile`                  |
-| Per-event costs           | currency       | `startup_cost`, `shutdown_cost`                                          |
-| State of charge           | fraction (0-1) | `soc`, `soc_min`, `soc_max`                                              |
-
-Profit terms multiply power by the timestep length in hours, so MW and currency/MWh are what make the numbers come out right. For a small asset such as an EV, write 22 kW as `0.022`.
-
-Time is always a `timedelta`: the `timestep`, a generator's `min_up_time`, `min_down_time` and `time_in_state`, and a `Trip`'s `start_time` and `end_time`, which are measured from the start of the horizon. Each must be a whole number of timesteps.
-
-Ramp limits (`ramp_up`, `ramp_down`) are **per timestep**, not per hour: a 40 MW ramp limit means 40 MW per 15 minutes with 15-minute steps. A battery's `self_discharge_rate`, on the other hand, is a fraction per hour.
-
 ## Reading order
 
 The guide starts with a stretch to read in order, then turns into pages to look up:
 
-1. **Building a model**: [Your first model](model/first_model.md) sets up and solves a first system, [Scenarios & Profiles](concepts/scenario.md) add its time series, and [Initial and final conditions](concepts/initial_and_final_conditions.md) set where each asset starts. Read these in order.
+1. **Building a model**: [Your first model](model/first_model.md) sets up and solves a first system, [Time and units](model/time_and_units.md) say how odys reads every value, [Scenarios & Profiles](concepts/scenario.md) add its time series, and [Initial and final conditions](concepts/initial_and_final_conditions.md) set where each asset starts. Read these in order.
 2. **Assets** and **Markets**: one page per type, all with the same structure. They also build the running example step by step, from the [Generator](assets/generator.md) to the [EnergyMarket](markets/energy_market.md), but each one stands on its own.
 3. **Solving and results**: how to read the [Results](optimization/results.md), choose a [solver](optimization/solvers.md), and what odys checks before solving, in [Validation and errors](solving/validation.md).
 4. **Uncertainty and risk**: planning against several futures with [Stochastic optimization](optimization/stochastic.md), and weighing bad outcomes in the [Objective](optimization/objective.md).

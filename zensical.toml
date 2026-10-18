@@ -19,6 +19,7 @@ nav = [
     { "Overview" = "user_guide/index.md" },
     { "Building a model" = [
       { "Your first model" = "user_guide/model/first_model.md" },
+      { "Time and units" = "user_guide/model/time_and_units.md" },
       { "Scenarios & Profiles" = "user_guide/concepts/scenario.md" },
       { "Initial and final conditions" = "user_guide/concepts/initial_and_final_conditions.md" },
     ] },

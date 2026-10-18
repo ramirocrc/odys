@@ -85,7 +85,7 @@ portfolio.assets  # every asset, keyed by name, read-only
 Each one is covered on its own page:
 
 - **`scenarios`**: a single [Scenario](../concepts/scenario.md) holds the time series of one future. A list of them plans against [several futures](../optimization/stochastic.md).
-- **`timestep`** and **`number_of_steps`**: see [Units and time](../index.md#units-and-time).
+- **`timestep`** and **`number_of_steps`**: see [Time and units](time_and_units.md).
 - **`markets`**: see [EnergyMarket](../markets/energy_market.md).
 - **`objective`**: see [Objective](../optimization/objective.md), to weigh profit against risk.
 - **`initial_conditions`** and **`final_conditions`**: see [below](#initial-and-final-conditions).
@@ -112,4 +112,4 @@ Final conditions are always optional. Loads, chargers and markets carry no state
 
 ## Next steps
 
-The factory's demand came from a `LoadProfile`. Next, see how [Scenarios & Profiles](../concepts/scenario.md) give each asset and market its time series.
+Every value in this model was a power, a price or a step length. Next, see how odys reads each of them, in [Time and units](time_and_units.md).
