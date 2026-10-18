@@ -51,7 +51,8 @@ FLEXIBLE_BASE = [20.0, 20.0, 25.0, 25.0, 25.0, 25.0, 20.0, 20.0]
 
 RECORDED_EXAMPLE_OBJECTIVES = {
     "basic_dispatch": -49_500.0,
-    "battery_dispatch": -35_750.0,
+    # Re-recorded when the example battery got 95 % efficiency each way (it was lossless before).
+    "battery_dispatch": -37_090.625,
     "market_arbitrage": -78_400.0,
     "flexible_load_market": -78_600.0,
     "ev_fleet_optimization": 5.21,

@@ -9,8 +9,8 @@ can save extra solar for later.
 - **solar_pv**: 150 MW solar farm, zero variable cost, output depends on
   weather and time of day.
 - **ccgt**: 100 MW gas turbine, variable cost of 50 $/MWh.
-- **battery**: 300 MWh capacity, 200 MW max charge/discharge rate.
-  Starts and ends empty (a `StorageInitialState` and a `StorageFinalState`
+- **battery**: 300 MWh capacity, 200 MW max charge/discharge rate, 95 %
+  efficient each way. Starts and ends empty (a `StorageInitialState` and a `StorageFinalState`
   with soc=0).
 
 ## Problem
@@ -30,8 +30,8 @@ when solar is scarce.
 
 For example:
 - When solar = 125 MW: battery charges at 55 MW, ccgt = 0  # free charging
-- When solar = 0 MW, battery fully charged: ccgt = 0  # battery powers load
-- When solar = 0 MW, battery empty: ccgt = 70  # must generate from gas
+- At night, before any surplus: ccgt = 70  # charging from gas would only add losses
+- In the evening, the stored solar covers part of the load and ccgt the rest
 
 ## Understanding the Output
 
@@ -71,12 +71,12 @@ LOAD_PROFILE: list[float] = 24 * [70.0]
 
 def run_battery_dispatch() -> OptimalDispatchResults:
     """Run the battery dispatch example and return the optimization results."""
-    generator_1 = Generator(
+    ccgt = Generator(
         name="ccgt",
         nominal_power=100,
         variable_cost=50,
     )
-    generator_2 = Generator(
+    solar_pv = Generator(
         name="solar_pv",
         nominal_power=150,
         variable_cost=0,
@@ -87,14 +87,19 @@ def run_battery_dispatch() -> OptimalDispatchResults:
 
     battery = StationaryStorage(
         name="battery",
-        battery=Battery(capacity=300, max_charge_power=200, max_discharge_power=200),
+        battery=Battery(
+            capacity=300,
+            max_charge_power=200,
+            max_discharge_power=200,
+            efficiency_charging=0.95,
+            efficiency_discharging=0.95,
+        ),
     )
-    portfolio = AssetPortfolio(assets=[generator_1, generator_2, load, battery])
+    portfolio = AssetPortfolio([ccgt, solar_pv, load, battery])
 
     scenario = Scenario(
         profiles=(
-            AvailableCapacityProfile(generator=generator_1, values=24 * [100]),
-            AvailableCapacityProfile(generator=generator_2, values=SOLAR_PROFILE),
+            AvailableCapacityProfile(generator=solar_pv, values=SOLAR_PROFILE),
             LoadProfile(load=load, values=LOAD_PROFILE),
         ),
     )
