@@ -58,8 +58,9 @@ RECORDED_EXAMPLE_OBJECTIVES = {
     # Re-recorded when the example prices equal to the value of consumption (70) became 72, removing a tie.
     "flexible_load_market": -78_840.0,
     "ev_fleet_optimization": 5.21,
-    "cvar_market_risk_expected_profit": 448_000.0,
-    "cvar_market_risk_penalized_cvar": 866_500.0,
+    # Re-recorded when the CVaR example went from one 24-hour step to one hourly step.
+    "cvar_market_risk_expected_profit": 18_666.67,
+    "cvar_market_risk_penalized_cvar": 36_104.17,
 }
 RECORDED_UNIT_COMMITMENT_OBJECTIVE = -46_960.0
 # Re-recorded when self-discharge started applying at the first step (it was skipped there before).

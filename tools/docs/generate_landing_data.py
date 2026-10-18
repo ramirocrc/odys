@@ -150,7 +150,7 @@ def _cvar_frontier() -> list[dict[str, float]]:
         for scenario, prices in scenario_prices.items():
             sold = volumes.xs(scenario, level="scenario").groupby(level="market").sum()
             revenue = sum(price * float(sold[market]) for market, price in prices.items())
-            profits.append((revenue - _cvar["CCGT_VARIABLE_COST"] * generation) * 24)
+            profits.append(revenue - _cvar["CCGT_VARIABLE_COST"] * generation)
         points.append({"cvar_weight": weight, "expected": round(float(np.mean(profits))), "worst": round(min(profits))})
     return points
 
