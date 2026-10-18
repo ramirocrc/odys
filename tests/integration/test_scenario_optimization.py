@@ -4,10 +4,10 @@ import pytest
 
 from odys.domain.conditions import ConditionSet, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.profiles import AvailableCapacityProfile, LoadProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
@@ -32,9 +32,9 @@ def gas_generator() -> Generator:
 
 
 @pytest.fixture
-def battery() -> StationaryStorage:
-    return StationaryStorage(
-        name="stationary_storage",
+def battery() -> BatteryStorage:
+    return BatteryStorage(
+        name="battery_storage",
         battery=Battery(
             capacity=100.0,
             max_charge_power=80.0,
@@ -46,7 +46,7 @@ def battery() -> StationaryStorage:
 
 
 @pytest.fixture
-def battery_conditions(battery: StationaryStorage) -> ConditionSet:
+def battery_conditions(battery: BatteryStorage) -> ConditionSet:
     return ConditionSet(
         initial=(StorageInitialState(storage=battery, soc=0.5),),
         final=(StorageFinalState(storage=battery, soc=0.5),),
@@ -62,7 +62,7 @@ def load() -> FixedLoad:
 def portfolio_with_battery(
     wind_generator: Generator,
     gas_generator: Generator,
-    battery: StationaryStorage,
+    battery: BatteryStorage,
     load: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio([wind_generator, gas_generator, battery, load])

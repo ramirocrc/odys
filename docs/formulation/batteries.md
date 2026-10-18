@@ -6,11 +6,11 @@ icon: lucide/battery-medium
 
 How do I move energy in time? With a battery. You charge it when power is cheap or plentiful, and discharge it when it's expensive or scarce. Every MWh that goes in comes out a little smaller, and the battery slowly leaks while it waits, so moving energy has a price.
 
-This page covers the battery model that stationary storage and electric vehicles share. It's written once, for every battery $k \in \mathcal{K} = \mathcal{B} \cup \mathcal{E}$. Electric vehicles add their trips on top of it; see [Electric vehicles and chargers](electric_vehicles.md).
+This page covers the battery model that battery storage and electric vehicles share. It's written once, for every battery $k \in \mathcal{K} = \mathcal{B} \cup \mathcal{E}$. Electric vehicles add their trips on top of it; see [Electric vehicles and chargers](electric_vehicles.md).
 
 ## Sets and indices
 
-Batteries live in $\mathcal{K} = \mathcal{B} \cup \mathcal{E}$, with index $k$: the stationary storages $\mathcal{B}$ and the electric vehicles $\mathcal{E}$. odys builds the same constraints for both, with names that start with `stationary_storage_` or `ev_`.
+Batteries live in $\mathcal{K} = \mathcal{B} \cup \mathcal{E}$, with index $k$: the battery storages $\mathcal{B}$ and the electric vehicles $\mathcal{E}$. odys builds the same constraints for both, with names that start with `battery_storage_` or `ev_`.
 
 ## Variables
 
@@ -49,7 +49,7 @@ Read aloud: in charging mode, charge up to the rating; otherwise, don't charge a
 
 **Why it looks like this.** It's half of the mode switch in [B-2](#b-2), and it also caps charging at the rating $\overline{P}^{ch}_k$.
 
-`Added: always · Binds: when the battery charges at full power, or is in discharging mode · Names: stationary_storage_max_charge_constraint, ev_max_charge_constraint`
+`Added: always · Binds: when the battery charges at full power, or is in discharging mode · Names: battery_storage_max_charge_constraint, ev_max_charge_constraint`
 
 ### B-2 · Discharging stays within the rating, outside charging mode {#b-2}
 
@@ -77,7 +77,7 @@ Read aloud: in discharging mode, discharge up to the rating; in charging mode, d
 - When the battery is idle, either mode fits, so the reported `charge_mode` can be 0 or 1 at a step without any power.
 - It costs one binary per battery, scenario and step.
 
-`Added: always · Binds: when the battery discharges at full power, or is in charging mode · Names: stationary_storage_max_discharge_constraint, ev_max_discharge_constraint`
+`Added: always · Binds: when the battery discharges at full power, or is in charging mode · Names: battery_storage_max_discharge_constraint, ev_max_discharge_constraint`
 
 ### B-3 · Charge carries over from step to step {#b-3}
 
@@ -103,7 +103,7 @@ Read aloud: what's left from the last step, minus the leak, plus the energy you 
 - Self-discharge is applied as $(1 - \delta_k\, \Delta t)$, with $\delta_k$ per hour. For long steps that factor can drop below 0 ([#158](https://github.com/ramirocrc/odys/issues/158)).
 - Electric vehicles lose the energy of their trips here too: [Electric vehicles and chargers](electric_vehicles.md) adds that term to this equation.
 
-`Added: always · Binds: always · Names: stationary_storage_soc_start_constraint, stationary_storage_soc_dynamics_constraint, ev_soc_start_constraint, ev_soc_dynamics_constraint`
+`Added: always · Binds: always · Names: battery_storage_soc_start_constraint, battery_storage_soc_dynamics_constraint, ev_soc_start_constraint, ev_soc_dynamics_constraint`
 
 ### B-4 · The last step hits the final charge {#b-4}
 
@@ -124,7 +124,7 @@ Read aloud: whatever happens along the way, the battery finishes at the charge y
 - The final charge is the same in every scenario.
 - It's an exact value, not a bound: a battery that would rather end fuller has to discharge to hit it. "At least" is proposed in [#163](https://github.com/ramirocrc/odys/issues/163).
 
-`Added: only with a final state · Binds: always, when added · Names: stationary_storage_soc_end_constraint, ev_soc_end_constraint`
+`Added: only with a final state · Binds: always, when added · Names: battery_storage_soc_end_constraint, ev_soc_end_constraint`
 
 ### B-5 · Charge stays between its limits {#b-5}
 
@@ -142,7 +142,7 @@ Read aloud: keep the battery out of the very bottom and the very top of its rang
 
 - The defaults are 0 and 1. odys checks that $\underline{\mathrm{soc}}_k < \overline{\mathrm{soc}}_k$, and that the initial and final states of charge lie between them.
 
-`Added: always · Binds: when the battery is at a limit · Names: stationary_storage_soc_min_constraint, stationary_storage_soc_max_constraint, ev_soc_min_constraint, ev_soc_max_constraint`
+`Added: always · Binds: when the battery is at a limit · Names: battery_storage_soc_min_constraint, battery_storage_soc_max_constraint, ev_soc_min_constraint, ev_soc_max_constraint`
 
 ### B-6 · A battery can't be more than full {#b-6}
 
@@ -160,7 +160,7 @@ Read aloud: a battery holds at most its capacity.
 
 - B-5 already implies it, because $\overline{\mathrm{soc}}_k \le 1$. So B-6 never binds on its own ([#143](https://github.com/ramirocrc/odys/issues/143)).
 
-`Added: always · Binds: never on its own (B-5 implies it) · Names: stationary_storage_capacity_constraint, ev_capacity_constraint`
+`Added: always · Binds: never on its own (B-5 implies it) · Names: battery_storage_capacity_constraint, ev_capacity_constraint`
 
 ### B-7 · Net power is charging minus discharging {#b-7}
 
@@ -179,7 +179,7 @@ Read aloud: positive while the battery charges, negative while it discharges.
 - Nothing else in the model uses $p^{net}$; it only exists for the results. Computing it from the results instead is proposed in [#157](https://github.com/ramirocrc/odys/issues/157).
 - The docstring of `net_power` in the results says "discharging − charging", which is the wrong way round ([#164](https://github.com/ramirocrc/odys/issues/164)).
 
-`Added: always · Binds: always · Names: stationary_storage_net_power_constraint, ev_net_power_constraint`
+`Added: always · Binds: always · Names: battery_storage_net_power_constraint, ev_net_power_constraint`
 
 ## Power balance contribution
 
@@ -211,7 +211,7 @@ Read aloud: every MWh that goes in or out costs a little wear.
 
 | Symbol | Attribute | Type | Unit |
 | ------ | --------- | ---- | ---- |
-| $\mathcal{B}$, $\mathcal{E}$ | `StationaryStorage`, `ElectricVehicle` | Parameter | – |
+| $\mathcal{B}$, $\mathcal{E}$ | `BatteryStorage`, `ElectricVehicle` | Parameter | – |
 | $E_k$ | `Battery.capacity` | Parameter | MWh |
 | $\overline{P}^{ch}_k$ | `Battery.max_charge_power` | Parameter | MW |
 | $\overline{P}^{dis}_k$ | `Battery.max_discharge_power` | Parameter | MW |
@@ -221,11 +221,11 @@ Read aloud: every MWh that goes in or out costs a little wear.
 | $\mathrm{soc}^{init}_k$ | `StorageInitialState.soc`, `ElectricVehicleInitialState.soc` | Parameter | fraction of capacity |
 | $\mathrm{soc}^{final}_k$ | `StorageFinalState.soc`, `ElectricVehicleFinalState.soc` | Parameter | fraction of capacity |
 | $c^{deg}_k$ | `Battery.degradation_cost` | Parameter | currency per MWh |
-| $p^{ch}_{k,s,t}$ | `stationary_storage_power_in`, `ev_power_in` | Variable | MW |
-| $p^{dis}_{k,s,t}$ | `stationary_storage_power_out`, `ev_power_out` | Variable | MW |
-| $p^{net}_{k,s,t}$ | `stationary_storage_net_power`, `ev_net_power` · `results.stationary_storages.net_power`, `results.electric_vehicles.net_power` | Variable · Result | MW |
-| $\mathrm{soc}_{k,s,t}$ | `stationary_storage_soc`, `ev_soc` · `results.stationary_storages.soc`, `results.electric_vehicles.soc` | Variable · Result | fraction of capacity |
-| $z_{k,s,t}$ | `stationary_storage_charge_mode`, `ev_charge_mode` · `results.stationary_storages.charge_mode`, `results.electric_vehicles.charge_mode` | Variable · Result | – |
+| $p^{ch}_{k,s,t}$ | `battery_storage_power_in`, `ev_power_in` | Variable | MW |
+| $p^{dis}_{k,s,t}$ | `battery_storage_power_out`, `ev_power_out` | Variable | MW |
+| $p^{net}_{k,s,t}$ | `battery_storage_net_power`, `ev_net_power` · `results.battery_storages.net_power`, `results.electric_vehicles.net_power` | Variable · Result | MW |
+| $\mathrm{soc}_{k,s,t}$ | `battery_storage_soc`, `ev_soc` · `results.battery_storages.soc`, `results.electric_vehicles.soc` | Variable · Result | fraction of capacity |
+| $z_{k,s,t}$ | `battery_storage_charge_mode`, `ev_charge_mode` · `results.battery_storages.charge_mode`, `results.electric_vehicles.charge_mode` | Variable · Result | – |
 
 The results don't report $p^{ch}$ and $p^{dis}$ on their own, only their difference $p^{net}$ ([#157](https://github.com/ramirocrc/odys/issues/157)).
 
@@ -233,4 +233,4 @@ Some batteries drive away. See [Electric vehicles and chargers](electric_vehicle
 
 ---
 
-Implemented in [`odys.optimization.formulations.storage`](../developer/api/optimization/formulations/storage.md), used by [`stationary_storage`](../developer/api/optimization/formulations/stationary_storage.md) and [`electric_vehicle`](../developer/api/optimization/formulations/electric_vehicle.md).
+Implemented in [`odys.optimization.formulations.storage`](../developer/api/optimization/formulations/storage.md), used by [`battery_storage`](../developer/api/optimization/formulations/battery_storage.md) and [`electric_vehicle`](../developer/api/optimization/formulations/electric_vehicle.md).

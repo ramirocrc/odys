@@ -13,11 +13,11 @@ from pydantic import ValidationError
 from odys.domain.conditions import GeneratorFinalState, GeneratorInitialState, StorageFinalState, StorageInitialState
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
+from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.entities.stationary_storage import StationaryStorage
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
@@ -28,7 +28,7 @@ HALF_PROBABILITY = 0.5
 SOC_START = 0.5
 SOC_END = 0.4
 
-TESTING_BATTERY = StationaryStorage(
+TESTING_BATTERY = BatteryStorage(
     name="test_battery",
     battery=Battery(
         capacity=50.0,
@@ -51,7 +51,7 @@ def testing_generator() -> Generator:
 
 
 @pytest.fixture
-def testing_battery() -> StationaryStorage:
+def testing_battery() -> BatteryStorage:
     return TESTING_BATTERY
 
 
@@ -63,7 +63,7 @@ def testing_load() -> FixedLoad:
 @pytest.fixture
 def testing_portfolio(
     testing_generator: Generator,
-    testing_battery: StationaryStorage,
+    testing_battery: BatteryStorage,
     testing_load: FixedLoad,
 ) -> AssetPortfolio:
     return AssetPortfolio(assets=[testing_generator, testing_battery, testing_load])
@@ -135,7 +135,7 @@ def test_validation_that_capacity_profiles_only_for_generators(
     testing_portfolio: AssetPortfolio,
     valid_demand_profile: list[float],
     testing_generator: Generator,
-    testing_battery: StationaryStorage,
+    testing_battery: BatteryStorage,
     testing_load: FixedLoad,
 ) -> None:
     """Test that a capacity profile cannot target a non-generator asset through a name clash."""
@@ -192,7 +192,7 @@ def portfolio_without_loads() -> AssetPortfolio:
 def portfolio_without_generators() -> AssetPortfolio:
     return AssetPortfolio(
         assets=[
-            StationaryStorage(
+            BatteryStorage(
                 name="battery",
                 battery=Battery(
                     capacity=50.0,
@@ -588,7 +588,7 @@ def test_energy_system_rejects_a_storage_without_initial_state(
     valid_demand_profile: list[float],
     testing_load: FixedLoad,
 ) -> None:
-    with pytest.raises(OdysValidationError, match="StationaryStorage 'test_battery' needs a StorageInitialState"):
+    with pytest.raises(OdysValidationError, match="BatteryStorage 'test_battery' needs a StorageInitialState"):
         EnergySystem(
             portfolio=testing_portfolio,
             number_of_steps=len(valid_demand_profile),

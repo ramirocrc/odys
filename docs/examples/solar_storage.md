@@ -28,7 +28,7 @@ flowchart LR
 
 ### 1. Define the assets
 
-The two [generators](../user_guide/assets/generator.md) and the [fixed load](../user_guide/assets/fixed_load.md) of Merit-Order Dispatch, plus a [stationary storage](../user_guide/assets/stationary_storage.md) holding a [battery](../user_guide/assets/battery.md). Its [efficiencies](../user_guide/assets/battery.md#efficiency) mean that of every MWh stored, about 0.9 MWh comes back:
+The two [generators](../user_guide/assets/generator.md) and the [fixed load](../user_guide/assets/fixed_load.md) of Merit-Order Dispatch, plus a [battery storage](../user_guide/assets/battery_storage.md) holding a [battery](../user_guide/assets/battery.md). Its [efficiencies](../user_guide/assets/battery.md#efficiency) mean that of every MWh stored, about 0.9 MWh comes back:
 
 ```python
 from datetime import timedelta
@@ -42,7 +42,7 @@ from odys import (
     Generator,
     LoadProfile,
     Scenario,
-    StationaryStorage,
+    BatteryStorage,
     StorageFinalState,
     StorageInitialState,
 )
@@ -61,7 +61,7 @@ load = FixedLoad(
     name="load",
 )
 
-battery = StationaryStorage(
+battery = BatteryStorage(
     name="battery",
     battery=Battery(
         capacity=300,
@@ -117,7 +117,7 @@ The top chart shows the dispatch, with the battery's discharge as positive bars 
 - **Steps 9 to 15:** solar exceeds the load, and the battery stores all of the surplus, up to 55 MW at step 12. It fills to 87 % of its capacity, and no solar is curtailed.
 - **Steps 16 to 23:** the battery returns what it stored, and the CCGT covers the rest of the load until the battery is empty again at the end of the day.
 
-The battery stores 275 MWh and gives back 248 MWh; the other 27 MWh is lost to its efficiencies. The CCGT produces 742 MWh instead of 990, so the objective improves from −49,500 to −37,091. In the evening, gas costs the same at every hour, so any split of those hours between the battery and the CCGT costs the same: the solver returns one of them, and the chart shows it. `result.stationary_storages.net_power` is positive while the battery charges; see [Results](../user_guide/assets/battery.md#results) on the Battery page for how to read it.
+The battery stores 275 MWh and gives back 248 MWh; the other 27 MWh is lost to its efficiencies. The CCGT produces 742 MWh instead of 990, so the objective improves from −49,500 to −37,091. In the evening, gas costs the same at every hour, so any split of those hours between the battery and the CCGT costs the same: the solver returns one of them, and the chart shows it. `result.battery_storages.net_power` is positive while the battery charges; see [Results](../user_guide/assets/battery.md#results) on the Battery page for how to read it.
 
 ## Discussion
 

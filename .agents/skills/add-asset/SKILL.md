@@ -5,7 +5,7 @@ description: Step-by-step checklist for adding a new asset type (e.g. heat pump,
 
 # Add a new asset type
 
-Adding an asset touches many modules. Work through the steps in order, running the fast checks (`uv run pytest tests/unit -x -q`, `uv run ty check`) after each step. Mirror the closest existing asset (Generator for dispatchable supply, StationaryStorage for SOC-based assets, composing a `Battery` rather than re-declaring its fields, FlexibleLoad for demand-side assets) instead of inventing new patterns.
+Adding an asset touches many modules. Work through the steps in order, running the fast checks (`uv run pytest tests/unit -x -q`, `uv run ty check`) after each step. Mirror the closest existing asset (Generator for dispatchable supply, BatteryStorage for SOC-based assets, composing a `Battery` rather than re-declaring its fields, FlexibleLoad for demand-side assets) instead of inventing new patterns.
 
 Before starting, confirm with the user: the asset's name, its user-facing parameters and units, its decision variables, its constraints (in math), and how it enters power balance and profit.
 
@@ -30,7 +30,7 @@ Mirror `formulations/flexible_load.py`. The asset needs no builder or power-bala
 - [ ] A `Formulation` subclass that names its axis with a module constant (`<ASSET> = "<asset>"`, then `dimension = <ASSET>`; it must differ from every other formulation's and from `scenario`/`time`, which `test_problem.py` checks) and sets `entity_type = <Asset>`, so `validate_entities_supported` accepts the asset.
 - [ ] A `build(inputs: FormulationInputs)` classmethod that picks its assets with `inputs.of_type(<Asset>)` (returns `None` when there are none; a formulation that depends on another reads it with `inputs.formulation_of(...)` and comes after it in `FORMULATIONS`), and an `__init__` that calls `super().__init__(assets, context)` (which builds `self.coordinates`) and vectorizes them (`vectorize(<Asset>Arrays, assets, self.coordinates)`).
 - [ ] If the asset has decision variables, subclass `VariableFormulation[<Asset>Variables]` with a frozen typed variables object and implement `_create_variables(model)` (use `self.context.variable_coords(self.coordinates)`); the base provides `variables` and the one-model guard. Keep each linopy variable name as a `ClassVar` constant (`<asset>_power_name`) for results.
-- [ ] One `@constraint` method per equation, returning `ModelConstraint` with a unique name ending in `_constraint`, reading only `self.arrays` and `self.variables`. Keep it vectorized. For SOC-style assets, compose `StorageFormulation` (`formulations/storage.py`) and delegate to its constraint methods, as `StationaryStorageFormulation` does.
+- [ ] One `@constraint` method per equation, returning `ModelConstraint` with a unique name ending in `_constraint`, reading only `self.arrays` and `self.variables`. Keep it vectorized. For SOC-style assets, compose `StorageFormulation` (`formulations/storage.py`) and delegate to its constraint methods, as `BatteryStorageFormulation` does.
 - [ ] `power_injection()` (net power into the bus, summed over the asset dimension; put variable terms before constants) and `profit()` (per scenario, energy terms multiplied by `context.timestep_hours`), or `None` when the asset has none.
 - [ ] Add the class to `FORMULATIONS` in `formulations/__init__.py`, and its module to the import-linter independence contract in `pyproject.toml` (a tool configuration change: say why in the PR).
 

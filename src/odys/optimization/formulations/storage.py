@@ -1,4 +1,4 @@
-"""Battery physics shared by every storage-like entity type (stationary storage, electric vehicles)."""
+"""Battery physics shared by every storage-like entity type (battery storage, electric vehicles)."""
 
 import linopy
 import numpy as np
@@ -33,7 +33,7 @@ class StorageFormulation:
     It is a reusable part, not a `Formulation`: it holds no variables (the
     composing formulation does, and passes them in), and each method returns
     one constraint. Variable and constraint names are prefixed with the
-    dimension name ("stationary_storage", "ev"). An optional SOC drop (EV trip
+    dimension name ("battery_storage", "ev"). An optional SOC drop (EV trip
     energy as a fraction of capacity) is subtracted at each step.
     """
 

@@ -5,7 +5,7 @@ description: Checklist for adding or changing a constraint (and any variable it 
 
 # Add or change a constraint
 
-Mirror `src/odys/optimization/formulations/flexible_load.py` and `tests/unit/test_optimization/formulations/test_flexible_load_formulation.py`. Read the Optimization section of "Layer rules" in `AGENTS.md` first. Every asset type is a formulation in `optimization/formulations/`; battery constraints shared by stationary storage and EVs are methods of `StorageFormulation` (`formulations/storage.py`).
+Mirror `src/odys/optimization/formulations/flexible_load.py` and `tests/unit/test_optimization/formulations/test_flexible_load_formulation.py`. Read the Optimization section of "Layer rules" in `AGENTS.md` first. Every asset type is a formulation in `optimization/formulations/`; battery constraints shared by battery storage and EVs are methods of `StorageFormulation` (`formulations/storage.py`).
 
 Before starting, confirm the math with the user: the constraint in equation form, the units, and which dimensions it ranges over.
 
