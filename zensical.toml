@@ -41,7 +41,7 @@ nav = [
     ] },
     { "Uncertainty and risk" = [
       { "Scenarios" = "user_guide/uncertainty/scenarios.md" },
-      { "Objective" = "user_guide/optimization/objective.md" },
+      { "Risk (CVaR)" = "user_guide/uncertainty/risk.md" },
     ] },
   ] },
   { "Mathematical Formulation" = [

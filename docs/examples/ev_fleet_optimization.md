@@ -163,7 +163,7 @@ energy_system = EnergySystem(
 result = energy_system.optimize()
 ```
 
-The [objective](../user_guide/optimization/objective.md) maximizes expected profit, so `result.objective_value` is the depot's profit over the day (positive = revenue).
+The [objective](../user_guide/solving/results.md#what-the-objective-adds-up) maximizes expected profit, so `result.objective_value` is the depot's profit over the day (positive = revenue).
 
 ## Results
 

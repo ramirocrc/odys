@@ -39,7 +39,7 @@ flowchart TD
 - The [AssetPortfolio](model/first_model.md#the-portfolio) holds the assets you own and operate: [generators](assets/generator.md), [fixed](assets/fixed_load.md) and [flexible](assets/flexible_load.md) loads, [stationary storage](assets/stationary_storage.md), [electric vehicles](assets/electric_vehicle.md) and [chargers](assets/charger.md). Stationary storage and electric vehicles each have a [Battery](assets/battery.md).
 - [EnergyMarkets](markets/energy_market.md) are where the portfolio buys and sells.
 - A [Scenario](model/profiles.md) holds the time series of one possible future, its profiles: demand, available capacity and prices.
-- The [Objective](optimization/objective.md) says what to maximize: expected profit, optionally balanced against risk.
+- The `Objective` says what to maximize: expected profit, optionally balanced against [risk](uncertainty/risk.md).
 
 ## One bus
 
@@ -80,7 +80,7 @@ The guide starts with a stretch to read in order, then turns into pages to look 
 1. **Building a model**: [Your first model](model/first_model.md) sets up and solves a first system, [Time and units](model/time_and_units.md) say how odys reads every value, and [Profiles](model/profiles.md) add its time series. Read these in order.
 2. **Assets** and **Markets**: one page per type, all with the same structure. They also build the running example step by step, from the [Generator](assets/generator.md) to the [EnergyMarket](markets/energy_market.md), but each one stands on its own.
 3. **Solving and results**: how to read the [Results](solving/results.md), choose a [solver](solving/solvers.md), and what odys checks before solving, in [Validation and errors](solving/validation.md).
-4. **Uncertainty and risk**: planning against several futures with [Scenarios](uncertainty/scenarios.md), and weighing bad outcomes in the [Objective](optimization/objective.md).
+4. **Uncertainty and risk**: planning against several futures with [Scenarios](uncertainty/scenarios.md), and weighing bad outcomes with [Risk (CVaR)](uncertainty/risk.md).
 
 The exact model odys builds is written out in the [Mathematical Formulation](../formulation/index.md) section.
 
