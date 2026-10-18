@@ -459,9 +459,9 @@ def generate_flexible_load_market() -> None:
     """Two-panel chart: load consumption + market prices."""
     result = run_flexible_load_market()
     actual_load = result.flexible_loads.actual_load
-    steps = list(range(1, len(actual_load) + 1))
+    steps = list(range(len(actual_load)))
 
-    market_prices = [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]
+    market_prices = [80, 75, 72, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 72, 80, 90, 85, 80, 75, 72]
 
     fig = make_subplots(
         rows=2,
@@ -528,8 +528,8 @@ def generate_flexible_load_market() -> None:
         margin=dict(l=40, r=40, t=60, b=40),
     )
 
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=2, col=1)
     fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 100])
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
