@@ -74,7 +74,7 @@ Each market has its own price, and the optimizer trades on whichever pays best a
 
 ## Stage-fixed markets
 
-Some markets clear before you know which future happens. You place day-ahead bids before you know tomorrow's wind, and you're held to them whatever the wind does. Mark such a market with `stage_fixed=True`, and the optimizer commits to the same trades, and the same direction, in every [scenario](../concepts/scenario.md#multiple-scenarios):
+Some markets clear before you know which future happens. You place day-ahead bids before you know tomorrow's wind, and you're held to them whatever the wind does. Mark such a market with `stage_fixed=True`, and the optimizer commits to the same trades, and the same direction, in every [scenario](../optimization/stochastic.md#multiple-scenarios):
 
 ```python
 day_ahead_bids = EnergyMarket(

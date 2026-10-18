@@ -55,7 +55,16 @@ high_wind = Scenario(
 )
 ```
 
-The day-ahead prices are already known, so they are the same in both scenarios. See [Scenarios & Profiles](../concepts/scenario.md#multiple-scenarios) for the rules scenarios must follow: probabilities that sum to 1 and unique names.
+The day-ahead prices are already known, so they are the same in both scenarios.
+
+## Multiple scenarios
+
+Odys enforces two rules across the scenarios and raises `OdysValidationError` otherwise:
+
+1. **Probabilities sum to 1.0**, within floating-point tolerance, so 49 scenarios of `1 / 49` each are accepted.
+2. **Names are unique.**
+
+Any profile can differ between scenarios, so a single run can capture renewable, demand and price uncertainty at once. A generator without an `AvailableCapacityProfile` in a scenario can produce up to its `nominal_power` in that scenario.
 
 ## Using stochastic scenarios
 
