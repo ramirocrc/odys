@@ -223,7 +223,7 @@ Assets --> AssetPortfolio --> EnergySystem --> optimize() --> Results
 EnergySystem
  ├── AssetPortfolio
  │    ├── Generator
- │    ├── StationaryStorage
+ │    ├── BatteryStorage
  │    ├── ElectricVehicle
  │    ├── Charger
  │    ├── FixedLoad
@@ -388,7 +388,7 @@ docs/
 │   │   ├── fixed_load.md
 │   │   ├── flexible_load.md
 │   │   ├── battery.md        # Battery physics shared by storage and EVs
-│   │   ├── stationary_storage.md
+│   │   ├── battery_storage.md
 │   │   ├── electric_vehicle.md
 │   │   └── charger.md
 │   ├── markets/
@@ -410,7 +410,7 @@ docs/
 │   ├── power_balance.md
 │   ├── markets.md
 │   ├── generators.md
-│   ├── batteries.md          # Shared by stationary storage and EVs
+│   ├── batteries.md          # Shared by battery storage and EVs
 │   ├── electric_vehicles.md  # EVs and chargers
 │   └── flexible_loads.md
 │

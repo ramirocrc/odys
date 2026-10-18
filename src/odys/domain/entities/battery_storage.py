@@ -1,6 +1,6 @@
-"""Stationary storage asset implementation.
+"""Battery storage asset implementation.
 
-This module provides the StationaryStorage class for modeling stationary
+This module provides the BatteryStorage class for modeling grid-connected
 energy storage devices in energy system optimization problems.
 """
 
@@ -9,10 +9,10 @@ from odys.domain.entities.battery import Battery
 from odys.domain.horizon import OperatingConditions
 
 
-class StationaryStorage(Asset):
-    """Stationary storage system in the energy system.
+class BatteryStorage(Asset):
+    """Battery storage (BESS): a battery at a fixed, grid-connected site.
 
-    A fixed site that stores energy in a battery. The battery describes the
+    The asset is what you own and name. The battery describes the
     physics (capacity, power limits, efficiencies, state of charge).
     """
 
