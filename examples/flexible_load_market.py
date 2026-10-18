@@ -1,9 +1,9 @@
-"""Flexible load with market price arbitrage.
+"""Flexible load buying from a market.
 
-This example shows how a flexible industrial consumer can shift electricity
-consumption to take advantage of low market prices. Instead of consuming a
-fixed amount regardless of cost, the optimizer adjusts demand up or down
-based on the economic value of consumption versus the market price.
+This example shows how a flexible industrial consumer follows market prices.
+Instead of consuming a fixed amount regardless of cost, the optimizer adjusts
+demand up or down at each step, weighing the value of consumption against
+the market price.
 
 ## Assets
 
@@ -18,26 +18,18 @@ based on the economic value of consumption versus the market price.
 We simulate 24 hourly periods. The industrial process has a baseline
 consumption of 60 MW, but the optimizer can adjust it within bounds.
 
-The decision logic compares the marginal value of consumption (70 $/MWh)
-against the marginal cost (market price):
+The decision compares the value of consumption (70 $/MWh) against the
+market price at each step:
 - When market price < 70 $/MWh: consuming more is profitable
 - When market price > 70 $/MWh: consuming less saves money
-- When market price = 70 $/MWh: neutral, no adjustment
 
 ## Expected Results
 
-The optimizer shifts consumption toward low-price hours:
+- Steps 3-16 (price 30-65 $/MWh): consumption rises to 80 MW, the market
+  limit, although the process could take 100 MW.
+- Steps 0-2 and 17-23 (price 72-90 $/MWh): consumption drops to 40 MW.
 
-- Hours 3-16 (price 30-65 $/MWh): Increase load to market limit (+20 MW)
-  Total consumption = 80 MW. Market supplies all 80 MW.
-- Hours 0-2, 17-23 (price 70-90 $/MWh): Decrease load (-20 MW)
-  Total consumption = 40 MW. Market supplies only 40 MW.
-- Hours 2, 23 (price 70 $/MWh): Neutral, consumption stays at 60 MW.
-
-The net effect: the industrial process consumes 33% more energy during cheap
-hours and 33% less during expensive hours, maximizing the economic value of
-consumption. The market volume limit (80 MW) constrains how much the load
-can increase, even though the process could flex up to 100 MW.
+Each step is decided on its own: nothing links one hour to the next.
 
 ## Understanding the Output
 
@@ -45,11 +37,6 @@ The script prints:
 - Load adjustment over time (positive = increase, negative = decrease)
 - Actual consumption (base profile + adjustment)
 - Market purchases (matches actual consumption at each timestep)
-
-This example demonstrates demand response: the flexibility to shift when you
-consume, not just how much you generate. The same principle applies to
-data centers, aluminum smelters, water pumping, and other processes where
-timing can be adjusted without affecting total output.
 """
 
 import logging
@@ -92,7 +79,7 @@ def run_flexible_load_market() -> OptimalDispatchResults:
             LoadProfile(load=industrial_process, values=24 * [60]),
             PriceProfile(
                 market=market,
-                values=[80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70],
+                values=[80, 75, 72, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 72, 80, 90, 85, 80, 75, 72],
             ),
         ),
     )
