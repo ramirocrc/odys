@@ -53,7 +53,8 @@ RECORDED_EXAMPLE_OBJECTIVES = {
     "basic_dispatch": -49_500.0,
     # Re-recorded when the example battery got 95 % efficiency each way (it was lossless before).
     "battery_dispatch": -37_090.625,
-    "market_arbitrage": -78_400.0,
+    # Re-recorded when the example market started selling too, and its prices equal to the ccgt cost (50) became 52.
+    "market_arbitrage": -68_680.0,
     # Re-recorded when the example prices equal to the value of consumption (70) became 72, removing a tie.
     "flexible_load_market": -78_840.0,
     "ev_fleet_optimization": 5.21,

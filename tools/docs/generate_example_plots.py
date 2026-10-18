@@ -367,10 +367,10 @@ def generate_market_arbitrage() -> None:
     """Two-panel chart: stacked dispatch bars + market prices."""
     result = run_market_arbitrage()
     gen_df = result.generators.to_dataframe()["power"].unstack("generator")
-    buy_volume = result.markets.buy_volume.xs("market", level="market")
-    steps = list(range(1, len(gen_df) + 1))
+    bought = -result.markets.net_volume.xs("market", level="market")
+    steps = list(range(len(gen_df)))
 
-    market_prices = [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 85, 80, 75, 70]
+    market_prices = [80, 75, 70, 65, 60, 55, 52, 45, 40, 35, 30, 35, 40, 45, 52, 55, 60, 70, 80, 90, 85, 80, 75, 70]
 
     fig = make_subplots(
         rows=2,
@@ -395,8 +395,8 @@ def generate_market_arbitrage() -> None:
     fig.add_trace(
         go.Bar(
             x=steps,
-            y=buy_volume.values,
-            name="Market Purchases",
+            y=bought.values,
+            name="Market (bought +, sold -)",
             marker=dict(color=MARKET_BUY_COLOR),
         ),
         row=1,
@@ -441,14 +441,14 @@ def generate_market_arbitrage() -> None:
     )
 
     fig.update_layout(
-        barmode="stack",
+        barmode="relative",
         hovermode="x unified",
         legend=dict(x=0.5, y=1.02, xanchor="center", yanchor="bottom", orientation="h"),
         margin=dict(l=40, r=40, t=60, b=40),
     )
 
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=1, col=1)
-    fig.update_xaxes(title="Time Step", range=[0.5, 24.5], row=2, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=1, col=1)
+    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=2, col=1)
     fig.update_yaxes(title="Power (MW)", row=1, col=1)
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
