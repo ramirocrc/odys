@@ -24,7 +24,7 @@ Principles for writing and improving the Odys documentation. The voice is the sa
 
 This is the most important page. Someone should be able to install the package, copy 20-30 lines of code, see a useful result, and understand why it works -- within 5 minutes.
 
-The quickstart lives on `index.md` as the "Quick example" section. The "Get started" button links to `user_guide/model/first_model.md`, which expands on the same workflow.
+The quickstart lives in `README.md` as the "Quick example" section (also the PyPI page, so its links are absolute URLs). The landing page (`overrides/home.html`) shows a generated example instead, and its "Get started" button links to `user_guide/model/first_model.md`, which expands on the same workflow.
 
 The smallest example that makes someone think "now I get it" is not a toy. It is a realistic dispatch problem with a generator, a load, and a visible result:
 
