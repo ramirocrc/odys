@@ -6,11 +6,7 @@ icon: lucide/play
 
 ## Problem Description
 
-This example asks a simple but important question: if a load must be met at every timestep, how should Odys dispatch a cheap renewable generator and a more expensive thermal unit?
-
-The setup is intentionally small. We have a fixed 70 MW load over 24 hourly periods, a free solar plant with time-varying availability, and a gas turbine with a marginal cost of 50 $/MWh. The optimizer should use solar whenever it is available and only call on gas when solar is not enough.
-
-That makes this a good first example because it shows the core Odys workflow without adding storage or markets.
+A site has to serve a constant 70 MW load over a day, in hourly steps. It has two units: a 150 MW solar farm, free to run but limited by the sun, and a 100 MW CCGT at 50 $/MWh. There's no storage and no market. The question is the merit order: how much of the load solar can cover at each hour, and how much the CCGT has to make up.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
@@ -24,51 +20,50 @@ flowchart LR
     style Load fill:none
 ```
 
-**Source**: [`examples/basic_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/basic_dispatch.py)
+**Source**: [`examples/basic_dispatch.py`](https://github.com/ramirocrc/odys/blob/main/examples/basic_dispatch.py). The script wraps the steps below in `run_basic_dispatch()`, which returns the results.
 
 ## Walkthrough
 
 ### 1. Define the assets
 
-Start by creating the two generators and the fixed load. This is the part where we tell Odys what can produce power, what it costs, and what demand must be served.
+Two [generators](../user_guide/assets/generator.md) and a [fixed load](../user_guide/assets/fixed_load.md), in one portfolio:
 
 ```python
 from datetime import timedelta
 
-from odys import AssetPortfolio, AvailableCapacityProfile, LoadProfile, EnergySystem, FixedLoad, Generator, Scenario
+from odys import (
+    AssetPortfolio,
+    AvailableCapacityProfile,
+    EnergySystem,
+    FixedLoad,
+    Generator,
+    LoadProfile,
+    Scenario,
+)
 
-ccgt = Generator(name="ccgt", nominal_power=100, variable_cost=50)
-solar_pv = Generator(name="solar_pv", nominal_power=150, variable_cost=0)
-load = FixedLoad(name="load")
+ccgt = Generator(
+    name="ccgt",
+    nominal_power=100,
+    variable_cost=50,
+)
+solar_pv = Generator(
+    name="solar_pv",
+    nominal_power=150,
+    variable_cost=0,
+)
+load = FixedLoad(
+    name="load",
+)
 portfolio = AssetPortfolio([ccgt, solar_pv, load])
 ```
 
-Here the cost difference does most of the work. Solar is free, so the solver will prefer it whenever it is available.
+### 2. Describe the day
 
-### 2. Describe what is available
-
-Now give Odys a time series for the solar PV available capacity and the load.
-
-The solar profile represents the maximum available capacity of the solar PV
-plant throughout the day. At night it is zero, then it increases as the sun
-rises and falls again toward evening. The important detail is that the
-available solar capacity does not have to match the panel's maximum rating.
-The plant may be able to produce up to 150 MW in principle, but at each
-timestep the actual limit is whatever the solar resource allows. During peak
-hours the available capacity reaches 125 MW, well above the 70 MW load.
-
-The ccgt is simpler: we treat it as fully available during the selected period,
-so it can produce up to its nominal capacity in every timestep. That gives the
-optimizer a reliable backup when solar is not enough.
-
-Finally, the load is fixed. Odys must serve that demand at every step, so the
-problem is really about deciding how much solar to use first and how much gas
-is needed to cover the remainder.
+The solar farm's [available capacity](../user_guide/model/profiles.md) follows the sun: zero at night, up to 125 MW at noon, below its 150 MW rating all day. The CCGT has no profile, so it can run up to its nominal power at every step. The load is 70 MW throughout:
 
 ```python
 scenario = Scenario(
     profiles=(
-        AvailableCapacityProfile(generator=ccgt, values=24 * [100]),
         AvailableCapacityProfile(
             generator=solar_pv,
             values=[0, 0, 0, 0, 0, 0, 10, 30, 60, 90, 110, 120, 125, 120, 110, 90, 60, 30, 10, 0, 0, 0, 0, 0],
@@ -78,11 +73,9 @@ scenario = Scenario(
 )
 ```
 
-Notice the subtle point here: the gas turbine has a nominal capacity of 100 MW, but solar is limited by its profile. In other words, installed capacity is not the same thing as what is actually usable in a given timestep. And when available solar exceeds demand, the optimizer can only dispatch what the load requires; the rest is curtailed.
+### 3. Solve
 
-### 3. Solve the system
-
-Once the portfolio and scenario are in place, the optimizer can build the least-cost dispatch.
+Twenty-four hourly steps:
 
 ```python
 energy_system = EnergySystem(
@@ -91,26 +84,24 @@ energy_system = EnergySystem(
     number_of_steps=24,
     scenarios=scenario,
 )
-```
 
-At this point the solver is doing the real work: it balances the load in every step while trying to use the cheapest energy first.
+result = energy_system.optimize()
+```
 
 ## Results
 
-The chart below shows the generator dispatch over time as stacked bars. Solar PV is used first whenever available (zero marginal cost), and CCGT fills the remaining demand. The dashed green line shows the available solar capacity, while the dashed gray line shows the constant load.
+The chart shows the dispatch as stacked bars, with the available solar capacity and the load as dashed lines:
 
 <iframe src="../assets/plots/basic_dispatch.html" style="width:100%; height:500px; border:none;" loading="lazy"></iframe>
 
-If you print `result.generators.power`, the pattern should be easy to read:
+Solar runs first whenever the sun is up, because it's free, and the CCGT covers the rest:
 
-- solar is used first whenever it is available
-- gas fills the remaining demand
-- total supply always matches the fixed load
+- **Steps 0 to 5 and 19 to 23:** no sun, so the CCGT carries the full 70 MW.
+- **Steps 6 to 8 and 16 to 18:** solar covers part of the load, and the CCGT fills the gap, from 60 MW down to 10 MW and back.
+- **Steps 9 to 15:** solar could produce more than 70 MW, so it covers the whole load, the CCGT is off, and the surplus is curtailed.
 
-The dashed green line shows the available solar capacity. Notice that during the middle hours (timesteps 9-15), the solar capacity exceeds the load. The optimizer can only dispatch what the load needs, so some solar generation goes unused. This is curtailment.
+Over the day, solar delivers 690 MWh of the 965 MWh it could have produced, so 275 MWh is curtailed. The CCGT produces 990 MWh, and its fuel cost of 49,500 is the whole objective: `result.objective_value` is −49,500. Print `result.generators.power` to see the numbers step by step; see [Results](../user_guide/solving/results.md) for how to read them.
 
 ## Discussion
 
-This example is the baseline for the rest of the docs. It shows the main idea behind optimization in Odys: define the assets, define what is available, define what must be served, and let the solver find the cheapest feasible dispatch.
-
-A useful mental model is a household budget. Solar is the income you would rather spend first because it is free, while gas is the emergency fund you only use when necessary.
+The dispatch follows the merit order, step by step: each hour is solved on its own terms, because nothing links one hour to the next. That's also why 275 MWh of free energy goes to waste at midday while the CCGT burns gas every evening. The [Battery Dispatch](battery_dispatch.md) example adds storage to move that surplus into the evening.
