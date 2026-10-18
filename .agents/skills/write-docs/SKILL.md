@@ -395,11 +395,11 @@ docs/
 │   │   └── energy_market.md
 │   ├── solving/
 │   │   ├── results.md        # Reading results, the objective value, clock time, chaining runs
+│   │   ├── solvers.md        # Solver choice and options
 │   │   └── validation.md     # Checks before solving, and errors
 │   └── optimization/
 │       ├── objective.md      # Profit and CVaR
 │       ├── stochastic.md     # Stochastic optimization
-│       └── solvers.md        # Solver choice and options
 │
 ├── formulation/              # Mathematical Formulation: the exact MILP, one page per model part
 │   ├── index.md              # Overview: problem size, assumptions, compact model

@@ -176,4 +176,4 @@ The scenarios are coupled only through the [non-anticipativity constraints](../.
 
 ## Next steps
 
-Next, see [Solvers](solvers.md) to choose and tune the solver behind `.optimize()`.
+Next, see how to weigh bad outcomes more heavily, in the [Objective](objective.md).

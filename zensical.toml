@@ -36,7 +36,7 @@ nav = [
     ] },
     { "Solving and results" = [
       { "Results" = "user_guide/solving/results.md" },
-      { "Solvers" = "user_guide/optimization/solvers.md" },
+      { "Solvers" = "user_guide/solving/solvers.md" },
       { "Validation and errors" = "user_guide/solving/validation.md" },
     ] },
     { "Uncertainty and risk" = [
