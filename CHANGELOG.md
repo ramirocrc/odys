@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+
+- Documentation: a simpler landing page, laid out like vuejs.org's. It has a hero with three buttons (Get started, `pip install odys`, GitHub), one figure of price scenarios going in and the battery schedule Odys commits to coming out, a "Built on" strip and six highlights. It follows the light/dark toggle and keeps the docs header and navigation tabs.
+- Documentation: the docs follow vuejs.org's colour scheme in both modes: a white or `#1a1a1a` background and header (the light mode header was violet), neutral greys for text, code blocks and the example charts' gridlines and axes, Vue's green as the dark mode accent. Links stay the brand violet.
+
 ## [0.3.0] - 2026-10-18
 
 

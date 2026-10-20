@@ -1,4 +1,4 @@
-"""Landing page hero snippet: twelve price scenarios, one schedule."""
+"""The run behind the landing page figure: twelve price scenarios in, one schedule out."""
 
 from datetime import timedelta
 
@@ -14,7 +14,6 @@ from odys import (
     StorageInitialState,
 )
 
-# --8<-- [start:shown]
 battery = BatteryStorage(
     name="bess",
     battery=Battery(
@@ -75,4 +74,3 @@ system = EnergySystem(
     final_conditions=[final],
 )
 result = system.optimize()
-# --8<-- [end:shown]

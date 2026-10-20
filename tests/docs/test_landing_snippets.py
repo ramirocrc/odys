@@ -1,4 +1,7 @@
-"""The landing page hero shows these snippets verbatim, so they must run and back up its claims."""
+"""The landing page figure is drawn from stochastic.py; these tests check that it backs up the page's claims.
+
+deterministic.py is the point-forecast baseline the stochastic schedule must beat.
+"""
 
 import runpy
 from pathlib import Path
