@@ -1,129 +1,158 @@
-/* Landing page (design "G · Orbit"). Loaded only by overrides/home.html.
+/* Landing page (design "C · Hero + chart"). Loaded only by overrides/home.html.
    Colours and fonts come from brand.css (generated from tools/docs/brand/tokens.json).
-   The landing page is always dark, so it uses the dark brand colours directly
-   instead of the scheme-dependent --md-* variables the docs pages follow. */
+   The page follows the light/dark toggle: each scheme maps the --home-* variables
+   below to the colours of vuejs.org's light and dark themes. Zensical's header,
+   navigation tabs and footer are kept as on every docs page. */
 
-.odys-home {
-  background: var(--odys-bg);
-  color: var(--odys-text);
-  font-family: var(--odys-font-sans);
-  font-size: 17px;
-  line-height: 1.55;
+/* ---- Colour schemes ---- */
+
+[data-md-color-scheme="slate"]:has(.odys-home) {
+  --home-bg: var(--odys-gray-900);
+  --home-text: var(--odys-gray-200);
+  --home-muted: var(--odys-gray-400);
+  --home-divider: var(--odys-gray-750);
+  --home-link: var(--odys-violet-300);
+  --home-link-hover: var(--odys-violet-200);
+  --home-primary-text: var(--odys-indigo-900);
+  --home-primary-hover: var(--odys-green-400);
+  --home-button: var(--odys-gray-800);
+  --home-button-hover: var(--odys-gray-700);
+  --home-button-text: var(--odys-indigo-200);
+  --home-grid: var(--odys-gray-800);
+  --home-axis: var(--odys-gray-600);
+  --home-input: var(--odys-mint-400);
+  --home-sell: var(--odys-violet-300);
+  --home-buy: var(--odys-violet-500);
 }
 
-.odys-home a {
-  color: var(--odys-violet-300);
-  text-decoration: none;
+[data-md-color-scheme="default"]:has(.odys-home) {
+  --home-bg: var(--odys-paper);
+  --home-text: var(--odys-indigo-900);
+  --home-muted: var(--odys-gray-500);
+  --home-divider: var(--odys-gray-100);
+  --home-link: var(--odys-violet-600);
+  --home-link-hover: var(--odys-violet-700);
+  --home-primary-text: var(--odys-paper);
+  --home-primary-hover: color-mix(in srgb, var(--odys-green-500) 88%, var(--odys-indigo-900));
+  --home-button: var(--odys-gray-50);
+  --home-button-hover: var(--odys-gray-150);
+  --home-button-text: var(--odys-indigo-600);
+  --home-grid: var(--odys-gray-100);
+  --home-axis: var(--odys-gray-300);
+  --home-input: var(--odys-mint-700);
+  --home-sell: var(--odys-violet-600);
+  --home-buy: var(--odys-violet-300);
 }
-
-.odys-home a:hover {
-  color: var(--odys-violet-200);
-}
-
-/* ---- Theme chrome on the landing page only ---- */
 
 body:has(.odys-home) {
-  background: var(--odys-bg);
-}
-
-/* The header sits on the dark landing page in every scheme, so pin the theme
-   variables it reads (text, icons, search box) to the dark brand colours. */
-body:has(.odys-home) .md-header,
-body:has(.odys-home) .md-tabs {
-  --md-default-fg-color: var(--odys-text);
-  --md-default-fg-color--light: color-mix(in srgb, var(--odys-text) 56%, transparent);
-  --md-default-fg-color--lighter: color-mix(in srgb, var(--odys-text) 32%, transparent);
-  --md-default-fg-color--lightest: color-mix(in srgb, var(--odys-text) 12%, transparent);
-  --md-default-bg-color: var(--odys-bg);
-  --md-default-bg-color--light: color-mix(in srgb, var(--odys-bg) 54%, transparent);
-  --md-accent-fg-color: var(--odys-mint-400);
-  color-scheme: dark;
-}
-
-body:has(.odys-home) .md-header {
-  background: var(--odys-bg);
-  border-bottom: 1px solid var(--odys-line-faint);
-  box-shadow: none;
-}
-
-body:has(.odys-home) .odys-logo--on-dark {
-  display: contents;
-}
-
-body:has(.odys-home) .odys-logo--on-light {
-  display: none;
+  background: var(--home-bg);
 }
 
 body:has(.odys-home) .md-main {
   display: none;
 }
 
-body:has(.odys-home) .md-footer-meta {
-  background: var(--odys-bg-deep);
+/* Zensical draws this line under the header once .md-main scrolls beneath it. The hidden
+   .md-main always counts as scrolled, so the line would show between the header and the tabs. */
+body:has(.odys-home) .md-header--shadow {
+  box-shadow: none;
+}
+
+.odys-home {
+  background: var(--home-bg);
+  color: var(--home-text);
+  font-family: var(--odys-font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.odys-home a {
+  color: var(--home-link);
+  text-decoration: none;
+}
+
+.odys-home a:hover {
+  color: var(--home-link-hover);
 }
 
 /* ---- Hero ---- */
 
 .odys-hero {
-  padding: 104px 24px 0;
-  background: radial-gradient(60% 50% at 50% 40%, color-mix(in srgb, var(--odys-violet-400) 28%, transparent), color-mix(in srgb, var(--odys-violet-400) 0%, transparent) 70%);
-}
-
-.odys-hero__intro {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 26px;
-  max-width: 1100px;
+  max-width: 960px;
   margin: 0 auto;
+  padding: 96px 32px 64px;
   text-align: center;
 }
 
+/* Like vuejs.org: the whole title carries the gradient in the dark scheme, only the
+   accent in the light one. */
 .odys-hero__title {
   margin: 0;
-  color: var(--odys-text);
-  font-size: clamp(40px, 6.2vw, 84px);
-  font-weight: 600;
-  font-stretch: 125%;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
+  color: var(--home-text);
+  font-size: 76px;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: -1.5px;
+}
+
+[data-md-color-scheme="slate"] .odys-hero__title,
+[data-md-color-scheme="default"] .odys-hero__accent {
+  background: linear-gradient(315deg, var(--odys-green-400) 25%, var(--odys-blue-400));
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .odys-hero__lead {
-  max-width: 680px;
-  margin: 0;
-  color: var(--odys-muted);
+  max-width: 620px;
+  margin: 24px auto 40px;
+  color: var(--home-muted);
   font-size: 22px;
 }
 
-/* Hero actions: three buttons of one height, each its own weight. Documentation
-   is the primary action; the install command copies itself; GitHub is quiet. */
+/* ---- Hero actions: vuejs.org's buttons ---- */
 
 .odys-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
-  margin-top: 6px;
+  gap: 18px;
 }
 
 .odys-home .odys-action {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 52px;
-  padding: 0 22px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  font: 600 16px var(--odys-font-sans);
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--home-button);
+  color: var(--home-button-text);
+  font: 500 16px var(--odys-font-ui);
   cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s;
+  transition: background-color 0.2s;
+}
+
+.odys-home .odys-action:hover {
+  background: var(--home-button-hover);
+  color: var(--home-button-text);
+}
+
+.odys-home .odys-action--primary,
+.odys-home .odys-action--primary:hover {
+  background: var(--odys-green-500);
+  color: var(--home-primary-text);
+  font-weight: 600;
+}
+
+.odys-home .odys-action--primary:hover {
+  background: var(--home-primary-hover);
 }
 
 .odys-action svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   fill: none;
   stroke: currentcolor;
@@ -132,49 +161,24 @@ body:has(.odys-home) .md-footer-meta {
   stroke-linejoin: round;
 }
 
-.odys-home .odys-action--docs,
-.odys-home .odys-action--docs:hover {
-  background: var(--odys-mint-400);
-  color: var(--odys-mint-ink);
-  font-weight: 700;
+.odys-action .odys-action__arrow {
+  width: 12px;
+  height: 12px;
+  stroke-width: 3;
 }
 
-.odys-home .odys-action--docs:hover {
-  background: color-mix(in srgb, var(--odys-mint-400) 88%, var(--odys-text));
+.odys-action .odys-action__mark {
+  fill: currentcolor;
+  stroke: none;
 }
 
 .odys-home .odys-action--install {
-  position: relative;
-  gap: 12px;
-  padding: 0 11px 0 18px;
-  border-color: var(--odys-line-strong);
-  background: var(--odys-surface);
-  color: var(--odys-text);
-  font: 500 16px var(--odys-font-mono);
-}
-
-.odys-home .odys-action--install:hover {
-  border-color: var(--odys-line-hover);
+  font-family: var(--odys-font-mono);
+  font-size: 15px;
 }
 
 .odys-action__prompt {
-  color: var(--odys-mint-400);
-}
-
-.odys-action__copy {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  background: var(--odys-line);
-  color: var(--odys-text-soft);
-}
-
-.odys-action .odys-action__copy svg {
-  width: 15px;
-  height: 15px;
+  color: var(--home-muted);
 }
 
 .odys-action__icon-done,
@@ -184,7 +188,7 @@ body:has(.odys-home) .md-footer-meta {
 
 .odys-action--install[data-copied="true"] .odys-action__icon-done {
   display: block;
-  color: var(--odys-mint-400);
+  color: var(--home-input);
 }
 
 /* Announced to screen readers; shown only when copying fails. */
@@ -193,7 +197,7 @@ body:has(.odys-home) .md-footer-meta {
   top: calc(100% + 8px);
   left: 50%;
   translate: -50% 0;
-  color: var(--odys-muted);
+  color: var(--home-muted);
   font: 400 12px var(--odys-font-sans);
   white-space: nowrap;
   clip-path: inset(50%);
@@ -203,304 +207,156 @@ body:has(.odys-home) .md-footer-meta {
   clip-path: none;
 }
 
-.odys-home .odys-action--github {
-  border-color: var(--odys-line-hover);
-  color: var(--odys-text);
+/* ---- Figure: price scenarios in, one schedule out ---- */
+
+.odys-figure {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 24px 96px;
 }
 
-.odys-home .odys-action--github:hover {
-  border-color: var(--odys-muted-deep);
-  background: var(--odys-surface);
-  color: var(--odys-text);
-}
-
-.odys-action .odys-action__mark {
-  fill: currentcolor;
-  stroke: none;
-}
-
-.odys-action .odys-action__star {
-  width: 15px;
-  height: 15px;
-  stroke: var(--odys-amber-300);
-}
-
-/* ---- Hero window: tabs, caption, code and chart ---- */
-
-.odys-window {
-  max-width: 1180px;
-  margin: 56px auto 0;
-  overflow: clip;
-  border: 1px solid var(--odys-line-strong);
-  border-bottom: 0;
-  border-radius: 16px 16px 0 0;
-  background: var(--odys-bg-raised);
-  box-shadow: 0 -20px 80px color-mix(in srgb, var(--odys-violet-400) 18%, transparent);
-}
-
-.odys-window__bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--odys-line);
-  background: var(--odys-bg);
-}
-
-.odys-window__tabs {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.odys-tab {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 0;
-  border-right: 1px solid var(--odys-line);
-  background: transparent;
-  color: var(--odys-muted);
-  font: 500 13px var(--odys-font-mono);
-  cursor: pointer;
-}
-
-.odys-tab[aria-selected="true"] {
-  background: var(--odys-surface);
-  box-shadow: inset 0 2px 0 var(--odys-mint-400);
-  color: var(--odys-text);
-}
-
-.odys-window__tag {
-  padding: 0 18px;
-  color: var(--odys-muted);
-  font: 400 12px var(--odys-font-mono);
-}
-
-.odys-caption {
-  display: grid;
-  align-items: center;
-  min-height: 104px;
-  margin: 28px 28px 0;
-}
-
-.odys-caption__text {
-  display: flex;
-  flex-direction: column;
-  grid-area: 1 / 1;
-  gap: 4px;
-}
-
-.odys-caption__text--sizer {
-  visibility: hidden;
-}
-
-.odys-caption__kicker {
-  color: var(--odys-mint-400);
-  font: 600 12px var(--odys-font-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.odys-caption__lead {
-  color: var(--odys-text);
-  font-size: clamp(22px, 2.6vw, 30px);
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-.odys-caption__rest {
-  color: var(--odys-text-soft);
-  font-size: 18px;
-}
-
-.odys-split {
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: 24px;
-  border-top: 1px solid var(--odys-line);
-}
-
-.odys-code {
-  box-sizing: border-box;
-  display: grid;
-  flex: 1 1 520px;
-  grid-template-columns: minmax(0, 1fr);
-  min-width: 0;
-  min-height: 548px;
-  padding: 22px 0;
-  border-right: 1px solid var(--odys-line);
-  background: var(--odys-bg);
-  color: var(--odys-code);
-  font: 400 13.5px/22px var(--odys-font-mono);
-}
-
-.odys-code__panel {
-  grid-area: 1 / 1;
-  min-width: 0;
-  overflow-x: auto;
-}
-
-.odys-code__panel--inactive {
-  visibility: hidden;
+.odys-figure figure {
+  margin: 0;
 }
 
 .odys-chart {
-  box-sizing: border-box;
-  flex: 1 1 460px;
-  min-width: 0;
-  margin: 0;
-  padding: 28px;
-}
-
-.odys-chart__sticky {
-  position: sticky;
-  top: 24px;
-}
-
-.odys-chart svg {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.odys-noscript {
-  padding: 24px 28px;
-  color: var(--odys-muted);
+.odys-chart__label {
+  fill: var(--home-muted);
+  font: 500 13px var(--odys-font-ui);
 }
 
-/* Code lines */
-
-.odys-ln {
-  min-height: 22px;
-  padding-right: 24px;
-  white-space: pre;
-  transition: opacity 0.2s;
+.odys-chart__tag {
+  font-weight: 600;
+  letter-spacing: 1.2px;
 }
 
-.odys-ln--dim {
-  opacity: 0.6;
+.odys-chart__tag--input {
+  fill: var(--home-input);
 }
 
-.odys-ln--changed {
-  background: color-mix(in srgb, var(--odys-mint-400) 13%, transparent);
-  box-shadow: inset 3px 0 0 var(--odys-mint-400);
+.odys-chart__tag--output {
+  fill: var(--home-sell);
 }
 
-.odys-gutter {
-  display: inline-block;
-  width: 52px;
-  padding-right: 12px;
-  color: var(--odys-muted-deep);
-  text-align: right;
-  user-select: none;
+.odys-chart__tick {
+  fill: var(--home-muted);
+  font: 400 12px var(--odys-font-mono);
 }
 
-.odys-marker {
-  display: inline-block;
-  width: 20px;
-  color: var(--odys-mint-400);
-  user-select: none;
+.odys-chart__grid {
+  stroke: var(--home-grid);
 }
 
-.odys-fold {
-  display: block;
-  width: 100%;
-  min-height: 30px;
-  margin: 2px 0;
-  padding: 0 24px 0 0;
-  border: 0;
-  background: color-mix(in srgb, var(--odys-violet-400) 8%, transparent);
-  color: inherit;
-  font: inherit;
-  overflow: hidden;
-  line-height: 30px;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: pre;
-  cursor: pointer;
+.odys-chart__axis,
+.odys-chart__flow {
+  stroke: var(--home-axis);
+  stroke-width: 1.5;
 }
 
-.odys-fold:hover {
-  background: color-mix(in srgb, var(--odys-violet-400) 16%, transparent);
+.odys-chart__arrowhead {
+  fill: var(--home-axis);
 }
 
-.odys-fold .odys-marker {
-  color: var(--odys-violet-300);
+.odys-chart__step {
+  fill: var(--home-button);
 }
 
-.odys-fold__meta {
-  margin-left: 14px;
-  color: var(--odys-code-comment);
-  font-size: 12.5px;
-}
-
-/* Syntax colours */
-
-.odys-home .tk-c { color: var(--odys-code-class); }
-.odys-home .tk-k { color: var(--odys-code-kwarg); }
-.odys-home .tk-s { color: var(--odys-mint-400); }
-.odys-home .tk-n { color: var(--odys-amber-300); }
-.odys-home .tk-kw { color: var(--odys-code-comment); font-style: italic; }
-.odys-home .tk-cm { color: var(--odys-code-comment); font-style: italic; }
-.odys-home .tk-p { color: var(--odys-code-punct); }
-.odys-home .tk-v { color: var(--odys-code); }
-.odys-home .tk-err { color: var(--odys-code-error); }
-
-/* Hero chart */
-
-.odys-chart .fan path {
-  fill: none;
-  stroke: var(--odys-violet-400);
-  stroke-width: 1.4;
-  stroke-opacity: 0.55;
-  stroke-dasharray: 2400;
-  stroke-dashoffset: 2400;
-  animation: odys-draw 2.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
-}
-
-.odys-chart .fan path.forecast {
-  stroke: var(--odys-violet-300);
-  stroke-width: 3;
-  stroke-opacity: 1;
-}
-
-.odys-chart .bar {
-  transform-box: fill-box;
-  animation: odys-grow 0.55s ease-out both;
-}
-
-.odys-chart .bar--up {
-  fill: var(--odys-mint-400);
-  transform-origin: bottom;
-}
-
-.odys-chart .bar--down {
-  fill: var(--odys-violet-400);
-  transform-origin: top;
-}
-
-.odys-home .axis {
-  stroke: var(--odys-axis);
-  stroke-width: 1;
-}
-
-.odys-home .label-strong {
-  fill: var(--odys-text);
+.odys-chart__step-text {
+  fill: var(--home-button-text);
   font: 500 14px var(--odys-font-mono);
 }
 
-.odys-home .label {
-  fill: var(--odys-muted);
-  font: 400 13px var(--odys-font-mono);
+.odys-chart__price {
+  fill: none;
+  stroke: var(--home-input);
+  stroke-width: 1.6;
+  stroke-opacity: 0.45;
+  stroke-linejoin: round;
+}
+
+.odys-chart__sell {
+  fill: var(--home-sell);
+}
+
+.odys-chart__buy {
+  fill: var(--home-buy);
+}
+
+/* Animation: home.js adds --animate (start hidden) and, once the figure is in view, --play.
+   The per-line and per-bar delays are set inline by home.js. */
+
+.odys-chart--animate .odys-chart__price {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.odys-chart--animate .odys-chart__optimize {
+  opacity: 0;
+}
+
+.odys-chart--animate .odys-chart__bar {
+  transform: scaleY(0);
+  transform-box: fill-box;
+}
+
+.odys-chart__bar.odys-chart__sell {
+  transform-origin: bottom;
+}
+
+.odys-chart__bar.odys-chart__buy {
+  transform-origin: top;
+}
+
+.odys-chart--play .odys-chart__price {
+  animation: odys-draw 1.2s cubic-bezier(0.3, 0.6, 0.3, 1) forwards;
+}
+
+.odys-chart--play .odys-chart__optimize {
+  animation: odys-fade 0.5s ease-out 1.4s forwards;
+}
+
+.odys-chart--play .odys-chart__bar {
+  animation: odys-grow 0.45s cubic-bezier(0.3, 0.6, 0.3, 1) forwards;
 }
 
 @keyframes odys-draw {
   to { stroke-dashoffset: 0; }
 }
 
+@keyframes odys-fade {
+  to { opacity: 1; }
+}
+
 @keyframes odys-grow {
-  from { transform: scaleY(0); }
   to { transform: scaleY(1); }
+}
+
+.odys-figure__caption {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.odys-figure__title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.odys-figure__text {
+  color: var(--home-muted);
+  font-size: 15px;
+}
+
+.odys-noscript {
+  color: var(--home-muted);
+  text-align: center;
 }
 
 /* ---- Built-on strip ---- */
@@ -509,331 +365,100 @@ body:has(.odys-home) .md-footer-meta {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
-  padding: 40px 24px;
-  border-top: 1px solid var(--odys-line);
+  gap: 14px;
+  padding: 0 24px 96px;
 }
 
 .odys-builton__label {
-  color: var(--odys-muted);
-  font-size: 14px;
+  color: var(--home-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .odys-builton__names {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px 56px;
-  color: var(--odys-text-soft);
-  font: 500 24px var(--odys-font-mono);
-}
-
-.odys-builton__chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  color: var(--odys-muted);
-  font-size: 13px;
-}
-
-.odys-builton__chips span {
-  padding: 4px 10px;
-  border: 1px solid var(--odys-line-strong);
-  border-radius: 999px;
-}
-
-/* ---- Sections below the hero ---- */
-
-.odys-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 96px 24px 0;
-}
-
-.odys-builton + .odys-section {
-  border-top: 1px solid var(--odys-line);
-}
-
-.odys-section .odys-h2 {
-  margin-bottom: 24px;
-}
-
-.odys-section__label {
-  color: var(--odys-mint-400);
-  font: 500 13px var(--odys-font-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.odys-section__label--violet {
-  color: var(--odys-violet-300);
-}
-
-.odys-h2 {
-  max-width: 760px;
-  margin: 0;
-  color: var(--odys-text);
-  font-size: clamp(28px, 3.6vw, 46px);
-  font-weight: 600;
-  font-stretch: 115%;
-  line-height: 1.1;
-  letter-spacing: 0;
-}
-
-/* Asset rows */
-
-.odys-assets {
-  display: flex;
-  flex-direction: column;
-  border-top: 1px solid var(--odys-line);
-}
-
-.odys-home .odys-asset {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 24px;
-  padding: 20px 12px;
-  border-bottom: 1px solid var(--odys-line);
-  color: var(--odys-text);
-  transition: background 0.2s;
-}
-
-.odys-home .odys-asset:hover {
-  background: var(--odys-surface);
-  color: var(--odys-text);
-}
-
-.odys-asset__icon {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  fill: none;
-  stroke: var(--odys-violet-300);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.odys-asset__name {
-  flex: 1 1 220px;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.odys-asset__text {
-  flex: 2 1 320px;
-  color: var(--odys-muted);
-}
-
-.odys-asset__arrow {
-  color: var(--odys-mint-400);
+  gap: 12px 40px;
+  color: var(--home-button-text);
   font-size: 20px;
-  transition: transform 0.2s;
+  font-weight: 600;
 }
 
-.odys-asset:hover .odys-asset__arrow {
-  transform: translateX(4px);
-}
+/* ---- Highlights: vuejs.org's feature boxes ---- */
 
-/* Cards: planning problems and features */
-
-.odys-grid {
+.odys-highlights {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 42px 32px 96px;
+  border-top: 1px solid var(--home-divider);
 }
 
-.odys-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-  padding: 26px;
-  border: 1px solid var(--odys-line);
-  border-radius: 16px;
-  background: var(--odys-surface);
-  transition: border-color 0.2s;
+.odys-highlight {
+  padding: 28px 36px;
+  border-radius: 8px;
 }
 
-.odys-card:hover {
-  border-color: var(--odys-line-hover);
-}
-
-.odys-card--accent {
-  border-color: var(--odys-mint-700);
-}
-
-.odys-card h3 {
-  margin: 0;
-  color: var(--odys-text);
-  font-size: 19px;
+.odys-highlight h2 {
+  margin: 0 0 0.75em;
+  color: var(--home-text);
+  font-size: 20px;
   font-weight: 600;
+  letter-spacing: -0.4px;
 }
 
-.odys-card p {
+.odys-highlight h2::first-letter {
+  color: var(--odys-green-500);
+}
+
+.odys-highlight p {
   margin: 0;
-  color: var(--odys-muted);
-  font-size: 16px;
-}
-
-.odys-home .odys-card__link {
-  margin-top: 4px;
+  color: var(--home-muted);
   font-size: 15px;
+  line-height: 1.6;
 }
 
-.odys-home .odys-problem {
-  color: var(--odys-text);
-}
+/* ---- Narrower screens, at vuejs.org's breakpoints ---- */
 
-.odys-home .odys-problem:hover {
-  color: var(--odys-text);
-}
-
-.odys-problem__tag {
-  font: 500 12px var(--odys-font-mono);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.odys-problem__tag--thermal { color: var(--odys-thermal-400); }
-.odys-problem__tag--solar { color: var(--odys-solar-400); }
-.odys-problem__tag--market { color: var(--odys-muted); }
-.odys-problem__tag--flex { color: var(--odys-flex-400); }
-.odys-problem__tag--ev { color: var(--odys-ev-400); }
-.odys-problem__tag--stochastic { color: var(--odys-mint-400); }
-
-.odys-problem__title {
-  font-size: 21px;
-  font-weight: 600;
-}
-
-.odys-problem__text {
-  color: var(--odys-muted);
-  font-size: 16px;
-}
-
-.odys-problem__more {
-  margin-top: auto;
-  padding-top: 6px;
-  color: var(--odys-violet-300);
-  font-size: 15px;
-}
-
-/* ---- Closing call to action ---- */
-
-.odys-closing {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  margin-top: 96px;
-  padding: 96px 24px 120px;
-  border-top: 1px solid var(--odys-line-faint);
-  background: radial-gradient(50% 60% at 50% 100%, color-mix(in srgb, var(--odys-mint-400) 12%, transparent), color-mix(in srgb, var(--odys-mint-400) 0%, transparent) 70%);
-  text-align: center;
-}
-
-.odys-closing__lead {
-  max-width: 560px;
-  margin: 0 0 16px;
-  color: var(--odys-muted);
-  font-size: 19px;
-}
-
-/* ---- Responsive ---- */
-
-@media (width <= 1060px) {
-  .odys-code {
-    border-top: 1px solid var(--odys-line);
-    border-right: 0;
-  }
-
-  .odys-chart {
-    order: -1;
-  }
-
-  .odys-caption {
-    min-height: 136px;
-  }
-}
-
-@media (width <= 760px) {
-  .odys-hero {
-    padding: 56px 16px 0;
-  }
-
+@media (width <= 960px) {
   .odys-hero__title {
-    font-size: 34px;
-    line-height: 1.05;
+    font-size: 64px;
+    letter-spacing: -0.5px;
   }
 
   .odys-hero__lead {
+    margin-bottom: 48px;
     font-size: 18px;
   }
+}
 
-  .odys-actions {
-    flex-direction: column;
-    align-self: stretch;
+@media (width <= 794px) {
+  .odys-hero__title {
+    font-size: 48px;
+  }
+}
+
+@media (width <= 576px) {
+  .odys-hero {
+    padding: 56px 16px 48px;
   }
 
-  .odys-window {
-    margin-top: 40px;
+  .odys-hero__lead {
+    margin: 18px 0 30px;
+    font-size: 16px;
   }
 
-  .odys-window__tabs {
-    flex-wrap: nowrap;
-    width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
+  .odys-figure {
+    padding: 0 16px 64px;
   }
 
-  .odys-tab {
-    flex: none;
-    padding: 0 14px;
-  }
-
-  .odys-window__tag {
-    display: none;
-  }
-
-  .odys-caption {
-    margin: 20px 16px 0;
-  }
-
-  .odys-chart {
-    padding: 16px;
-  }
-
-  .odys-code {
-    min-height: 520px;
-    padding: 14px 0;
-    font-size: 12.5px;
-    line-height: 20px;
-  }
-
-  .odys-ln {
-    min-height: 20px;
-  }
-
-  .odys-gutter {
-    width: 40px;
-    padding-right: 8px;
-  }
-
-  .odys-marker {
-    width: 14px;
-  }
-
-  .odys-fold {
-    padding: 6px 12px 6px 0;
-    line-height: 20px;
-    white-space: normal;
+  .odys-builton {
+    padding: 0 16px 64px;
   }
 
   .odys-builton__names {
@@ -841,39 +466,11 @@ body:has(.odys-home) .md-footer-meta {
     font-size: 18px;
   }
 
-  .odys-section {
-    padding: 56px 16px 0;
+  .odys-highlights {
+    padding: 24px 16px 64px;
   }
 
-  .odys-closing {
-    margin-top: 56px;
-    padding: 64px 16px 80px;
-  }
-
-  .odys-asset__name {
-    font-size: 19px;
-  }
-
-  .odys-home .odys-asset {
-    padding: 16px 4px;
-  }
-
-  .odys-card {
-    padding: 20px;
-  }
-
-}
-
-@media (width <= 640px) {
-  .odys-caption {
-    min-height: 172px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .odys-chart .fan path,
-  .odys-chart .bar {
-    animation: none;
-    stroke-dashoffset: 0;
+  .odys-highlight {
+    padding: 20px 8px;
   }
 }

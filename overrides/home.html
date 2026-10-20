@@ -1,8 +1,8 @@
 {#-
-  Landing page (design "G · Orbit"). Used by docs/index.md via `template: home.html`.
-  Static content lives here; the hero's chart and code are filled in by
+  Landing page (design "C · Hero + chart"). Used by docs/index.md via `template: home.html`.
+  Static content lives here; the figure's price lines and schedule bars are drawn by
   assets/javascripts/home.js from assets/landing/data.json, which
-  tools/docs/generate_landing_data.py writes from real Odys runs.
+  tools/docs/generate_landing_data.py writes from a real Odys run.
 -#}
 {% extends "main.html" %}
 
@@ -11,154 +11,87 @@
   <link rel="stylesheet" href="{{ 'assets/stylesheets/home.css' | url }}">
 {% endblock %}
 
-{% block tabs %}{% endblock %}
 {% block site_nav %}{% endblock %}
 {% block container %}{% endblock %}
 
-{% block hero %}
+{#- Zensical renders the hero block above the navigation tabs, so the page follows the tabs instead. -#}
+{% block tabs %}
+{{ super() }}
 {% set guide = 'user_guide/' | url %}
 <div class="odys-home" data-landing-data="{{ 'assets/landing/data.json' | url }}">
 
   <section class="odys-hero">
-    <div class="odys-hero__intro">
-      <h1 class="odys-hero__title">Dispatch decisions that hold up in every future</h1>
-      <p class="odys-hero__lead">Odys optimizes energy portfolios under uncertainty. Batteries, generators, EVs and markets, planned against every scenario at once.</p>
-      <div class="odys-actions">
-        <a class="odys-action odys-action--docs" href="{{ guide }}model/first_model/">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>
-          Get started
-        </a>
-        <button type="button" class="odys-action odys-action--install" data-copy="pip install odys" aria-label="Copy install command: pip install odys">
-          <span class="odys-action__prompt">$</span>pip install odys
-          <span class="odys-action__copy">
-            <svg class="odys-action__icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <svg class="odys-action__icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
-          </span>
-          <span class="odys-action__state" data-copy-state aria-live="polite"></span>
-        </button>
-        <a class="odys-action odys-action--github" href="https://github.com/ramirocrc/odys">
-          <svg class="odys-action__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.82 1.19 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
-          GitHub
-          <svg class="odys-action__star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
-        </a>
-      </div>
+    <h1 class="odys-hero__title">Dispatch decisions that hold up in <span class="odys-hero__accent">every future</span></h1>
+    <p class="odys-hero__lead">Odys optimizes energy portfolios under uncertainty. Batteries, generators, EVs and markets, planned against every scenario at once.</p>
+    <div class="odys-actions">
+      <a class="odys-action odys-action--primary" href="{{ guide }}model/first_model/">
+        Get started
+        <svg class="odys-action__arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
+      </a>
+      <button type="button" class="odys-action odys-action--install" data-copy="pip install odys" aria-label="Copy install command: pip install odys">
+        <span class="odys-action__prompt">$</span>pip install odys
+        <svg class="odys-action__icon-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <svg class="odys-action__icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+        <span class="odys-action__state" data-copy-state aria-live="polite"></span>
+      </button>
+      <a class="odys-action" href="https://github.com/ramirocrc/odys">
+        <svg class="odys-action__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.82 1.19 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+        GitHub
+      </a>
     </div>
+  </section>
 
-    <div class="odys-window" data-hero>
-      <div class="odys-window__bar">
-        <div class="odys-window__tabs" role="tablist" aria-label="Optimization approach">
-          <button type="button" role="tab" class="odys-tab" data-tab="deterministic" aria-selected="false"
-            data-kicker="Deterministic" data-lead="Optimizes for a single scenario: your forecast."
-            data-rest="One price forecast in, one schedule out. It is the best plan only if tomorrow turns out exactly like the forecast.">deterministic.py</button>
-          <button type="button" role="tab" class="odys-tab" data-tab="stochastic" aria-selected="true"
-            data-kicker="Stochastic" data-lead="Optimizes for many scenarios at once."
-            data-rest="Multiple price scenarios in, one schedule out. Odys picks the schedule with the highest expected profit across all of them.">stochastic.py</button>
-        </div>
-        <span class="odys-window__tag" data-tab-tag></span>
-      </div>
-      <div class="odys-caption">
-        <div class="odys-caption__text" aria-live="polite">
-          <span class="odys-caption__kicker" data-caption-kicker></span>
-          <span class="odys-caption__lead" data-caption-lead></span>
-          <span class="odys-caption__rest" data-caption-rest></span>
-        </div>
-      </div>
-      <div class="odys-split">
-        <div class="odys-code" data-code></div>
-        <figure class="odys-chart">
-          <div class="odys-chart__sticky">
-            <svg viewBox="0 0 600 560" role="img" aria-label="Price scenarios over a day, above the single schedule Odys commits to" data-chart></svg>
-          </div>
-        </figure>
-      </div>
-      <noscript>
-        <p class="odys-noscript">Enable JavaScript to see the interactive example, or read the <a href="{{ guide }}uncertainty/scenarios/">stochastic optimization guide</a>.</p>
-      </noscript>
-    </div>
+  <section class="odys-figure" aria-label="How it works">
+    <figure>
+      <svg class="odys-chart" viewBox="0 0 960 570" role="img" aria-label="Input: several hourly price scenarios over one day. Odys optimizes them into one output: a single battery schedule that charges in the cheap hours and sells into the price peaks." data-chart>
+        <text class="odys-chart__label" x="0" y="16"><tspan class="odys-chart__tag odys-chart__tag--input">INPUT</tspan><tspan dx="10">Several scenarios</tspan></text>
+        <g data-prices transform="translate(0 36)"></g>
+        <g class="odys-chart__optimize" aria-hidden="true">
+          <line class="odys-chart__flow" x1="495" y1="284" x2="495" y2="304"/>
+          <rect class="odys-chart__step" x="400" y="304" width="190" height="34" rx="8"/>
+          <text class="odys-chart__step-text" x="495" y="326" text-anchor="middle">system.optimize()</text>
+          <line class="odys-chart__flow" x1="495" y1="338" x2="495" y2="360"/>
+          <path class="odys-chart__arrowhead" d="M489 358 L495 368 L501 358 Z"/>
+        </g>
+        <text class="odys-chart__label" x="0" y="400"><tspan class="odys-chart__tag odys-chart__tag--output">OUTPUT</tspan><tspan dx="10">Optimal battery schedule</tspan></text>
+        <g class="odys-chart__label">
+          <rect class="odys-chart__sell" x="726" y="390" width="12" height="12" rx="2"/>
+          <text x="744" y="400">Sell (discharge)</text>
+          <rect class="odys-chart__buy" x="856" y="390" width="12" height="12" rx="2"/>
+          <text x="874" y="400">Buy (charge)</text>
+        </g>
+        <g data-schedule transform="translate(0 140)"></g>
+      </svg>
+      <figcaption class="odys-figure__caption">
+        <span class="odys-figure__title">Several price futures in, one schedule out.</span>
+        <span class="odys-figure__text">A battery bids on the day-ahead market. Odys picks the schedule with the best expected profit across every scenario. <a href="{{ guide }}uncertainty/scenarios/">How it works →</a></span>
+      </figcaption>
+    </figure>
+    <noscript>
+      <p class="odys-noscript">Enable JavaScript to see the price scenarios and the schedule, or read the <a href="{{ guide }}uncertainty/scenarios/">stochastic optimization guide</a>.</p>
+    </noscript>
   </section>
 
   <section class="odys-builton" aria-label="Built on">
     <span class="odys-builton__label">Built on</span>
     <div class="odys-builton__names"><span>linopy</span><span>xarray</span><span>pandas</span><span>HiGHS</span><span>pydantic</span></div>
-    <div class="odys-builton__chips"><span>MIT licence</span><span>Python 3.11–3.14</span><span>Typed, validated inputs</span></div>
   </section>
 
-  <section class="odys-section">
-    <span class="odys-section__label">Planning problems</span>
-    <h2 class="odys-h2">What you can do with Odys.</h2>
-    <div class="odys-grid">
-      {% set problems = [
-        ("merit_order_dispatch", "Generators", "thermal", "Merit-order dispatch", "Merit-order dispatch of solar and gas against a fixed load."),
-        ("solar_storage", "Solar · storage", "solar", "Storing solar for the evening", "Shift midday solar output to later hours with a battery."),
-        ("make_or_buy", "Markets", "market", "Make or buy", "Run the plant or buy from the market, and sell its spare output when the price is high."),
-        ("demand_response", "Flexible load", "flex", "Industrial demand response", "Adjust industrial demand within bounds to follow market prices."),
-        ("depot_charging", "EVs · chargers", "ev", "Depot charging with V2G", "Schedule charging and V2G around trips and shared chargers."),
-        ("day_ahead_or_intraday", "Stochastic · CVaR", "stochastic", "Day-ahead or intraday", "Commit volume day-ahead or keep it for intraday, with a CVaR term."),
-      ] %}
-      {% for slug, tag, tone, title, text in problems %}
-      <a class="odys-card odys-problem{% if tone == 'stochastic' %} odys-card--accent{% endif %}" href="{{ 'examples/' | url }}{{ slug }}/">
-        <span class="odys-problem__tag odys-problem__tag--{{ tone }}">{{ tag }}</span>
-        <span class="odys-problem__title">{{ title }}</span>
-        <span class="odys-problem__text">{{ text }}</span>
-        <span class="odys-problem__more">Open example →</span>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section class="odys-section">
-    <span class="odys-section__label">Formulation and tooling</span>
-    <h2 class="odys-h2">Open about its math. Strict about its inputs.</h2>
-    <div class="odys-grid">
-      <article class="odys-card">
-        <h3>Documented formulation</h3>
-        <p>Every variable and constraint is written out, with the equation numbers the code uses.</p>
-        <a class="odys-card__link" href="{{ 'formulation/' | url }}">Read the formulation →</a>
-      </article>
-      {% set features = [
-        ("Validated before solving", "Assets, profiles and scenarios are checked when you build them, so a bad input fails with a clear message, not a strange result."),
-        ("Results as pandas", "Dispatch comes back as Series and DataFrames, ready for your reports and plots."),
-        ("Any solver", "HiGHS ships by default. Gurobi, CPLEX and SCIP are optional extras."),
-        ("Typed and tested", "Fully typed public API, checked by four type checkers and tested on Python 3.11 to 3.14."),
-        ("MIT licensed", "Use it in research or in production, and read every line of it on GitHub."),
-      ] %}
-      {% for title, text in features %}
-      <article class="odys-card">
-        <h3>{{ title }}</h3>
-        <p>{{ text }}</p>
-      </article>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section class="odys-section">
-    <span class="odys-section__label odys-section__label--violet">Components</span>
-    <h2 class="odys-h2">Assets and markets.</h2>
-    <div class="odys-assets">
-      {% set assets = [
-        ("Generator", "Thermal or renewable, with costs, ramps and availability.", "assets/generator/", "M13 2 4 14h7l-1 8 9-12h-7l1-8z"),
-        ("Fixed load", "Inflexible demand the system must always meet.", "assets/fixed_load/", "M3 10.5 12 3l9 7.5M5 9v12h14V9"),
-        ("Flexible load", "Demand that can be adjusted within absolute bounds.", "assets/flexible_load/", "M4 6h16M4 12h16M4 18h16M9 4v4M15 10v4M7 16v4"),
-        ("Battery storage", "Batteries with efficiencies, SoC limits and self-discharge.", "assets/battery_storage/", "M3 7h15v10H3zM18 10h3v4h-3M7 10v4M11 10v4"),
-        ("Electric vehicle", "Mobile batteries that leave on trips and come back.", "assets/electric_vehicle/", "M3 16v-4l2-5h14l2 5v4zM6 16v2M18 16v2M7 12h.01M17 12h.01"),
-        ("Charger", "Connects vehicles to the site, with power limits.", "assets/charger/", "M8 3v5M16 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"),
-        ("Market", "Buy, sell or both, with volume limits and stage-fixed bids.", "markets/energy_market/", "M3 20h18M6 16l4-5 3 3 6-7M15 7h4v4"),
-      ] %}
-      {% for name, text, page_path, icon in assets %}
-      <a class="odys-asset" href="{{ guide }}{{ page_path }}">
-        <svg class="odys-asset__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ icon }}"/></svg>
-        <span class="odys-asset__name">{{ name }}</span>
-        <span class="odys-asset__text">{{ text }}</span>
-        <span class="odys-asset__arrow" aria-hidden="true">→</span>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section class="odys-closing">
-    <h2 class="odys-h2">Plan your first portfolio.</h2>
-    <p class="odys-closing__lead">The User Guide starts from one asset and one market, and takes you to scenarios and risk.</p>
-    <a class="odys-action odys-action--docs" href="{{ guide }}model/first_model/">Start the User Guide</a>
+  <section class="odys-highlights" aria-label="Why Odys">
+    {% set highlights = [
+      ("Every asset, one model", "Generators, batteries, flexible loads, EVs with chargers and markets, dispatched together in one optimization."),
+      ("Built for uncertainty", "Describe each possible future as a scenario. Optimize for expected profit, or add a CVaR term to guard against the worst ones."),
+      ("Documented formulation", "Every variable, constraint and objective term of the model is written out in the docs."),
+      ("Comprehensive validation", "Assets, profiles and scenarios are checked when you build them, so a bad input fails with a clear message, not a strange result."),
+      ("Support for multiple solvers", "HiGHS ships by default. Gurobi, CPLEX and SCIP are optional extras."),
+      ("Results as pandas", "Dispatch comes back as Series and DataFrames, ready for your reports and plots."),
+    ] %}
+    {% for title, text in highlights %}
+    <article class="odys-highlight">
+      <h2>{{ title }}</h2>
+      <p>{{ text }}</p>
+    </article>
+    {% endfor %}
   </section>
 
 </div>
