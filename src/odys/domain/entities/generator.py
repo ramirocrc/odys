@@ -36,14 +36,14 @@ class Generator(Asset):
         default=None,
         strict=True,
         ge=0,
-        description="Ramp-up rate of the generator in MW per hour",
+        description="Largest increase in output, in MW per hour; each step allows ramp_up times its length in hours.",
     )
 
     ramp_down: float | None = Field(
         default=None,
         strict=True,
         ge=0,
-        description="Ramp-down rate of the generator in MW per hour",
+        description="Largest decrease in output, in MW per hour; each step allows ramp_down times its length in hours.",
     )
 
     min_power: float = Field(

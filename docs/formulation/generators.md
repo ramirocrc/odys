@@ -156,11 +156,11 @@ Read aloud: switching off counts as a shut-down, and nothing else does.
 
 ### G-7 · Output changes gradually {#g-7}
 
-From one step to the next, the output rises at most by the ramp-up limit and falls at most by the ramp-down limit.
+From one step to the next, the output rises at most by the ramp-up rate and falls at most by the ramp-down rate, times the step length.
 
 $$
-p_{g,s,t} - p_{g,s,t-1} \le \overline{R}^{up}_g, \qquad
-p_{g,s,t-1} - p_{g,s,t} \le \overline{R}^{down}_g \qquad \forall g \in \mathcal{G},\ s \in \mathcal{S},\ t \in \mathcal{T}
+p_{g,s,t} - p_{g,s,t-1} \le \overline{R}^{up}_g\, \Delta t, \qquad
+p_{g,s,t-1} - p_{g,s,t} \le \overline{R}^{down}_g\, \Delta t \qquad \forall g \in \mathcal{G},\ s \in \mathcal{S},\ t \in \mathcal{T}
 $$
 
 with $p_{g,s,-1} = P^{init}_g$.
@@ -172,8 +172,8 @@ Read aloud: a big unit can't jump from low to full output, or back, in one step.
 **Good to know.**
 
 - Without `ramp_up` or `ramp_down`, the limit is the rating $\overline{P}_g$, so it never binds: the output can't change by more than that anyway. The rows are added all the same ([#154](https://github.com/ramirocrc/odys/issues/154)).
-- The limit is applied **per step**, although the field is described as MW per hour. With hourly steps they agree; with 15-minute steps the ramp is four times too loose ([#124](https://github.com/ramirocrc/odys/issues/124)).
-- The limit also applies when the unit starts or stops, from or to 0 MW. With a minimum output above the ramp-up limit, an off unit can never start, and with one above the ramp-down limit, a running unit can never stop ([#147](https://github.com/ramirocrc/odys/issues/147)).
+- The rates are in MW per hour, so a generator ramps the same whatever the step length: with 15-minute steps, a `ramp_up` of 40 MW per hour allows 10 MW per step.
+- The limit also applies when the unit starts or stops, from or to 0 MW. With a minimum output above one step's ramp-up limit, an off unit can never start, and with one above the ramp-down limit, a running unit can never stop ([#147](https://github.com/ramirocrc/odys/issues/147)).
 
 `Added: always · Binds: only with ramp_up or ramp_down set · Names: generator_max_ramp_up_constraint, generator_max_ramp_down_constraint`
 
@@ -311,7 +311,7 @@ Read aloud: the fuel for every MWh, plus a fixed amount for every start and ever
 | $\underline{P}_g$ | `Generator.min_power` | Parameter | MW |
 | $\varepsilon_g$ | $10^{-5}\, \overline{P}_g$, fixed in the code | Parameter | MW |
 | $A_{g,s,t}$ | `AvailableCapacityProfile.values` | Parameter | MW |
-| $\overline{R}^{up}_g$, $\overline{R}^{down}_g$ | `Generator.ramp_up`, `Generator.ramp_down` | Parameter | MW per step |
+| $\overline{R}^{up}_g$, $\overline{R}^{down}_g$ | `Generator.ramp_up`, `Generator.ramp_down` | Parameter | MW per hour |
 | $L^{up}_g$, $L^{down}_g$ | `Generator.commitment.min_up_time`, `Generator.commitment.min_down_time`, in steps | Parameter | steps |
 | $c^{var}_g$ | `Generator.variable_cost` | Parameter | currency per MWh |
 | $c^{start}_g$, $c^{stop}_g$ | `Generator.commitment.startup_cost`, `Generator.commitment.shutdown_cost` | Parameter | currency per event |

@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     )
     ```
 
+- **Breaking:** `Generator.ramp_up` and `ramp_down` are in MW per hour, as their descriptions said, and each step allows the rate times its length in hours. Before, they were applied per step, so on runs with steps shorter than an hour a ramp now allows less per step (with 15-minute steps, a quarter). Hourly runs are unchanged.
 - **Breaking:** `result.flexible_loads` has one series, `consumption`, replacing `load_adjustment` and `actual_load`. The linopy variable is `flexible_load_consumption` (it was `load_adjustment`), and the constraints are `flexible_load_lower_bound_constraint` and `flexible_load_upper_bound_constraint`.
 - **Breaking:** the objective values all of a flexible load's consumption at `value_of_consumption`, not only its adjustment from the base. The dispatch of a problem written with the same range is unchanged, but `objective_value` and each scenario's profit (which the CVaR term weighs) now include the value of the consumption the old base stood for.
 - Documentation: a simpler landing page, laid out like vuejs.org's. It has a hero with three buttons (Get started, `pip install odys`, GitHub), one figure of price scenarios going in and the battery schedule Odys commits to coming out, a "Built on" strip and six highlights. It follows the light/dark toggle and keeps the docs header and navigation tabs.
