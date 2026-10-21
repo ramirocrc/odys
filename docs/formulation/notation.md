@@ -46,7 +46,7 @@ You can tell what a symbol is from how it looks:
 
 The only decisions written in Greek are the two helper variables of the risk term, $\zeta$ and $\xi_s$, on the [Objective](objective.md) page. They follow the paper that introduced them.
 
-Superscripts only say what role a symbol plays, never a limit: *ch* and *dis* (charge, discharge), *buy* and *sell*, *start* and *stop*, *up* and *down*, *net*, *trip*, *trade*, *fix* (fixed), *init* and *final* (the run's initial and final conditions), *var* (variable), *deg* (degradation) and *val* (value).
+Superscripts only say what role a symbol plays, never a limit: *ch* and *dis* (charge, discharge), *buy* and *sell*, *start* and *stop*, *up* and *down*, *net*, *trip*, *trade*, *fix* (fixed), *sw* (switchable), *init* and *final* (the run's initial and final conditions), *var* (variable), *deg* (degradation) and *val* (value).
 
 Each page ends with a table that maps its symbols to the odys attributes they come from, with units.
 
@@ -97,6 +97,7 @@ You don't always have to say where an asset starts:
 | ----- | ---------------------------- |
 | Generator | Starts off ($P^{init}_g = 0$), as if it had been off forever ($N^{init}_g = \infty$), so no minimum time carries over. odys asks for a `GeneratorInitialState` as soon as the start matters: when `ramp_up` or `ramp_down` is set, or its `commitment` has `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost`. |
 | Generator with an initial state but no `time_in_state` | As if it had been in that state forever ($N^{init}_g = \infty$). odys only allows this when the matching minimum time is unset. |
+| Flexible load | Starts at 0 MW: running if it has no commitment, off if it has one, as if it had been in that state forever. odys asks for a `FlexibleLoadInitialState` as soon as the start matters: when `ramp_up` or `ramp_down` is set, or its `commitment` has `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost`. |
 | Battery storage, electric vehicle | No default: a `StorageInitialState` or `ElectricVehicleInitialState` is always required, because the charge carries over from step to step. |
 
 Final conditions are always optional.

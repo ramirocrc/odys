@@ -10,15 +10,18 @@ from odys import (
     AvailableCapacityProfile,
     Battery,
     BatteryStorage,
+    Commitment,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
+    FlexibleLoadInitialState,
     FlexibleLoadProfile,
     Generator,
     LoadProfile,
     Objective,
+    OptimalDispatchResults,
     PriceProfile,
     ProfitTerm,
     Scenario,
@@ -416,3 +419,125 @@ def test_flexible_load_follows_time_varying_bounds() -> None:
     consumption = system.optimize().flexible_loads.consumption.to_numpy()
 
     assert consumption == pytest.approx([upper_bound[0], lower_bound[1], upper_bound[2]], abs=TOLERANCE)
+
+
+def _buy_from_market(
+    load: FlexibleLoad,
+    flexible_range: FlexibleLoadProfile,
+    prices: list[float],
+    initial_conditions: tuple[FlexibleLoadInitialState, ...] = (),
+    timestep: timedelta = timedelta(hours=1),
+) -> OptimalDispatchResults:
+    market = EnergyMarket(
+        name="grid",
+        max_trading_volume_per_step=1000.0,
+        allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
+    )
+    return EnergySystem(
+        portfolio=AssetPortfolio([load]),
+        markets=market,
+        timestep=timestep,
+        number_of_steps=len(prices),
+        scenarios=Scenario(profiles=(flexible_range, PriceProfile(market=market, values=prices))),
+        initial_conditions=initial_conditions,
+    ).optimize()
+
+
+def test_ramp_limit_per_hour_spreads_a_rise_over_half_hourly_steps() -> None:
+    """Power is cheap, so the load rises as fast as 30 MW per hour allows: 15 MW per half-hour step."""
+    load = FlexibleLoad(name="process", value_of_consumption=80.0, ramp_up=30.0)
+
+    results = _buy_from_market(
+        load,
+        _constant_range(load, 0.0, 100.0, 4),
+        [10.0] * 4,
+        (FlexibleLoadInitialState(load=load, power=0.0),),
+        timestep=timedelta(minutes=30),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([15.0, 30.0, 45.0, 60.0], abs=TOLERANCE)
+
+
+def test_switchable_load_switches_off_when_power_costs_more_than_it_is_worth() -> None:
+    """At 100 $/MWh, even the 40 MW minimum stable load loses money, so the load stops for that step."""
+    load = FlexibleLoad(name="process", value_of_consumption=60.0, commitment=Commitment())
+
+    results = _buy_from_market(load, _constant_range(load, 40.0, 80.0, 3), [30.0, 100.0, 30.0])
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([80.0, 0.0, 80.0], abs=TOLERANCE)
+    assert results.flexible_loads.status.to_numpy() == pytest.approx([1.0, 0.0, 1.0], abs=TOLERANCE)
+
+
+def test_start_lands_anywhere_in_the_range_past_the_ramp_limit() -> None:
+    """Ramps apply between two running steps: a start from off jumps straight to the 80 MW ceiling."""
+    load = FlexibleLoad(name="process", value_of_consumption=60.0, ramp_up=10.0, commitment=Commitment())
+
+    results = _buy_from_market(
+        load,
+        _constant_range(load, 50.0, 80.0, 2),
+        [10.0, 10.0],
+        (FlexibleLoadInitialState(load=load, power=0.0),),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([80.0, 80.0], abs=TOLERANCE)
+    assert results.flexible_loads.startup.to_numpy() == pytest.approx([1.0, 0.0], abs=TOLERANCE)
+
+
+def test_minimum_up_time_counts_the_time_on_before_the_horizon() -> None:
+    """On for 1 of its 3 minimum hours, the load stays on for 2 more hours at its floor, then stops."""
+    load = FlexibleLoad(
+        name="process",
+        value_of_consumption=60.0,
+        commitment=Commitment(min_up_time=timedelta(hours=3)),
+    )
+
+    results = _buy_from_market(
+        load,
+        _constant_range(load, 40.0, 80.0, 4),
+        [200.0] * 4,
+        (FlexibleLoadInitialState(load=load, power=50.0, time_in_state=timedelta(hours=1)),),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([40.0, 40.0, 0.0, 0.0], abs=TOLERANCE)
+
+
+@pytest.mark.parametrize(
+    ("startup_cost", "expected_consumption"),
+    [(0.0, [80.0, 0.0, 80.0]), (1000.0, [80.0, 40.0, 80.0])],
+    ids=["free_restart", "costly_restart"],
+)
+def test_startup_cost_keeps_the_load_running_through_a_short_expensive_spell(
+    startup_cost: float,
+    expected_consumption: list[float],
+) -> None:
+    """Stopping for the 70 $/MWh hour saves 400 at the floor, less than a 1,000 restart."""
+    load = FlexibleLoad(name="process", value_of_consumption=60.0, commitment=Commitment(startup_cost=startup_cost))
+
+    results = _buy_from_market(
+        load,
+        _constant_range(load, 40.0, 80.0, 3),
+        [30.0, 70.0, 30.0],
+        (FlexibleLoadInitialState(load=load, power=50.0),),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx(expected_consumption, abs=TOLERANCE)
+
+
+def test_kiln_respects_its_ramp_minimum_up_time_and_startup_cost() -> None:
+    """The kiln starts at 90 MW, can't stop within its 2-hour minimum, and ramps back up at 20 MW per hour."""
+    kiln = FlexibleLoad(
+        name="kiln",
+        value_of_consumption=80.0,
+        ramp_up=20.0,
+        commitment=Commitment(min_up_time=timedelta(hours=2), startup_cost=500.0),
+    )
+
+    results = _buy_from_market(
+        kiln,
+        _constant_range(kiln, 30.0, 90.0, 4),
+        [50.0, 100.0, 60.0, 40.0],
+        (FlexibleLoadInitialState(load=kiln, power=0.0, time_in_state=timedelta(hours=5)),),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([90.0, 70.0, 90.0, 90.0], abs=TOLERANCE)
+    assert results.objective_value == pytest.approx(80.0 * 340.0 - 20_500.0 - 500.0)
