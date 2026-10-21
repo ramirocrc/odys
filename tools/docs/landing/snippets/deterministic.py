@@ -1,4 +1,7 @@
-"""Landing page hero snippet: one price forecast, one schedule."""
+"""The landing page figure's baseline: the same battery optimized against one price forecast.
+
+tests/docs/test_landing_snippets.py checks that stochastic.py's schedule beats this one in expectation.
+"""
 
 from datetime import timedelta
 
@@ -14,7 +17,6 @@ from odys import (
     StorageInitialState,
 )
 
-# --8<-- [start:shown]
 battery = BatteryStorage(
     name="bess",
     battery=Battery(
@@ -57,4 +59,3 @@ system = EnergySystem(
     final_conditions=[final],
 )
 result = system.optimize()
-# --8<-- [end:shown]
