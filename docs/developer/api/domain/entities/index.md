@@ -13,6 +13,7 @@ Domain entity models.
 - `base`
 - `battery`
 - `charger`
+- `commitment`
 - `electric_vehicle`
 - `fixed_load`
 - `flexible_load`

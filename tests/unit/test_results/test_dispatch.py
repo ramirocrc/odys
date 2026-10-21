@@ -323,6 +323,7 @@ def test_generator_to_dataframe(generator_dispatch: GeneratorDispatch) -> None:
 
 EXPECTED_FLEXIBLE_LOAD_COUNT = 2
 EXPECTED_CONSUMPTION_FIRST_VALUE = 110.0
+FLEXIBLE_LOAD_SERIES = ["consumption", "status", "startup", "shutdown"]
 
 
 @pytest.fixture
@@ -336,7 +337,16 @@ def flexible_load_dispatch() -> FlexibleLoadDispatch:
         coords={"flexible_load": flexible_load_names, "time": timesteps},
     )
 
-    return FlexibleLoadDispatch(xr.Dataset({"consumption": consumption}), FLEXIBLE_LOAD_DIMENSION)
+    status = xr.DataArray(
+        [[1.0, 1.0], [1.0, 0.0]],
+        dims=["flexible_load", "time"],
+        coords={"flexible_load": flexible_load_names, "time": timesteps},
+    )
+    no_change = xr.zeros_like(status)
+    return FlexibleLoadDispatch(
+        xr.Dataset({"consumption": consumption, "status": status, "startup": no_change, "shutdown": no_change}),
+        FLEXIBLE_LOAD_DIMENSION,
+    )
 
 
 def test_flexible_load_getitem(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
@@ -370,18 +380,26 @@ def test_flexible_load_consumption(flexible_load_dispatch: FlexibleLoadDispatch)
     assert consumption.iloc[0] == pytest.approx(EXPECTED_CONSUMPTION_FIRST_VALUE)
 
 
+@pytest.mark.parametrize("series", ["status", "startup", "shutdown"])
+def test_flexible_load_on_off_series(flexible_load_dispatch: FlexibleLoadDispatch, series: str) -> None:
+    values = getattr(flexible_load_dispatch, series)
+
+    assert len(values) == EXPECTED_FLEXIBLE_LOAD_COUNT * EXPECTED_TIMESTEP_COUNT
+    assert values.name == series
+
+
 def test_flexible_load_to_dataset(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
     dataset = flexible_load_dispatch.to_dataset()
 
     assert isinstance(dataset, xr.Dataset)
-    assert list(dataset.data_vars) == ["consumption"]
+    assert list(dataset.data_vars) == FLEXIBLE_LOAD_SERIES
 
 
 def test_flexible_load_to_dataframe(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
     dataframe = flexible_load_dispatch.to_dataframe()
 
     assert not dataframe.empty
-    assert list(dataframe.columns) == ["consumption"]
+    assert list(dataframe.columns) == FLEXIBLE_LOAD_SERIES
 
 
 def test_flexible_load_repr(flexible_load_dispatch: FlexibleLoadDispatch) -> None:

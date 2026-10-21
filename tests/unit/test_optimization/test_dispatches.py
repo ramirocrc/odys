@@ -66,7 +66,7 @@ EXPECTED_SERIES: dict[type[Dispatch], tuple[str, ...]] = {
     ElectricVehicleDispatch: ("net_power", "soc", "charge_mode"),
     ChargerDispatch: ("assignment", "power"),
     MarketDispatch: ("sell_volume", "buy_volume", "net_volume"),
-    FlexibleLoadDispatch: ("consumption",),
+    FlexibleLoadDispatch: ("consumption", "status", "startup", "shutdown"),
 }
 
 

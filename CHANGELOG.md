@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Commitment`, exported from `odys`: minimum up and down times and start-up and shut-down costs, held by `Generator.commitment`.
 - `FlexibleLoadProfile(load=..., lower_bound=..., upper_bound=...)`: the range a flexible load can consume in at each step, in MW, per scenario. Both bounds are at least 0, the lower one is at most the upper one, and they lie within the load's `min_load` and `max_load` when those are set; otherwise building it raises `OdysValidationError`.
+- A `FlexibleLoad` can model an industrial process:
+    - `ramp_up` and `ramp_down`, in MW per hour, limit how fast its consumption changes between two steps it runs;
+    - `commitment` (a `Commitment`) lets it switch off: it is then either off, at 0 MW, or running within its `FlexibleLoadProfile` range, with the minimum up and down times and the start-up and shut-down costs of its commitment. A start can land anywhere in the range and a stop drops to 0, whatever the ramps;
+    - `FlexibleLoadInitialState(load=..., power=..., time_in_state=...)` gives where it starts, and is required as soon as ramps, minimum times or start and stop costs are set;
+    - `result.flexible_loads` adds `status`, `startup` and `shutdown`. A load without a commitment is always on.
 
 ### Changed
 

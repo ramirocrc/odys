@@ -370,6 +370,7 @@ classDiagram
     BatteryStorageFormulation *-- StorageFormulation
     ElectricVehicleFormulation *-- StorageFormulation
     GeneratorFormulation *-- CommitmentFormulation
+    FlexibleLoadFormulation *-- CommitmentFormulation
     ChargingFormulation --> ElectricVehicleFormulation
     Formulation --> ModelContext
     Formulation ..> EntityArrays : vectorize
@@ -460,6 +461,9 @@ classDiagram
     }
     class FlexibleLoadDispatch {
         +consumption
+        +status
+        +startup
+        +shutdown
     }
     class OptimalDispatchResults {
         +solver_status: SolveStatus

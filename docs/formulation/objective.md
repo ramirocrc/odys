@@ -20,19 +20,19 @@ $$
 && \text{generator cost} \\
 & - \sum_{k \in \mathcal{K}} \sum_{t \in \mathcal{T}} c^{deg}_k \left(p^{ch}_{k,s,t} + p^{dis}_{k,s,t}\right) \Delta t
 && \text{battery wear} \\
-& + \sum_{l \in \mathcal{L}} \sum_{t \in \mathcal{T}} c^{val}_l\, d_{l,s,t}\, \Delta t
+& + \sum_{l \in \mathcal{L}} \sum_{t \in \mathcal{T}} \left(c^{val}_l\, d_{l,s,t}\, \Delta t - c^{start}_l\, y^{start}_{l,s,t} - c^{stop}_l\, y^{stop}_{l,s,t}\right)
 && \text{flexible-load value}
 \end{aligned}
 $$
 
-Read aloud: what you sell minus what you buy, at that scenario's prices; minus what your generators cost to run, start and stop; minus what your batteries lose in wear; plus what your flexible loads' consumption is worth.
+Read aloud: what you sell minus what you buy, at that scenario's prices; minus what your generators cost to run, start and stop; minus what your batteries lose in wear; plus what your flexible loads' consumption is worth, less what starting and stopping them costs.
 
 Each line belongs to one page:
 
 - **Market revenue**, on [Markets](markets.md#objective-contribution). Selling earns the price, buying pays it. With a negative price, it's the other way round.
 - **Generator cost**, on [Generators](generators.md#objective-contribution). Fuel is paid per MWh, start-ups and shut-downs per event.
 - **Battery wear**, on [Batteries](batteries.md#objective-contribution) and [Electric vehicles](electric_vehicles.md#objective-contribution). Every MWh in or out counts, so a full cycle pays twice.
-- **Flexible-load value**, on [Flexible loads](flexible_loads.md#objective-contribution). Every MWh they use is worth $c^{val}_l$.
+- **Flexible-load value**, on [Flexible loads](flexible_loads.md#objective-contribution). Every MWh they use is worth $c^{val}_l$, and a load that can switch off pays for its starts and stops.
 
 Fixed loads and chargers add nothing of their own. Serving a fixed demand still costs money, but that cost already shows up in the lines above: the energy you buy for it, or the fuel your generators burn.
 
@@ -138,6 +138,7 @@ Read aloud: make the most money on average, but also keep the bad days from gett
 | $c^{stop}_g$ | `Generator.commitment.shutdown_cost` | Parameter | currency per shut-down |
 | $c^{deg}_k$ | `Battery.degradation_cost` | Parameter | currency per MWh |
 | $c^{val}_l$ | `FlexibleLoad.value_of_consumption` | Parameter | currency per MWh |
+| $c^{start}_l$, $c^{stop}_l$ | `FlexibleLoad.commitment.startup_cost`, `FlexibleLoad.commitment.shutdown_cost` | Parameter | currency per event |
 | $\lambda_{m,s,t}$ | `PriceProfile.values` | Parameter | currency per MWh |
 | – | `results.objective_value` | Result | currency |
 

@@ -16,6 +16,7 @@ import xarray as xr
 from odys.domain.conditions import (
     ElectricVehicleFinalState,
     ElectricVehicleInitialState,
+    FlexibleLoadInitialState,
     GeneratorFinalState,
     GeneratorInitialState,
     StorageFinalState,
@@ -24,6 +25,7 @@ from odys.domain.conditions import (
 from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.horizon import Horizon
 from odys.parameters.context import ModelContext
@@ -99,6 +101,21 @@ class FlexibleLoadArrays(EntityArrays):
     """Flexible load parameters along the flexible load dimension."""
 
     value_of_consumption: xr.DataArray
+    ramp_up: xr.DataArray
+    ramp_down: xr.DataArray
+
+
+class FlexibleLoadStateArrays(EntityArrays):
+    """Flexible load quantities that depend on the run: the initial consumption and the on/off states.
+
+    Without an initial state, the load starts at 0 MW, running if it has no
+    commitment and off if it has one. `is_switchable` marks the loads with a
+    commitment; the others are always running.
+    """
+
+    initial_power: xr.DataArray
+    is_switchable: xr.DataArray
+    commitment: CommitmentStateArrays
 
 
 class MarketArrays(EntityArrays):
@@ -214,6 +231,56 @@ def generator_state_arrays(
             coordinates,
             context.horizon,
             initially_on=initial_power > 0,
+            initial_steps_in_state=initial_steps_in_state,
+        ),
+    )
+
+
+def flexible_load_state_arrays(
+    loads: Sequence[FlexibleLoad],
+    coordinates: Coordinates,
+    context: ModelContext,
+) -> FlexibleLoadStateArrays:
+    """Build the flexible loads' initial consumption and their on/off states.
+
+    A load without a commitment gets `Commitment()` here, so every load has an on/off state; it is always on.
+
+    Args:
+        loads: The flexible loads, in coordinate order.
+        coordinates: The labels of the loads along the flexible load dimension.
+        context: The shared indexing of the problem, with its horizon and conditions.
+
+    Returns:
+        The flexible loads' state arrays.
+
+    """
+    initial_power = context.conditions(
+        FlexibleLoadInitialState,
+        loads,
+        coordinates,
+        lambda state: state.power,
+        default=0.0,
+    )
+    is_switchable = xr.DataArray(
+        [load.commitment is not None for load in loads],
+        dims=coordinates.dimension,
+        coords=coordinates.dimension_coordinates_map,
+    )
+    initial_steps_in_state = context.conditions(
+        FlexibleLoadInitialState,
+        loads,
+        coordinates,
+        lambda state: _steps_in_state(state.time_in_state, context.horizon),
+        default=np.inf,
+    )
+    return FlexibleLoadStateArrays(
+        initial_power=initial_power,
+        is_switchable=is_switchable,
+        commitment=commitment_state_arrays(
+            [load.commitment or Commitment() for load in loads],
+            coordinates,
+            context.horizon,
+            initially_on=~is_switchable | (initial_power > 0),
             initial_steps_in_state=initial_steps_in_state,
         ),
     )
