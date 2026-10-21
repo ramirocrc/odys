@@ -32,12 +32,20 @@ That's all a generator needs. The optimizer runs the CCGT whenever its 50 $/MWh 
 | `nominal_power` | `float`             | Yes      | -       | Rated output, above 0 (MW)                                    |
 | `variable_cost` | `float`             | Yes      | -       | Cost of each MWh produced, at least 0 (currency/MWh)          |
 | `min_power`     | `float`             | No       | `0.0`   | Lowest output while on (MW)                                   |
-| `ramp_up`       | `float \| None`     | No       | `None`  | Largest increase in output from one step to the next (MW/step) |
-| `ramp_down`     | `float \| None`     | No       | `None`  | Largest decrease in output from one step to the next (MW/step) |
-| `min_up_time`   | `timedelta \| None` | No       | `None`  | Shortest time the generator stays on once started             |
-| `min_down_time` | `timedelta \| None` | No       | `None`  | Shortest time the generator stays off once stopped            |
-| `startup_cost`  | `float`             | No       | `0.0`   | Cost of each start-up (currency)                              |
-| `shutdown_cost` | `float`             | No       | `0.0`   | Cost of each shut-down (currency)                             |
+| `ramp_up`       | `float \| None`     | No       | `None`  | Fastest the output can rise (MW per hour)                     |
+| `ramp_down`     | `float \| None`     | No       | `None`  | Fastest the output can fall (MW per hour)                     |
+| `commitment`    | `Commitment`        | No       | `Commitment()` | How it switches on and off: minimum up and down times, start-up and shut-down costs |
+
+A `Commitment` holds the rules for switching on and off:
+
+| Field           | Type                | Required | Default | Description                                         |
+| --------------- | ------------------- | -------- | ------- | --------------------------------------------------- |
+| `min_up_time`   | `timedelta \| None` | No       | `None`  | Shortest time the generator stays on once started   |
+| `min_down_time` | `timedelta \| None` | No       | `None`  | Shortest time the generator stays off once stopped  |
+| `startup_cost`  | `float`             | No       | `0.0`   | Cost of each start-up, at least 0 (currency)        |
+| `shutdown_cost` | `float`             | No       | `0.0`   | Cost of each shut-down, at least 0 (currency)       |
+
+The default, `Commitment()`, lets the generator switch on and off freely, at no cost.
 
 ## Minimum power
 
@@ -64,28 +72,32 @@ ccgt = Generator(
     nominal_power=100.0,
     variable_cost=50.0,
     min_power=30.0,
-    ramp_up=40.0,  # up by at most 40 MW per step
-    ramp_down=40.0,  # down by at most 40 MW per step
+    ramp_up=40.0,  # up by at most 40 MW per hour
+    ramp_down=40.0,  # down by at most 40 MW per hour
 )
 ```
 
-With these, going from 30 to 100 MW takes two steps. The limits are **per step**, not per hour: with 15-minute steps, `ramp_up=40.0` allows 40 MW every 15 minutes. Leave them at `None` for a unit that can follow any change, like a wind farm.
+With hourly steps, going from 30 to 100 MW takes two steps. The limits are **per hour**, whatever the step length: with 15-minute steps, `ramp_up=40.0` allows 10 MW per step. Leave them at `None` for a unit that can follow any change, like a wind farm.
 
-Ramps also count when the generator starts or stops, and at the first step, where they start from the generator's [initial state](#initial-and-final-state). So keep `ramp_up` at or above `min_power`, or the unit can't reach its minimum and never starts. See [G-7](../../formulation/generators.md#g-7).
+Ramps also count when the generator starts or stops, and at the first step, where they start from the generator's [initial state](#initial-and-final-state). So keep one step's worth of `ramp_up` at or above `min_power`, or the unit can't reach its minimum and never starts. See [G-7](../../formulation/generators.md#g-7).
 
 ## Minimum up and down time
 
-Once started, a big plant has to stay on for a while, and once stopped, it needs time to cool down before it starts again:
+Once started, a big plant has to stay on for a while, and once stopped, it needs time to cool down before it starts again. Both go in its `Commitment`:
 
 ```python
 from datetime import timedelta
+
+from odys import Commitment
 
 ccgt = Generator(
     name="ccgt",
     nominal_power=100.0,
     variable_cost=50.0,
-    min_up_time=timedelta(hours=4),  # once on, on for at least 4 hours
-    min_down_time=timedelta(hours=3),  # once off, off for at least 3 hours
+    commitment=Commitment(
+        min_up_time=timedelta(hours=4),  # once on, on for at least 4 hours
+        min_down_time=timedelta(hours=3),  # once off, off for at least 3 hours
+    ),
 )
 ```
 
@@ -95,15 +107,14 @@ Time spent before the run counts too: a CCGT that has been on for 1 hour, with a
 
 ## Startup and shutdown cost
 
-Starting a thermal plant burns fuel and wears it out before it produces a single MWh. Put a price on each start-up and each shut-down, and the optimizer thinks twice before switching:
+Starting a thermal plant burns fuel and wears it out before it produces a single MWh. Put a price on each start-up and each shut-down in its `Commitment`, and the optimizer thinks twice before switching:
 
 ```python
 ccgt = Generator(
     name="ccgt",
     nominal_power=100.0,
     variable_cost=50.0,
-    startup_cost=500.0,
-    shutdown_cost=200.0,
+    commitment=Commitment(startup_cost=500.0, shutdown_cost=200.0),
 )
 ```
 
@@ -130,7 +141,7 @@ ccgt = Generator(
     variable_cost=50.0,
     min_power=30.0,
     ramp_up=40.0,
-    min_up_time=timedelta(hours=4),
+    commitment=Commitment(min_up_time=timedelta(hours=4)),
 )
 factory = FixedLoad(name="factory")
 

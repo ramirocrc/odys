@@ -10,6 +10,7 @@ Model formulations, one per entity type. A `Formulation` owns, for every entity 
 
 - `base`
 - `charging`
+- `commitment`
 - `electric_vehicle`
 - `energy_market`
 - `fixed_load`

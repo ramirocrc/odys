@@ -6,12 +6,18 @@ import numpy as np
 import pytest
 
 from odys.domain.conditions import ConditionSet, GeneratorFinalState, GeneratorInitialState
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.generator import Generator
 from odys.domain.horizon import Horizon
 from odys.domain.scenario import Scenario, ScenarioSet
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
-from odys.parameters.entity_arrays import GeneratorArrays, GeneratorStateArrays, generator_state_arrays
+from odys.parameters.entity_arrays import (
+    CommitmentArrays,
+    GeneratorArrays,
+    GeneratorStateArrays,
+    generator_state_arrays,
+)
 from odys.parameters.vectorize import vectorize
 
 GENERATOR_DIMENSION = "generator"
@@ -33,6 +39,14 @@ def _generator_arrays(generators: list[Generator]) -> GeneratorArrays:
     return vectorize(GeneratorArrays, generators, Coordinates.of_entities(GENERATOR_DIMENSION, generators))
 
 
+def _commitment_arrays(generators: list[Generator]) -> CommitmentArrays:
+    return vectorize(
+        CommitmentArrays,
+        [generator.commitment for generator in generators],
+        Coordinates.of_entities(GENERATOR_DIMENSION, generators),
+    )
+
+
 def _state_arrays(generators: list[Generator], condition_set: ConditionSet) -> GeneratorStateArrays:
     context = ModelContext(
         horizon=Horizon(timestep=HALF_HOUR, number_of_steps=4),
@@ -48,7 +62,7 @@ def generator_with_shutdown_cost() -> Generator:
         name="gen_with_shutdown_cost",
         nominal_power=STANDARD_NOMINAL_POWER,
         variable_cost=STANDARD_VARIABLE_COST,
-        shutdown_cost=EXPLICIT_SHUTDOWN_COST,
+        commitment=Commitment(shutdown_cost=EXPLICIT_SHUTDOWN_COST),
     )
 
 
@@ -62,7 +76,7 @@ def generator_without_shutdown_cost() -> Generator:
 
 
 def test_shutdown_cost_reflects_explicit_value(generator_with_shutdown_cost: Generator) -> None:
-    params = _generator_arrays([generator_with_shutdown_cost])
+    params = _commitment_arrays([generator_with_shutdown_cost])
 
     value = params.shutdown_cost.sel(generator="gen_with_shutdown_cost").item()
 
@@ -70,7 +84,7 @@ def test_shutdown_cost_reflects_explicit_value(generator_with_shutdown_cost: Gen
 
 
 def test_shutdown_cost_defaults_to_zero_when_not_set(generator_without_shutdown_cost: Generator) -> None:
-    params = _generator_arrays([generator_without_shutdown_cost])
+    params = _commitment_arrays([generator_without_shutdown_cost])
 
     value = params.shutdown_cost.sel(generator="gen_without_shutdown_cost").item()
 
@@ -81,7 +95,7 @@ def test_shutdown_cost_preserves_explicit_values_alongside_defaulted_ones(
     generator_with_shutdown_cost: Generator,
     generator_without_shutdown_cost: Generator,
 ) -> None:
-    params = _generator_arrays([generator_with_shutdown_cost, generator_without_shutdown_cost])
+    params = _commitment_arrays([generator_with_shutdown_cost, generator_without_shutdown_cost])
 
     assert params.shutdown_cost.sel(generator="gen_with_shutdown_cost").item() == EXPLICIT_SHUTDOWN_COST
     assert params.shutdown_cost.sel(generator="gen_without_shutdown_cost").item() == 0.0
@@ -92,18 +106,18 @@ def test_min_down_steps_converts_the_min_down_time_with_the_timestep() -> None:
         name="gen_with_min_down_time",
         nominal_power=STANDARD_NOMINAL_POWER,
         variable_cost=STANDARD_VARIABLE_COST,
-        min_down_time=EXPLICIT_MIN_DOWN_TIME,
+        commitment=Commitment(min_down_time=EXPLICIT_MIN_DOWN_TIME),
     )
     states = _state_arrays([generator], ConditionSet())
 
-    assert states.min_down_steps.sel(generator="gen_with_min_down_time").item() == EXPLICIT_MIN_DOWN_STEPS
+    assert states.commitment.min_down_steps.sel(generator="gen_with_min_down_time").item() == EXPLICIT_MIN_DOWN_STEPS
 
 
 def test_min_up_and_down_steps_default_to_one_when_not_set(generator_without_shutdown_cost: Generator) -> None:
     states = _state_arrays([generator_without_shutdown_cost], ConditionSet())
 
-    assert states.min_up_steps.sel(generator="gen_without_shutdown_cost").item() == 1
-    assert states.min_down_steps.sel(generator="gen_without_shutdown_cost").item() == 1
+    assert states.commitment.min_up_steps.sel(generator="gen_without_shutdown_cost").item() == 1
+    assert states.commitment.min_down_steps.sel(generator="gen_without_shutdown_cost").item() == 1
 
 
 def test_state_arrays_read_the_initial_and_final_state(generator_with_shutdown_cost: Generator) -> None:
@@ -121,7 +135,7 @@ def test_state_arrays_read_the_initial_and_final_state(generator_with_shutdown_c
     selection = {"generator": "gen_with_shutdown_cost"}
 
     assert states.initial_power.sel(selection).item() == pytest.approx(INITIAL_POWER)
-    assert states.initial_steps_in_state.sel(selection).item() == STEPS_IN_STATE
+    assert states.commitment.initial_steps_in_state.sel(selection).item() == STEPS_IN_STATE
     assert states.final_power.sel(selection).item() == pytest.approx(FINAL_POWER)
 
 
@@ -132,7 +146,7 @@ def test_state_arrays_without_conditions_start_off_for_ever_with_no_final_power(
     selection = {"generator": "gen_without_shutdown_cost"}
 
     assert states.initial_power.sel(selection).item() == 0.0
-    assert states.initial_steps_in_state.sel(selection).item() == np.inf
+    assert states.commitment.initial_steps_in_state.sel(selection).item() == np.inf
     assert bool(states.final_power.sel(selection).isnull())
 
 
@@ -141,7 +155,7 @@ def test_state_arrays_without_time_in_state_count_unlimited_steps(generator_with
 
     states = _state_arrays([generator_with_shutdown_cost], condition_set)
 
-    assert states.initial_steps_in_state.sel(generator="gen_with_shutdown_cost").item() == np.inf
+    assert states.commitment.initial_steps_in_state.sel(generator="gen_with_shutdown_cost").item() == np.inf
 
 
 def test_unset_ramp_up_becomes_nan_in_a_float_array(generator_without_shutdown_cost: Generator) -> None:

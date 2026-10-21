@@ -8,10 +8,11 @@ import xarray as xr
 
 from odys.domain.conditions import ConditionSet, GeneratorInitialState
 from odys.domain.entities.fixed_load import FixedLoad
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.exceptions import OdysError
 from odys.domain.horizon import Horizon
-from odys.domain.profiles import AvailableCapacityProfile, LoadProfile
+from odys.domain.profiles import AvailableCapacityProfile, FlexibleLoadProfile, LoadProfile
 from odys.domain.scenario import Scenario, ScenarioSet
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
@@ -33,6 +34,7 @@ SECOND = FixedLoad(name="load_b")
 GENERATOR = Generator(name="gen", nominal_power=NOMINAL_POWER, variable_cost=1.0)
 LOAD_DIMENSION = "fixed_load"
 GENERATOR_DIMENSION = "generator"
+FLEXIBLE_LOAD_DIMENSION = "flexible_load"
 LOAD_COORDINATES = Coordinates.of_entities(LOAD_DIMENSION, [FIRST, SECOND])
 GENERATOR_COORDINATES = Coordinates.of_entities(GENERATOR_DIMENSION, [GENERATOR])
 
@@ -80,7 +82,7 @@ def test_context_holds_only_the_horizon_scenarios_and_conditions() -> None:
 
 
 def test_context_profiles_follow_entity_order_not_profile_order(context: ModelContext) -> None:
-    profiles = context.profiles(LoadProfile, [FIRST, SECOND], LOAD_COORDINATES)
+    profiles = context.profiles(LoadProfile, [FIRST, SECOND], LOAD_COORDINATES, lambda profile: profile.values)
 
     expected = xr.DataArray(
         [[FIRST_LOAD, SECOND_LOAD], [FIRST_LOAD, SECOND_LOAD]],
@@ -90,7 +92,13 @@ def test_context_profiles_follow_entity_order_not_profile_order(context: ModelCo
 
 
 def test_context_profiles_use_default_for_entity_without_profile(context: ModelContext) -> None:
-    profiles = context.profiles(AvailableCapacityProfile, [GENERATOR], GENERATOR_COORDINATES, default=np.inf)
+    profiles = context.profiles(
+        AvailableCapacityProfile,
+        [GENERATOR],
+        GENERATOR_COORDINATES,
+        lambda profile: profile.values,
+        default=np.inf,
+    )
 
     expected = xr.DataArray(
         [[CAPACITY], [(np.inf,) * NUMBER_OF_STEPS]],
@@ -101,7 +109,7 @@ def test_context_profiles_use_default_for_entity_without_profile(context: ModelC
 
 def test_context_profiles_without_default_raise_for_missing_profile(context: ModelContext) -> None:
     with pytest.raises(OdysError, match="Scenario 'high' has no AvailableCapacityProfile for 'gen'"):
-        context.profiles(AvailableCapacityProfile, [GENERATOR], GENERATOR_COORDINATES)
+        context.profiles(AvailableCapacityProfile, [GENERATOR], GENERATOR_COORDINATES, lambda profile: profile.values)
 
 
 def test_context_profiles_match_the_entity_not_only_its_name() -> None:
@@ -112,10 +120,30 @@ def test_context_profiles_match_the_entity_not_only_its_name() -> None:
         AvailableCapacityProfile,
         [copy_with_other_power],
         Coordinates.of_entities(GENERATOR_DIMENSION, [copy_with_other_power]),
+        lambda profile: profile.values,
         default=0.0,
     )
 
     assert float(profiles.sum()) == pytest.approx(0.0)
+
+
+def test_context_profiles_read_the_series_the_selector_picks() -> None:
+    flexible_load = FlexibleLoad(name="flex", value_of_consumption=1.0)
+    profile = FlexibleLoadProfile(load=flexible_load, lower_bound=SECOND_LOAD, upper_bound=FIRST_LOAD)
+    context = _context(Scenario(profiles=(profile,)))
+
+    profiles = context.profiles(
+        FlexibleLoadProfile,
+        [flexible_load],
+        Coordinates.of_entities(FLEXIBLE_LOAD_DIMENSION, [flexible_load]),
+        lambda profile: profile.upper_bound,
+    )
+
+    expected = xr.DataArray(
+        [[FIRST_LOAD]],
+        coords={"scenario": ["base"], "flexible_load": ["flex"], "time": ["0", "1", "2"]},
+    )
+    xr.testing.assert_allclose(profiles, expected)
 
 
 def test_context_variable_coords_are_scenario_time_then_entity_dimensions(context: ModelContext) -> None:

@@ -18,7 +18,7 @@ flowchart LR
     M["Markets"] <-->|"+p<sup>buy</sup> − p<sup>sell</sup>"| Bus
     K["Batteries<br/>(stationary and EV)"] <-->|"+p<sup>dis</sup> − p<sup>ch</sup>"| Bus
     Bus -->|"−D"| F["Fixed loads"]
-    Bus -->|"−(D + p<sup>adj</sup>)"| L["Flexible loads"]
+    Bus -->|"−d"| L["Flexible loads"]
 ```
 
 Each arrow is one term of the balance, with the sign from the [sign convention](notation.md#sign-convention): power into the bus is positive.
@@ -38,7 +38,7 @@ $$
 + \sum_{m \in \mathcal{M}} \left(p^{buy}_{m,s,t} - p^{sell}_{m,s,t}\right)
 + \sum_{k \in \mathcal{K}} \left(p^{dis}_{k,s,t} - p^{ch}_{k,s,t}\right)
 - \sum_{l \in \mathcal{L}^{fix}} D_{l,s,t}
-- \sum_{l \in \mathcal{L}} \left(D_{l,s,t} + p^{adj}_{l,s,t}\right)
+- \sum_{l \in \mathcal{L}} d_{l,s,t}
 = 0
 \qquad \forall s \in \mathcal{S},\ t \in \mathcal{T}
 $$
@@ -68,7 +68,7 @@ Read aloud: what your generators make, plus what you buy, plus what your batteri
 | $p^{sell}_{m,s,t}$ | `market_sell_volume` · `results.markets.sell_volume` | Variable · Result | MW |
 | $p^{ch}_{k,s,t}$ | `battery_storage_power_in`, `ev_power_in` | Variable | MW |
 | $p^{dis}_{k,s,t}$ | `battery_storage_power_out`, `ev_power_out` | Variable | MW |
-| $p^{adj}_{l,s,t}$ | `load_adjustment` · `results.flexible_loads.load_adjustment` | Variable · Result | MW |
+| $d_{l,s,t}$ | `flexible_load_consumption` · `results.flexible_loads.consumption` | Variable · Result | MW |
 
 Who fills the gap? First, the outside world. See [Markets](markets.md).
 

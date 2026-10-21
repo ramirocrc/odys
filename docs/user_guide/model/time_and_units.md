@@ -24,7 +24,7 @@ The horizon has no start date. Time labels count steps from the start of the run
 | Power                     | MW             | `nominal_power`, `max_charge_power`, load and capacity profiles |
 | Energy                    | MWh            | `capacity`, `energy_consumption`                                |
 | Prices and variable costs | currency / MWh | `variable_cost`, `value_of_consumption`, `PriceProfile`         |
-| Per-event costs           | currency       | `startup_cost`, `shutdown_cost`                                 |
+| Per-event costs           | currency       | `Commitment.startup_cost`, `Commitment.shutdown_cost`           |
 | State of charge           | fraction (0-1) | `soc`, `soc_min`, `soc_max`                                     |
 
 Profiles and decisions are powers, held for the whole step. The energy of a step is that power times the step length: 60 MW over a 15-minute step is 15 MWh. Prices and costs are per MWh, so odys multiplies them by the energy, and the currency is whatever your prices are in.
@@ -37,7 +37,7 @@ Most fields are a power, an energy or a price. A few depend on the step length, 
 
 | Field | Read as | With 15-minute steps |
 | ----- | ------- | -------------------- |
-| [`ramp_up`, `ramp_down`](../assets/generator.md#ramp-limits) | MW per step ([G-7](../../formulation/generators.md#g-7)) | 40 MW is 40 MW per quarter-hour, 160 MW per hour |
+| [`ramp_up`, `ramp_down`](../assets/generator.md#ramp-limits) | MW per hour ([G-7](../../formulation/generators.md#g-7)) | 40 MW per hour is 10 MW per step |
 | [`self_discharge_rate`](../assets/battery.md#self-discharge) | Fraction per hour | 0.004 loses 0.1 % of the charge per step |
 | [`variable_cost`](../assets/generator.md), [`value_of_consumption`](../assets/flexible_load.md#value-of-consumption), [`degradation_cost`](../assets/battery.md#degradation-cost), prices | Currency per MWh | 50 per MWh at 60 MW is 750 per step |
 | [`startup_cost`, `shutdown_cost`](../assets/generator.md#startup-and-shutdown-cost) | Currency per event | Charged once per start, whatever the step length |
@@ -45,8 +45,6 @@ Most fields are a power, an energy or a price. A few depend on the step length, 
 | [Trip `start_time`, `end_time`](../assets/electric_vehicle.md#trips) | `timedelta` from the start of the run | `timedelta(hours=7)` is the start of step 28 |
 
 Every `timedelta` has to be a whole number of steps: `timedelta(minutes=50)` with 15-minute steps raises an `OdysValidationError` when you create the `EnergySystem`.
-
-When you change the step length, check the per-step fields: a ramp limit written for hourly steps allows four times as much per hour with 15-minute steps. See [G-7](../../formulation/generators.md#g-7).
 
 ## Horizon and problem size
 

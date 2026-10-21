@@ -19,6 +19,7 @@ from odys import (
     Battery,
     BatteryStorage,
     Charger,
+    Commitment,
     CVaRTerm,
     ElectricVehicle,
     ElectricVehicleFinalState,
@@ -27,6 +28,8 @@ from odys import (
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
+    FlexibleLoadInitialState,
+    FlexibleLoadProfile,
     Generator,
     GeneratorFinalState,
     GeneratorInitialState,
@@ -54,7 +57,7 @@ DOCUMENTED_PAGES: dict[str, tuple[str, ...]] = {
         "ev_capacity_",
     ),
     "electric_vehicles.md": ("ev_driving_", "ev_min_soc_departure_", "charger_"),
-    "flexible_loads.md": ("flexible_load_", "load_adjustment"),
+    "flexible_loads.md": ("flexible_load_",),
     "generators.md": ("generator_", "available_capacity_"),
     "markets.md": ("market_",),
     "non_anticipativity.md": ("non_anticipativity_",),
@@ -80,6 +83,9 @@ TRIP_ENERGY = 2.0
 CHARGER_POWER = 5.0
 FLEXIBLE_RANGE = 5.0
 FLEXIBLE_VALUE = 30.0
+FLEXIBLE_RAMP = 2.0
+FLEXIBLE_MIN_TIME = timedelta(hours=3)
+FLEXIBLE_TIME_IN_STATE = timedelta(hours=1)
 BASE_LOAD = [10.0] * NUMBER_OF_STEPS
 MARKET_VOLUME = 200.0
 SCENARIO_PRICES = {"high": [80.0, 90.0, 100.0, 70.0], "low": [20.0, 30.0, 40.0, 10.0]}
@@ -94,6 +100,11 @@ CONDITIONAL_CONSTRAINTS = (
     "market_buy_only_constraint",
     "non_anticipativity_market_sell_volume_constraint",
     "cvar_shortfall_constraint",
+    "flexible_load_always_on_constraint",
+    "flexible_load_max_ramp_up_constraint",
+    "flexible_load_max_ramp_down_constraint",
+    "flexible_load_initial_min_uptime_constraint",
+    "flexible_load_initial_min_downtime_constraint",
 )
 
 CONSTRAINT_NAME = re.compile(r"\b[a-z][a-z0-9_]*(?:\{[a-z_]+\}[a-z0-9_]*)*_constraint\b")
@@ -106,13 +117,13 @@ def _reference_system() -> EnergySystem:
         nominal_power=GENERATOR_POWER,
         variable_cost=40.0,
         min_power=GENERATOR_MIN_POWER,
-        min_up_time=GENERATOR_MIN_UP_TIME,
+        commitment=Commitment(min_up_time=GENERATOR_MIN_UP_TIME),
     )
     peaker = Generator(
         name="peaker",
         nominal_power=PEAKER_POWER,
         variable_cost=90.0,
-        min_down_time=PEAKER_MIN_DOWN_TIME,
+        commitment=Commitment(min_down_time=PEAKER_MIN_DOWN_TIME),
     )
     storage = BatteryStorage(
         name="bess",
@@ -127,9 +138,24 @@ def _reference_system() -> EnergySystem:
     fixed_load = FixedLoad(name="site")
     flexible_load = FlexibleLoad(
         name="process",
-        max_increase=FLEXIBLE_RANGE,
-        max_decrease=FLEXIBLE_RANGE,
         value_of_consumption=FLEXIBLE_VALUE,
+        ramp_up=FLEXIBLE_RAMP,
+        ramp_down=FLEXIBLE_RAMP,
+        commitment=Commitment(min_up_time=FLEXIBLE_MIN_TIME),
+    )
+    kiln = FlexibleLoad(
+        name="kiln",
+        value_of_consumption=FLEXIBLE_VALUE,
+        commitment=Commitment(min_down_time=FLEXIBLE_MIN_TIME),
+    )
+    pump = FlexibleLoad(name="pump", value_of_consumption=FLEXIBLE_VALUE)
+    flexible_ranges = tuple(
+        FlexibleLoadProfile(
+            load=load,
+            lower_bound=[value - FLEXIBLE_RANGE for value in BASE_LOAD],
+            upper_bound=[value + FLEXIBLE_RANGE for value in BASE_LOAD],
+        )
+        for load in (flexible_load, kiln, pump)
     )
     day_ahead = EnergyMarket(name="day_ahead", max_trading_volume_per_step=MARKET_VOLUME, stage_fixed=True)
     grid = EnergyMarket(
@@ -143,7 +169,7 @@ def _reference_system() -> EnergySystem:
             probability=1 / len(SCENARIO_PRICES),
             profiles=(
                 LoadProfile(load=fixed_load, values=BASE_LOAD),
-                LoadProfile(load=flexible_load, values=BASE_LOAD),
+                *flexible_ranges,
                 PriceProfile(market=day_ahead, values=prices),
                 PriceProfile(market=grid, values=prices),
             ),
@@ -151,7 +177,7 @@ def _reference_system() -> EnergySystem:
         for name, prices in SCENARIO_PRICES.items()
     ]
     return EnergySystem(
-        portfolio=AssetPortfolio([generator, peaker, storage, vehicle, charger, fixed_load, flexible_load]),
+        portfolio=AssetPortfolio([generator, peaker, storage, vehicle, charger, fixed_load, flexible_load, kiln, pump]),
         markets=(day_ahead, grid),
         scenarios=scenarios,
         timestep=TIMESTEP,
@@ -168,6 +194,8 @@ def _reference_system() -> EnergySystem:
             GeneratorInitialState(generator=peaker, power=0.0, time_in_state=PEAKER_TIME_OFF_BEFORE_START),
             StorageInitialState(storage=storage, soc=BATTERY_SOC),
             ElectricVehicleInitialState(vehicle=vehicle, soc=EV_INITIAL_SOC),
+            FlexibleLoadInitialState(load=flexible_load, power=BASE_LOAD[0], time_in_state=FLEXIBLE_TIME_IN_STATE),
+            FlexibleLoadInitialState(load=kiln, power=0.0, time_in_state=FLEXIBLE_TIME_IN_STATE),
         ),
         final_conditions=(
             GeneratorFinalState(generator=generator, power=GENERATOR_INITIAL_POWER),

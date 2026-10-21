@@ -7,6 +7,7 @@ import pytest
 from odys.domain.conditions import (
     ConditionSet,
     ElectricVehicleInitialState,
+    FlexibleLoadInitialState,
     GeneratorFinalState,
     GeneratorInitialState,
     StorageInitialState,
@@ -14,6 +15,7 @@ from odys.domain.conditions import (
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
@@ -23,7 +25,7 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.horizon import Horizon
-from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
+from odys.domain.profiles import AvailableCapacityProfile, FlexibleLoadProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario, ScenarioSet
 from odys.domain.validation import (
     validate_conditions_fit_the_run,
@@ -52,8 +54,7 @@ SCENARIO_PROBABILITY = 1.0
 DEMAND_PROFILE = [80.0, 120.0, 90.0, 100.0]
 MARKET_PRICES = [10.0, 20.0, 30.0, 40.0]
 CAPACITY_PROFILE = [90.0, 100.0, 95.0, 100.0]
-MAX_INCREASE = 50.0
-MAX_DECREASE = 30.0
+FLEXIBLE_RANGE_WIDTH = 50.0
 VALUE_OF_CONSUMPTION = 100.0
 EV_CAPACITY = 50.0
 EV_MAX_CHARGE_POWER = 22.0
@@ -96,12 +97,12 @@ def load() -> FixedLoad:
 
 @pytest.fixture
 def flexible_load() -> FlexibleLoad:
-    return FlexibleLoad(
-        name="flex_load1",
-        max_increase=MAX_INCREASE,
-        max_decrease=MAX_DECREASE,
-        value_of_consumption=VALUE_OF_CONSUMPTION,
-    )
+    return FlexibleLoad(name="flex_load1", value_of_consumption=VALUE_OF_CONSUMPTION)
+
+
+def _flexible_profile(load: FlexibleLoad, lower_bound: list[float]) -> FlexibleLoadProfile:
+    upper_bound = [lower_t + FLEXIBLE_RANGE_WIDTH for lower_t in lower_bound]
+    return FlexibleLoadProfile(load=load, lower_bound=lower_bound, upper_bound=upper_bound)
 
 
 @pytest.fixture
@@ -261,6 +262,21 @@ class TestValidateRequiredInitialConditionsPresent:
 
         validate_required_initial_conditions_present(conditions, AssetPortfolio([ramping, load]))
 
+    def test_ramping_flexible_load_without_initial_state_is_rejected(self, flexible_load: FlexibleLoad) -> None:
+        ramping = flexible_load.model_copy(update={"ramp_up": RAMP_UP})
+
+        with pytest.raises(
+            OdysValidationError,
+            match="FlexibleLoad 'flex_load1' needs a FlexibleLoadInitialState because it has ramp_up set",
+        ):
+            validate_required_initial_conditions_present(ConditionSet(), AssetPortfolio([ramping]))
+
+    def test_switchable_flexible_load_with_initial_state_is_valid(self, flexible_load: FlexibleLoad) -> None:
+        switchable = flexible_load.model_copy(update={"commitment": Commitment(startup_cost=VALUE_OF_CONSUMPTION)})
+        conditions = ConditionSet(initial=(FlexibleLoadInitialState(load=switchable, power=0.0),))
+
+        validate_required_initial_conditions_present(conditions, AssetPortfolio([switchable]))
+
 
 class TestValidateConditionsFitTheHorizon:
     @pytest.fixture
@@ -269,7 +285,7 @@ class TestValidateConditionsFitTheHorizon:
             name="gen1",
             nominal_power=NOMINAL_POWER,
             variable_cost=VARIABLE_COST,
-            min_up_time=MIN_UP_TIME,
+            commitment=Commitment(min_up_time=MIN_UP_TIME),
         )
 
     def test_whole_steps_are_valid(self, generator_with_min_up_time: Generator) -> None:
@@ -382,10 +398,10 @@ class TestValidateProfilesReferenceSystemEntities:
         portfolio: AssetPortfolio,
         flexible_load: FlexibleLoad,
     ) -> None:
-        scenario = Scenario(name="s1", profiles=(LoadProfile(load=flexible_load, values=DEMAND_PROFILE),))
+        scenario = Scenario(name="s1", profiles=(_flexible_profile(flexible_load, DEMAND_PROFILE),))
         with pytest.raises(
             OdysValidationError,
-            match="Scenario 's1' has a LoadProfile for 'flex_load1', which is not in the energy system",
+            match="Scenario 's1' has a FlexibleLoadProfile for 'flex_load1', which is not in the energy system",
         ):
             validate_profiles_reference_system_entities((scenario,), portfolio, ())
 
@@ -492,8 +508,8 @@ class TestValidateRequiredProfilesPresent:
 
     def test_missing_flexible_load_profile(self, flexible_load: FlexibleLoad) -> None:
         other_load = flexible_load.model_copy(update={"name": "flex_load2"})
-        scenario = Scenario(name="s1", profiles=(LoadProfile(load=flexible_load, values=DEMAND_PROFILE),))
-        with pytest.raises(OdysValidationError, match=r"is missing a LoadProfile for: \['flex_load2'\]"):
+        scenario = Scenario(name="s1", profiles=(_flexible_profile(flexible_load, DEMAND_PROFILE),))
+        with pytest.raises(OdysValidationError, match=r"is missing a FlexibleLoadProfile for: \['flex_load2'\]"):
             validate_required_profiles_present((scenario,), (flexible_load, other_load))
 
     def test_missing_market_prices(self, market: EnergyMarket) -> None:
@@ -525,8 +541,8 @@ class TestValidateProfileLengths:
             validate_profile_lengths((scenario,), HORIZON)
 
     def test_flexible_load_length_mismatch(self, flexible_load: FlexibleLoad) -> None:
-        scenario = Scenario(name="s1", profiles=(LoadProfile(load=flexible_load, values=[40.0, 50.0]),))
-        with pytest.raises(OdysValidationError, match="the LoadProfile for 'flex_load1' has 2 values"):
+        scenario = Scenario(name="s1", profiles=(_flexible_profile(flexible_load, [40.0, 50.0]),))
+        with pytest.raises(OdysValidationError, match="the FlexibleLoadProfile for 'flex_load1' has 2 values"):
             validate_profile_lengths((scenario,), HORIZON)
 
     def test_capacity_length_mismatch(self, generator: Generator) -> None:
@@ -543,6 +559,9 @@ class TestValidateProfileLengths:
 class TestValidateHasLoadOrMarket:
     def test_load_without_market_is_valid(self, scenario: Scenario) -> None:
         validate_has_load_or_market(scenario, ())
+
+    def test_flexible_load_without_market_is_valid(self, flexible_load: FlexibleLoad) -> None:
+        validate_has_load_or_market(Scenario(profiles=(_flexible_profile(flexible_load, DEMAND_PROFILE),)), ())
 
     def test_market_only_no_loads_is_valid(self, market: EnergyMarket) -> None:
         validate_has_load_or_market(Scenario(), (market,))
@@ -591,31 +610,31 @@ class TestValidateEnoughPowerToMeetDemand:
         with pytest.raises(OdysValidationError, match=r"time index 0: minimum demand = 200\.0"):
             validate_enough_power_to_meet_demand(scenario, (generator, storage, load, other_load), HORIZON)
 
-    def test_flexible_load_feasible_after_decrease(
+    def test_flexible_load_feasible_at_its_lower_bound(
         self,
         generator: Generator,
         storage: BatteryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 150.0, 90.0, 100.0]),))
+        scenario = Scenario(profiles=(_flexible_profile(flexible_load, [50.0, 120.0, 60.0, 70.0]),))
         validate_enough_power_to_meet_demand(scenario, (generator, storage, flexible_load), HORIZON)
 
-    def test_flexible_load_feasible_with_decrease_at_the_limit(
+    def test_flexible_load_feasible_with_lower_bound_at_the_limit(
         self,
         generator: Generator,
         storage: BatteryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 155.0, 90.0, 100.0]),))
+        scenario = Scenario(profiles=(_flexible_profile(flexible_load, [50.0, 125.0, 60.0, 70.0]),))
         validate_enough_power_to_meet_demand(scenario, (generator, storage, flexible_load), HORIZON)
 
-    def test_flexible_load_infeasible_even_with_decrease(
+    def test_flexible_load_infeasible_at_its_lower_bound(
         self,
         generator: Generator,
         storage: BatteryStorage,
         flexible_load: FlexibleLoad,
     ) -> None:
-        scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[80.0, 200.0, 90.0, 100.0]),))
+        scenario = Scenario(profiles=(_flexible_profile(flexible_load, [50.0, 170.0, 60.0, 70.0]),))
         with pytest.raises(OdysValidationError, match=r"time index 1: minimum demand = 170\.0"):
             validate_enough_power_to_meet_demand(scenario, (generator, storage, flexible_load), HORIZON)
 
@@ -698,8 +717,8 @@ class TestValidateEnoughEnergyToMeetDemand:
 
         validate_enough_energy_to_meet_demand(scenario, (load, market), HORIZON)
 
-    def test_flexible_load_min_possible_demand_used(self, flexible_load: FlexibleLoad) -> None:
-        scenario = Scenario(profiles=(LoadProfile(load=flexible_load, values=[40.0, 40.0, 40.0, 40.0]),))
+    def test_flexible_load_lower_bound_used(self, flexible_load: FlexibleLoad) -> None:
+        scenario = Scenario(profiles=(_flexible_profile(flexible_load, [10.0, 10.0, 10.0, 10.0]),))
         with pytest.raises(OdysValidationError, match=r"total energy demand \(40.0\)"):
             validate_enough_energy_to_meet_demand(scenario, (flexible_load,), HORIZON)
 

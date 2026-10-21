@@ -12,7 +12,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
-from odys.domain.profiles import LoadProfile
+from odys.domain.profiles import FlexibleLoadProfile, LoadProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.model.model_builder import build_model
@@ -149,10 +149,11 @@ def test_dispatch_of_an_absent_entity_type_raises(
         getattr(result, accessor)
 
 
-FLEXIBLE_BASE = [20.0, 20.0, 20.0]
+FLEXIBLE_LOWER_BOUND = [15.0, 15.0, 15.0]
+FLEXIBLE_UPPER_BOUND = [25.0, 25.0, 25.0]
 FLEXIBLE_DEMAND = [30.0, 40.0, 50.0]
-FLEXIBLE_MAX_INCREASE = 5.0
-LOW_FLEXIBLE_BASE = [10.0, 10.0, 10.0]
+LOW_FLEXIBLE_LOWER_BOUND = [5.0, 5.0, 5.0]
+LOW_FLEXIBLE_UPPER_BOUND = [15.0, 15.0, 15.0]
 HIGH_SCENARIO_PROBABILITY = 0.6
 LOW_SCENARIO_PROBABILITY = 0.4
 
@@ -160,12 +161,7 @@ LOW_SCENARIO_PROBABILITY = 0.4
 @pytest.fixture
 def single_scenario_flexible_results() -> OptimalDispatchResults:
     load = FixedLoad(name="load")
-    flexible_load = FlexibleLoad(
-        name="flex",
-        max_increase=FLEXIBLE_MAX_INCREASE,
-        max_decrease=5.0,
-        value_of_consumption=40.0,
-    )
+    flexible_load = FlexibleLoad(name="flex", value_of_consumption=40.0)
     system = EnergySystem(
         portfolio=AssetPortfolio(
             [Generator(name="gen", nominal_power=100.0, variable_cost=20.0), load, flexible_load],
@@ -175,7 +171,11 @@ def single_scenario_flexible_results() -> OptimalDispatchResults:
         scenarios=Scenario(
             profiles=(
                 LoadProfile(load=load, values=FLEXIBLE_DEMAND),
-                LoadProfile(load=flexible_load, values=FLEXIBLE_BASE),
+                FlexibleLoadProfile(
+                    load=flexible_load,
+                    lower_bound=FLEXIBLE_LOWER_BOUND,
+                    upper_bound=FLEXIBLE_UPPER_BOUND,
+                ),
             ),
         ),
     )
@@ -190,23 +190,17 @@ def test_single_scenario_results_have_no_scenario_dimension(
     assert "scenario" not in single_scenario_flexible_results.flexible_loads.to_dataset().dims
 
 
-def test_single_scenario_flexible_actual_load_is_base_plus_adjustment(
+def test_single_scenario_flexible_consumption_is_the_upper_bound_when_supply_is_cheaper(
     single_scenario_flexible_results: OptimalDispatchResults,
 ) -> None:
     flexible_loads = single_scenario_flexible_results.flexible_loads["flex"]
 
-    expected = [base + FLEXIBLE_MAX_INCREASE for base in FLEXIBLE_BASE]
-    assert list(flexible_loads.actual_load) == pytest.approx(expected)
+    assert list(flexible_loads.consumption) == pytest.approx(FLEXIBLE_UPPER_BOUND)
 
 
 def _two_scenario_flexible_system() -> EnergySystem:
     load = FixedLoad(name="load")
-    flexible_load = FlexibleLoad(
-        name="flex",
-        max_increase=FLEXIBLE_MAX_INCREASE,
-        max_decrease=5.0,
-        value_of_consumption=40.0,
-    )
+    flexible_load = FlexibleLoad(name="flex", value_of_consumption=40.0)
     return EnergySystem(
         portfolio=AssetPortfolio(
             [Generator(name="gen", nominal_power=100.0, variable_cost=20.0), load, flexible_load],
@@ -219,7 +213,11 @@ def _two_scenario_flexible_system() -> EnergySystem:
                 probability=HIGH_SCENARIO_PROBABILITY,
                 profiles=(
                     LoadProfile(load=load, values=FLEXIBLE_DEMAND),
-                    LoadProfile(load=flexible_load, values=FLEXIBLE_BASE),
+                    FlexibleLoadProfile(
+                        load=flexible_load,
+                        lower_bound=FLEXIBLE_LOWER_BOUND,
+                        upper_bound=FLEXIBLE_UPPER_BOUND,
+                    ),
                 ),
             ),
             Scenario(
@@ -227,7 +225,11 @@ def _two_scenario_flexible_system() -> EnergySystem:
                 probability=LOW_SCENARIO_PROBABILITY,
                 profiles=(
                     LoadProfile(load=load, values=FLEXIBLE_DEMAND),
-                    LoadProfile(load=flexible_load, values=LOW_FLEXIBLE_BASE),
+                    FlexibleLoadProfile(
+                        load=flexible_load,
+                        lower_bound=LOW_FLEXIBLE_LOWER_BOUND,
+                        upper_bound=LOW_FLEXIBLE_UPPER_BOUND,
+                    ),
                 ),
             ),
         ],
@@ -242,19 +244,19 @@ def test_multi_scenario_results_keep_the_scenario_dimension() -> None:
 
 
 @pytest.mark.parametrize(
-    ("scenario", "base"),
-    [("high", FLEXIBLE_BASE), ("low", LOW_FLEXIBLE_BASE)],
+    ("scenario", "upper_bound"),
+    [("high", FLEXIBLE_UPPER_BOUND), ("low", LOW_FLEXIBLE_UPPER_BOUND)],
     ids=["high", "low"],
 )
-def test_multi_scenario_flexible_actual_load_is_each_scenarios_base_plus_adjustment(
+def test_multi_scenario_flexible_consumption_follows_each_scenarios_upper_bound(
     scenario: str,
-    base: list[float],
+    upper_bound: list[float],
 ) -> None:
     results = _two_scenario_flexible_system().optimize()
 
-    actual_load = results.flexible_loads["flex"].to_dataset()["actual_load"].sel({ModelDimension.Scenarios: scenario})
+    consumption = results.flexible_loads["flex"].to_dataset()["consumption"].sel({ModelDimension.Scenarios: scenario})
 
-    assert list(actual_load.to_numpy()) == pytest.approx([value + FLEXIBLE_MAX_INCREASE for value in base])
+    assert list(consumption.to_numpy()) == pytest.approx(upper_bound)
 
 
 def test_results_with_a_solution_build_the_dispatches_once_from_the_full_solution() -> None:

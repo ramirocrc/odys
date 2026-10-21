@@ -16,14 +16,18 @@ import xarray as xr
 from odys.domain.conditions import (
     ElectricVehicleFinalState,
     ElectricVehicleInitialState,
+    FlexibleLoadInitialState,
     GeneratorFinalState,
     GeneratorInitialState,
     StorageFinalState,
     StorageInitialState,
 )
 from odys.domain.entities.battery_storage import BatteryStorage
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
+from odys.domain.horizon import Horizon
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
 from odys.parameters.vectorize import EntityArrays, vectorize
@@ -35,26 +39,41 @@ class GeneratorArrays(EntityArrays):
     nominal_power: xr.DataArray
     variable_cost: xr.DataArray
     min_power: xr.DataArray
-    startup_cost: xr.DataArray
-    shutdown_cost: xr.DataArray
     ramp_up: xr.DataArray
     ramp_down: xr.DataArray
 
 
-class GeneratorStateArrays(EntityArrays):
-    """Generator quantities that depend on the run: minimum times in steps and the initial and final states.
+class CommitmentArrays(EntityArrays):
+    """Commitment parameters along an entity dimension: the cost of each start and stop."""
 
-    Without a minimum time, the minimum is one step. Without an initial state, the
-    generator starts off (power 0). Without a time in state, it has been in its
-    initial state for longer than any minimum time (`inf` steps), so nothing carries
-    over. `final_power` is NaN where there is no final state.
+    startup_cost: xr.DataArray
+    shutdown_cost: xr.DataArray
+
+
+class CommitmentStateArrays(EntityArrays):
+    """On/off quantities that depend on the run: minimum times in steps and the initial status.
+
+    Without a minimum time, the minimum is one step. Without a time in state, the
+    entity has been in its initial status for longer than any minimum time (`inf`
+    steps), so nothing carries over.
     """
 
     min_up_steps: xr.DataArray
     min_down_steps: xr.DataArray
-    initial_power: xr.DataArray
+    initially_on: xr.DataArray
     initial_steps_in_state: xr.DataArray
+
+
+class GeneratorStateArrays(EntityArrays):
+    """Generator quantities that depend on the run: the initial and final power, and the on/off states.
+
+    Without an initial state, the generator starts off (power 0). `final_power` is
+    NaN where there is no final state.
+    """
+
+    initial_power: xr.DataArray
     final_power: xr.DataArray
+    commitment: CommitmentStateArrays
 
 
 class BatteryArrays(EntityArrays):
@@ -81,11 +100,22 @@ class BatteryStateArrays(EntityArrays):
 class FlexibleLoadArrays(EntityArrays):
     """Flexible load parameters along the flexible load dimension."""
 
-    max_increase: xr.DataArray
-    max_decrease: xr.DataArray
-    min_load: xr.DataArray
-    max_load: xr.DataArray
     value_of_consumption: xr.DataArray
+    ramp_up: xr.DataArray
+    ramp_down: xr.DataArray
+
+
+class FlexibleLoadStateArrays(EntityArrays):
+    """Flexible load quantities that depend on the run: the initial consumption and the on/off states.
+
+    Without an initial state, the load starts at 0 MW, running if it has no
+    commitment and off if it has one. `is_switchable` marks the loads with a
+    commitment; the others are always running.
+    """
+
+    initial_power: xr.DataArray
+    is_switchable: xr.DataArray
+    commitment: CommitmentStateArrays
 
 
 class MarketArrays(EntityArrays):
@@ -118,12 +148,51 @@ class ElectricVehicleArrays(EntityArrays):
     trips: ElectricVehicleTripArrays
 
 
+def commitment_state_arrays(
+    commitments: Sequence[Commitment],
+    coordinates: Coordinates,
+    horizon: Horizon,
+    initially_on: xr.DataArray,
+    initial_steps_in_state: xr.DataArray,
+) -> CommitmentStateArrays:
+    """Build the minimum up and down times in steps of the given commitments, with their entities' initial status.
+
+    Args:
+        commitments: The commitments, in coordinate order.
+        coordinates: The labels of their entities along the entity dimension.
+        horizon: The time grid of the optimization.
+        initially_on: Whether each entity is on just before the first timestep.
+        initial_steps_in_state: How many steps each entity has been in its initial status (`inf` when unknown).
+
+    Returns:
+        The on/off state arrays.
+
+    """
+
+    def steps(duration: timedelta | None) -> int:
+        return 1 if duration is None else horizon.steps_in(duration)
+
+    def along_entities(values: Sequence[float]) -> xr.DataArray:
+        return xr.DataArray(values, dims=coordinates.dimension, coords=coordinates.dimension_coordinates_map)
+
+    return CommitmentStateArrays(
+        min_up_steps=along_entities([steps(commitment.min_up_time) for commitment in commitments]),
+        min_down_steps=along_entities([steps(commitment.min_down_time) for commitment in commitments]),
+        initially_on=initially_on,
+        initial_steps_in_state=initial_steps_in_state,
+    )
+
+
+def _steps_in_state(time_in_state: timedelta | None, horizon: Horizon) -> float:
+    return np.inf if time_in_state is None else horizon.steps_in(time_in_state)
+
+
 def generator_state_arrays(
     generators: Sequence[Generator],
     coordinates: Coordinates,
     context: ModelContext,
 ) -> GeneratorStateArrays:
-    """Build the generators' minimum up and down times in steps and their initial and final states.
+    """Build the generators' initial and final power and their on/off states.
 
     Args:
         generators: The generators, in coordinate order.
@@ -134,40 +203,85 @@ def generator_state_arrays(
         The generators' state arrays.
 
     """
-    horizon = context.horizon
-
-    def steps(duration: timedelta | None) -> int:
-        return 1 if duration is None else horizon.steps_in(duration)
-
-    def steps_in_state(state: GeneratorInitialState) -> float:
-        return np.inf if state.time_in_state is None else horizon.steps_in(state.time_in_state)
-
-    def along_generators(values: Sequence[float]) -> xr.DataArray:
-        return xr.DataArray(values, dims=coordinates.dimension, coords=coordinates.dimension_coordinates_map)
-
+    initial_power = context.conditions(
+        GeneratorInitialState,
+        generators,
+        coordinates,
+        lambda state: state.power,
+        default=0.0,
+    )
+    initial_steps_in_state = context.conditions(
+        GeneratorInitialState,
+        generators,
+        coordinates,
+        lambda state: _steps_in_state(state.time_in_state, context.horizon),
+        default=np.inf,
+    )
     return GeneratorStateArrays(
-        min_up_steps=along_generators([steps(generator.min_up_time) for generator in generators]),
-        min_down_steps=along_generators([steps(generator.min_down_time) for generator in generators]),
-        initial_power=context.conditions(
-            GeneratorInitialState,
-            generators,
-            coordinates,
-            lambda state: state.power,
-            default=0.0,
-        ),
-        initial_steps_in_state=context.conditions(
-            GeneratorInitialState,
-            generators,
-            coordinates,
-            steps_in_state,
-            default=np.inf,
-        ),
+        initial_power=initial_power,
         final_power=context.conditions(
             GeneratorFinalState,
             generators,
             coordinates,
             lambda state: state.power,
             default=np.nan,
+        ),
+        commitment=commitment_state_arrays(
+            [generator.commitment for generator in generators],
+            coordinates,
+            context.horizon,
+            initially_on=initial_power > 0,
+            initial_steps_in_state=initial_steps_in_state,
+        ),
+    )
+
+
+def flexible_load_state_arrays(
+    loads: Sequence[FlexibleLoad],
+    coordinates: Coordinates,
+    context: ModelContext,
+) -> FlexibleLoadStateArrays:
+    """Build the flexible loads' initial consumption and their on/off states.
+
+    A load without a commitment gets `Commitment()` here, so every load has an on/off state; it is always on.
+
+    Args:
+        loads: The flexible loads, in coordinate order.
+        coordinates: The labels of the loads along the flexible load dimension.
+        context: The shared indexing of the problem, with its horizon and conditions.
+
+    Returns:
+        The flexible loads' state arrays.
+
+    """
+    initial_power = context.conditions(
+        FlexibleLoadInitialState,
+        loads,
+        coordinates,
+        lambda state: state.power,
+        default=0.0,
+    )
+    is_switchable = xr.DataArray(
+        [load.commitment is not None for load in loads],
+        dims=coordinates.dimension,
+        coords=coordinates.dimension_coordinates_map,
+    )
+    initial_steps_in_state = context.conditions(
+        FlexibleLoadInitialState,
+        loads,
+        coordinates,
+        lambda state: _steps_in_state(state.time_in_state, context.horizon),
+        default=np.inf,
+    )
+    return FlexibleLoadStateArrays(
+        initial_power=initial_power,
+        is_switchable=is_switchable,
+        commitment=commitment_state_arrays(
+            [load.commitment or Commitment() for load in loads],
+            coordinates,
+            context.horizon,
+            initially_on=~is_switchable | (initial_power > 0),
+            initial_steps_in_state=initial_steps_in_state,
         ),
     )
 

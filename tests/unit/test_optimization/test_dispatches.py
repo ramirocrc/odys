@@ -18,6 +18,7 @@ from odys import (
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
+    FlexibleLoadProfile,
     Generator,
     LoadProfile,
     PriceProfile,
@@ -43,7 +44,8 @@ from odys.solvers.solver import solve
 from odys.solvers.solver_config import SolverConfig
 
 DEMAND = [40.0, 60.0, 50.0]
-FLEXIBLE_BASE = [10.0, 10.0, 10.0]
+FLEXIBLE_LOWER_BOUND = [5.0, 5.0, 5.0]
+FLEXIBLE_UPPER_BOUND = [15.0, 15.0, 15.0]
 PRICES = [30.0, 80.0, 50.0]
 
 EV_CAPACITY = 50.0
@@ -52,16 +54,10 @@ EV_SOC_END = 0.7
 STORAGE_SOC_START = 0.5
 EV_DEGRADATION_COST = 100.0
 EXPECTED_EV_CHARGED_ENERGY = (EV_SOC_END - EV_SOC_START) * EV_CAPACITY
-FLEXIBLE_ADJUSTMENT_LIMIT = 5.0
-EXPECTED_FLEXIBLE_ACTUAL_LOAD = [15.0, 5.0, 5.0]
+EXPECTED_FLEXIBLE_CONSUMPTION = [15.0, 5.0, 5.0]
 
 FIXED_LOAD = FixedLoad(name="load")
-FLEXIBLE_LOAD = FlexibleLoad(
-    name="flex",
-    max_increase=FLEXIBLE_ADJUSTMENT_LIMIT,
-    max_decrease=FLEXIBLE_ADJUSTMENT_LIMIT,
-    value_of_consumption=40.0,
-)
+FLEXIBLE_LOAD = FlexibleLoad(name="flex", value_of_consumption=40.0)
 MARKET = EnergyMarket(name="grid", max_trading_volume_per_step=100.0)
 
 EXPECTED_SERIES: dict[type[Dispatch], tuple[str, ...]] = {
@@ -70,7 +66,7 @@ EXPECTED_SERIES: dict[type[Dispatch], tuple[str, ...]] = {
     ElectricVehicleDispatch: ("net_power", "soc", "charge_mode"),
     ChargerDispatch: ("assignment", "power"),
     MarketDispatch: ("sell_volume", "buy_volume", "net_volume"),
-    FlexibleLoadDispatch: ("load_adjustment", "actual_load"),
+    FlexibleLoadDispatch: ("consumption", "status", "startup", "shutdown"),
 }
 
 
@@ -108,7 +104,11 @@ def solved_problem() -> tuple[OptimizationProblem, xr.Dataset]:
         scenarios=Scenario(
             profiles=(
                 LoadProfile(load=FIXED_LOAD, values=DEMAND),
-                LoadProfile(load=FLEXIBLE_LOAD, values=FLEXIBLE_BASE),
+                FlexibleLoadProfile(
+                    load=FLEXIBLE_LOAD,
+                    lower_bound=FLEXIBLE_LOWER_BOUND,
+                    upper_bound=FLEXIBLE_UPPER_BOUND,
+                ),
                 PriceProfile(market=MARKET, values=PRICES),
             ),
         ),
@@ -183,7 +183,7 @@ def test_charger_power_delivers_the_energy_the_vehicle_must_gain(
     assert charged_energy == pytest.approx(EXPECTED_EV_CHARGED_ENERGY)
 
 
-def test_flexible_load_actual_load_is_base_plus_adjustment(
+def test_flexible_load_consumption_is_the_solved_variable(
     solved_problem: tuple[OptimizationProblem, xr.Dataset],
 ) -> None:
     problem, solution = solved_problem
@@ -191,9 +191,9 @@ def test_flexible_load_actual_load_is_base_plus_adjustment(
     assert flexible_loads is not None
     dispatch = flexible_loads.dispatch(solution)
 
-    actual_load = dispatch.to_dataset()["actual_load"].squeeze()
+    consumption = dispatch.to_dataset()["consumption"].squeeze()
 
-    assert list(actual_load.to_numpy()) == pytest.approx(EXPECTED_FLEXIBLE_ACTUAL_LOAD)
+    assert list(consumption.to_numpy()) == pytest.approx(EXPECTED_FLEXIBLE_CONSUMPTION)
 
 
 def test_market_net_volume_is_sell_minus_buy(solved_problem: tuple[OptimizationProblem, xr.Dataset]) -> None:
