@@ -141,8 +141,8 @@ class TestPerScenarioProfitDegradationCost:
         timestep_hours = TIMESTEP / timedelta(hours=1)
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
-            + generators.variables.startup * generators.commitment_arrays.startup_cost
-            + generators.variables.shutdown * generators.commitment_arrays.shutdown_cost
+            + generators.variables.commitment.startup * generators.commitment_arrays.startup_cost
+            + generators.variables.commitment.shutdown * generators.commitment_arrays.shutdown_cost
         ).sum([ModelDimension.Time, GeneratorFormulation.dimension]) - (
             (storages.variables.power_in + storages.variables.power_out)
             * timestep_hours
@@ -160,8 +160,8 @@ class TestPerScenarioProfitDegradationCost:
         assert generators is not None
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
-            + generators.variables.startup * generators.commitment_arrays.startup_cost
-            + generators.variables.shutdown * generators.commitment_arrays.shutdown_cost
+            + generators.variables.commitment.startup * generators.commitment_arrays.startup_cost
+            + generators.variables.commitment.shutdown * generators.commitment_arrays.shutdown_cost
         ).sum([ModelDimension.Time, GeneratorFormulation.dimension])
 
         assert_linequal(actual_profit, expected_profit)
@@ -187,8 +187,8 @@ class TestPerScenarioProfitShutdownCost:
         assert generators is not None
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
-            + generators.variables.startup * generators.commitment_arrays.startup_cost
-            + generators.variables.shutdown * generators.commitment_arrays.shutdown_cost
+            + generators.variables.commitment.startup * generators.commitment_arrays.startup_cost
+            + generators.variables.commitment.shutdown * generators.commitment_arrays.shutdown_cost
         ).sum([ModelDimension.Time, GeneratorFormulation.dimension])
 
         assert_linequal(actual_profit, expected_profit)

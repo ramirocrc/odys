@@ -583,9 +583,9 @@ class TestGeneratorFormulation:
     def test_variable_names_match_the_model(self, formulation: GeneratorFormulation) -> None:
         variables = formulation.variables
         assert variables.power.name == GeneratorFormulation.power_name
-        assert variables.status.name == GeneratorFormulation.status_name
-        assert variables.startup.name == GeneratorFormulation.startup_name
-        assert variables.shutdown.name == GeneratorFormulation.shutdown_name
+        assert variables.commitment.status.name == GeneratorFormulation.status_name
+        assert variables.commitment.startup.name == GeneratorFormulation.startup_name
+        assert variables.commitment.shutdown.name == GeneratorFormulation.shutdown_name
 
     def test_power_injection_is_the_total_output(
         self,
