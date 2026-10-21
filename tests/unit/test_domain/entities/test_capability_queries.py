@@ -8,6 +8,7 @@ from odys.domain.entities.base import EnergyEntity
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
@@ -88,6 +89,13 @@ def test_min_demand_with_profile(entity: EnergyEntity, expected: tuple[float, ..
     conditions = OperatingConditions(horizon=HALF_HOUR, profile_values=LOAD_VALUES)
 
     assert entity.min_demand(conditions) == pytest.approx(expected)
+
+
+def test_min_demand_of_a_flexible_load_that_can_switch_off_is_zero() -> None:
+    switchable = FLEXIBLE_LOAD.model_copy(update={"commitment": Commitment()})
+    conditions = OperatingConditions(horizon=HALF_HOUR, profile_values=LOAD_VALUES)
+
+    assert switchable.min_demand(conditions) == pytest.approx(ZEROS)
 
 
 @pytest.mark.parametrize("entity", [FIXED_LOAD, FLEXIBLE_LOAD], ids=["fixed_load", "flexible_load"])

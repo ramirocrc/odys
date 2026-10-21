@@ -26,6 +26,7 @@ from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.horizon import Horizon, OperatingConditions
@@ -244,6 +245,96 @@ class GeneratorFinalState(FinalCondition):
         return self.generator
 
 
+class FlexibleLoadInitialState(InitialCondition):
+    """Consumption of a flexible load just before the first timestep, and how long it has been on or off.
+
+    A load with a commitment is off if `power` is 0 and running otherwise; a
+    load without one is always running. A running `power` lies within the
+    load's `min_load` and `max_load`. `time_in_state` is how long a load with a
+    commitment has been in its state; it carries the minimum up or down time
+    over from before the horizon, and is required when the matching minimum
+    time is set.
+    """
+
+    entity_types: ClassVar[tuple[type[Asset], ...]] = (FlexibleLoad,)
+
+    load: FlexibleLoad
+    power: float = Field(strict=True, ge=0, description="Consumption just before the first timestep, in MW.")
+    time_in_state: timedelta | None = Field(
+        default=None,
+        strict=True,
+        gt=timedelta(0),
+        description="How long the load has been running (power > 0) or off (power = 0). Only with a commitment.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_power_within_load_limits(self) -> Self:
+        if not self.is_on:
+            return self
+        min_load, max_load = self.load.min_load, self.load.max_load
+        if (min_load is not None and self.power < min_load) or (max_load is not None and self.power > max_load):
+            off = "either off (0) or " if self.load.commitment is not None else ""
+            msg = (
+                f"FlexibleLoadInitialState for flexible load '{self.load.name}' has power={self.power}, but the "
+                f"load is {off}between min_load ({min_load}) and max_load ({max_load})."
+            )
+            raise OdysValidationError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _validate_time_in_state(self) -> Self:
+        if self.load.commitment is None:
+            if self.time_in_state is not None:
+                msg = (
+                    f"FlexibleLoadInitialState for flexible load '{self.load.name}' has time_in_state, but the load "
+                    "has no commitment, so it is always running."
+                )
+                raise OdysValidationError(msg)
+            return self
+        _validate_time_in_state_given_with_min_time(
+            self.load.commitment,
+            is_on=self.is_on,
+            time_in_state=self.time_in_state,
+            subject=f"{type(self).__name__} for flexible load '{self.load.name}'",
+            entity_kind="flexible load",
+        )
+        return self
+
+    def validate_horizon(self, horizon: Horizon) -> None:
+        """Check that the time in state spans a whole number of timesteps.
+
+        Args:
+            horizon: The time grid of the optimization.
+
+        Raises:
+            OdysValidationError: If the time in state is not a whole number of timesteps.
+        """
+        if self.time_in_state is not None and not horizon.is_whole_steps(self.time_in_state):
+            msg = (
+                f"FlexibleLoadInitialState for flexible load '{self.load.name}' has "
+                f"time_in_state={self.time_in_state}, which is not a whole number of timesteps "
+                f"({horizon.timestep})."
+            )
+            raise OdysValidationError(msg)
+
+    @classmethod
+    def required_for(cls, entity: Asset) -> str | None:
+        """Return why a flexible load needs an initial state: a parameter linking one timestep to the next is set."""
+        if not isinstance(entity, FlexibleLoad):
+            return None
+        return _time_coupling_reason(entity.ramp_up, entity.ramp_down, entity.commitment)
+
+    @property
+    def is_on(self) -> bool:
+        """Return whether the load is running just before the first timestep: always without a commitment."""
+        return self.load.commitment is None or self.power > 0
+
+    @property
+    def entity(self) -> FlexibleLoad:
+        """Return the flexible load this state belongs to."""
+        return self.load
+
+
 class StorageInitialState(InitialCondition):
     """State of charge of a battery storage just before the first timestep. Always required."""
 
@@ -370,10 +461,13 @@ class ElectricVehicleFinalState(FinalCondition):
         return self.vehicle
 
 
-AnyInitialCondition = GeneratorInitialState | StorageInitialState | ElectricVehicleInitialState
+AnyInitialCondition = (
+    GeneratorInitialState | FlexibleLoadInitialState | StorageInitialState | ElectricVehicleInitialState
+)
 AnyFinalCondition = GeneratorFinalState | StorageFinalState | ElectricVehicleFinalState
 INITIAL_CONDITION_TYPES: tuple[type[InitialCondition], ...] = (
     GeneratorInitialState,
+    FlexibleLoadInitialState,
     StorageInitialState,
     ElectricVehicleInitialState,
 )

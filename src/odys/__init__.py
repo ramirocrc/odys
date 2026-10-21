@@ -10,6 +10,7 @@ from importlib.metadata import version
 from odys.domain.conditions import (
     ElectricVehicleFinalState,
     ElectricVehicleInitialState,
+    FlexibleLoadInitialState,
     GeneratorFinalState,
     GeneratorInitialState,
     StorageFinalState,
@@ -55,6 +56,7 @@ __all__ = [
     "EnergySystem",
     "FixedLoad",
     "FlexibleLoad",
+    "FlexibleLoadInitialState",
     "FlexibleLoadProfile",
     "Generator",
     "GeneratorFinalState",

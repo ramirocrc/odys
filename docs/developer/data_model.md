@@ -74,6 +74,9 @@ classDiagram
         +min_load
         +max_load
         +value_of_consumption
+        +ramp_up
+        +ramp_down
+        +commitment: Commitment or None
     }
     class EnergyMarket {
         +max_trading_volume_per_step
@@ -160,6 +163,12 @@ classDiagram
         +generator: Generator
         +power: float
     }
+    class FlexibleLoadInitialState {
+        +load: FlexibleLoad
+        +power: float
+        +time_in_state: timedelta or None
+        +is_on: bool
+    }
     class StorageInitialState {
         +storage: BatteryStorage
         +soc: float
@@ -204,6 +213,7 @@ classDiagram
     Asset <|-- FixedLoad
     Asset <|-- FlexibleLoad
     Generator *-- Commitment
+    FlexibleLoad o-- Commitment
     BatteryStorage *-- Battery
     ElectricVehicle *-- Battery
     ElectricVehicle *-- "0..*" Trip
@@ -226,11 +236,13 @@ classDiagram
     InitialCondition <|-- GeneratorInitialState
     InitialCondition <|-- StorageInitialState
     InitialCondition <|-- ElectricVehicleInitialState
+    InitialCondition <|-- FlexibleLoadInitialState
     FinalCondition <|-- GeneratorFinalState
     FinalCondition <|-- StorageFinalState
     FinalCondition <|-- ElectricVehicleFinalState
     GeneratorInitialState --> Generator
     GeneratorFinalState --> Generator
+    FlexibleLoadInitialState --> FlexibleLoad
     StorageInitialState --> BatteryStorage
     StorageFinalState --> BatteryStorage
     ElectricVehicleInitialState --> ElectricVehicle
