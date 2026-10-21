@@ -50,8 +50,6 @@ ALLOWED_ESCAPE_HATCHES: dict[tuple[str, str], int] = {
     ("tests/unit/test_domain/entities/test_battery.py", "typing.Any"): 9,
     ("tests/unit/test_domain/entities/test_charger.py", "typing.Any"): 5,
     ("tests/unit/test_domain/entities/test_electric_vehicle.py", "typing.Any"): 13,
-    ("tests/unit/test_domain/entities/test_generator.py", "cast(...)"): 1,
-    ("tests/unit/test_domain/entities/test_generator.py", "typing.Any"): 2,
     ("tests/unit/test_domain/entities/test_trip.py", "typing.Any"): 7,
     ("tests/unit/test_optimization/formulations/test_charging_formulation.py", "# noqa"): 2,
     ("tests/unit/test_optimization/formulations/test_electric_vehicle_formulation.py", "# noqa"): 1,

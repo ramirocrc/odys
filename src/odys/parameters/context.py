@@ -10,8 +10,7 @@ from odys.domain.conditions import ConditionSet, ConditionT
 from odys.domain.entities.base import Asset, EnergyEntity
 from odys.domain.exceptions import OdysError
 from odys.domain.horizon import Horizon
-from odys.domain.profiles import Profile
-from odys.domain.scenario import Scenario, ScenarioSet
+from odys.domain.scenario import ProfileT, Scenario, ScenarioSet
 from odys.parameters.coordinates import Coordinates
 from odys.parameters.dimensions import ModelDimension
 
@@ -76,18 +75,20 @@ class ModelContext(BaseModel):
 
     def profiles(
         self,
-        kind: type[Profile],
+        kind: type[ProfileT],
         entities: Sequence[EnergyEntity],
         coordinates: Coordinates,
+        value: Callable[[ProfileT], Sequence[float]],
         *,
         default: float | None = None,
     ) -> xr.DataArray:
-        """Return the profiles of the given kind for the given entities, over scenario, entity and time.
+        """Return one series of the given kind of profile for the given entities, over scenario, entity and time.
 
         Args:
             kind: The profile type to read, such as `PriceProfile`.
             entities: The entities, in the order of their coordinates.
             coordinates: The entities' coordinates, which name their dimension.
+            value: Reads the series from a profile, such as its values or its lower bound.
             default: The value at every step for an entity without a profile in a scenario.
 
         Returns:
@@ -98,7 +99,7 @@ class ModelContext(BaseModel):
 
         """
         data = [
-            [self._profile_values(scenario, kind, entity, default) for entity in entities]
+            [self._profile_values(scenario, kind, entity, value, default) for entity in entities]
             for scenario in self.scenario_set.scenarios
         ]
         return xr.DataArray(
@@ -157,13 +158,14 @@ class ModelContext(BaseModel):
     def _profile_values(
         self,
         scenario: Scenario,
-        kind: type[Profile],
+        kind: type[ProfileT],
         entity: EnergyEntity,
+        value: Callable[[ProfileT], Sequence[float]],
         default: float | None,
     ) -> tuple[float, ...]:
         profile = next((profile for profile in scenario.profiles_of(kind) if profile.entity == entity), None)
         if profile is not None:
-            return tuple(profile.values)
+            return tuple(value(profile))
         if default is None:
             msg = f"Scenario '{scenario.name}' has no {kind.__name__} for '{entity.name}'."
             raise OdysError(msg)

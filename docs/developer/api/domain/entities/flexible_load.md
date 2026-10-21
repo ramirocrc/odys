@@ -4,7 +4,7 @@ icon: fontawesome/solid/plug
 
 # `odys.domain.entities.flexible_load`
 
-Flexible load asset representing adjustable demand within bounds to optimize profit.
+Flexible load asset: demand the optimizer sets within a range at every step, for a value per MWh.
 
 See [FlexibleLoad](../../../../user_guide/assets/flexible_load.md) in the User Guide for a conceptual walkthrough.
 

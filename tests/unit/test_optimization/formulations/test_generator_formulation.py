@@ -9,6 +9,7 @@ import xarray as xr
 from linopy.testing import assert_conequal, assert_linequal
 
 from odys.domain.conditions import GeneratorFinalState, GeneratorInitialState
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -47,10 +48,12 @@ def generator1() -> Generator:
         nominal_power=100.0,
         variable_cost=20.0,
         min_power=10.0,
-        min_up_time=timedelta(hours=GEN1_MIN_STEPS),
-        min_down_time=timedelta(hours=GEN1_MIN_STEPS),
         ramp_up=50.0,
         ramp_down=40.0,
+        commitment=Commitment(
+            min_up_time=timedelta(hours=GEN1_MIN_STEPS),
+            min_down_time=timedelta(hours=GEN1_MIN_STEPS),
+        ),
     )
 
 
@@ -62,10 +65,12 @@ def generator2() -> Generator:
         nominal_power=150.0,
         variable_cost=25.0,
         min_power=15.0,
-        min_up_time=timedelta(hours=GEN2_MIN_STEPS),
-        min_down_time=timedelta(hours=GEN2_MIN_STEPS),
         ramp_up=75.0,
         ramp_down=60.0,
+        commitment=Commitment(
+            min_up_time=timedelta(hours=GEN2_MIN_STEPS),
+            min_down_time=timedelta(hours=GEN2_MIN_STEPS),
+        ),
     )
 
 
@@ -578,9 +583,9 @@ class TestGeneratorFormulation:
     def test_variable_names_match_the_model(self, formulation: GeneratorFormulation) -> None:
         variables = formulation.variables
         assert variables.power.name == GeneratorFormulation.power_name
-        assert variables.status.name == GeneratorFormulation.status_name
-        assert variables.startup.name == GeneratorFormulation.startup_name
-        assert variables.shutdown.name == GeneratorFormulation.shutdown_name
+        assert variables.commitment.status.name == GeneratorFormulation.status_name
+        assert variables.commitment.startup.name == GeneratorFormulation.startup_name
+        assert variables.commitment.shutdown.name == GeneratorFormulation.shutdown_name
 
     def test_power_injection_is_the_total_output(
         self,
@@ -599,8 +604,14 @@ class TestGeneratorFormulation:
     ) -> None:
         names = {"generator": [generator1.name, generator2.name]}
         variable_cost = xr.DataArray([generator1.variable_cost, generator2.variable_cost], coords=names)
-        startup_cost = xr.DataArray([generator1.startup_cost, generator2.startup_cost], coords=names)
-        shutdown_cost = xr.DataArray([generator1.shutdown_cost, generator2.shutdown_cost], coords=names)
+        startup_cost = xr.DataArray(
+            [generator1.commitment.startup_cost, generator2.commitment.startup_cost],
+            coords=names,
+        )
+        shutdown_cost = xr.DataArray(
+            [generator1.commitment.shutdown_cost, generator2.commitment.shutdown_cost],
+            coords=names,
+        )
 
         expected = -(
             linopy_model.variables["generator_power"] * HOURS_PER_STEP * variable_cost
@@ -614,3 +625,38 @@ class TestGeneratorFormulation:
         assert generators is not None
         with pytest.raises(OdysError, match=r"GeneratorFormulation\.add_variables must run before"):
             _ = generators.variables
+
+
+HALF_HOUR_RAMP_UP = 40.0
+HALF_HOUR_RAMP_DOWN = 20.0
+
+
+@pytest.mark.parametrize(
+    ("constraint_name", "ramp_per_hour"),
+    [
+        ("generator_max_ramp_up_constraint", HALF_HOUR_RAMP_UP),
+        ("generator_max_ramp_down_constraint", HALF_HOUR_RAMP_DOWN),
+    ],
+    ids=["ramp_up", "ramp_down"],
+)
+def test_ramp_limits_are_per_hour_scaled_by_the_step_length(constraint_name: str, ramp_per_hour: float) -> None:
+    generator = Generator(
+        name="gen",
+        nominal_power=100.0,
+        variable_cost=10.0,
+        ramp_up=HALF_HOUR_RAMP_UP,
+        ramp_down=HALF_HOUR_RAMP_DOWN,
+    )
+    load = FixedLoad(name="load")
+    system = EnergySystem(
+        portfolio=AssetPortfolio([generator, load]),
+        timestep=timedelta(minutes=30),
+        number_of_steps=3,
+        scenarios=Scenario(profiles=(LoadProfile(load=load, values=[10.0, 20.0, 30.0]),)),
+        initial_conditions=(GeneratorInitialState(generator=generator, power=0.0),),
+    )
+
+    actual_constraint = build_model(system.build_problem()).constraints[constraint_name]
+
+    assert bool((actual_constraint.rhs == ramp_per_hour * 0.5).all())
+    _assert_no_masked_entries(actual_constraint)

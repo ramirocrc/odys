@@ -121,4 +121,4 @@ The battery stores 275 MWh and gives back 248 MWh; the other 27 MWh is lost to i
 
 ## Discussion
 
-Storage links one hour to the next: the battery moves the midday surplus into the evening, and the losses are worth paying because the energy it replaces costs 50 $/MWh. Since the CCGT costs the same at every hour, it doesn't matter when in the evening the battery discharges. The [Industrial Demand Response](demand_response.md) example replaces the generators with a market whose price changes through the day, and a load that adjusts its consumption to it.
+Storage links one hour to the next: the battery moves the midday surplus into the evening, and the losses are worth paying because the energy it replaces costs 50 $/MWh. Since the CCGT costs the same at every hour, it doesn't matter when in the evening the battery discharges. The [Industrial Demand Response](demand_response.md) example replaces the generators with a market whose price changes through the day, and a kiln that adjusts its consumption to it, as fast as its physics allows.

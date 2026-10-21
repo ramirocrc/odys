@@ -11,7 +11,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
+from odys.domain.profiles import AvailableCapacityProfile, FlexibleLoadProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.energy_market import EnergyMarketFormulation
@@ -25,7 +25,8 @@ VARIABLE_COST = 10.0
 MAX_TRADING_VOLUME = 500.0
 FIRST_LOAD = [10.0, 20.0]
 SECOND_LOAD = [1.0, 2.0]
-FLEX_BASE = [50.0, 60.0]
+FLEX_LOWER_BOUND = [45.0, 55.0]
+FLEX_UPPER_BOUND = [55.0, 65.0]
 LOW_PRICES = [5.0, 6.0]
 HIGH_PRICES = [50.0, 60.0]
 CAPACITY = [100.0, 200.0]
@@ -44,7 +45,7 @@ def second_load() -> FixedLoad:
 
 @pytest.fixture
 def flexible_load() -> FlexibleLoad:
-    return FlexibleLoad(name="flex", max_increase=5.0, max_decrease=5.0, value_of_consumption=40.0)
+    return FlexibleLoad(name="flex", value_of_consumption=40.0)
 
 
 @pytest.fixture
@@ -77,7 +78,7 @@ def optimization_problem(
         PriceProfile(market=market_b, values=HIGH_PRICES),
         LoadProfile(load=second_load, values=SECOND_LOAD),
         AvailableCapacityProfile(generator=gen_b, values=CAPACITY),
-        LoadProfile(load=flexible_load, values=FLEX_BASE),
+        FlexibleLoadProfile(load=flexible_load, lower_bound=FLEX_LOWER_BOUND, upper_bound=FLEX_UPPER_BOUND),
         PriceProfile(market=market_a, values=LOW_PRICES),
         LoadProfile(load=first_load, values=FIRST_LOAD),
     )
@@ -119,13 +120,11 @@ def test_generator_without_profile_is_unbounded(optimization_problem: Optimizati
     )
 
 
-def test_flexible_load_base_profiles(optimization_problem: OptimizationProblem) -> None:
+def test_flexible_load_bounds(optimization_problem: OptimizationProblem) -> None:
     flexible_loads = optimization_problem.formulation_of(FlexibleLoadFormulation)
     assert flexible_loads is not None
-    xr.testing.assert_allclose(
-        flexible_loads.base_profiles,
-        _expected([FLEX_BASE], "flexible_load", ["flex"]),
-    )
+    xr.testing.assert_allclose(flexible_loads.lower_bounds, _expected([FLEX_LOWER_BOUND], "flexible_load", ["flex"]))
+    xr.testing.assert_allclose(flexible_loads.upper_bounds, _expected([FLEX_UPPER_BOUND], "flexible_load", ["flex"]))
 
 
 def test_formulations_absent_without_matching_entities(first_load: FixedLoad) -> None:

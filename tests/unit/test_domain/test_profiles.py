@@ -10,13 +10,25 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.exceptions import OdysValidationError
-from odys.domain.profiles import PROFILE_TYPES, AvailableCapacityProfile, LoadProfile, PriceProfile, Profile
+from odys.domain.profiles import (
+    PROFILE_TYPES,
+    AvailableCapacityProfile,
+    FlexibleLoadProfile,
+    LoadProfile,
+    PriceProfile,
+    Profile,
+)
 
 VALUES = [10.0, 20.0, 30.0]
 NOMINAL_POWER = 100.0
 VARIABLE_COST = 20.0
 MAX_TRADING_VOLUME = 50.0
-MAX_DECREASE = 5.0
+LOWER_BOUND = [5.0, 10.0, 15.0]
+UPPER_BOUND = [20.0, 25.0, 30.0]
+MIN_LOAD = 5.0
+MAX_LOAD = 30.0
+VALUE_OF_CONSUMPTION = 50.0
+SERIES_FIELDS = {"values", "lower_bound", "upper_bound"}
 
 
 @pytest.fixture
@@ -26,7 +38,7 @@ def fixed_load() -> FixedLoad:
 
 @pytest.fixture
 def flexible_load() -> FlexibleLoad:
-    return FlexibleLoad(name="flex1", max_increase=10.0, max_decrease=MAX_DECREASE, value_of_consumption=50.0)
+    return FlexibleLoad(name="flex1", value_of_consumption=VALUE_OF_CONSUMPTION)
 
 
 @pytest.fixture
@@ -43,8 +55,9 @@ class TestProfileEntity:
     def test_demand_of_a_fixed_load(self, fixed_load: FixedLoad) -> None:
         assert LoadProfile(load=fixed_load, values=VALUES).entity == fixed_load
 
-    def test_demand_of_a_flexible_load(self, flexible_load: FlexibleLoad) -> None:
-        assert LoadProfile(load=flexible_load, values=VALUES).entity == flexible_load
+    def test_range_of_a_flexible_load(self, flexible_load: FlexibleLoad) -> None:
+        profile = FlexibleLoadProfile(load=flexible_load, lower_bound=LOWER_BOUND, upper_bound=UPPER_BOUND)
+        assert profile.entity == flexible_load
 
     def test_available_capacity_of_a_generator(self, generator: Generator) -> None:
         assert AvailableCapacityProfile(generator=generator, values=VALUES).entity == generator
@@ -57,6 +70,16 @@ class TestProfileRejectsWrongEntityType:
     def test_demand_of_a_generator(self, generator: Generator) -> None:
         with pytest.raises(ValidationError, match="instance of FixedLoad"):
             LoadProfile.model_validate({"load": generator, "values": VALUES})
+
+    def test_demand_of_a_flexible_load(self, flexible_load: FlexibleLoad) -> None:
+        with pytest.raises(ValidationError, match="instance of FixedLoad"):
+            LoadProfile.model_validate({"load": flexible_load, "values": VALUES})
+
+    def test_range_of_a_fixed_load(self, fixed_load: FixedLoad) -> None:
+        with pytest.raises(ValidationError, match="instance of FlexibleLoad"):
+            FlexibleLoadProfile.model_validate(
+                {"load": fixed_load, "lower_bound": LOWER_BOUND, "upper_bound": UPPER_BOUND},
+            )
 
     def test_available_capacity_of_a_load(self, fixed_load: FixedLoad) -> None:
         with pytest.raises(ValidationError, match="instance of Generator"):
@@ -102,60 +125,95 @@ class TestAvailableCapacityWithinNominalPower:
             AvailableCapacityProfile(generator=generator, values=[NOMINAL_POWER, value])
 
 
-class TestFlexibleLoadProfileCoversMaxDecrease:
-    def test_accepts_base_equal_to_max_decrease(self, flexible_load: FlexibleLoad) -> None:
-        values = [MAX_DECREASE, *VALUES]
-        assert LoadProfile(load=flexible_load, values=values).values == tuple(values)
+class TestSeriesProfileOperatingConditions:
+    def test_number_of_steps_is_the_number_of_values(self, fixed_load: FixedLoad) -> None:
+        assert LoadProfile(load=fixed_load, values=VALUES).number_of_steps == len(VALUES)
 
-    def test_rejects_base_below_max_decrease(self, flexible_load: FlexibleLoad) -> None:
-        below_max_decrease = MAX_DECREASE - 1
-        with pytest.raises(
-            OdysValidationError,
-            match=r"Flexible load 'flex1' has max_decrease \(5.0\) greater than the base profile value \(4.0\) "
-            r"at time index 1\. This would allow actual load to go negative",
-        ):
-            LoadProfile(load=flexible_load, values=[MAX_DECREASE, below_max_decrease])
-
-    def test_fixed_load_profile_has_no_lower_bound_from_the_load(self, fixed_load: FixedLoad) -> None:
-        assert LoadProfile(load=fixed_load, values=[0.0]).values == (0.0,)
+    def test_operating_values_are_the_values(self, generator: Generator) -> None:
+        assert AvailableCapacityProfile(generator=generator, values=VALUES).operating_values == tuple(VALUES)
 
 
-class TestFlexibleLoadProfileWithinAbsoluteBounds:
+class TestFlexibleLoadProfileBounds:
+    def test_bounds_are_stored_as_float_tuples(self, flexible_load: FlexibleLoad) -> None:
+        profile = FlexibleLoadProfile(load=flexible_load, lower_bound=[1, 2], upper_bound=[3, 4])
+
+        assert profile.lower_bound == (1.0, 2.0)
+        assert profile.upper_bound == (3.0, 4.0)
+        assert all(type(value) is float for value in (*profile.lower_bound, *profile.upper_bound))
+
+    @pytest.mark.parametrize("field", ["lower_bound", "upper_bound"], ids=["lower", "upper"])
+    def test_rejects_an_empty_bound(self, flexible_load: FlexibleLoad, field: str) -> None:
+        bounds = {"lower_bound": LOWER_BOUND, "upper_bound": UPPER_BOUND} | {field: []}
+        with pytest.raises(ValidationError, match="at least 1 item"):
+            FlexibleLoadProfile.model_validate({"load": flexible_load, **bounds})
+
+    def test_number_of_steps_is_the_length_of_the_bounds(self, flexible_load: FlexibleLoad) -> None:
+        profile = FlexibleLoadProfile(load=flexible_load, lower_bound=LOWER_BOUND, upper_bound=UPPER_BOUND)
+        assert profile.number_of_steps == len(LOWER_BOUND)
+
+    def test_operating_values_are_the_lower_bound(self, flexible_load: FlexibleLoad) -> None:
+        profile = FlexibleLoadProfile(load=flexible_load, lower_bound=LOWER_BOUND, upper_bound=UPPER_BOUND)
+        assert profile.operating_values == tuple(LOWER_BOUND)
+
+    def test_accepts_equal_bounds_and_a_zero_lower_bound(self, flexible_load: FlexibleLoad) -> None:
+        profile = FlexibleLoadProfile(load=flexible_load, lower_bound=[0.0, 10.0], upper_bound=[0.0, 10.0])
+        assert profile.lower_bound == profile.upper_bound
+
+    @pytest.mark.parametrize(
+        ("lower_bound", "upper_bound", "message"),
+        [
+            ([5.0, 10.0], [20.0], r"Flexible load 'flex1' has 2 lower bound values and 1 upper bound values"),
+            ([5.0, -1.0], [20.0, 20.0], r"Flexible load 'flex1' has a negative lower bound \(-1.0\) at time index 1"),
+            (
+                [5.0, 21.0],
+                [20.0, 20.0],
+                r"Flexible load 'flex1' has a lower bound \(21.0\) above its upper bound \(20.0\) at time index 1",
+            ),
+        ],
+        ids=["different_lengths", "negative_lower_bound", "lower_above_upper"],
+    )
+    def test_rejects_bounds_that_are_not_a_range(
+        self,
+        flexible_load: FlexibleLoad,
+        lower_bound: list[float],
+        upper_bound: list[float],
+        message: str,
+    ) -> None:
+        with pytest.raises(OdysValidationError, match=message):
+            FlexibleLoadProfile(load=flexible_load, lower_bound=lower_bound, upper_bound=upper_bound)
+
+
+class TestFlexibleLoadProfileWithinLoadLimits:
     @pytest.fixture
-    def bounded_load(self) -> FlexibleLoad:
-        return FlexibleLoad(name="flex1", min_load=10.0, max_load=30.0, value_of_consumption=50.0)
-
-    def test_accepts_base_on_the_bounds(self, bounded_load: FlexibleLoad) -> None:
-        assert LoadProfile(load=bounded_load, values=VALUES).values == tuple(VALUES)
-
-    def test_rejects_base_below_min_load(self, bounded_load: FlexibleLoad) -> None:
-        with pytest.raises(
-            OdysValidationError,
-            match=r"Flexible load 'flex1' has base profile value \(9.0\) below min_load \(10.0\) at time index 1",
-        ):
-            LoadProfile(load=bounded_load, values=[10.0, 9.0])
-
-    def test_rejects_base_above_max_load(self, bounded_load: FlexibleLoad) -> None:
-        with pytest.raises(
-            OdysValidationError,
-            match=r"Flexible load 'flex1' has base profile value \(31.0\) above max_load \(30.0\) at time index 2",
-        ):
-            LoadProfile(load=bounded_load, values=[10.0, 20.0, 31.0])
-
-    def test_min_load_replaces_the_max_decrease_check(self) -> None:
-        # max_decrease (5) exceeds the base value (4), but min_load overrides max_decrease
-        load = FlexibleLoad(
+    def limited_load(self) -> FlexibleLoad:
+        return FlexibleLoad(
             name="flex1",
-            max_increase=10.0,
-            max_decrease=MAX_DECREASE,
-            min_load=2.0,
-            value_of_consumption=50.0,
+            min_load=MIN_LOAD,
+            max_load=MAX_LOAD,
+            value_of_consumption=VALUE_OF_CONSUMPTION,
         )
-        assert LoadProfile(load=load, values=[4.0]).values == (4.0,)
 
-    def test_unset_max_load_puts_no_upper_limit_on_the_base(self) -> None:
-        load = FlexibleLoad(name="flex1", min_load=1.0, max_increase=10.0, value_of_consumption=50.0)
-        assert LoadProfile(load=load, values=[1.0, 1000.0]).values == (1.0, 1000.0)
+    def test_accepts_bounds_on_the_limits(self, limited_load: FlexibleLoad) -> None:
+        profile = FlexibleLoadProfile(load=limited_load, lower_bound=[MIN_LOAD], upper_bound=[MAX_LOAD])
+        assert profile.lower_bound == (MIN_LOAD,)
+
+    def test_rejects_lower_bound_below_min_load(self, limited_load: FlexibleLoad) -> None:
+        with pytest.raises(
+            OdysValidationError,
+            match=r"Flexible load 'flex1' has a lower bound \(4.0\) below min_load \(5.0\) at time index 1",
+        ):
+            FlexibleLoadProfile(load=limited_load, lower_bound=[MIN_LOAD, 4.0], upper_bound=[MAX_LOAD, MAX_LOAD])
+
+    def test_rejects_upper_bound_above_max_load(self, limited_load: FlexibleLoad) -> None:
+        with pytest.raises(
+            OdysValidationError,
+            match=r"Flexible load 'flex1' has an upper bound \(31.0\) above max_load \(30.0\) at time index 2",
+        ):
+            FlexibleLoadProfile(load=limited_load, lower_bound=LOWER_BOUND, upper_bound=[20.0, 25.0, 31.0])
+
+    def test_unset_limits_put_no_limit_on_the_bounds(self, flexible_load: FlexibleLoad) -> None:
+        profile = FlexibleLoadProfile(load=flexible_load, lower_bound=[0.0], upper_bound=[1000.0])
+        assert profile.upper_bound == (1000.0,)
 
 
 def test_profile_types_apply_to_disjoint_entity_types() -> None:
@@ -166,7 +224,7 @@ def test_profile_types_apply_to_disjoint_entity_types() -> None:
 
 @pytest.mark.parametrize("profile_type", PROFILE_TYPES, ids=lambda profile_type: profile_type.__name__)
 def test_profile_type_entity_types_match_its_entity_field(profile_type: type[Profile]) -> None:
-    entity_field = next(name for name in profile_type.model_fields if name != "values")
+    entity_field = next(name for name in profile_type.model_fields if name not in SERIES_FIELDS)
     annotation = profile_type.model_fields[entity_field].annotation
     declared_types = get_args(annotation) or (annotation,)
 

@@ -29,10 +29,16 @@ classDiagram
         +min_power
         +ramp_up
         +ramp_down
+        +commitment: Commitment
+    }
+    class Commitment {
+        <<value object>>
         +min_up_time
         +min_down_time
         +startup_cost
         +shutdown_cost
+        +validate_horizon(horizon, owner)
+        +time_coupled_fields() tuple~str~
     }
     class Battery {
         <<value object>>
@@ -65,9 +71,12 @@ classDiagram
     }
     class FixedLoad
     class FlexibleLoad {
-        +max_increase
-        +max_decrease
+        +min_load
+        +max_load
         +value_of_consumption
+        +ramp_up
+        +ramp_down
+        +commitment: Commitment or None
     }
     class EnergyMarket {
         +max_trading_volume_per_step
@@ -99,11 +108,21 @@ classDiagram
         <<abstract>>
         +entity_types: ClassVar
         +required: ClassVar
-        +values: tuple~float~
         +entity: EnergyEntity
+        +number_of_steps: int
+        +operating_values: tuple~float~
+    }
+    class SeriesProfile {
+        <<abstract>>
+        +values: tuple~float~
     }
     class LoadProfile {
-        +load: FixedLoad or FlexibleLoad
+        +load: FixedLoad
+    }
+    class FlexibleLoadProfile {
+        +load: FlexibleLoad
+        +lower_bound: tuple~float~
+        +upper_bound: tuple~float~
     }
     class AvailableCapacityProfile {
         +generator: Generator
@@ -143,6 +162,12 @@ classDiagram
     class GeneratorFinalState {
         +generator: Generator
         +power: float
+    }
+    class FlexibleLoadInitialState {
+        +load: FlexibleLoad
+        +power: float
+        +time_in_state: timedelta or None
+        +is_on: bool
     }
     class StorageInitialState {
         +storage: BatteryStorage
@@ -187,16 +212,20 @@ classDiagram
     Asset <|-- Charger
     Asset <|-- FixedLoad
     Asset <|-- FlexibleLoad
+    Generator *-- Commitment
+    FlexibleLoad o-- Commitment
     BatteryStorage *-- Battery
     ElectricVehicle *-- Battery
     ElectricVehicle *-- "0..*" Trip
     EnergyMarket --> AllowedTradeDirection
     AssetPortfolio o-- "0..*" Asset
-    Profile <|-- LoadProfile
-    Profile <|-- AvailableCapacityProfile
-    Profile <|-- PriceProfile
+    Profile <|-- SeriesProfile
+    Profile <|-- FlexibleLoadProfile
+    SeriesProfile <|-- LoadProfile
+    SeriesProfile <|-- AvailableCapacityProfile
+    SeriesProfile <|-- PriceProfile
     LoadProfile --> FixedLoad
-    LoadProfile --> FlexibleLoad
+    FlexibleLoadProfile --> FlexibleLoad
     AvailableCapacityProfile --> Generator
     PriceProfile --> EnergyMarket
     Scenario *-- "0..*" Profile
@@ -207,11 +236,13 @@ classDiagram
     InitialCondition <|-- GeneratorInitialState
     InitialCondition <|-- StorageInitialState
     InitialCondition <|-- ElectricVehicleInitialState
+    InitialCondition <|-- FlexibleLoadInitialState
     FinalCondition <|-- GeneratorFinalState
     FinalCondition <|-- StorageFinalState
     FinalCondition <|-- ElectricVehicleFinalState
     GeneratorInitialState --> Generator
     GeneratorFinalState --> Generator
+    FlexibleLoadInitialState --> FlexibleLoad
     StorageInitialState --> BatteryStorage
     StorageFinalState --> BatteryStorage
     ElectricVehicleInitialState --> ElectricVehicle
@@ -237,7 +268,7 @@ classDiagram
         +timestep_hours: float
         +probabilities
         +variable_coords(coordinates)
-        +profiles(kind, entities, coordinates)
+        +profiles(kind, entities, coordinates, value)
         +conditions(kind, entities, coordinates, value)
     }
     class Coordinates {
@@ -294,6 +325,11 @@ classDiagram
         +power_injection(variables)
         +dispatch_data(solution)
     }
+    class CommitmentFormulation {
+        +create_variables(model) CommitmentVariables
+        +previous_status(variables)
+        +costs(variables, arrays)
+    }
     class PowerBalance
     class ObjectiveTermInputs {
         +objective: Objective
@@ -333,6 +369,8 @@ classDiagram
     VariableFormulation <|-- ChargingFormulation
     BatteryStorageFormulation *-- StorageFormulation
     ElectricVehicleFormulation *-- StorageFormulation
+    GeneratorFormulation *-- CommitmentFormulation
+    FlexibleLoadFormulation *-- CommitmentFormulation
     ChargingFormulation --> ElectricVehicleFormulation
     Formulation --> ModelContext
     Formulation ..> EntityArrays : vectorize
@@ -422,8 +460,10 @@ classDiagram
         +net_volume
     }
     class FlexibleLoadDispatch {
-        +load_adjustment
-        +actual_load
+        +consumption
+        +status
+        +startup
+        +shutdown
     }
     class OptimalDispatchResults {
         +solver_status: SolveStatus

@@ -8,12 +8,14 @@ import pytest
 import xarray as xr
 from linopy.testing import assert_conequal, assert_linequal
 
+from odys.domain.conditions import FlexibleLoadInitialState
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.exceptions import OdysError
-from odys.domain.profiles import LoadProfile, PriceProfile
+from odys.domain.profiles import FlexibleLoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.flexible_load import FlexibleLoadFormulation
@@ -22,20 +24,24 @@ from odys.optimization.problem import OptimizationProblem
 
 logger = logging.getLogger(__name__)
 
-MAX_INCREASE = 50.0
-MAX_DECREASE = 30.0
+LOWER_BOUND = (70.0, 80.0, 60.0)
+UPPER_BOUND = (150.0, 120.0, 130.0)
+SECOND_LOWER_BOUND = (10.0, 10.0, 10.0)
+SECOND_UPPER_BOUND = (20.0, 25.0, 30.0)
 VALUE_OF_CONSUMPTION = 100.0
 HOURS_PER_STEP = 1.0
+PRICES = (50.0, 50.0, 50.0)
+TIME = ["0", "1", "2"]
 
 
 @pytest.fixture
 def flexible_load1() -> FlexibleLoad:
-    return FlexibleLoad(
-        name="flex_load1",
-        max_increase=MAX_INCREASE,
-        max_decrease=MAX_DECREASE,
-        value_of_consumption=VALUE_OF_CONSUMPTION,
-    )
+    return FlexibleLoad(name="flex_load1", value_of_consumption=VALUE_OF_CONSUMPTION)
+
+
+@pytest.fixture
+def flexible_load2() -> FlexibleLoad:
+    return FlexibleLoad(name="flex_load2", value_of_consumption=VALUE_OF_CONSUMPTION)
 
 
 @pytest.fixture
@@ -49,39 +55,26 @@ def market1() -> EnergyMarket:
 
 
 @pytest.fixture
-def asset_portfolio_sample(
+def energy_system_sample(
     generator1: Generator,
     flexible_load1: FlexibleLoad,
-) -> AssetPortfolio:
-    return AssetPortfolio(assets=[generator1, flexible_load1])
-
-
-@pytest.fixture
-def demand_profile_sample() -> list[float]:
-    return [100.0, 100.0, 100.0]
-
-
-@pytest.fixture
-def time_index(demand_profile_sample: list[float]) -> list[int]:
-    return list(range(len(demand_profile_sample)))
-
-
-@pytest.fixture
-def energy_system_sample(
-    asset_portfolio_sample: AssetPortfolio,
-    demand_profile_sample: list[float],
+    flexible_load2: FlexibleLoad,
     market1: EnergyMarket,
-    flexible_load1: FlexibleLoad,
 ) -> EnergySystem:
     return EnergySystem(
-        portfolio=asset_portfolio_sample,
+        portfolio=AssetPortfolio(assets=[generator1, flexible_load1, flexible_load2]),
         markets=market1,
-        number_of_steps=len(demand_profile_sample),
+        number_of_steps=len(LOWER_BOUND),
         timestep=timedelta(hours=1),
         scenarios=Scenario(
             profiles=(
-                LoadProfile(load=flexible_load1, values=demand_profile_sample),
-                PriceProfile(market=market1, values=[50.0, 50.0, 50.0]),
+                FlexibleLoadProfile(load=flexible_load1, lower_bound=LOWER_BOUND, upper_bound=UPPER_BOUND),
+                FlexibleLoadProfile(
+                    load=flexible_load2,
+                    lower_bound=SECOND_LOWER_BOUND,
+                    upper_bound=SECOND_UPPER_BOUND,
+                ),
+                PriceProfile(market=market1, values=PRICES),
             ),
         ),
     )
@@ -106,41 +99,35 @@ def formulation(optimization_problem: OptimizationProblem, linopy_model: linopy.
     return flexible_loads
 
 
+def _bounds(first: tuple[float, ...], second: tuple[float, ...]) -> xr.DataArray:
+    return xr.DataArray(
+        [list(zip(first, second, strict=True))],
+        coords={"scenario": ["base"], "time": TIME, "flexible_load": ["flex_load1", "flex_load2"]},
+    )
+
+
 class TestFlexibleLoadConstraints:
-    @pytest.fixture(autouse=True)
-    def setup(
+    def test_lower_bound_constraint_keeps_consumption_at_or_above_the_profile_lower_bound(
         self,
         linopy_model: linopy.Model,
-        flexible_load1: FlexibleLoad,
-        time_index: list[int],
     ) -> None:
-        self.linopy_model = linopy_model
-        self.flexible_load1 = flexible_load1
-        self.time_index = time_index
+        actual_constraint = linopy_model.constraints["flexible_load_lower_bound_constraint"]
+        consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name]
 
-    def test_adjustment_lower_bound(self) -> None:
-        actual_constraint = self.linopy_model.constraints["flexible_load_adjustment_lower_bound_constraint"]
-
-        load_adjustment = self.linopy_model.variables["load_adjustment"]
-        max_decrease_array = xr.DataArray(
-            [self.flexible_load1.max_decrease],
-            coords={"flexible_load": [self.flexible_load1.name]},
-        )
-
-        expected_expr = load_adjustment >= -max_decrease_array
+        expected_expr = consumption >= _bounds(LOWER_BOUND, SECOND_LOWER_BOUND)
         assert_conequal(expected_expr, actual_constraint.lhs >= actual_constraint.rhs)
+        assert bool((actual_constraint.labels != -1).all())
 
-    def test_adjustment_upper_bound(self) -> None:
-        actual_constraint = self.linopy_model.constraints["flexible_load_adjustment_upper_bound_constraint"]
+    def test_upper_bound_constraint_keeps_consumption_at_or_below_the_profile_upper_bound(
+        self,
+        linopy_model: linopy.Model,
+    ) -> None:
+        actual_constraint = linopy_model.constraints["flexible_load_upper_bound_constraint"]
+        consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name]
 
-        load_adjustment = self.linopy_model.variables["load_adjustment"]
-        max_increase_array = xr.DataArray(
-            [self.flexible_load1.max_increase],
-            coords={"flexible_load": [self.flexible_load1.name]},
-        )
-
-        expected_expr = load_adjustment <= max_increase_array
+        expected_expr = consumption <= _bounds(UPPER_BOUND, SECOND_UPPER_BOUND)
         assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
+        assert bool((actual_constraint.labels != -1).all())
 
 
 class TestFlexibleLoadFormulation:
@@ -150,103 +137,195 @@ class TestFlexibleLoadFormulation:
         with pytest.raises(OdysError, match="add_variables must run before its variables are used"):
             _ = flexible_loads.variables
 
-    def test_load_adjustment_is_unbounded_over_scenario_time_and_load(
+    def test_consumption_is_non_negative_over_scenario_time_and_load(
         self,
         formulation: FlexibleLoadFormulation,
         linopy_model: linopy.Model,
     ) -> None:
-        load_adjustment = linopy_model.variables["load_adjustment"]
+        consumption = linopy_model.variables["flexible_load_consumption"]
 
-        assert formulation.variables.load_adjustment.name == FlexibleLoadFormulation.variable_name
-        assert load_adjustment.dims == ("scenario", "time", "flexible_load")
-        assert bool((load_adjustment.lower == -float("inf")).all())
+        assert formulation.variables.consumption.name == FlexibleLoadFormulation.variable_name
+        assert consumption.dims == ("scenario", "time", "flexible_load")
+        assert bool((consumption.lower == 0).all())
 
-    def test_power_injection_is_minus_base_profile_and_adjustment(
+    def test_power_injection_is_minus_the_summed_consumption(
         self,
         formulation: FlexibleLoadFormulation,
         linopy_model: linopy.Model,
-        demand_profile_sample: list[float],
     ) -> None:
-        load_adjustment = linopy_model.variables["load_adjustment"]
-        base_profile = xr.DataArray(
-            [demand_profile_sample],
-            coords={"scenario": ["base"], "time": ["0", "1", "2"]},
-        )
+        consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name]
 
-        expected = -load_adjustment.sum("flexible_load") - base_profile
-        assert_linequal(formulation.power_injection(), expected)
+        assert_linequal(formulation.power_injection(), -consumption.sum("flexible_load"))
 
-    def test_profit_values_the_adjustment_per_step(
+    def test_profit_values_the_consumption_per_step(
         self,
         formulation: FlexibleLoadFormulation,
         linopy_model: linopy.Model,
-        flexible_load1: FlexibleLoad,
     ) -> None:
-        load_adjustment = linopy_model.variables["load_adjustment"]
+        consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name]
         value_of_consumption = xr.DataArray(
-            [flexible_load1.value_of_consumption],
-            coords={"flexible_load": [flexible_load1.name]},
+            [VALUE_OF_CONSUMPTION, VALUE_OF_CONSUMPTION],
+            coords={"flexible_load": ["flex_load1", "flex_load2"]},
         )
 
-        expected = (load_adjustment * HOURS_PER_STEP * value_of_consumption).sum(["time", "flexible_load"])
+        expected = (consumption * HOURS_PER_STEP * value_of_consumption).sum(["time", "flexible_load"])
         assert_linequal(formulation.profit(), expected)
 
 
-class TestFlexibleLoadAbsoluteBoundConstraints:
-    """Absolute bounds against a time-varying base profile, alongside a relative-only load."""
+@pytest.mark.parametrize(
+    "name",
+    [FlexibleLoadFormulation.status_name, FlexibleLoadFormulation.startup_name, FlexibleLoadFormulation.shutdown_name],
+)
+def test_flexible_loads_without_a_commitment_add_no_on_off_variables(linopy_model: linopy.Model, name: str) -> None:
+    assert name not in set(linopy_model.variables)
 
-    BASE_PROFILE = (100.0, 110.0, 90.0)
-    MIN_LOAD = 80.0
-    MAX_LOAD = 130.0
 
-    @pytest.fixture(autouse=True)
-    def setup(self, generator1: Generator, market1: EnergyMarket, flexible_load1: FlexibleLoad) -> None:
-        # max_increase/max_decrease are set too, so the absolute bounds must override them
-        absolute_load = FlexibleLoad(
-            name="abs_load",
-            max_increase=MAX_INCREASE,
-            max_decrease=MAX_DECREASE,
-            min_load=self.MIN_LOAD,
-            max_load=self.MAX_LOAD,
+KILN_LOWER_BOUND = (30.0, 30.0, 30.0)
+KILN_UPPER_BOUND = (90.0, 80.0, 90.0)
+PUMP_BOUNDS = (5.0, 5.0, 5.0)
+KILN_RAMP_UP = 20.0
+KILN_RAMP_DOWN = 40.0
+KILN_INITIAL_POWER = 60.0
+STARTUP_COST = 500.0
+SHUTDOWN_COST = 100.0
+HOURS_PER_HALF_HOUR = 0.5
+FIRST_STEP_ONLY = xr.DataArray([1.0, 0.0, 0.0], coords={"time": TIME})
+KILN = {"flexible_load": "kiln"}
+PUMP = {"flexible_load": "pump"}
+
+
+class TestSwitchableRampingFlexibleLoad:
+    """Half-hourly steps. The kiln has ramps and a commitment, and starts at 60 MW; the pump is always on."""
+
+    @pytest.fixture
+    def linopy_model(self, market1: EnergyMarket) -> linopy.Model:
+        kiln = FlexibleLoad(
+            name="kiln",
             value_of_consumption=VALUE_OF_CONSUMPTION,
-        )
-        system = EnergySystem(
-            portfolio=AssetPortfolio(assets=[generator1, flexible_load1, absolute_load]),
-            markets=market1,
-            number_of_steps=len(self.BASE_PROFILE),
-            timestep=timedelta(hours=1),
-            scenarios=Scenario(
-                profiles=(
-                    LoadProfile(load=flexible_load1, values=[100.0, 100.0, 100.0]),
-                    LoadProfile(load=absolute_load, values=self.BASE_PROFILE),
-                    PriceProfile(market=market1, values=[50.0, 50.0, 50.0]),
-                ),
+            ramp_up=KILN_RAMP_UP,
+            ramp_down=KILN_RAMP_DOWN,
+            commitment=Commitment(
+                min_up_time=timedelta(hours=1),
+                startup_cost=STARTUP_COST,
+                shutdown_cost=SHUTDOWN_COST,
             ),
         )
-        self.linopy_model = build_model(system.build_problem())
+        pump = FlexibleLoad(name="pump", value_of_consumption=VALUE_OF_CONSUMPTION)
+        system = EnergySystem(
+            portfolio=AssetPortfolio(assets=[kiln, pump]),
+            markets=market1,
+            number_of_steps=len(TIME),
+            timestep=timedelta(minutes=30),
+            scenarios=Scenario(
+                profiles=(
+                    FlexibleLoadProfile(load=kiln, lower_bound=KILN_LOWER_BOUND, upper_bound=KILN_UPPER_BOUND),
+                    FlexibleLoadProfile(load=pump, lower_bound=PUMP_BOUNDS, upper_bound=PUMP_BOUNDS),
+                    PriceProfile(market=market1, values=PRICES),
+                ),
+            ),
+            initial_conditions=(
+                FlexibleLoadInitialState(load=kiln, power=KILN_INITIAL_POWER, time_in_state=timedelta(hours=2)),
+            ),
+        )
+        return build_model(system.build_problem())
 
-    def _expected_bound(self, absolute_bound: float, relative_bound: float) -> xr.DataArray:
+    @staticmethod
+    def _bounds(kiln: tuple[float, ...], pump: tuple[float, ...]) -> xr.DataArray:
         return xr.DataArray(
-            [[[relative_bound, absolute_bound - base] for base in self.BASE_PROFILE]],
-            coords={
-                "scenario": ["base"],
-                "time": [str(t) for t in range(len(self.BASE_PROFILE))],
-                "flexible_load": ["flex_load1", "abs_load"],
-            },
+            [list(zip(kiln, pump, strict=True))],
+            coords={"scenario": ["base"], "time": TIME, "flexible_load": ["kiln", "pump"]},
         )
 
-    def test_lower_bound_uses_min_load(self) -> None:
-        actual_constraint = self.linopy_model.constraints["flexible_load_adjustment_lower_bound_constraint"]
-        load_adjustment = self.linopy_model.variables["load_adjustment"]
+    def test_range_applies_only_while_running(self, linopy_model: linopy.Model) -> None:
+        consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name]
+        status = linopy_model.variables[FlexibleLoadFormulation.status_name]
+        lower = linopy_model.constraints["flexible_load_lower_bound_constraint"]
+        upper = linopy_model.constraints["flexible_load_upper_bound_constraint"]
 
-        expected_expr = load_adjustment >= self._expected_bound(self.MIN_LOAD, -MAX_DECREASE)
-        assert_conequal(expected_expr, actual_constraint.lhs >= actual_constraint.rhs)
-        assert bool((actual_constraint.labels != -1).all())
+        assert_conequal(consumption >= status * self._bounds(KILN_LOWER_BOUND, PUMP_BOUNDS), lower.lhs >= lower.rhs)
+        assert_conequal(consumption <= status * self._bounds(KILN_UPPER_BOUND, PUMP_BOUNDS), upper.lhs <= upper.rhs)
 
-    def test_upper_bound_uses_max_load(self) -> None:
-        actual_constraint = self.linopy_model.constraints["flexible_load_adjustment_upper_bound_constraint"]
-        load_adjustment = self.linopy_model.variables["load_adjustment"]
+    def test_load_without_a_commitment_is_always_on(self, linopy_model: linopy.Model) -> None:
+        actual_constraint = linopy_model.constraints["flexible_load_always_on_constraint"]
+        status = linopy_model.variables[FlexibleLoadFormulation.status_name]
 
-        expected_expr = load_adjustment <= self._expected_bound(self.MAX_LOAD, MAX_INCREASE)
-        assert_conequal(expected_expr, actual_constraint.lhs <= actual_constraint.rhs)
-        assert bool((actual_constraint.labels != -1).all())
+        expected = (1 * status.sel({"flexible_load": ["pump"]})).to_constraint("=", 1)
+        assert_conequal(expected, actual_constraint.lhs == actual_constraint.rhs)
+        _assert_no_masked_entries(actual_constraint)
+
+    def test_ramp_up_is_per_hour_from_the_initial_power_and_free_at_a_start(self, linopy_model: linopy.Model) -> None:
+        actual_constraint = linopy_model.constraints["flexible_load_max_ramp_up_constraint"]
+        consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name].sel(KILN)
+        startup = linopy_model.variables[FlexibleLoadFormulation.startup_name].sel(KILN)
+        upper_bound = xr.DataArray(list(KILN_UPPER_BOUND), coords={"time": TIME})
+
+        increase = consumption - (1 * consumption).shift(time=1).fillna(0) - FIRST_STEP_ONLY * KILN_INITIAL_POWER
+        expected = increase - startup * upper_bound <= KILN_RAMP_UP * HOURS_PER_HALF_HOUR
+        assert_conequal(expected, actual_constraint.lhs.sel(KILN) <= actual_constraint.rhs.sel(KILN))
+        assert list(actual_constraint.labels.coords["flexible_load"].values) == ["kiln"]
+        _assert_no_masked_entries(actual_constraint)
+
+    def test_ramp_down_is_per_hour_from_the_initial_power_and_free_at_a_stop(self, linopy_model: linopy.Model) -> None:
+        actual_constraint = linopy_model.constraints["flexible_load_max_ramp_down_constraint"]
+        consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name].sel(KILN)
+        shutdown = linopy_model.variables[FlexibleLoadFormulation.shutdown_name].sel(KILN)
+        previous_upper_bound = xr.DataArray([KILN_INITIAL_POWER, *KILN_UPPER_BOUND[:-1]], coords={"time": TIME})
+
+        decrease = (1 * consumption).shift(time=1).fillna(0) + FIRST_STEP_ONLY * KILN_INITIAL_POWER - consumption
+        expected = decrease - shutdown * previous_upper_bound <= KILN_RAMP_DOWN * HOURS_PER_HALF_HOUR
+        assert_conequal(expected, actual_constraint.lhs.sel(KILN) <= actual_constraint.rhs.sel(KILN))
+        _assert_no_masked_entries(actual_constraint)
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "flexible_load_startup_lower_bound_constraint",
+            "flexible_load_shutdown_upper_bound_2_constraint",
+            "flexible_load_min_uptime_kiln_constraint",
+            "flexible_load_min_downtime_pump_constraint",
+        ],
+    )
+    def test_on_off_rules_are_shared_with_generators_under_the_flexible_load_prefix(
+        self,
+        linopy_model: linopy.Model,
+        name: str,
+    ) -> None:
+        assert name in set(linopy_model.constraints)
+
+    def test_profit_subtracts_startup_and_shutdown_costs(self, linopy_model: linopy.Model) -> None:
+        objective = linopy_model.objective.expression
+        startup = linopy_model.variables[FlexibleLoadFormulation.startup_name].sel(KILN)
+        shutdown = linopy_model.variables[FlexibleLoadFormulation.shutdown_name].sel(KILN)
+
+        coefficients = dict(zip(objective.vars.values.ravel(), objective.coeffs.values.ravel(), strict=True))
+
+        assert all(coefficients[label] == pytest.approx(-STARTUP_COST) for label in startup.labels.values.ravel())
+        assert all(coefficients[label] == pytest.approx(-SHUTDOWN_COST) for label in shutdown.labels.values.ravel())
+
+
+def _assert_no_masked_entries(constraint: linopy.Constraint) -> None:
+    assert bool((constraint.labels != -1).all())
+
+
+def test_ramp_down_of_a_load_without_a_commitment_has_no_shutdown_term(market1: EnergyMarket) -> None:
+    pump = FlexibleLoad(name="pump", value_of_consumption=VALUE_OF_CONSUMPTION, ramp_down=KILN_RAMP_DOWN)
+    system = EnergySystem(
+        portfolio=AssetPortfolio(assets=[pump]),
+        markets=market1,
+        number_of_steps=len(TIME),
+        timestep=timedelta(minutes=30),
+        scenarios=Scenario(
+            profiles=(
+                FlexibleLoadProfile(load=pump, lower_bound=KILN_LOWER_BOUND, upper_bound=KILN_UPPER_BOUND),
+                PriceProfile(market=market1, values=PRICES),
+            ),
+        ),
+        initial_conditions=(FlexibleLoadInitialState(load=pump, power=KILN_INITIAL_POWER),),
+    )
+    linopy_model = build_model(system.build_problem())
+    actual_constraint = linopy_model.constraints["flexible_load_max_ramp_down_constraint"]
+    consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name]
+
+    decrease = (1 * consumption).shift(time=1).fillna(0) + FIRST_STEP_ONLY * KILN_INITIAL_POWER - consumption
+    assert_conequal(decrease <= KILN_RAMP_DOWN * HOURS_PER_HALF_HOUR, actual_constraint.lhs <= actual_constraint.rhs)
+    _assert_no_masked_entries(actual_constraint)

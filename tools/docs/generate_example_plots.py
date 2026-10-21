@@ -25,7 +25,13 @@ from plotly.offline import get_plotlyjs_version
 from plotly.subplots import make_subplots
 
 from examples.day_ahead_or_intraday import run_day_ahead_or_intraday  # pyrefly: ignore
-from examples.demand_response import run_demand_response  # pyrefly: ignore
+from examples.demand_response import (  # pyrefly: ignore
+    DAY_AHEAD_PRICES,
+    MAX_LOAD,
+    MIN_STABLE_LOAD,
+    VALUE_OF_CONSUMPTION,
+    run_demand_response,
+)
 from examples.depot_charging import (  # pyrefly: ignore
     CHARGERS,
     EV_FINAL_STATES,
@@ -456,29 +462,44 @@ def generate_make_or_buy() -> None:
 
 
 def generate_demand_response() -> None:
-    """Two-panel chart: load consumption + market prices."""
-    result = run_demand_response()
-    actual_load = result.flexible_loads.actual_load
-    steps = list(range(len(actual_load)))
-
-    market_prices = [80, 75, 72, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 72, 80, 90, 85, 80, 75, 72]
+    """Two-panel chart: the kiln's and the ideal kiln's consumption, and the day-ahead price."""
+    results = run_demand_response()
+    kiln = results.kiln.flexible_loads.consumption
+    ideal = results.ideal.flexible_loads.consumption
+    steps = list(range(len(kiln)))
 
     fig = make_subplots(
         rows=2,
         cols=1,
         shared_xaxes=True,
         vertical_spacing=0.12,
-        subplot_titles=("Load Consumption", "Market Prices"),
+        subplot_titles=("Kiln Consumption", "Day-Ahead Price"),
         row_heights=[0.5, 0.5],
     )
+
+    for bound_name, bound in (
+        (f"Min Stable Load ({MIN_STABLE_LOAD:.0f} MW)", MIN_STABLE_LOAD),
+        (f"Max Load ({MAX_LOAD:.0f} MW)", MAX_LOAD),
+    ):
+        fig.add_trace(
+            go.Scatter(
+                x=steps,
+                y=[bound] * len(steps),
+                mode="lines",
+                name=bound_name,
+                line=dict(color=LOAD_COLOR, width=1, dash="dot"),
+            ),
+            row=1,
+            col=1,
+        )
 
     fig.add_trace(
         go.Scatter(
             x=steps,
-            y=[60] * len(steps),
+            y=ideal.values,
             mode="lines",
-            name="Base Load (60 MW)",
-            line=dict(color=LOAD_COLOR, width=2, dash="dash"),
+            name="Ideal Kiln",
+            line=dict(color=LOAD_COLOR, width=2, dash="dash", shape="hv"),
         ),
         row=1,
         col=1,
@@ -487,10 +508,10 @@ def generate_demand_response() -> None:
     fig.add_trace(
         go.Scatter(
             x=steps,
-            y=actual_load.values,
+            y=kiln.values,
             mode="lines+markers",
-            name="Actual Consumption",
-            line=dict(color=FLEXIBLE_LOAD_COLOR, width=2),
+            name="Kiln",
+            line=dict(color=FLEXIBLE_LOAD_COLOR, width=2, shape="hv"),
             marker=dict(size=6),
         ),
         row=1,
@@ -500,10 +521,10 @@ def generate_demand_response() -> None:
     fig.add_trace(
         go.Scatter(
             x=steps,
-            y=market_prices,
+            y=DAY_AHEAD_PRICES,
             mode="lines+markers",
-            name="Market Price ($/MWh)",
-            line=dict(color=MARKET_PRICE_COLOR, width=2),
+            name="Day-Ahead Price ($/MWh)",
+            line=dict(color=MARKET_PRICE_COLOR, width=2, shape="hv"),
             marker=dict(size=8),
         ),
         row=2,
@@ -513,9 +534,9 @@ def generate_demand_response() -> None:
     fig.add_trace(
         go.Scatter(
             x=steps,
-            y=[70] * len(steps),
+            y=[VALUE_OF_CONSUMPTION] * len(steps),
             mode="lines",
-            name="Value of Consumption (70 $/MWh)",
+            name=f"Value of Consumption ({VALUE_OF_CONSUMPTION:.0f} $/MWh)",
             line=dict(color=VALUE_OF_CONSUMPTION_COLOR, width=2, dash="dash"),
         ),
         row=2,
@@ -528,9 +549,9 @@ def generate_demand_response() -> None:
         margin=dict(l=40, r=40, t=60, b=40),
     )
 
-    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=1, col=1)
-    fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=2, col=1)
-    fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 100])
+    fig.update_xaxes(title="Hour", range=[-0.5, 23.5], row=1, col=1)
+    fig.update_xaxes(title="Hour", range=[-0.5, 23.5], row=2, col=1)
+    fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 110])
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
     _save_figure(fig, "demand_response")

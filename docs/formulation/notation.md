@@ -38,7 +38,7 @@ You can tell what a symbol is from how it looks:
 
 | Kind | Style | Examples |
 | ---- | ----- | -------- |
-| Decisions the optimizer makes | lowercase Latin | power $p$, state of charge $\mathrm{soc}$, on/off status $u$ |
+| Decisions the optimizer makes | lowercase Latin | power $p$, flexible consumption $d$, state of charge $\mathrm{soc}$, on/off status $u$ |
 | Things you give odys: sizes and profiles | uppercase Latin | battery capacity $E_k$, demand $D_{l,s,t}$, available capacity $A_{g,s,t}$ |
 | Upper and lower limits | a bar over or under the letter | rated power $\overline{P}_g$, minimum power $\underline{P}_g$, minimum state of charge $\underline{\mathrm{soc}}_k$ |
 | Costs and values | lowercase $c$ | variable cost $c^{var}_g$, start-up cost $c^{start}_g$, degradation cost $c^{deg}_k$ |
@@ -46,7 +46,7 @@ You can tell what a symbol is from how it looks:
 
 The only decisions written in Greek are the two helper variables of the risk term, $\zeta$ and $\xi_s$, on the [Objective](objective.md) page. They follow the paper that introduced them.
 
-Superscripts only say what role a symbol plays, never a limit: *ch* and *dis* (charge, discharge), *buy* and *sell*, *start* and *stop*, *up* and *down*, *net*, *adj* (adjustment), *trip*, *trade*, *fix* (fixed), *init* and *final* (the run's initial and final conditions), *var* (variable), *deg* (degradation) and *val* (value).
+Superscripts only say what role a symbol plays, never a limit: *ch* and *dis* (charge, discharge), *buy* and *sell*, *start* and *stop*, *up* and *down*, *net*, *trip*, *trade*, *fix* (fixed), *sw* (switchable), *init* and *final* (the run's initial and final conditions), *var* (variable), *deg* (degradation) and *val* (value).
 
 Each page ends with a table that maps its symbols to the odys attributes they come from, with units.
 
@@ -60,7 +60,7 @@ Every asset and market connects to one bus, and power **into** the bus counts as
 | A battery | $+p^{dis}_{k,s,t} - p^{ch}_{k,s,t}$ (discharging minus charging) |
 | A market | $+p^{buy}_{m,s,t} - p^{sell}_{m,s,t}$ (buying minus selling) |
 | A fixed load | $-D_{l,s,t}$ |
-| A flexible load | $-(D_{l,s,t} + p^{adj}_{l,s,t})$ |
+| A flexible load | $-d_{l,s,t}$ |
 
 One exception to keep in mind: a battery's **net power** $p^{net}_{k,s,t} = p^{ch}_{k,s,t} - p^{dis}_{k,s,t}$ is positive while it *charges*. That's the battery's own point of view, and it's what the results report as `net_power`.
 
@@ -95,8 +95,9 @@ You don't always have to say where an asset starts:
 
 | Asset | Without an initial condition |
 | ----- | ---------------------------- |
-| Generator | Starts off ($P^{init}_g = 0$), as if it had been off forever ($N^{init}_g = \infty$), so no minimum time carries over. odys asks for a `GeneratorInitialState` as soon as the start matters: when `ramp_up`, `ramp_down`, `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost` is set. |
+| Generator | Starts off ($P^{init}_g = 0$), as if it had been off forever ($N^{init}_g = \infty$), so no minimum time carries over. odys asks for a `GeneratorInitialState` as soon as the start matters: when `ramp_up` or `ramp_down` is set, or its `commitment` has `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost`. |
 | Generator with an initial state but no `time_in_state` | As if it had been in that state forever ($N^{init}_g = \infty$). odys only allows this when the matching minimum time is unset. |
+| Flexible load | Starts at 0 MW: running if it has no commitment, off if it has one, as if it had been in that state forever. odys asks for a `FlexibleLoadInitialState` as soon as the start matters: when `ramp_up` or `ramp_down` is set, or its `commitment` has `min_up_time`, `min_down_time`, `startup_cost` or `shutdown_cost`. |
 | Battery storage, electric vehicle | No default: a `StorageInitialState` or `ElectricVehicleInitialState` is always required, because the charge carries over from step to step. |
 
 Final conditions are always optional.

@@ -10,14 +10,18 @@ from odys import (
     AvailableCapacityProfile,
     Battery,
     BatteryStorage,
+    Commitment,
     CVaRTerm,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
+    FlexibleLoadInitialState,
+    FlexibleLoadProfile,
     Generator,
     LoadProfile,
     Objective,
+    OptimalDispatchResults,
     PriceProfile,
     ProfitTerm,
     Scenario,
@@ -25,302 +29,149 @@ from odys import (
     StorageInitialState,
 )
 
-MAX_DECREASE = 30.0
-MAX_INCREASE = 50.0
 TOLERANCE = 1e-5
 TWO_FLEXIBLE_LOADS = 2
 SIX_ENTRIES = 6
 
 
-def test_flexible_load_optimization_decrease() -> None:
-    """Test that flexible load decreases when value_of_consumption < marginal supply cost."""
-    # Generator with variable cost = 50 $/MWh
-    generator = Generator(
-        name="gen1",
-        nominal_power=200.0,
-        variable_cost=50.0,
-    )
+def _constant_range(load: FlexibleLoad, lower: float, upper: float, steps: int) -> FlexibleLoadProfile:
+    return FlexibleLoadProfile(load=load, lower_bound=[lower] * steps, upper_bound=[upper] * steps)
 
-    # Flexible load with value of consumption = 30 $/MWh
-    # Marginal supply cost is 50 $/MWh (generator variable cost)
-    # Since voc (30) < var_cost (50), optimizer should decrease load
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=50.0,
-        max_decrease=30.0,
-        value_of_consumption=30.0,
-    )
 
+def test_flexible_load_runs_at_its_lower_bound_when_supply_costs_more_than_its_value() -> None:
+    """value_of_consumption (30) < marginal supply cost (generator, 50): the load runs at its lower bound."""
+    generator = Generator(name="gen1", nominal_power=200.0, variable_cost=50.0)
+    flexible_load = FlexibleLoad(name="flex_load", value_of_consumption=30.0)
     market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
 
-    portfolio = AssetPortfolio([generator, flexible_load])
-
-    # Market price = 80 $/MWh (higher than generator cost, so generator is marginal)
-    # Optimizer should decrease load by max_decrease (30 MW)
     system = EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, flexible_load]),
         markets=market,
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
             profiles=(
-                LoadProfile(load=flexible_load, values=[100.0, 100.0, 100.0]),
+                _constant_range(flexible_load, 70.0, 150.0, 3),
                 PriceProfile(market=market, values=[80.0, 80.0, 80.0]),
             ),
         ),
     )
 
-    results = system.optimize()
+    consumption = system.optimize().flexible_loads.consumption
 
-    # Use the new flexible_loads API
-    flex_dispatch = results.flexible_loads
-    load_adjustment = flex_dispatch.load_adjustment
-    actual_load = flex_dispatch.actual_load
-
-    # Exact value check:
-    # - voc (30) < marginal cost (50), so optimizer decreases load
-    # - Decreasing load saves 50 - 30 = 20 $/MWh
-    # - Maximum savings at max_decrease (30 MW)
-    # - Expected: load_adjustment = -30.0 for all timesteps
-    assert abs(load_adjustment.sum().item() - (-30.0 * 3)) < TOLERANCE
-
-    # Check that adjustment is within bounds
-    assert load_adjustment.min() >= -MAX_DECREASE, "Load decrease should not exceed max_decrease"
-    assert load_adjustment.max() <= MAX_INCREASE, "Load increase should not exceed max_increase"
-
-    # Check actual load: base (100) + adjustment (-30) = 70
-    assert abs(actual_load.mean() - 70.0) < TOLERANCE
+    assert consumption.to_numpy() == pytest.approx([70.0] * 3, abs=TOLERANCE)
 
 
-def test_flexible_load_optimization_increase() -> None:
-    """Test that flexible load increases when value_of_consumption > marginal supply cost."""
-    # Generator with low variable cost
-    generator = Generator(
-        name="gen1",
-        nominal_power=200.0,
-        variable_cost=10.0,
-    )
-
-    # Flexible load with value of consumption = 100 $/MWh
-    # Marginal supply cost is 10 $/MWh (generator variable cost)
-    # Since voc (100) > var_cost (10), optimizer should increase load
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=50.0,
-        max_decrease=30.0,
-        value_of_consumption=100.0,
-    )
-
+def test_flexible_load_runs_at_its_upper_bound_when_its_value_exceeds_the_supply_cost() -> None:
+    """value_of_consumption (100) > marginal supply cost (generator, 10): the load runs at its upper bound."""
+    generator = Generator(name="gen1", nominal_power=200.0, variable_cost=10.0)
+    flexible_load = FlexibleLoad(name="flex_load", value_of_consumption=100.0)
     market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
 
-    portfolio = AssetPortfolio([generator, flexible_load])
-
-    # Market price = 20 $/MWh (higher than generator cost, so generator is marginal)
-    # Optimizer should increase load by max_increase (50 MW)
     system = EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, flexible_load]),
         markets=market,
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
             profiles=(
-                LoadProfile(load=flexible_load, values=[100.0, 100.0, 100.0]),
+                _constant_range(flexible_load, 70.0, 150.0, 3),
                 PriceProfile(market=market, values=[20.0, 20.0, 20.0]),
             ),
         ),
     )
 
-    results = system.optimize()
+    consumption = system.optimize().flexible_loads.consumption
 
-    # Use the new flexible_loads API
-    flex_dispatch = results.flexible_loads
-    load_adjustment = flex_dispatch.load_adjustment
-    actual_load = flex_dispatch.actual_load
-
-    # Exact value check:
-    # - voc (100) > marginal cost (10), so optimizer increases load
-    # - Increasing load gains 100 - 10 = 90 $/MWh
-    # - Maximum gain at max_increase (50 MW)
-    # - Expected: load_adjustment = +50.0 for all timesteps
-    assert abs(load_adjustment.sum().item() - (50.0 * 3)) < TOLERANCE
-
-    # Check that adjustment is within bounds
-    assert load_adjustment.min() >= -MAX_DECREASE, "Load decrease should not exceed max_decrease"
-    assert load_adjustment.max() <= MAX_INCREASE, "Load increase should not exceed max_increase"
-
-    # Check actual load: base (100) + adjustment (50) = 150
-    assert abs(actual_load.mean() - 150.0) < TOLERANCE
+    assert consumption.to_numpy() == pytest.approx([150.0] * 3, abs=TOLERANCE)
 
 
 def test_flexible_load_with_fixed_load() -> None:
-    """Test system with both fixed and flexible loads."""
-    generator = Generator(
-        name="gen1",
-        nominal_power=300.0,
-        variable_cost=30.0,
-    )
-
+    """value_of_consumption (50) > marginal cost (generator, 30): the flexible load runs at its upper bound."""
+    generator = Generator(name="gen1", nominal_power=300.0, variable_cost=30.0)
     fixed_load = FixedLoad(name="fixed_load")
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=40.0,
-        max_decrease=20.0,
-        value_of_consumption=50.0,
-    )
-
+    flexible_load = FlexibleLoad(name="flex_load", value_of_consumption=50.0)
     market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
 
-    portfolio = AssetPortfolio([generator, fixed_load, flexible_load])
-
-    # Market price = 20 $/MWh (below generator cost of 30 $/MWh)
-    # Marginal supply cost = 30 $/MWh (generator is the marginal source)
-    # value_of_consumption = 50 $/MWh > marginal cost (30), so optimizer should increase flexible load
     system = EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, fixed_load, flexible_load]),
         markets=market,
         timestep=timedelta(hours=1),
         number_of_steps=2,
         scenarios=Scenario(
             profiles=(
                 LoadProfile(load=fixed_load, values=[100.0, 100.0]),
-                LoadProfile(load=flexible_load, values=[80.0, 80.0]),
+                _constant_range(flexible_load, 60.0, 120.0, 2),
                 PriceProfile(market=market, values=[20.0, 20.0]),
             ),
         ),
     )
 
     results = system.optimize()
+    consumption = results.flexible_loads.consumption
 
-    # Use the new flexible_loads API
-    flex_dispatch = results.flexible_loads
-    load_adjustment = flex_dispatch.load_adjustment
-    actual_load = flex_dispatch.actual_load
+    assert consumption.to_numpy() == pytest.approx([120.0, 120.0], abs=TOLERANCE)
 
-    # Exact value check:
-    # - voc (50) > marginal cost (30), so optimizer increases load
-    # - Increasing load gains 50 - 30 = 20 $/MWh
-    # - Maximum gain at max_increase (40 MW)
-    # - Expected: load_adjustment = +40.0 for all timesteps
-    assert abs(load_adjustment.sum().item() - (40.0 * 2)) < TOLERANCE
-
-    # Check actual load: base (80) + adjustment (40) = 120
-    assert abs(actual_load.mean() - 120.0) < TOLERANCE
-
-    # Check that power balance is satisfied
-    # gen_power + market_buy - market_sell = fixed_load + flex_load_base + load_adjustment
     solution = results.to_dataset()
-    gen_power = solution["generator_power"]
-    market_buy = solution["market_buy_volume"]
-    market_sell = solution["market_sell_volume"]
-
-    for t in range(2):
-        total_load = 100.0 + 80.0 + load_adjustment.iloc[t]
-        gen_at_t = gen_power.isel(time=t).values
-        market_buy_at_t = market_buy.isel(time=t).values
-        market_sell_at_t = market_sell.isel(time=t).values
-        supply = gen_at_t + market_buy_at_t - market_sell_at_t
-        assert abs(supply - total_load) < TOLERANCE, f"Power balance not satisfied at time {t}"
+    supply = solution["generator_power"].sum("generator") + (
+        solution["market_buy_volume"] - solution["market_sell_volume"]
+    ).sum("market")
+    assert supply.to_numpy() == pytest.approx([100.0 + 120.0] * 2, abs=TOLERANCE)
 
 
 def test_flexible_load_with_generator_capacity_constraint() -> None:
-    """Test that a flexible load decreases when generator capacity can't cover base demand.
+    """A flexible load consumes less than its upper bound when generator capacity can't cover it.
 
     No market is configured, so the generator is the only supply source. At t=1 the
-    generator's available capacity (80 MW) drops below what fixed_load + flex base
-    profile would require (60 + 50 = 110 MW), forcing the flexible load to decrease by
-    exactly the shortfall to keep the power balance feasible. At t=0 and t=2, capacity
-    is ample (150 MW), so the optimizer follows its economic incentive instead: since
-    value_of_consumption (100) > generator variable_cost (40), it increases the load to
-    max_increase.
+    generator's available capacity (80 MW) leaves only 20 MW after the fixed load (60 MW),
+    so the flexible load consumes exactly that. At t=0 and t=2 capacity is ample, and
+    since value_of_consumption (100) > generator variable_cost (40) the load runs at
+    its upper bound.
     """
-    generator = Generator(
-        name="gen1",
-        nominal_power=150.0,
-        variable_cost=40.0,
-    )
-
+    generator = Generator(name="gen1", nominal_power=150.0, variable_cost=40.0)
     fixed_load = FixedLoad(name="fixed_load")
-    max_increase = 30.0
-    max_decrease = 40.0
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=max_increase,
-        max_decrease=max_decrease,
-        value_of_consumption=100.0,
-    )
-
-    portfolio = AssetPortfolio([generator, fixed_load, flexible_load])
+    flexible_load = FlexibleLoad(name="flex_load", value_of_consumption=100.0)
+    available_capacity = [150.0, 80.0, 150.0]
 
     system = EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, fixed_load, flexible_load]),
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
             profiles=(
-                AvailableCapacityProfile(generator=generator, values=[150.0, 80.0, 150.0]),
+                AvailableCapacityProfile(generator=generator, values=available_capacity),
                 LoadProfile(load=fixed_load, values=[60.0, 60.0, 60.0]),
-                LoadProfile(load=flexible_load, values=[50.0, 50.0, 50.0]),
+                _constant_range(flexible_load, 10.0, 80.0, 3),
             ),
         ),
     )
 
     results = system.optimize()
+    consumption = results.flexible_loads.consumption
 
-    flex_dispatch = results.flexible_loads
-    load_adjustment = flex_dispatch.load_adjustment
-    actual_load = flex_dispatch.actual_load
+    assert consumption.to_numpy() == pytest.approx([80.0, 20.0, 80.0], abs=TOLERANCE)
 
-    expected_adjustment = [30.0, -30.0, 30.0]
-    for t, expected in enumerate(expected_adjustment):
-        assert abs(load_adjustment.iloc[t] - expected) < TOLERANCE, f"Unexpected load_adjustment at time {t}"
-
-    assert load_adjustment.min() >= -max_decrease
-    assert load_adjustment.max() <= max_increase
-
-    solution = results.to_dataset()
-    gen_power = solution["generator_power"]
-    available_capacity = [150.0, 80.0, 150.0]
-
-    for t in range(3):
-        total_load = 60.0 + actual_load.iloc[t]
-        gen_at_t = gen_power.isel(time=t).values
-        assert gen_at_t <= available_capacity[t] + TOLERANCE, f"Generator power exceeds available capacity at time {t}"
-        assert abs(gen_at_t - total_load) < TOLERANCE, f"Power balance not satisfied at time {t}"
+    gen_power = results.to_dataset()["generator_power"].sel(generator="gen1").to_numpy()
+    assert gen_power == pytest.approx(60.0 + consumption.to_numpy(), abs=TOLERANCE)
+    assert all(power <= capacity + TOLERANCE for power, capacity in zip(gen_power, available_capacity, strict=True))
 
 
 def test_multiple_flexible_loads() -> None:
-    """Test system with two flexible loads in one portfolio."""
-    generator = Generator(
-        name="gen1",
-        nominal_power=300.0,
-        variable_cost=40.0,
-    )
-
-    flex_load_1 = FlexibleLoad(
-        name="flex_load_1",
-        max_increase=30.0,
-        max_decrease=20.0,
-        value_of_consumption=60.0,
-    )
-    flex_load_2 = FlexibleLoad(
-        name="flex_load_2",
-        max_increase=25.0,
-        max_decrease=15.0,
-        value_of_consumption=20.0,
-    )
-
+    """Of two flexible loads, the one worth more than the market price runs high, the other low."""
+    generator = Generator(name="gen1", nominal_power=300.0, variable_cost=40.0)
+    flex_load_1 = FlexibleLoad(name="flex_load_1", value_of_consumption=60.0)
+    flex_load_2 = FlexibleLoad(name="flex_load_2", value_of_consumption=20.0)
     market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
-    portfolio = AssetPortfolio([generator, flex_load_1, flex_load_2])
 
     system = EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, flex_load_1, flex_load_2]),
         markets=market,
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
             profiles=(
-                LoadProfile(load=flex_load_1, values=[100.0, 100.0, 100.0]),
-                LoadProfile(load=flex_load_2, values=[80.0, 80.0, 80.0]),
+                _constant_range(flex_load_1, 80.0, 130.0, 3),
+                _constant_range(flex_load_2, 65.0, 105.0, 3),
                 PriceProfile(market=market, values=[50.0, 50.0, 50.0]),
             ),
         ),
@@ -331,21 +182,13 @@ def test_multiple_flexible_loads() -> None:
     assert len(results.flexible_loads) == TWO_FLEXIBLE_LOADS
     assert "flex_load_1" in results.flexible_loads
     assert "flex_load_2" in results.flexible_loads
-
-    flex_1_adj = results.flexible_loads["flex_load_1"].load_adjustment
-    assert flex_1_adj.sum().item() > 0
-
-    flex_2_adj = results.flexible_loads["flex_load_2"].load_adjustment
-    assert flex_2_adj.sum().item() < 0
+    assert results.flexible_loads["flex_load_1"].consumption.to_numpy() == pytest.approx([130.0] * 3, abs=TOLERANCE)
+    assert results.flexible_loads["flex_load_2"].consumption.to_numpy() == pytest.approx([65.0] * 3, abs=TOLERANCE)
 
 
 def test_flexible_load_with_storage() -> None:
-    """Test flexible loads work with storage assets."""
-    generator = Generator(
-        name="gen1",
-        nominal_power=150.0,
-        variable_cost=50.0,
-    )
+    """Flexible loads work with storage assets, and the power balance holds."""
+    generator = Generator(name="gen1", nominal_power=150.0, variable_cost=50.0)
     battery = BatteryStorage(
         name="battery",
         battery=Battery(
@@ -356,24 +199,17 @@ def test_flexible_load_with_storage() -> None:
             efficiency_discharging=0.9,
         ),
     )
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=30.0,
-        max_decrease=20.0,
-        value_of_consumption=70.0,
-    )
-
+    flexible_load = FlexibleLoad(name="flex_load", value_of_consumption=70.0)
     market = EnergyMarket(name="market1", max_trading_volume_per_step=500.0)
-    portfolio = AssetPortfolio([generator, battery, flexible_load])
 
     system = EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, battery, flexible_load]),
         markets=market,
         timestep=timedelta(hours=1),
         number_of_steps=4,
         scenarios=Scenario(
             profiles=(
-                LoadProfile(load=flexible_load, values=[100.0, 100.0, 100.0, 100.0]),
+                _constant_range(flexible_load, 80.0, 130.0, 4),
                 PriceProfile(market=market, values=[60.0, 60.0, 60.0, 60.0]),
             ),
         ),
@@ -382,57 +218,32 @@ def test_flexible_load_with_storage() -> None:
     )
 
     results = system.optimize()
+    consumption = results.flexible_loads.consumption
 
-    flex_dispatch = results.flexible_loads
-    assert flex_dispatch.load_adjustment.sum().item() > 0
-
-    storage_dispatch = results.battery_storages
-    assert len(storage_dispatch.soc) > 0
+    assert consumption.to_numpy() == pytest.approx([130.0] * 4, abs=TOLERANCE)
+    assert len(results.battery_storages.soc) > 0
 
     solution = results.to_dataset()
-    gen_power = solution["generator_power"]
-    storage_out = solution["battery_storage_power_out"]
-    storage_in = solution["battery_storage_power_in"]
-    market_buy = solution["market_buy_volume"]
-    market_sell = solution["market_sell_volume"]
-
-    for t in range(4):
-        flex_base = 100.0
-        flex_adj = flex_dispatch.load_adjustment.iloc[t]
-        total_load = flex_base + flex_adj
-        supply = (
-            gen_power.isel(time=t).values
-            + storage_out.isel(time=t).values
-            - storage_in.isel(time=t).values
-            + market_buy.isel(time=t).values
-            - market_sell.isel(time=t).values
-        )
-        assert abs(supply - total_load) < TOLERANCE, f"Power balance not satisfied at time {t}"
+    supply = (
+        solution["generator_power"].sum("generator")
+        + (solution["battery_storage_power_out"] - solution["battery_storage_power_in"]).sum("battery_storage")
+        + (solution["market_buy_volume"] - solution["market_sell_volume"]).sum("market")
+    )
+    assert supply.to_numpy() == pytest.approx(consumption.to_numpy(), abs=TOLERANCE)
 
 
 def test_flexible_load_stochastic_scenarios() -> None:
-    """Test flexible loads with two scenarios having different base profiles."""
-    generator = Generator(
-        name="gen1",
-        nominal_power=200.0,
-        variable_cost=30.0,
-    )
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=40.0,
-        max_decrease=25.0,
-        value_of_consumption=50.0,
-    )
-
+    """Each scenario's consumption follows that scenario's range."""
+    generator = Generator(name="gen1", nominal_power=200.0, variable_cost=30.0)
+    flexible_load = FlexibleLoad(name="flex_load", value_of_consumption=50.0)
     market = EnergyMarket(name="market1", max_trading_volume_per_step=500.0)
-    portfolio = AssetPortfolio([generator, flexible_load])
 
     scenarios = [
         Scenario(
             name="high_demand",
             probability=0.6,
             profiles=(
-                LoadProfile(load=flexible_load, values=[120.0, 120.0, 120.0]),
+                _constant_range(flexible_load, 95.0, 160.0, 3),
                 PriceProfile(market=market, values=[40.0, 40.0, 40.0]),
             ),
         ),
@@ -440,14 +251,14 @@ def test_flexible_load_stochastic_scenarios() -> None:
             name="low_demand",
             probability=0.4,
             profiles=(
-                LoadProfile(load=flexible_load, values=[80.0, 80.0, 80.0]),
+                _constant_range(flexible_load, 55.0, 120.0, 3),
                 PriceProfile(market=market, values=[40.0, 40.0, 40.0]),
             ),
         ),
     ]
 
     system = EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, flexible_load]),
         markets=market,
         timestep=timedelta(hours=1),
         number_of_steps=3,
@@ -459,51 +270,44 @@ def test_flexible_load_stochastic_scenarios() -> None:
     assert results.solver_status == "ok"
     assert results.termination_condition == "optimal"
 
-    flex_dispatch = results.flexible_loads
-    load_adjustment = flex_dispatch.load_adjustment
+    consumption = results.flexible_loads.consumption
 
-    assert len(load_adjustment) == SIX_ENTRIES
-
-    assert load_adjustment.min() >= -MAX_DECREASE
-    assert load_adjustment.max() <= MAX_INCREASE
+    assert len(consumption) == SIX_ENTRIES
+    assert consumption.xs("high_demand", level="scenario").to_numpy() == pytest.approx([160.0] * 3, abs=TOLERANCE)
+    assert consumption.xs("low_demand", level="scenario").to_numpy() == pytest.approx([120.0] * 3, abs=TOLERANCE)
 
 
 def _build_cvar_flexible_load_system(objective: Objective) -> EnergySystem:
     generator = Generator(name="gen1", nominal_power=100.0, variable_cost=0.0)
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=40.0,
-        max_decrease=1.0,
-        value_of_consumption=30.0,
-    )
+    flexible_load = FlexibleLoad(name="flex_load", value_of_consumption=30.0)
     market = EnergyMarket(
         name="market1",
         max_trading_volume_per_step=50.0,
         stage_fixed=True,
         allowed_trade_direction=AllowedTradeDirection.SELL_ONLY,
     )
-    portfolio = AssetPortfolio([generator, flexible_load])
+    flexible_range = _constant_range(flexible_load, 49.0, 90.0, 1)
 
     scenarios = [
         Scenario(
             name="high",
             probability=1 / 3,
-            profiles=(LoadProfile(load=flexible_load, values=[50.0]), PriceProfile(market=market, values=[100.0])),
+            profiles=(flexible_range, PriceProfile(market=market, values=[100.0])),
         ),
         Scenario(
             name="mid",
             probability=1 / 3,
-            profiles=(LoadProfile(load=flexible_load, values=[50.0]), PriceProfile(market=market, values=[100.0])),
+            profiles=(flexible_range, PriceProfile(market=market, values=[100.0])),
         ),
         Scenario(
             name="low",
             probability=1 / 3,
-            profiles=(LoadProfile(load=flexible_load, values=[50.0]), PriceProfile(market=market, values=[-50.0])),
+            profiles=(flexible_range, PriceProfile(market=market, values=[-50.0])),
         ),
     ]
 
     return EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, flexible_load]),
         markets=market,
         scenarios=scenarios,
         number_of_steps=1,
@@ -520,49 +324,35 @@ def test_flexible_load_with_cvar_objective() -> None:
     Prices are 100 in two scenarios and -50 in the third. The flexible load's
     value_of_consumption (30) is below the expected market price (50), so a
     pure profit-maximizer sells the maximum feasible volume into the market
-    and leaves the flexible load unadjusted. But because the market decision
-    is shared across scenarios, selling more also means losing 50/unit in the
-    bad scenario. A CVaR-averse optimizer pulls back the (shared) market
-    volume and instead directs that capacity to the flexible load's
-    unconditionally-safe, scenario-independent consumption value.
+    and the flexible load consumes the rest of the generator's 100 MW (50 MW).
+    But because the market decision is shared across scenarios, selling more
+    also means losing 50/unit in the bad scenario. A CVaR-averse optimizer
+    pulls back the (shared) market volume and instead directs that capacity to
+    the flexible load's unconditionally-safe, scenario-independent consumption
+    value, up to its upper bound (90 MW).
 
-    load_adjustment is uniquely determined by the LP in both cases (checked
+    The consumption is uniquely determined by the LP in both cases (checked
     with an exact assertion). The shared market volume under CVaR sits in a
     provably flat region of the objective (any value in [0, 10] is equally
     optimal), so that comparison uses an upper bound and a strict
     less-than instead of an exact value, to avoid asserting a specific point
     in a mathematically non-unique optimum.
     """
-    profit_only_system = _build_cvar_flexible_load_system(Objective(terms=(ProfitTerm(weight=1),)))
-    profit_only_results = profit_only_system.optimize()
+    profit_only_results = _build_cvar_flexible_load_system(Objective(terms=(ProfitTerm(weight=1),))).optimize()
 
     assert profit_only_results.solver_status == "ok"
     assert profit_only_results.termination_condition == "optimal"
+    assert profit_only_results.flexible_loads.consumption.to_numpy() == pytest.approx([50.0] * 3, abs=TOLERANCE)
+    assert profit_only_results.markets.sell_volume.to_numpy() == pytest.approx([50.0] * 3, abs=TOLERANCE)
 
-    profit_only_adjustment = profit_only_results.flexible_loads.load_adjustment
-    profit_only_market_sell = profit_only_results.markets.sell_volume
-
-    for value in profit_only_adjustment:
-        assert abs(value - 0.0) < TOLERANCE
-    for value in profit_only_market_sell:
-        assert abs(value - 50.0) < TOLERANCE
-
-    cvar_system = _build_cvar_flexible_load_system(
+    cvar_results = _build_cvar_flexible_load_system(
         Objective(terms=(ProfitTerm(weight=1), CVaRTerm(weight=1, confidence_level=0.8))),
-    )
-    cvar_results = cvar_system.optimize()
+    ).optimize()
 
     assert cvar_results.solver_status == "ok"
     assert cvar_results.termination_condition == "optimal"
-
-    cvar_adjustment = cvar_results.flexible_loads.load_adjustment
-    cvar_market_sell = cvar_results.markets.sell_volume
-
-    for value in cvar_adjustment:
-        assert abs(value - 40.0) < TOLERANCE
-
-    for value in cvar_market_sell:
-        assert value <= 10.0 + TOLERANCE
+    assert cvar_results.flexible_loads.consumption.to_numpy() == pytest.approx([90.0] * 3, abs=TOLERANCE)
+    assert all(value <= 10.0 + TOLERANCE for value in cvar_results.markets.sell_volume)
 
 
 def test_cvar_objective_does_not_depend_on_term_order() -> None:
@@ -579,43 +369,21 @@ def test_cvar_objective_does_not_depend_on_term_order() -> None:
 
 
 def test_multiple_flexible_loads_different_value_of_consumption() -> None:
-    """Test prioritization of flexible loads with different value_of_consumption."""
-    generator = Generator(
-        name="gen1",
-        nominal_power=300.0,
-        variable_cost=40.0,
-    )
-
-    flex_load_high = FlexibleLoad(
-        name="flex_load_high",
-        max_increase=30.0,
-        max_decrease=20.0,
-        value_of_consumption=80.0,
-    )
-
-    flex_load_low = FlexibleLoad(
-        name="flex_load_low",
-        max_increase=30.0,
-        max_decrease=20.0,
-        value_of_consumption=40.0,
-    )
-
-    market = EnergyMarket(
-        name="market1",
-        max_trading_volume_per_step=1000.0,
-    )
-
-    portfolio = AssetPortfolio([generator, flex_load_high, flex_load_low])
+    """The load worth more than the market price runs at its upper bound, the one worth less at its lower bound."""
+    generator = Generator(name="gen1", nominal_power=300.0, variable_cost=40.0)
+    flex_load_high = FlexibleLoad(name="flex_load_high", value_of_consumption=80.0)
+    flex_load_low = FlexibleLoad(name="flex_load_low", value_of_consumption=40.0)
+    market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
 
     system = EnergySystem(
-        portfolio=portfolio,
+        portfolio=AssetPortfolio([generator, flex_load_high, flex_load_low]),
         markets=market,
         timestep=timedelta(hours=1),
         number_of_steps=3,
         scenarios=Scenario(
             profiles=(
-                LoadProfile(load=flex_load_high, values=[100.0, 100.0, 100.0]),
-                LoadProfile(load=flex_load_low, values=[100.0, 100.0, 100.0]),
+                _constant_range(flex_load_high, 80.0, 130.0, 3),
+                _constant_range(flex_load_low, 80.0, 130.0, 3),
                 PriceProfile(market=market, values=[60.0, 60.0, 60.0]),
             ),
         ),
@@ -623,24 +391,18 @@ def test_multiple_flexible_loads_different_value_of_consumption() -> None:
 
     results = system.optimize()
 
-    high_adj = results.flexible_loads["flex_load_high"].load_adjustment
-    low_adj = results.flexible_loads["flex_load_low"].load_adjustment
-
-    assert high_adj.sum().item() > 0
-    assert low_adj.sum().item() < 0
+    assert results.flexible_loads["flex_load_high"].consumption.to_numpy() == pytest.approx([130.0] * 3)
+    assert results.flexible_loads["flex_load_low"].consumption.to_numpy() == pytest.approx([80.0] * 3)
 
 
-def test_flexible_load_absolute_bounds_with_varying_base_profile() -> None:
-    """Test that min_load/max_load bound actual consumption regardless of the base profile."""
-    min_load = 20.0
-    max_load = 100.0
+def test_flexible_load_follows_time_varying_bounds() -> None:
+    """The range can change from step to step, and the consumption follows whichever bound pays."""
     generator = Generator(name="gen1", nominal_power=200.0, variable_cost=50.0)
-    # Absolute bounds only, e.g. a compressor that runs between 20 and 100 MW
-    flexible_load = FlexibleLoad(name="compressor", min_load=min_load, max_load=max_load, value_of_consumption=40.0)
+    flexible_load = FlexibleLoad(name="compressor", min_load=20.0, max_load=100.0, value_of_consumption=40.0)
     market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
+    lower_bound = [20.0, 30.0, 25.0]
+    upper_bound = [100.0, 60.0, 80.0]
 
-    # Price 10 < voc 40: buying to consume more is profitable -> run at max_load
-    # Price 90 > voc 40: freed energy is worth more sold -> run at min_load
     system = EnergySystem(
         portfolio=AssetPortfolio([generator, flexible_load]),
         markets=market,
@@ -648,44 +410,134 @@ def test_flexible_load_absolute_bounds_with_varying_base_profile() -> None:
         number_of_steps=3,
         scenarios=Scenario(
             profiles=(
-                LoadProfile(load=flexible_load, values=[50.0, 70.0, 40.0]),
+                FlexibleLoadProfile(load=flexible_load, lower_bound=lower_bound, upper_bound=upper_bound),
                 PriceProfile(market=market, values=[10.0, 90.0, 10.0]),
             ),
         ),
     )
 
-    results = system.optimize()
+    consumption = system.optimize().flexible_loads.consumption.to_numpy()
 
-    actual_load = results.flexible_loads.actual_load.to_numpy()
-    assert actual_load == pytest.approx([max_load, min_load, max_load], abs=TOLERANCE)
+    assert consumption == pytest.approx([upper_bound[0], lower_bound[1], upper_bound[2]], abs=TOLERANCE)
 
 
-def test_flexible_load_absolute_bound_overrides_relative_bound() -> None:
-    """Test that min_load takes precedence over max_decrease when both are set."""
-    generator = Generator(name="gen1", nominal_power=200.0, variable_cost=50.0)
-    # base - max_decrease would be 70, but min_load = 90 must win
-    flexible_load = FlexibleLoad(
-        name="flex_load",
-        max_increase=MAX_INCREASE,
-        max_decrease=MAX_DECREASE,
-        min_load=90.0,
-        value_of_consumption=30.0,
+def _buy_from_market(
+    load: FlexibleLoad,
+    flexible_range: FlexibleLoadProfile,
+    prices: list[float],
+    initial_conditions: tuple[FlexibleLoadInitialState, ...] = (),
+    timestep: timedelta = timedelta(hours=1),
+) -> OptimalDispatchResults:
+    market = EnergyMarket(
+        name="grid",
+        max_trading_volume_per_step=1000.0,
+        allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
     )
-    market = EnergyMarket(name="market1", max_trading_volume_per_step=1000.0)
-
-    system = EnergySystem(
-        portfolio=AssetPortfolio([generator, flexible_load]),
+    return EnergySystem(
+        portfolio=AssetPortfolio([load]),
         markets=market,
-        timestep=timedelta(hours=1),
-        number_of_steps=3,
-        scenarios=Scenario(
-            profiles=(
-                LoadProfile(load=flexible_load, values=[100.0, 100.0, 100.0]),
-                PriceProfile(market=market, values=[80.0, 80.0, 80.0]),
-            ),
-        ),
+        timestep=timestep,
+        number_of_steps=len(prices),
+        scenarios=Scenario(profiles=(flexible_range, PriceProfile(market=market, values=prices))),
+        initial_conditions=initial_conditions,
+    ).optimize()
+
+
+def test_ramp_limit_per_hour_spreads_a_rise_over_half_hourly_steps() -> None:
+    """Power is cheap, so the load rises as fast as 30 MW per hour allows: 15 MW per half-hour step."""
+    load = FlexibleLoad(name="process", value_of_consumption=80.0, ramp_up=30.0)
+
+    results = _buy_from_market(
+        load,
+        _constant_range(load, 0.0, 100.0, 4),
+        [10.0] * 4,
+        (FlexibleLoadInitialState(load=load, power=0.0),),
+        timestep=timedelta(minutes=30),
     )
 
-    results = system.optimize()
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([15.0, 30.0, 45.0, 60.0], abs=TOLERANCE)
 
-    assert results.flexible_loads.actual_load.to_numpy() == pytest.approx([90.0] * 3, abs=TOLERANCE)
+
+def test_switchable_load_switches_off_when_power_costs_more_than_it_is_worth() -> None:
+    """At 100 $/MWh, even the 40 MW minimum stable load loses money, so the load stops for that step."""
+    load = FlexibleLoad(name="process", value_of_consumption=60.0, commitment=Commitment())
+
+    results = _buy_from_market(load, _constant_range(load, 40.0, 80.0, 3), [30.0, 100.0, 30.0])
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([80.0, 0.0, 80.0], abs=TOLERANCE)
+    assert results.flexible_loads.status.to_numpy() == pytest.approx([1.0, 0.0, 1.0], abs=TOLERANCE)
+
+
+def test_start_lands_anywhere_in_the_range_past_the_ramp_limit() -> None:
+    """Ramps apply between two running steps: a start from off jumps straight to the 80 MW ceiling."""
+    load = FlexibleLoad(name="process", value_of_consumption=60.0, ramp_up=10.0, commitment=Commitment())
+
+    results = _buy_from_market(
+        load,
+        _constant_range(load, 50.0, 80.0, 2),
+        [10.0, 10.0],
+        (FlexibleLoadInitialState(load=load, power=0.0),),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([80.0, 80.0], abs=TOLERANCE)
+    assert results.flexible_loads.startup.to_numpy() == pytest.approx([1.0, 0.0], abs=TOLERANCE)
+
+
+def test_minimum_up_time_counts_the_time_on_before_the_horizon() -> None:
+    """On for 1 of its 3 minimum hours, the load stays on for 2 more hours at its floor, then stops."""
+    load = FlexibleLoad(
+        name="process",
+        value_of_consumption=60.0,
+        commitment=Commitment(min_up_time=timedelta(hours=3)),
+    )
+
+    results = _buy_from_market(
+        load,
+        _constant_range(load, 40.0, 80.0, 4),
+        [200.0] * 4,
+        (FlexibleLoadInitialState(load=load, power=50.0, time_in_state=timedelta(hours=1)),),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([40.0, 40.0, 0.0, 0.0], abs=TOLERANCE)
+
+
+@pytest.mark.parametrize(
+    ("startup_cost", "expected_consumption"),
+    [(0.0, [80.0, 0.0, 80.0]), (1000.0, [80.0, 40.0, 80.0])],
+    ids=["free_restart", "costly_restart"],
+)
+def test_startup_cost_keeps_the_load_running_through_a_short_expensive_spell(
+    startup_cost: float,
+    expected_consumption: list[float],
+) -> None:
+    """Stopping for the 70 $/MWh hour saves 400 at the floor, less than a 1,000 restart."""
+    load = FlexibleLoad(name="process", value_of_consumption=60.0, commitment=Commitment(startup_cost=startup_cost))
+
+    results = _buy_from_market(
+        load,
+        _constant_range(load, 40.0, 80.0, 3),
+        [30.0, 70.0, 30.0],
+        (FlexibleLoadInitialState(load=load, power=50.0),),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx(expected_consumption, abs=TOLERANCE)
+
+
+def test_kiln_respects_its_ramp_minimum_up_time_and_startup_cost() -> None:
+    """The kiln starts at 90 MW, can't stop within its 2-hour minimum, and ramps back up at 20 MW per hour."""
+    kiln = FlexibleLoad(
+        name="kiln",
+        value_of_consumption=80.0,
+        ramp_up=20.0,
+        commitment=Commitment(min_up_time=timedelta(hours=2), startup_cost=500.0),
+    )
+
+    results = _buy_from_market(
+        kiln,
+        _constant_range(kiln, 30.0, 90.0, 4),
+        [50.0, 100.0, 60.0, 40.0],
+        (FlexibleLoadInitialState(load=kiln, power=0.0, time_in_state=timedelta(hours=5)),),
+    )
+
+    assert results.flexible_loads.consumption.to_numpy() == pytest.approx([90.0, 70.0, 90.0, 90.0], abs=TOLERANCE)
+    assert results.objective_value == pytest.approx(80.0 * 340.0 - 20_500.0 - 500.0)

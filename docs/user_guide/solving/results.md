@@ -23,6 +23,7 @@ Let's solve the complete site, the one the [EnergyMarket](../markets/energy_mark
         EnergySystem,
         FixedLoad,
         FlexibleLoad,
+        FlexibleLoadProfile,
         Generator,
         LoadProfile,
         PriceProfile,
@@ -34,7 +35,7 @@ Let's solve the complete site, the one the [EnergyMarket](../markets/energy_mark
     ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
     wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
     factory = FixedLoad(name="factory")
-    process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
+    process = FlexibleLoad(name="process", value_of_consumption=60.0)
     bess = BatteryStorage(
         name="bess",
         battery=Battery(
@@ -53,7 +54,7 @@ Let's solve the complete site, the one the [EnergyMarket](../markets/energy_mark
         scenarios=Scenario(
             profiles=(
                 LoadProfile(load=factory, values=[60, 90, 40, 70]),
-                LoadProfile(load=process, values=[30, 30, 30, 30]),
+                FlexibleLoadProfile(load=process, lower_bound=[20, 20, 20, 20], upper_bound=[50, 50, 50, 50]),
                 AvailableCapacityProfile(generator=wind, values=[40, 10, 60, 30]),
                 PriceProfile(market=day_ahead, values=[40, 75, 30, 65]),
             ),
@@ -95,7 +96,7 @@ Each asset type and the markets have their own container. What each series means
 | Container                    | Series                                     | Details                                                       |
 | ---------------------------- | ------------------------------------------ | ------------------------------------------------------------- |
 | `result.generators`          | `power`, `status`, `startup`, `shutdown`   | [Generator](../assets/generator.md#results)                   |
-| `result.flexible_loads`      | `load_adjustment`, `actual_load`           | [FlexibleLoad](../assets/flexible_load.md#results)            |
+| `result.flexible_loads`      | `consumption`                              | [FlexibleLoad](../assets/flexible_load.md#results)            |
 | `result.battery_storages` | `net_power`, `soc`, `charge_mode`          | [Battery](../assets/battery.md#results)                       |
 | `result.electric_vehicles`   | `net_power`, `soc`, `charge_mode`          | [Battery](../assets/battery.md#results)                       |
 | `result.chargers`            | `assignment`, `power`                      | [Charger](../assets/charger.md#results)                       |
@@ -155,7 +156,7 @@ result.to_dataset()
 
 - the [market revenue](../../formulation/markets.md#objective-contribution): what you sell, minus what you buy, at each step's price;
 - minus the [generation costs](../../formulation/generators.md#objective-contribution): variable costs, plus start-up and shut-down costs;
-- plus the [value of flexible consumption](../../formulation/flexible_loads.md#objective-contribution): what each MWh a flexible load moves up is worth, minus what each MWh it gives up was worth;
+- plus the [value of flexible consumption](../../formulation/flexible_loads.md#objective-contribution): what each MWh a flexible load consumes is worth;
 - minus the [battery wear](../../formulation/batteries.md#objective-contribution), from `degradation_cost`.
 
 ```python
@@ -163,10 +164,10 @@ print(round(result.objective_value, 2))
 ```
 
 ```text
--7313.43
+-113.43
 ```
 
-Here the CCGT burns 10,000 of fuel. Trading earns back about 1,487 net, and the process's 20 MWh of net extra consumption is worth 1,200 at 60 $/MWh, so the profit is −7,313. Fixed loads add nothing: serving them costs whatever the energy that covers them costs.
+Here the CCGT burns 10,000 of fuel. Trading earns back about 1,487 net, and the process's 140 MWh are worth 8,400 at 60 $/MWh, so the profit is −113. Fixed loads add nothing: serving them costs whatever the energy that covers them costs.
 
 With several scenarios, `objective_value` is the expected profit, weighted by the scenarios' probabilities. With a CVaR term, it's the weighted sum of the expected profit and the CVaR, not a profit you can book; see [Risk (CVaR)](../uncertainty/risk.md#results).
 

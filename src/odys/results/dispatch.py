@@ -187,14 +187,24 @@ class FlexibleLoadDispatch(Dispatch):
     label = "flexible load"
 
     @property
-    def load_adjustment(self) -> pd.Series:
-        """Load adjustment from base profile (MW)."""
-        return self._series("load_adjustment")
+    def consumption(self) -> pd.Series:
+        """Power the load consumes (MW)."""
+        return self._series("consumption")
 
     @property
-    def actual_load(self) -> pd.Series:
-        """Actual consumption = base profile + adjustment (MW)."""
-        return self._series("actual_load")
+    def status(self) -> pd.Series:
+        """On/off status (1 while running, always 1 for a load without a commitment)."""
+        return self._series("status")
+
+    @property
+    def startup(self) -> pd.Series:
+        """Startup indicator (1 at the step the load starts)."""
+        return self._series("startup")
+
+    @property
+    def shutdown(self) -> pd.Series:
+        """Shutdown indicator (1 at the step the load stops)."""
+        return self._series("shutdown")
 
 
 def _split_extra_dim(variable: xr.DataArray, row_dims: list[Hashable]) -> xr.Dataset:

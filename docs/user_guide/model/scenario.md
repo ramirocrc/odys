@@ -34,13 +34,14 @@ Where an asset starts, such as the battery's charge at midnight, isn't part of a
 
 ## Each one is a profile
 
-A scenario holds its availability, demand and prices as **profiles**: one time series per asset or market, with one value per step. Each profile holds the asset or market itself, not its name, so it can't be attached to the wrong kind of object.
+A scenario holds its availability, demand and prices as **profiles**: the time series of one asset or market, with one value per step. Each profile holds the asset or market itself, not its name, so it can't be attached to the wrong kind of object.
 
-| Profile                    | References   | Unit         | Required                   | Meaning                                                                                                                              |
-| -------------------------- | ------------ | ------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `LoadProfile`              | `load=`      | MW           | Yes, for every load        | Demand of a [FixedLoad](../assets/fixed_load.md#profiles), or base profile of a [FlexibleLoad](../assets/flexible_load.md#profiles) |
-| `AvailableCapacityProfile` | `generator=` | MW           | No                         | What a [Generator](../assets/generator.md#profiles) can produce at each step; up to its `nominal_power` without one                 |
-| `PriceProfile`             | `market=`    | currency/MWh | Yes, for every market      | Price of an [EnergyMarket](../markets/energy_market.md#profiles) at each step                                                       |
+| Profile                    | References   | Unit         | Required                     | Meaning                                                                                                              |
+| -------------------------- | ------------ | ------------ | ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `LoadProfile`              | `load=`      | MW           | Yes, for every fixed load    | Demand of a [FixedLoad](../assets/fixed_load.md#profiles) at each step                                               |
+| `FlexibleLoadProfile`      | `load=`      | MW           | Yes, for every flexible load | Range of a [FlexibleLoad](../assets/flexible_load.md#profiles) at each step, as a `lower_bound` and an `upper_bound` |
+| `AvailableCapacityProfile` | `generator=` | MW           | No                           | What a [Generator](../assets/generator.md#profiles) can produce at each step; up to its `nominal_power` without one  |
+| `PriceProfile`             | `market=`    | currency/MWh | Yes, for every market        | Price of an [EnergyMarket](../markets/energy_market.md#profiles) at each step                                        |
 
 Every profile has one value per step of the horizon, and each asset or market takes at most one profile of each type. Storage, electric vehicles and chargers take none. The linked sections show each profile in use, with the checks it has to pass.
 

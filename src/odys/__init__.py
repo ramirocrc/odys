@@ -10,6 +10,7 @@ from importlib.metadata import version
 from odys.domain.conditions import (
     ElectricVehicleFinalState,
     ElectricVehicleInitialState,
+    FlexibleLoadInitialState,
     GeneratorFinalState,
     GeneratorInitialState,
     StorageFinalState,
@@ -19,6 +20,7 @@ from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
@@ -28,7 +30,7 @@ from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysError, OdysNoResultsError, OdysSolverError, OdysValidationError
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
-from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PriceProfile
+from odys.domain.profiles import AvailableCapacityProfile, FlexibleLoadProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.results.optimization_results import OptimalDispatchResults
@@ -46,6 +48,7 @@ __all__ = [
     "BatteryStorage",
     "CVaRTerm",
     "Charger",
+    "Commitment",
     "ElectricVehicle",
     "ElectricVehicleFinalState",
     "ElectricVehicleInitialState",
@@ -53,6 +56,8 @@ __all__ = [
     "EnergySystem",
     "FixedLoad",
     "FlexibleLoad",
+    "FlexibleLoadInitialState",
+    "FlexibleLoadProfile",
     "Generator",
     "GeneratorFinalState",
     "GeneratorInitialState",

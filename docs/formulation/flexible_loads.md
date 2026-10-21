@@ -4,112 +4,156 @@ icon: lucide/sliders-horizontal
 
 # Flexible loads
 
-A cold store can run a bit harder when power is cheap, a process can slow down when it's expensive, a site can cut a few machines for an hour. A flexible load is demand like that: it has a base profile, and the optimizer may move it up or down, within limits, when that pays.
+A cold store can run a bit harder when power is cheap, a process can slow down when it's expensive, a site can cut a few machines for an hour. A flexible load is demand like that: at every step it has a range it can run in, and the optimizer picks where in that range it runs, when that pays.
 
-This page covers every `FlexibleLoad`. It's the simplest asset in odys: one decision per step, and a range it has to stay in.
+This page covers every `FlexibleLoad`. At its simplest it's one decision per step and a range to stay in. An industrial process can add two things a generator has too: it changes only so fast, and it can be switched off.
 
 ## Sets and indices
 
-Flexible loads live in $\mathcal{L}$, with index $l$. Each one has a base profile $D_{l,s,t}$, from its `LoadProfile` in each scenario: what it would consume if nobody touched it.
+Flexible loads live in $\mathcal{L}$, with index $l$. Each one has a range from its `FlexibleLoadProfile` in each scenario: a lower bound $\underline{D}_{l,s,t}$, the least it consumes while it runs, and an upper bound $\overline{D}_{l,s,t}$, the most. The loads with a `commitment`, which can be switched off, form $\mathcal{L}^{sw} \subseteq \mathcal{L}$.
 
 ## Variables
 
 For each flexible load, scenario and step, odys decides:
 
-- $p^{adj}_{l,s,t}$: the adjustment, in MW. Positive raises the load, negative lowers it.
+- $d_{l,s,t} \ge 0$: the consumption, in MW. The results report it as `consumption`.
 
-The load that actually happens is the base plus the adjustment, $D_{l,s,t} + p^{adj}_{l,s,t}$. The results report both: `load_adjustment` and `actual_load`.
+When at least one flexible load has a commitment, every flexible load also gets the three binaries a generator has:
+
+- $u_{l,s,t} \in \{0, 1\}$: 1 while the load runs (`status`);
+- $y^{start}_{l,s,t}, y^{stop}_{l,s,t} \in \{0, 1\}$: 1 at the step it starts or stops (`startup`, `shutdown`).
+
+Without any commitment, there are no binaries, and the results report every load as on, with no starts or stops. Below, $u_{l,s,t} = 1$ and $y^{start}_{l,s,t} = y^{stop}_{l,s,t} = 0$ in that case.
 
 ## Constraints
 
-Each side of the range can be limited in one of two ways: **relative** to the base (at most so many MW less, or more), or **absolute** (never below, or above, so many MW). You choose one per side, or both.
+### FL-1 · Demand stays within its range while it runs {#fl-1}
 
-For example, take a base of 10 MW. With `max_decrease=3` and `max_increase=3`, the actual load can go anywhere from 7 to 13 MW. Add `min_load=8`, and the floor becomes 8 MW, while the top stays at 13 MW.
-
-### FL-1 · Demand moves within its range {#fl-1}
-
-The load never falls below its floor or rises above its ceiling. Each one is either an absolute limit, if you set it, or a step away from the base.
+While it runs, the load never consumes less than its lower bound or more than its upper bound. While it's off, it consumes nothing.
 
 $$
-\underline{F}_{l,s,t} \le p^{adj}_{l,s,t} \le \overline{F}_{l,s,t} \qquad \forall l \in \mathcal{L},\ s \in \mathcal{S},\ t \in \mathcal{T}
+\underline{D}_{l,s,t}\, u_{l,s,t} \le d_{l,s,t} \le \overline{D}_{l,s,t}\, u_{l,s,t} \qquad \forall l \in \mathcal{L},\ s \in \mathcal{S},\ t \in \mathcal{T}
 $$
 
-with the lowest and highest adjustment
+Read aloud: you can run the load anywhere from its floor to its ceiling, or, if it can switch off, not at all.
 
-$$
-\underline{F}_{l,s,t} =
-\begin{cases}
-\underline{P}_l - D_{l,s,t} & \text{if a minimum load } \underline{P}_l \text{ is set} \\
--\overline{\Delta}^{down}_l & \text{otherwise}
-\end{cases}
-\qquad
-\overline{F}_{l,s,t} =
-\begin{cases}
-\overline{P}_l - D_{l,s,t} & \text{if a maximum load } \overline{P}_l \text{ is set} \\
-\overline{\Delta}^{up}_l & \text{otherwise}
-\end{cases}
-$$
-
-Read aloud: you can turn the load down or up, but not past the floor or the ceiling.
-
-**Why it looks like this.** Some consumption can always be trimmed or pushed a little, so a limit relative to the base fits. Other loads have a hard minimum to keep running, or can't draw more than their connection allows, so an absolute limit fits. Both are written as a limit on the adjustment, so the model has one variable per load and step, whichever you choose. An absolute limit moves with the base: a high base leaves more room to cut, and less room to grow.
+**Why it looks like this.** Without a floor, the optimizer would turn the load down to nothing whenever power costs more than the load is worth. Without a ceiling, it would run the load without limit whenever power is cheap. Each bound is given per step and per scenario, because what a process can do changes over the day (a shift pattern, a minimum to keep a furnace warm) and between futures (an order book that may or may not fill).
 
 **Good to know.**
 
-- Every flexible load needs a floor and a ceiling: odys asks for `max_decrease` or `min_load`, and for `max_increase` or `max_load`. It also checks that `min_load` isn't above `max_load`.
-- When you set both on one side, the absolute limit wins and the relative one is ignored, even when it's the tighter one ([#168](https://github.com/ramirocrc/odys/issues/168)).
-- odys checks that the base stays between `min_load` and `max_load`, and, without `min_load`, that `max_decrease` is never above the base. So the actual load can't go negative. It doesn't check that the base itself is non-negative ([#148](https://github.com/ramirocrc/odys/issues/148)).
+- odys checks that both bounds are at least 0 and that the lower bound isn't above the upper one, at every step. When the load has `min_load` or `max_load`, its bounds must also stay within them. So the consumption can never be negative.
 - The floor and the ceiling are two constraints in the model, one per side.
+- For a load that can switch off, the lower bound is its minimum stable load: it runs at least that much, or not at all.
 
-`Added: always · Binds: when it pays to move the load as far as it goes · Names: flexible_load_adjustment_lower_bound_constraint, flexible_load_adjustment_upper_bound_constraint`
+`Added: always · Binds: when it pays to run the load as low or as high as it goes · Names: flexible_load_lower_bound_constraint, flexible_load_upper_bound_constraint`
+
+### FL-2 · A load switches on and off like a generator {#fl-2}
+
+A load with a commitment starts, stops and stays in each state the way a generator does. A load without one stays on.
+
+$$
+u_{l,s,t} = 1 \qquad \forall l \in \mathcal{L} \setminus \mathcal{L}^{sw},\ s \in \mathcal{S},\ t \in \mathcal{T}
+$$
+
+and, for every flexible load, the generator rows with $l$ in place of $g$:
+
+- start-ups and shut-downs are counted from the status, as in [G-5](generators.md#g-5) and [G-6](generators.md#g-6), from the initial status at $t = 0$;
+- once started, the load runs for at least `min_up_time`, and once stopped, it stays off for at least `min_down_time`, counting the time before the run, as in [G-8](generators.md#g-8) and [G-9](generators.md#g-9).
+
+Read aloud: a kiln that can stop pays to start again, and once it's running it keeps running for a while.
+
+**Why it looks like this.** A process with a minimum stable load can't just turn down a little more: it has to stop. Stopping and starting cost money, wear and time, which is what a generator's `Commitment` already describes, so a flexible load takes the same one, and the same rows. A load without a commitment gets the always-on row only when another flexible load has the binaries; otherwise it has none.
+
+**Good to know.**
+
+- The binaries exist only when some flexible load has a commitment, so a model of loads without one stays linear.
+- At $t = 0$ the status before the run comes from the load's `FlexibleLoadInitialState`: running if its `power` is above 0, or always for a load without a commitment. Without an initial state, a load with a commitment starts off.
+- Every flexible load gets the rows, even one that can't switch off, for which they decide nothing.
+
+`Added: when some flexible load has a commitment (the time-zero rows only when a load starts within its minimum time) · Binds: with min_up_time, min_down_time or start-up and shut-down costs · Names: flexible_load_always_on_constraint, flexible_load_startup_lower_bound_constraint, flexible_load_startup_upper_bound_1_constraint, flexible_load_startup_upper_bound_2_constraint, flexible_load_shutdown_lower_bound_constraint, flexible_load_shutdown_upper_bound_1_constraint, flexible_load_shutdown_upper_bound_2_constraint, flexible_load_min_uptime_{name}_constraint, flexible_load_min_downtime_{name}_constraint, flexible_load_initial_min_uptime_constraint, flexible_load_initial_min_downtime_constraint`
+
+### FL-3 · Consumption rises gradually {#fl-3}
+
+Between two steps the load runs, the consumption rises at most by the ramp-up rate times the step length. A start can land anywhere in the range.
+
+$$
+d_{l,s,t} - d_{l,s,t-1} \le \overline{R}^{up}_l\, \Delta t + \overline{D}_{l,s,t}\, y^{start}_{l,s,t} \qquad \forall l \in \mathcal{L} \text{ with } \overline{R}^{up}_l,\ s \in \mathcal{S},\ t \in \mathcal{T}
+$$
+
+with $d_{l,s,-1} = P^{init}_l$, the `power` of its initial state.
+
+Read aloud: a running kiln heats up only so fast, but it can start straight at any load it can run at.
+
+**Why it looks like this.** A process changes its draw at a rate set by its physics, in MW per hour, so the step allows that rate times its length. A start is different: a kiln goes from off to its minimum stable load at once, which a ramp from 0 would forbid whenever the minimum is above one step's ramp. The start-up term lifts the limit by the most the load can consume, so it never binds at a start.
+
+**Good to know.**
+
+- The row exists only for the loads with `ramp_up` set.
+- At $t = 0$ it counts from the initial power, which is why odys asks for a `FlexibleLoadInitialState` when a ramp is set.
+
+`Added: when some flexible load has ramp_up · Binds: when the load would rise faster than it can · Name: flexible_load_max_ramp_up_constraint`
+
+### FL-4 · Consumption falls gradually {#fl-4}
+
+Between two steps the load runs, the consumption falls at most by the ramp-down rate times the step length. A stop drops straight to 0.
+
+$$
+d_{l,s,t-1} - d_{l,s,t} \le \overline{R}^{down}_l\, \Delta t + \overline{D}_{l,s,t-1}\, y^{stop}_{l,s,t} \qquad \forall l \in \mathcal{L} \text{ with } \overline{R}^{down}_l,\ s \in \mathcal{S},\ t \in \mathcal{T}
+$$
+
+with $d_{l,s,-1} = P^{init}_l$ and $\overline{D}_{l,s,-1} = P^{init}_l$.
+
+Read aloud: a running kiln cools down only so fast, but it can be switched off at once.
+
+**Why it looks like this.** It mirrors FL-3: the same rate per hour, and a shut-down term large enough, the most the load consumed the step before, that a stop never binds.
+
+`Added: when some flexible load has ramp_down · Binds: when the load would fall faster than it can · Name: flexible_load_max_ramp_down_constraint`
 
 ### What a flexible load doesn't do
 
-Every step stands on its own. There's nothing more to a flexible load than FL-1:
-
-- Energy cut now doesn't have to be made up later. A lower load is simply consumption that doesn't happen, not consumption that moves. Shifting load in time is proposed in [#162](https://github.com/ramirocrc/odys/issues/162).
-- The adjustment can jump from one end of its range to the other in one step. Ramp limits are proposed in [#79](https://github.com/ramirocrc/odys/issues/79).
-- The variable is called `load_adjustment`, without the `flexible_load_` prefix the constraints have ([#161](https://github.com/ramirocrc/odys/issues/161)).
+- Energy not used now doesn't have to be used later. Lower consumption is simply consumption that doesn't happen, not consumption that moves. Shifting load in time is proposed in [#162](https://github.com/ramirocrc/odys/issues/162).
+- Ramps don't apply at a start or a stop, unlike a generator's ([G-7](generators.md#g-7)).
 
 ## Power balance contribution
 
-A flexible load takes its actual load from the bus, so it adds
+A flexible load takes its consumption from the bus, so it adds
 
 $$
--\left(D_{l,s,t} + p^{adj}_{l,s,t}\right)
+-d_{l,s,t}
 $$
 
 to the [power balance](power_balance.md#pb-1) at every step.
 
-Before solving, odys counts the least a flexible load can consume: its `min_load`, or the base minus `max_decrease`. That's what the check on supply has to cover (see [PB-1](power_balance.md#pb-1)).
+Before solving, odys counts the least a flexible load can consume: its lower bound, or 0 for a load that can switch off. That's what the check on supply has to cover (see [PB-1](power_balance.md#pb-1)).
 
 ## Objective contribution
 
-Each flexible load adds the value of its adjustment to the profit $\Pi_s$ of every scenario (see [Objective](objective.md#profit-per-scenario)):
+Each flexible load adds the value of its consumption, less what its starts and stops cost, to the profit $\Pi_s$ of every scenario (see [Objective](objective.md#profit-per-scenario)):
 
 $$
-\sum_{l \in \mathcal{L}} \sum_{t \in \mathcal{T}} c^{val}_l\, p^{adj}_{l,s,t}\, \Delta t
+\sum_{l \in \mathcal{L}} \sum_{t \in \mathcal{T}} \left(c^{val}_l\, d_{l,s,t}\, \Delta t - c^{start}_l\, y^{start}_{l,s,t} - c^{stop}_l\, y^{stop}_{l,s,t}\right)
 $$
 
-Read aloud: every extra MWh you consume is worth $c^{val}_l$, and every MWh you don't is worth that much less.
+Read aloud: every MWh you consume is worth $c^{val}_l$, and every start and stop costs what its commitment says.
 
-- This is where the decision comes from: the extra power has to come from somewhere, and its cost sits in the other assets' and markets' terms. How that plays out in a plan is on the [FlexibleLoad](../user_guide/assets/flexible_load.md#value-of-consumption) page.
-- Only the adjustment is valued, not the base. The base's value doesn't depend on any decision, so it's left out.
+- This is where the decision comes from: the power has to come from somewhere, and its cost sits in the other assets' and markets' terms. How that plays out in a plan is on the [FlexibleLoad](../user_guide/assets/flexible_load.md#value-of-consumption) page.
+- All of the consumption is valued, including the part the lower bound forces. That part doesn't change the plan, but it is in the objective value, and in each scenario's profit that the [risk term](objective.md#conditional-value-at-risk) weighs.
 
 ## Where to find each symbol in odys
 
 | Symbol | Attribute | Type | Unit |
 | ------ | --------- | ---- | ---- |
 | $\mathcal{L}$ | `FlexibleLoad` | Parameter | – |
-| $D_{l,s,t}$ | `LoadProfile.values` | Parameter | MW |
-| $\underline{P}_l$ | `FlexibleLoad.min_load` | Parameter | MW |
-| $\overline{P}_l$ | `FlexibleLoad.max_load` | Parameter | MW |
-| $\overline{\Delta}^{down}_l$ | `FlexibleLoad.max_decrease` | Parameter | MW |
-| $\overline{\Delta}^{up}_l$ | `FlexibleLoad.max_increase` | Parameter | MW |
-| $\underline{F}_{l,s,t}$, $\overline{F}_{l,s,t}$ | the lowest and highest adjustment, from the limits above | Parameter | MW |
+| $\underline{D}_{l,s,t}$ | `FlexibleLoadProfile.lower_bound` | Parameter | MW |
+| $\overline{D}_{l,s,t}$ | `FlexibleLoadProfile.upper_bound` | Parameter | MW |
+| $\mathcal{L}^{sw}$ | flexible loads with a `FlexibleLoad.commitment` | Parameter | – |
 | $c^{val}_l$ | `FlexibleLoad.value_of_consumption` | Parameter | currency per MWh |
-| $p^{adj}_{l,s,t}$ | `load_adjustment` · `results.flexible_loads.load_adjustment` | Variable · Result | MW |
-| $D_{l,s,t} + p^{adj}_{l,s,t}$ | `results.flexible_loads.actual_load` | Result | MW |
+| $\overline{R}^{up}_l$, $\overline{R}^{down}_l$ | `FlexibleLoad.ramp_up`, `FlexibleLoad.ramp_down` | Parameter | MW per hour |
+| $c^{start}_l$, $c^{stop}_l$ | `FlexibleLoad.commitment.startup_cost`, `FlexibleLoad.commitment.shutdown_cost` | Parameter | currency per event |
+| $P^{init}_l$ | `FlexibleLoadInitialState.power` | Parameter | MW |
+| $d_{l,s,t}$ | `flexible_load_consumption` · `results.flexible_loads.consumption` | Variable · Result | MW |
+| $u_{l,s,t}$ | `flexible_load_status` · `results.flexible_loads.status` | Variable · Result | – |
+| $y^{start}_{l,s,t}$, $y^{stop}_{l,s,t}$ | `flexible_load_startup`, `flexible_load_shutdown` · `results.flexible_loads.startup`, `.shutdown` | Variable · Result | – |
 
 You've now seen every piece. Back to the whole model on one screen: see the [Overview](index.md#the-whole-model-on-one-screen).
 

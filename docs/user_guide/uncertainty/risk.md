@@ -25,6 +25,7 @@ Let's take the calm and windy site of the [Several scenarios](scenarios.md) page
         EnergySystem,
         FixedLoad,
         FlexibleLoad,
+        FlexibleLoadProfile,
         Generator,
         LoadProfile,
         PriceProfile,
@@ -36,7 +37,7 @@ Let's take the calm and windy site of the [Several scenarios](scenarios.md) page
     ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
     wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
     factory = FixedLoad(name="factory")
-    process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
+    process = FlexibleLoad(name="process", value_of_consumption=60.0)
     bess = BatteryStorage(
         name="bess",
         battery=Battery(
@@ -55,7 +56,7 @@ Let's take the calm and windy site of the [Several scenarios](scenarios.md) page
         probability=0.3,
         profiles=(
             LoadProfile(load=factory, values=[60, 90, 40, 70]),
-            LoadProfile(load=process, values=[30, 30, 30, 30]),
+            FlexibleLoadProfile(load=process, lower_bound=[20, 20, 20, 20], upper_bound=[50, 50, 50, 50]),
             AvailableCapacityProfile(generator=wind, values=[20, 5, 30, 15]),
             PriceProfile(market=day_ahead, values=[45, 80, 35, 68]),
             PriceProfile(market=intraday, values=[55, 90, 45, 70]),
@@ -66,7 +67,7 @@ Let's take the calm and windy site of the [Several scenarios](scenarios.md) page
         probability=0.7,
         profiles=(
             LoadProfile(load=factory, values=[60, 90, 40, 70]),
-            LoadProfile(load=process, values=[30, 30, 30, 30]),
+            FlexibleLoadProfile(load=process, lower_bound=[20, 20, 20, 20], upper_bound=[50, 50, 50, 50]),
             AvailableCapacityProfile(generator=wind, values=[60, 40, 80, 50]),
             PriceProfile(market=day_ahead, values=[35, 65, 25, 55]),
             PriceProfile(market=intraday, values=[30, 58, 20, 45]),
@@ -151,7 +152,7 @@ print(round(averse_result.objective_value, 2))
 ```
 
 ```text
--10872.2
+-72.2
 ```
 
 The risk term adds no binaries: one threshold, plus one shortfall per scenario.

@@ -19,10 +19,12 @@ from odys import (
     AvailableCapacityProfile,
     Battery,
     BatteryStorage,
+    Commitment,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
+    FlexibleLoadProfile,
     Generator,
     GeneratorInitialState,
     LoadProfile,
@@ -47,7 +49,8 @@ COMMITMENT_LOAD = [45.0, 100.0, 100.0, 20.0, 20.0, 100.0, 100.0, 100.0, 20.0, 10
 BASELOAD_CAPACITY = [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 70.0, 100.0, 100.0, 100.0, 100.0]
 STORAGE_LOAD = [30.0, 30.0, 50.0, 70.0, 70.0, 40.0, 30.0, 30.0]
 STORAGE_PRICES = [20.0, 15.0, 40.0, 90.0, 110.0, 60.0, 25.0, 20.0]
-FLEXIBLE_BASE = [20.0, 20.0, 25.0, 25.0, 25.0, 25.0, 20.0, 20.0]
+FLEXIBLE_LOWER_BOUND = [5.0, 5.0, 10.0, 10.0, 10.0, 10.0, 5.0, 5.0]
+FLEXIBLE_UPPER_BOUND = [30.0, 30.0, 35.0, 35.0, 35.0, 35.0, 30.0, 30.0]
 
 RECORDED_EXAMPLE_OBJECTIVES = {
     "merit_order_dispatch": -49_500.0,
@@ -55,8 +58,9 @@ RECORDED_EXAMPLE_OBJECTIVES = {
     "solar_storage": -37_090.625,
     # Re-recorded when the example market started selling too, and its prices equal to the ccgt cost (50) became 52.
     "make_or_buy": -68_680.0,
-    # Re-recorded when the example prices equal to the value of consumption (70) became 72, removing a tie.
-    "demand_response": -78_840.0,
+    # Re-recorded when the example became a kiln with ramps and on/off, compared with an ideal kiln.
+    "demand_response_kiln": 31_320.0,
+    "demand_response_ideal": 36_600.0,
     # Re-recorded when ev_2 and ev_3 in the example got V2G discharge, so the vans compete for the chargers.
     "depot_charging": 9.99,
     # Re-recorded when the CVaR example's day-ahead and intraday prices started moving together
@@ -66,7 +70,10 @@ RECORDED_EXAMPLE_OBJECTIVES = {
 }
 RECORDED_UNIT_COMMITMENT_OBJECTIVE = -46_960.0
 # Re-recorded when self-discharge started applying at the first step (it was skipped there before).
-RECORDED_STORAGE_MARKET_OBJECTIVE = -12_080.181292386771
+# Re-recorded when flexible loads started valuing all of their consumption, not only the adjustment from a base
+# profile: the dispatch is unchanged, and the old base (180 MW summed over the steps, 0.5 h each, at 50/MWh, 4,500)
+# is now counted: -12,080.181292386771 + 4,500.
+RECORDED_STORAGE_MARKET_OBJECTIVE = -7_580.181292386771
 
 
 def _run_example(module_name: str, function_name: str) -> object:
@@ -90,6 +97,15 @@ def _day_ahead_or_intraday_example_results() -> tuple[OptimalDispatchResults, Op
     return expected_profit, penalized_cvar
 
 
+def _demand_response_example_results() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
+    results = _run_example("demand_response", "run_demand_response")
+    assert isinstance(results, tuple)
+    kiln, ideal = results
+    assert isinstance(kiln, OptimalDispatchResults)
+    assert isinstance(ideal, OptimalDispatchResults)
+    return kiln, ideal
+
+
 def _assert_optimal_with_objective(result: OptimalDispatchResults, expected: float, *, rel: float) -> None:
     assert result.termination_condition == "optimal"
     assert result.objective_value == pytest.approx(expected, rel=rel)
@@ -97,7 +113,7 @@ def _assert_optimal_with_objective(result: OptimalDispatchResults, expected: flo
 
 @pytest.mark.parametrize(
     "module_name",
-    ["merit_order_dispatch", "solar_storage", "make_or_buy", "demand_response", "depot_charging"],
+    ["merit_order_dispatch", "solar_storage", "make_or_buy", "depot_charging"],
 )
 def test_example_objective_is_unchanged(module_name: str) -> None:
     result = _single_example_result(module_name)
@@ -118,6 +134,20 @@ def test_day_ahead_or_intraday_example_objectives_are_unchanged() -> None:
     )
 
 
+def test_demand_response_example_objectives_are_unchanged() -> None:
+    kiln, ideal = _demand_response_example_results()
+    _assert_optimal_with_objective(kiln, RECORDED_EXAMPLE_OBJECTIVES["demand_response_kiln"], rel=DEFAULT_MIP_GAP)
+    _assert_optimal_with_objective(ideal, RECORDED_EXAMPLE_OBJECTIVES["demand_response_ideal"], rel=DEFAULT_MIP_GAP)
+
+
+def test_demand_response_example_ideal_kiln_earns_at_least_the_real_one() -> None:
+    kiln, ideal = _demand_response_example_results()
+
+    assert kiln.objective_value is not None
+    assert ideal.objective_value is not None
+    assert kiln.objective_value <= ideal.objective_value
+
+
 def _unit_commitment_system() -> EnergySystem:
     baseload = Generator(
         name="baseload",
@@ -126,17 +156,14 @@ def _unit_commitment_system() -> EnergySystem:
         min_power=40.0,
         ramp_up=50.0,
         ramp_down=50.0,
-        min_up_time=timedelta(hours=3),
-        min_down_time=timedelta(hours=3),
-        startup_cost=300.0,
-        shutdown_cost=50.0,
+        commitment=Commitment(
+            min_up_time=timedelta(hours=3),
+            min_down_time=timedelta(hours=3),
+            startup_cost=300.0,
+            shutdown_cost=50.0,
+        ),
     )
-    peaker = Generator(
-        name="peaker",
-        nominal_power=120.0,
-        variable_cost=80.0,
-        startup_cost=10.0,
-    )
+    peaker = Generator(name="peaker", nominal_power=120.0, variable_cost=80.0, commitment=Commitment(startup_cost=10.0))
     demand = FixedLoad(name="demand")
     return EnergySystem(
         portfolio=AssetPortfolio([baseload, peaker, demand]),
@@ -170,7 +197,7 @@ def _storage_and_market_system() -> EnergySystem:
             self_discharge_rate=0.01,
         ),
     )
-    flexible = FlexibleLoad(name="process", max_increase=10.0, max_decrease=15.0, value_of_consumption=50.0)
+    flexible = FlexibleLoad(name="process", value_of_consumption=50.0)
     market = EnergyMarket(
         name="grid",
         max_trading_volume_per_step=150.0,
@@ -185,7 +212,7 @@ def _storage_and_market_system() -> EnergySystem:
         scenarios=Scenario(
             profiles=(
                 LoadProfile(load=site, values=STORAGE_LOAD),
-                LoadProfile(load=flexible, values=FLEXIBLE_BASE),
+                FlexibleLoadProfile(load=flexible, lower_bound=FLEXIBLE_LOWER_BOUND, upper_bound=FLEXIBLE_UPPER_BOUND),
                 PriceProfile(market=market, values=STORAGE_PRICES),
             ),
         ),

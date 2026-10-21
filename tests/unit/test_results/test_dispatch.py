@@ -322,7 +322,8 @@ def test_generator_to_dataframe(generator_dispatch: GeneratorDispatch) -> None:
 
 
 EXPECTED_FLEXIBLE_LOAD_COUNT = 2
-EXPECTED_ACTUAL_LOAD_FIRST_VALUE = 110.0  # base (100) + adjustment (10)
+EXPECTED_CONSUMPTION_FIRST_VALUE = 110.0
+FLEXIBLE_LOAD_SERIES = ["consumption", "status", "startup", "shutdown"]
 
 
 @pytest.fixture
@@ -330,20 +331,20 @@ def flexible_load_dispatch() -> FlexibleLoadDispatch:
     flexible_load_names = ["flex_load_1", "flex_load_2"]
     timesteps = [0, 1]
 
-    load_adjustment = xr.DataArray(
-        [[10.0, -5.0], [20.0, -10.0]],
+    consumption = xr.DataArray(
+        [[EXPECTED_CONSUMPTION_FIRST_VALUE, 95.0], [100.0, 70.0]],
         dims=["flexible_load", "time"],
         coords={"flexible_load": flexible_load_names, "time": timesteps},
     )
 
-    base_profiles = xr.DataArray(
-        [[100.0, 100.0], [80.0, 80.0]],
+    status = xr.DataArray(
+        [[1.0, 1.0], [1.0, 0.0]],
         dims=["flexible_load", "time"],
         coords={"flexible_load": flexible_load_names, "time": timesteps},
     )
-
+    no_change = xr.zeros_like(status)
     return FlexibleLoadDispatch(
-        xr.Dataset({"load_adjustment": load_adjustment, "actual_load": base_profiles + load_adjustment}),
+        xr.Dataset({"consumption": consumption, "status": status, "startup": no_change, "shutdown": no_change}),
         FLEXIBLE_LOAD_DIMENSION,
     )
 
@@ -352,7 +353,7 @@ def test_flexible_load_getitem(flexible_load_dispatch: FlexibleLoadDispatch) -> 
     load = flexible_load_dispatch["flex_load_1"]
 
     assert isinstance(load, FlexibleLoadDispatch)
-    assert len(load.load_adjustment) == EXPECTED_TIMESTEP_COUNT
+    assert len(load.consumption) == EXPECTED_TIMESTEP_COUNT
 
 
 def test_flexible_load_iter(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
@@ -372,34 +373,33 @@ def test_flexible_load_contains(flexible_load_dispatch: FlexibleLoadDispatch) ->
     assert "flex_load_3" not in flexible_load_dispatch
 
 
-def test_flexible_load_load_adjustment(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
-    load_adjustment = flexible_load_dispatch.load_adjustment
+def test_flexible_load_consumption(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
+    consumption = flexible_load_dispatch.consumption
 
-    assert len(load_adjustment) == EXPECTED_FLEXIBLE_LOAD_COUNT * EXPECTED_TIMESTEP_COUNT
+    assert len(consumption) == EXPECTED_FLEXIBLE_LOAD_COUNT * EXPECTED_TIMESTEP_COUNT
+    assert consumption.iloc[0] == pytest.approx(EXPECTED_CONSUMPTION_FIRST_VALUE)
 
 
-def test_flexible_load_actual_load(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
-    actual_load = flexible_load_dispatch.actual_load
+@pytest.mark.parametrize("series", ["status", "startup", "shutdown"])
+def test_flexible_load_on_off_series(flexible_load_dispatch: FlexibleLoadDispatch, series: str) -> None:
+    values = getattr(flexible_load_dispatch, series)
 
-    assert len(actual_load) == EXPECTED_FLEXIBLE_LOAD_COUNT * EXPECTED_TIMESTEP_COUNT
-    # Check first value: base (100) + adjustment (10) = 110
-    assert actual_load.iloc[0] == EXPECTED_ACTUAL_LOAD_FIRST_VALUE
+    assert len(values) == EXPECTED_FLEXIBLE_LOAD_COUNT * EXPECTED_TIMESTEP_COUNT
+    assert values.name == series
 
 
 def test_flexible_load_to_dataset(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
     dataset = flexible_load_dispatch.to_dataset()
 
     assert isinstance(dataset, xr.Dataset)
-    assert "load_adjustment" in dataset.data_vars
-    assert "actual_load" in dataset.data_vars
+    assert list(dataset.data_vars) == FLEXIBLE_LOAD_SERIES
 
 
 def test_flexible_load_to_dataframe(flexible_load_dispatch: FlexibleLoadDispatch) -> None:
     dataframe = flexible_load_dispatch.to_dataframe()
 
     assert not dataframe.empty
-    assert "load_adjustment" in dataframe.columns
-    assert "actual_load" in dataframe.columns
+    assert list(dataframe.columns) == FLEXIBLE_LOAD_SERIES
 
 
 def test_flexible_load_repr(flexible_load_dispatch: FlexibleLoadDispatch) -> None:

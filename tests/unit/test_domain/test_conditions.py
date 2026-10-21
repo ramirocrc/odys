@@ -9,6 +9,7 @@ from odys.domain.conditions import (
     ConditionSet,
     ElectricVehicleFinalState,
     ElectricVehicleInitialState,
+    FlexibleLoadInitialState,
     GeneratorFinalState,
     GeneratorInitialState,
     StorageFinalState,
@@ -16,10 +17,13 @@ from odys.domain.conditions import (
 )
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
+from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.trip import Trip
 from odys.domain.exceptions import OdysValidationError
+from odys.domain.horizon import Horizon
 
 NOMINAL_POWER = 100.0
 MIN_POWER = 20.0
@@ -104,7 +108,7 @@ def test_generator_initial_state_requires_time_in_state_with_the_matching_min_ti
     power: float,
     state: str,
 ) -> None:
-    generator = GENERATOR.model_copy(update={min_time_field: MIN_TIME})
+    generator = GENERATOR.model_copy(update={"commitment": Commitment.model_validate({min_time_field: MIN_TIME})})
 
     with pytest.raises(
         OdysValidationError,
@@ -122,13 +126,13 @@ def test_generator_initial_state_does_not_require_time_in_state_for_the_other_mi
     min_time_field: str,
     power: float,
 ) -> None:
-    generator = GENERATOR.model_copy(update={min_time_field: MIN_TIME})
+    generator = GENERATOR.model_copy(update={"commitment": Commitment.model_validate({min_time_field: MIN_TIME})})
 
     assert GeneratorInitialState(generator=generator, power=power).time_in_state is None
 
 
 def test_generator_initial_state_accepts_time_in_state() -> None:
-    generator = GENERATOR.model_copy(update={"min_up_time": MIN_TIME})
+    generator = GENERATOR.model_copy(update={"commitment": Commitment(min_up_time=MIN_TIME)})
 
     state = GeneratorInitialState(generator=generator, power=POWER_WITHIN_LIMITS, time_in_state=TIME_IN_STATE)
 
@@ -145,24 +149,28 @@ def test_generator_initial_state_is_optional_for_a_generator_without_time_coupli
 
 
 @pytest.mark.parametrize(
-    ("field", "value"),
+    ("field", "update"),
     [
-        ("ramp_up", 10.0),
-        ("ramp_down", 0.0),
-        ("min_up_time", MIN_TIME),
-        ("min_down_time", MIN_TIME),
-        ("startup_cost", 5.0),
-        ("shutdown_cost", 5.0),
+        ("ramp_up", {"ramp_up": 10.0}),
+        ("ramp_down", {"ramp_down": 0.0}),
+        ("min_up_time", {"commitment": Commitment(min_up_time=MIN_TIME)}),
+        ("min_down_time", {"commitment": Commitment(min_down_time=MIN_TIME)}),
+        ("startup_cost", {"commitment": Commitment(startup_cost=5.0)}),
+        ("shutdown_cost", {"commitment": Commitment(shutdown_cost=5.0)}),
     ],
+    ids=["ramp_up", "ramp_down", "min_up_time", "min_down_time", "startup_cost", "shutdown_cost"],
 )
-def test_generator_initial_state_is_required_for_a_time_coupled_generator(field: str, value: float | timedelta) -> None:
-    generator = PLAIN_GENERATOR.model_copy(update={field: value})
+def test_generator_initial_state_is_required_for_a_time_coupled_generator(
+    field: str,
+    update: dict[str, object],
+) -> None:
+    generator = PLAIN_GENERATOR.model_copy(update=update)
 
     assert GeneratorInitialState.required_for(generator) == f"it has {field} set"
 
 
 def test_generator_initial_state_required_reason_lists_every_time_coupling_field() -> None:
-    generator = PLAIN_GENERATOR.model_copy(update={"ramp_up": 10.0, "startup_cost": 5.0})
+    generator = PLAIN_GENERATOR.model_copy(update={"ramp_up": 10.0, "commitment": Commitment(startup_cost=5.0)})
 
     assert GeneratorInitialState.required_for(generator) == "it has ramp_up, startup_cost set"
 
@@ -409,3 +417,148 @@ def test_condition_set_get_ignores_a_different_asset_with_the_same_name() -> Non
     copy_with_other_cost = GENERATOR.model_copy(update={"variable_cost": VARIABLE_COST + 1})
 
     assert ConditionSet(initial=(initial,)).get(GeneratorInitialState, copy_with_other_cost) is None
+
+
+FLEXIBLE_MIN_LOAD = 20.0
+FLEXIBLE_MAX_LOAD = 80.0
+FLEXIBLE_POWER_WITHIN_LIMITS = 50.0
+FLEXIBLE_RAMP = 10.0
+ALWAYS_ON_LOAD = FlexibleLoad(
+    name="process",
+    value_of_consumption=VARIABLE_COST,
+    min_load=FLEXIBLE_MIN_LOAD,
+    max_load=FLEXIBLE_MAX_LOAD,
+)
+SWITCHABLE_LOAD = ALWAYS_ON_LOAD.model_copy(update={"commitment": Commitment()})
+
+
+def _switchable_load(commitment: Commitment) -> FlexibleLoad:
+    return ALWAYS_ON_LOAD.model_copy(update={"commitment": commitment})
+
+
+@pytest.mark.parametrize(
+    ("load", "power", "is_on"),
+    [
+        (ALWAYS_ON_LOAD, FLEXIBLE_POWER_WITHIN_LIMITS, True),
+        (SWITCHABLE_LOAD, FLEXIBLE_POWER_WITHIN_LIMITS, True),
+        (SWITCHABLE_LOAD, 0.0, False),
+        (SWITCHABLE_LOAD, FLEXIBLE_MIN_LOAD, True),
+        (SWITCHABLE_LOAD, FLEXIBLE_MAX_LOAD, True),
+    ],
+    ids=["always_on_running", "switchable_running", "switchable_off", "at_min_load", "at_max_load"],
+)
+def test_flexible_load_initial_state_accepts_off_or_power_within_limits(
+    load: FlexibleLoad,
+    power: float,
+    *,
+    is_on: bool,
+) -> None:
+    assert FlexibleLoadInitialState(load=load, power=power).is_on is is_on
+
+
+@pytest.mark.parametrize(
+    ("load", "power", "message"),
+    [
+        (ALWAYS_ON_LOAD, 0.0, r"has power=0.0, but the load is between min_load \(20.0\) and max_load \(80.0\)"),
+        (
+            SWITCHABLE_LOAD,
+            10.0,
+            r"has power=10.0, but the load is either off \(0\) or between min_load \(20.0\) and max_load \(80.0\)",
+        ),
+        (SWITCHABLE_LOAD, 90.0, r"has power=90.0, but the load is either off \(0\) or between"),
+    ],
+    ids=["always_on_at_zero", "switchable_below_min_load", "switchable_above_max_load"],
+)
+def test_flexible_load_initial_state_rejects_power_outside_limits(
+    load: FlexibleLoad,
+    power: float,
+    message: str,
+) -> None:
+    with pytest.raises(OdysValidationError, match=rf"FlexibleLoadInitialState for flexible load 'process' {message}"):
+        FlexibleLoadInitialState(load=load, power=power)
+
+
+def test_flexible_load_initial_state_without_limits_accepts_any_non_negative_power() -> None:
+    load = FlexibleLoad(name="process", value_of_consumption=VARIABLE_COST)
+
+    assert FlexibleLoadInitialState(load=load, power=0.0).is_on
+
+
+def test_flexible_load_initial_state_rejects_negative_power() -> None:
+    with pytest.raises(ValidationError, match="Input should be greater than or equal to 0"):
+        FlexibleLoadInitialState(load=ALWAYS_ON_LOAD, power=-1.0)
+
+
+def test_flexible_load_initial_state_rejects_time_in_state_without_a_commitment() -> None:
+    with pytest.raises(OdysValidationError, match="has time_in_state, but the load has no commitment"):
+        FlexibleLoadInitialState(load=ALWAYS_ON_LOAD, power=FLEXIBLE_POWER_WITHIN_LIMITS, time_in_state=TIME_IN_STATE)
+
+
+@pytest.mark.parametrize(
+    ("min_time_field", "power", "state"),
+    [("min_up_time", FLEXIBLE_POWER_WITHIN_LIMITS, "on"), ("min_down_time", 0.0, "off")],
+    ids=["on_with_min_up_time", "off_with_min_down_time"],
+)
+def test_flexible_load_initial_state_requires_time_in_state_with_the_matching_min_time(
+    min_time_field: str,
+    power: float,
+    state: str,
+) -> None:
+    load = _switchable_load(Commitment.model_validate({min_time_field: MIN_TIME}))
+
+    with pytest.raises(
+        OdysValidationError,
+        match=rf"starts {state} and the flexible load has {min_time_field} set, so time_in_state is required",
+    ):
+        FlexibleLoadInitialState(load=load, power=power)
+
+
+def test_flexible_load_initial_state_accepts_time_in_state_with_a_commitment() -> None:
+    load = _switchable_load(Commitment(min_down_time=MIN_TIME))
+
+    state = FlexibleLoadInitialState(load=load, power=0.0, time_in_state=TIME_IN_STATE)
+
+    assert state.time_in_state == TIME_IN_STATE
+
+
+def test_flexible_load_initial_state_rejects_time_in_state_not_a_whole_number_of_steps() -> None:
+    state = FlexibleLoadInitialState(load=SWITCHABLE_LOAD, power=0.0, time_in_state=timedelta(minutes=90))
+
+    with pytest.raises(
+        OdysValidationError,
+        match=r"has time_in_state=1:30:00, which is not a whole number of timesteps \(1:00:00\)",
+    ):
+        state.validate_horizon(Horizon(timestep=timedelta(hours=1), number_of_steps=4))
+
+
+def test_flexible_load_initial_state_entity_is_its_load() -> None:
+    assert FlexibleLoadInitialState(load=ALWAYS_ON_LOAD, power=FLEXIBLE_POWER_WITHIN_LIMITS).entity == ALWAYS_ON_LOAD
+
+
+@pytest.mark.parametrize(
+    "load",
+    [ALWAYS_ON_LOAD, SWITCHABLE_LOAD, GENERATOR],
+    ids=["always_on", "switchable_without_minimum_times_or_costs", "not_a_flexible_load"],
+)
+def test_flexible_load_initial_state_is_optional_without_time_coupling(load: FlexibleLoad | Generator) -> None:
+    assert FlexibleLoadInitialState.required_for(load) is None
+
+
+@pytest.mark.parametrize(
+    ("update", "expected"),
+    [
+        ({"ramp_up": FLEXIBLE_RAMP}, "it has ramp_up set"),
+        ({"ramp_down": FLEXIBLE_RAMP}, "it has ramp_down set"),
+        ({"commitment": Commitment(min_up_time=MIN_TIME)}, "it has min_up_time set"),
+        (
+            {"ramp_up": FLEXIBLE_RAMP, "commitment": Commitment(startup_cost=5.0, shutdown_cost=5.0)},
+            "it has ramp_up, startup_cost, shutdown_cost set",
+        ),
+    ],
+    ids=["ramp_up", "ramp_down", "min_up_time", "ramp_and_costs"],
+)
+def test_flexible_load_initial_state_is_required_for_a_time_coupled_load(
+    update: dict[str, object],
+    expected: str,
+) -> None:
+    assert FlexibleLoadInitialState.required_for(ALWAYS_ON_LOAD.model_copy(update=update)) == expected
