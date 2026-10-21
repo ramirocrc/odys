@@ -325,6 +325,11 @@ classDiagram
         +power_injection(variables)
         +dispatch_data(solution)
     }
+    class CommitmentFormulation {
+        +create_variables(model) CommitmentVariables
+        +previous_status(variables)
+        +costs(variables, arrays)
+    }
     class PowerBalance
     class ObjectiveTermInputs {
         +objective: Objective
@@ -364,6 +369,7 @@ classDiagram
     VariableFormulation <|-- ChargingFormulation
     BatteryStorageFormulation *-- StorageFormulation
     ElectricVehicleFormulation *-- StorageFormulation
+    GeneratorFormulation *-- CommitmentFormulation
     ChargingFormulation --> ElectricVehicleFormulation
     Formulation --> ModelContext
     Formulation ..> EntityArrays : vectorize

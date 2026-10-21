@@ -110,14 +110,14 @@ def test_min_down_steps_converts_the_min_down_time_with_the_timestep() -> None:
     )
     states = _state_arrays([generator], ConditionSet())
 
-    assert states.min_down_steps.sel(generator="gen_with_min_down_time").item() == EXPLICIT_MIN_DOWN_STEPS
+    assert states.commitment.min_down_steps.sel(generator="gen_with_min_down_time").item() == EXPLICIT_MIN_DOWN_STEPS
 
 
 def test_min_up_and_down_steps_default_to_one_when_not_set(generator_without_shutdown_cost: Generator) -> None:
     states = _state_arrays([generator_without_shutdown_cost], ConditionSet())
 
-    assert states.min_up_steps.sel(generator="gen_without_shutdown_cost").item() == 1
-    assert states.min_down_steps.sel(generator="gen_without_shutdown_cost").item() == 1
+    assert states.commitment.min_up_steps.sel(generator="gen_without_shutdown_cost").item() == 1
+    assert states.commitment.min_down_steps.sel(generator="gen_without_shutdown_cost").item() == 1
 
 
 def test_state_arrays_read_the_initial_and_final_state(generator_with_shutdown_cost: Generator) -> None:
@@ -135,7 +135,7 @@ def test_state_arrays_read_the_initial_and_final_state(generator_with_shutdown_c
     selection = {"generator": "gen_with_shutdown_cost"}
 
     assert states.initial_power.sel(selection).item() == pytest.approx(INITIAL_POWER)
-    assert states.initial_steps_in_state.sel(selection).item() == STEPS_IN_STATE
+    assert states.commitment.initial_steps_in_state.sel(selection).item() == STEPS_IN_STATE
     assert states.final_power.sel(selection).item() == pytest.approx(FINAL_POWER)
 
 
@@ -146,7 +146,7 @@ def test_state_arrays_without_conditions_start_off_for_ever_with_no_final_power(
     selection = {"generator": "gen_without_shutdown_cost"}
 
     assert states.initial_power.sel(selection).item() == 0.0
-    assert states.initial_steps_in_state.sel(selection).item() == np.inf
+    assert states.commitment.initial_steps_in_state.sel(selection).item() == np.inf
     assert bool(states.final_power.sel(selection).isnull())
 
 
@@ -155,7 +155,7 @@ def test_state_arrays_without_time_in_state_count_unlimited_steps(generator_with
 
     states = _state_arrays([generator_with_shutdown_cost], condition_set)
 
-    assert states.initial_steps_in_state.sel(generator="gen_with_shutdown_cost").item() == np.inf
+    assert states.commitment.initial_steps_in_state.sel(generator="gen_with_shutdown_cost").item() == np.inf
 
 
 def test_unset_ramp_up_becomes_nan_in_a_float_array(generator_without_shutdown_cost: Generator) -> None:
