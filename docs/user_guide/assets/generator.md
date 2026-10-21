@@ -32,8 +32,8 @@ That's all a generator needs. The optimizer runs the CCGT whenever its 50 $/MWh 
 | `nominal_power` | `float`             | Yes      | -       | Rated output, above 0 (MW)                                    |
 | `variable_cost` | `float`             | Yes      | -       | Cost of each MWh produced, at least 0 (currency/MWh)          |
 | `min_power`     | `float`             | No       | `0.0`   | Lowest output while on (MW)                                   |
-| `ramp_up`       | `float \| None`     | No       | `None`  | Largest increase in output from one step to the next (MW/step) |
-| `ramp_down`     | `float \| None`     | No       | `None`  | Largest decrease in output from one step to the next (MW/step) |
+| `ramp_up`       | `float \| None`     | No       | `None`  | Fastest the output can rise (MW per hour)                     |
+| `ramp_down`     | `float \| None`     | No       | `None`  | Fastest the output can fall (MW per hour)                     |
 | `commitment`    | `Commitment`        | No       | `Commitment()` | How it switches on and off: minimum up and down times, start-up and shut-down costs |
 
 A `Commitment` holds the rules for switching on and off:
@@ -72,14 +72,14 @@ ccgt = Generator(
     nominal_power=100.0,
     variable_cost=50.0,
     min_power=30.0,
-    ramp_up=40.0,  # up by at most 40 MW per step
-    ramp_down=40.0,  # down by at most 40 MW per step
+    ramp_up=40.0,  # up by at most 40 MW per hour
+    ramp_down=40.0,  # down by at most 40 MW per hour
 )
 ```
 
-With these, going from 30 to 100 MW takes two steps. The limits are **per step**, not per hour: with 15-minute steps, `ramp_up=40.0` allows 40 MW every 15 minutes. Leave them at `None` for a unit that can follow any change, like a wind farm.
+With hourly steps, going from 30 to 100 MW takes two steps. The limits are **per hour**, whatever the step length: with 15-minute steps, `ramp_up=40.0` allows 10 MW per step. Leave them at `None` for a unit that can follow any change, like a wind farm.
 
-Ramps also count when the generator starts or stops, and at the first step, where they start from the generator's [initial state](#initial-and-final-state). So keep `ramp_up` at or above `min_power`, or the unit can't reach its minimum and never starts. See [G-7](../../formulation/generators.md#g-7).
+Ramps also count when the generator starts or stops, and at the first step, where they start from the generator's [initial state](#initial-and-final-state). So keep one step's worth of `ramp_up` at or above `min_power`, or the unit can't reach its minimum and never starts. See [G-7](../../formulation/generators.md#g-7).
 
 ## Minimum up and down time
 

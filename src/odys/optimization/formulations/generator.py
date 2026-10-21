@@ -162,8 +162,11 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
 
     @constraint
     def _get_max_ramp_up_constraint(self) -> ModelConstraint:
-        """Output rises by at most `ramp_up` per step, from the initial power at t=0 (unlimited when unset)."""
-        max_ramp_up = self.arrays.ramp_up.fillna(self.arrays.nominal_power)
+        """Output rises by at most `ramp_up` per hour times the step length, from the initial power at t=0.
+
+        Unlimited when unset.
+        """
+        max_ramp_up = (self.arrays.ramp_up * self.context.timestep_hours).fillna(self.arrays.nominal_power)
         ramp = self.variables.power - self._previous_power()
         return ModelConstraint(
             constraint=ramp.to_constraint("<=", max_ramp_up),
@@ -172,8 +175,11 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
 
     @constraint
     def _get_max_ramp_down_constraint(self) -> ModelConstraint:
-        """Output falls by at most `ramp_down` per step, from the initial power at t=0 (unlimited when unset)."""
-        max_ramp_down = self.arrays.ramp_down.fillna(self.arrays.nominal_power)
+        """Output falls by at most `ramp_down` per hour times the step length, from the initial power at t=0.
+
+        Unlimited when unset.
+        """
+        max_ramp_down = (self.arrays.ramp_down * self.context.timestep_hours).fillna(self.arrays.nominal_power)
         ramp = self._previous_power() - self.variables.power
         return ModelConstraint(
             constraint=ramp.to_constraint("<=", max_ramp_down),
