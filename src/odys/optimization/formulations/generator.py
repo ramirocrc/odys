@@ -60,6 +60,7 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
             AvailableCapacityProfile,
             generators,
             self.coordinates,
+            lambda profile: profile.values,
             default=np.inf,
         )
 

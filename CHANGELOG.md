@@ -7,8 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `FlexibleLoadProfile(load=..., lower_bound=..., upper_bound=...)`: the range a flexible load can consume in at each step, in MW, per scenario. Both bounds are at least 0, the lower one is at most the upper one, and they lie within the load's `min_load` and `max_load` when those are set; otherwise building it raises `OdysValidationError`.
+
 ### Changed
 
+- **Breaking:** a `FlexibleLoad` takes its range from a `FlexibleLoadProfile` in every scenario instead of a base `LoadProfile` adjusted by `max_increase` / `max_decrease`, which are removed. `LoadProfile` is for fixed loads only. `min_load` and `max_load` stay, as optional limits every scenario's bounds must fit in. The optimizer decides the consumption itself:
+
+    ```python
+    # Before
+    process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
+    LoadProfile(load=process, values=[30, 30, 30, 30])
+
+    # After
+    process = FlexibleLoad(name="process", value_of_consumption=60.0)
+    FlexibleLoadProfile(load=process, lower_bound=[20, 20, 20, 20], upper_bound=[50, 50, 50, 50])
+    ```
+
+- **Breaking:** `result.flexible_loads` has one series, `consumption`, replacing `load_adjustment` and `actual_load`. The linopy variable is `flexible_load_consumption` (it was `load_adjustment`), and the constraints are `flexible_load_lower_bound_constraint` and `flexible_load_upper_bound_constraint`.
+- **Breaking:** the objective values all of a flexible load's consumption at `value_of_consumption`, not only its adjustment from the base. The dispatch of a problem written with the same range is unchanged, but `objective_value` and each scenario's profit (which the CVaR term weighs) now include the value of the consumption the old base stood for.
 - Documentation: a simpler landing page, laid out like vuejs.org's. It has a hero with three buttons (Get started, `pip install odys`, GitHub), one figure of price scenarios going in and the battery schedule Odys commits to coming out, a "Built on" strip and six highlights. It follows the light/dark toggle and keeps the docs header and navigation tabs.
 - Documentation: the docs follow vuejs.org's colour scheme in both modes: a white or `#1a1a1a` background and header (the light mode header was violet), neutral greys for text, code blocks and the example charts' gridlines and axes, Vue's green as the dark mode accent. Links stay the brand violet.
 

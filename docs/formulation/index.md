@@ -63,7 +63,7 @@ Every model simplifies. These are the simplifications odys makes, each with the 
 - **Ramps are in MW per step**, and they apply at start-up and shut-down too ([G-7](generators.md#g-7), [#124](https://github.com/ramirocrc/odys/issues/124)).
 - **Final conditions are exact**, and energy left in a battery at the end is worth nothing. Without a final state, the plan empties the battery whenever that pays ([B-4](batteries.md#b-4), [G-10](generators.md#g-10), [#163](https://github.com/ramirocrc/odys/issues/163)).
 - **Chargers switch freely.** A vehicle can change chargers every step, at no cost ([CH-2](electric_vehicles.md#ch-2), [#160](https://github.com/ramirocrc/odys/issues/160)). `Charger.efficiency` isn't used ([CH-4](electric_vehicles.md#ch-4), [#155](https://github.com/ramirocrc/odys/issues/155)).
-- **A flexible load doesn't shift energy.** Demand cut now isn't made up later ([FL-1](flexible_loads.md#fl-1), [#162](https://github.com/ramirocrc/odys/issues/162)).
+- **A flexible load doesn't shift energy.** Energy not used now isn't used later ([FL-1](flexible_loads.md#fl-1), [#162](https://github.com/ramirocrc/odys/issues/162)).
 - **Each scenario sees its whole future.** Only trades on stage-fixed markets are decided before the future is known; generator commitment adapts to each scenario ([NA-1](non_anticipativity.md#na-1), [#153](https://github.com/ramirocrc/odys/issues/153)).
 - **Without a stage-fixed market or a risk term, scenarios are independent.** Solving them together gives the same plan as solving each one on its own ([Scenarios](scenarios.md#when-scenarios-are-solved-on-their-own)).
 - **No prices from the model.** odys reports no duals or marginal prices. In a MILP they only exist for the linear problem with the binaries fixed.
@@ -75,7 +75,7 @@ Some properties hold not because a constraint enforces them, but because `Energy
 - **Probabilities add up to 1**, and scenario names are unique (`ScenarioSet`).
 - **Profiles fit the run.** Every profile has one value per step, references an asset or market of the system, and each market has a price in every scenario (`EnergySystem`).
 - **Available capacity never exceeds the rating** (`AvailableCapacityProfile`).
-- **A flexible load never goes negative.** The base stays between `min_load` and `max_load`, and is at least `max_decrease` when there's no `min_load` (`LoadProfile`). The base itself can still be negative ([#148](https://github.com/ramirocrc/odys/issues/148)).
+- **A flexible load never goes negative.** Its lower bound is at least 0 and at most its upper bound, and both stay between `min_load` and `max_load` when they're set (`FlexibleLoadProfile`).
 - **Durations are whole steps.** Minimum up and down times, a generator's time in its initial state, and trip departures and returns ([Notation](notation.md#time-and-boundary-conventions)). Trips end within the horizon (`ElectricVehicle`).
 - **Trips don't overlap** (`ElectricVehicle`).
 - **A trip that departs at the start fits in the initial charge**, both its minimum charge and its energy above $\underline{\mathrm{soc}}_e$. [EV-3](electric_vehicles.md#ev-3) has no row for it (`ElectricVehicleInitialState`).
@@ -102,9 +102,9 @@ where $\Pi_s$ is the [profit of scenario $s$](objective.md#profit-per-scenario),
 - **Batteries:** [B-1](batteries.md#b-1) charging, [B-2](batteries.md#b-2) discharging, [B-3](batteries.md#b-3) state of charge, [B-4](batteries.md#b-4) final charge, [B-5](batteries.md#b-5) charge limits, [B-6](batteries.md#b-6) at most full, [B-7](batteries.md#b-7) net power.
 - **Electric vehicles:** [EV-1](electric_vehicles.md#ev-1) trip energy, [EV-2](electric_vehicles.md#ev-2) no charging on the road, [EV-3](electric_vehicles.md#ev-3) charge before a trip.
 - **Chargers:** [CH-1](electric_vehicles.md#ch-1) one vehicle per charger, [CH-2](electric_vehicles.md#ch-2) one charger per vehicle, [CH-3](electric_vehicles.md#ch-3) no plugging in while driving, [CH-4](electric_vehicles.md#ch-4) charger rating.
-- **Flexible loads:** [FL-1](flexible_loads.md#fl-1) demand moves within its range.
+- **Flexible loads:** [FL-1](flexible_loads.md#fl-1) demand stays within its range.
 - **Risk:** [CV-1](objective.md#cv-1) shortfall below the threshold, only with a `CVaRTerm`.
-- **Domains:** $p$, $p^{ch}$, $p^{dis}$, $p^{buy}$, $p^{sell}$, $\mathrm{soc}$ and $\xi_s$ are at least 0; $p^{adj}$, $p^{net}$ and $\zeta$ can take either sign; $u$, $y^{start}$, $y^{stop}$, $z$, $y^{trade}$ and $a$ are 0 or 1.
+- **Domains:** $p$, $p^{ch}$, $p^{dis}$, $p^{buy}$, $p^{sell}$, $d$, $\mathrm{soc}$ and $\xi_s$ are at least 0; $p^{net}$ and $\zeta$ can take either sign; $u$, $y^{start}$, $y^{stop}$, $z$, $y^{trade}$ and $a$ are 0 or 1.
 
 Before the equations, a few words on how we write them. See [Notation and conventions](notation.md).
 

@@ -458,8 +458,8 @@ def generate_make_or_buy() -> None:
 def generate_demand_response() -> None:
     """Two-panel chart: load consumption + market prices."""
     result = run_demand_response()
-    actual_load = result.flexible_loads.actual_load
-    steps = list(range(len(actual_load)))
+    consumption = result.flexible_loads.consumption
+    steps = list(range(len(consumption)))
 
     market_prices = [80, 75, 72, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 72, 80, 90, 85, 80, 75, 72]
 
@@ -472,24 +472,25 @@ def generate_demand_response() -> None:
         row_heights=[0.5, 0.5],
     )
 
-    fig.add_trace(
-        go.Scatter(
-            x=steps,
-            y=[60] * len(steps),
-            mode="lines",
-            name="Base Load (60 MW)",
-            line=dict(color=LOAD_COLOR, width=2, dash="dash"),
-        ),
-        row=1,
-        col=1,
-    )
+    for bound_name, bound in (("Lower Bound (40 MW)", 40), ("Upper Bound (100 MW)", 100)):
+        fig.add_trace(
+            go.Scatter(
+                x=steps,
+                y=[bound] * len(steps),
+                mode="lines",
+                name=bound_name,
+                line=dict(color=LOAD_COLOR, width=2, dash="dash"),
+            ),
+            row=1,
+            col=1,
+        )
 
     fig.add_trace(
         go.Scatter(
             x=steps,
-            y=actual_load.values,
+            y=consumption.values,
             mode="lines+markers",
-            name="Actual Consumption",
+            name="Consumption",
             line=dict(color=FLEXIBLE_LOAD_COLOR, width=2),
             marker=dict(size=6),
         ),
@@ -530,7 +531,7 @@ def generate_demand_response() -> None:
 
     fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=1, col=1)
     fig.update_xaxes(title="Time Step", range=[-0.5, 23.5], row=2, col=1)
-    fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 100])
+    fig.update_yaxes(title="Power (MW)", row=1, col=1, range=[0, 110])
     fig.update_yaxes(title="Price ($/MWh)", row=2, col=1)
 
     _save_figure(fig, "demand_response")

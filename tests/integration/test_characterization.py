@@ -23,6 +23,7 @@ from odys import (
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
+    FlexibleLoadProfile,
     Generator,
     GeneratorInitialState,
     LoadProfile,
@@ -47,7 +48,8 @@ COMMITMENT_LOAD = [45.0, 100.0, 100.0, 20.0, 20.0, 100.0, 100.0, 100.0, 20.0, 10
 BASELOAD_CAPACITY = [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 70.0, 100.0, 100.0, 100.0, 100.0]
 STORAGE_LOAD = [30.0, 30.0, 50.0, 70.0, 70.0, 40.0, 30.0, 30.0]
 STORAGE_PRICES = [20.0, 15.0, 40.0, 90.0, 110.0, 60.0, 25.0, 20.0]
-FLEXIBLE_BASE = [20.0, 20.0, 25.0, 25.0, 25.0, 25.0, 20.0, 20.0]
+FLEXIBLE_LOWER_BOUND = [5.0, 5.0, 10.0, 10.0, 10.0, 10.0, 5.0, 5.0]
+FLEXIBLE_UPPER_BOUND = [30.0, 30.0, 35.0, 35.0, 35.0, 35.0, 30.0, 30.0]
 
 RECORDED_EXAMPLE_OBJECTIVES = {
     "merit_order_dispatch": -49_500.0,
@@ -56,7 +58,9 @@ RECORDED_EXAMPLE_OBJECTIVES = {
     # Re-recorded when the example market started selling too, and its prices equal to the ccgt cost (50) became 52.
     "make_or_buy": -68_680.0,
     # Re-recorded when the example prices equal to the value of consumption (70) became 72, removing a tie.
-    "demand_response": -78_840.0,
+    # Re-recorded when flexible loads started valuing all of their consumption, not only the adjustment from a
+    # base profile: the dispatch is unchanged, and the old base (60 MW for 24 h at 70/MWh, 100,800) is now counted.
+    "demand_response": 21_960.0,
     # Re-recorded when ev_2 and ev_3 in the example got V2G discharge, so the vans compete for the chargers.
     "depot_charging": 9.99,
     # Re-recorded when the CVaR example's day-ahead and intraday prices started moving together
@@ -66,7 +70,10 @@ RECORDED_EXAMPLE_OBJECTIVES = {
 }
 RECORDED_UNIT_COMMITMENT_OBJECTIVE = -46_960.0
 # Re-recorded when self-discharge started applying at the first step (it was skipped there before).
-RECORDED_STORAGE_MARKET_OBJECTIVE = -12_080.181292386771
+# Re-recorded when flexible loads started valuing all of their consumption, not only the adjustment from a base
+# profile: the dispatch is unchanged, and the old base (180 MW summed over the steps, 0.5 h each, at 50/MWh, 4,500)
+# is now counted: -12,080.181292386771 + 4,500.
+RECORDED_STORAGE_MARKET_OBJECTIVE = -7_580.181292386771
 
 
 def _run_example(module_name: str, function_name: str) -> object:
@@ -170,7 +177,7 @@ def _storage_and_market_system() -> EnergySystem:
             self_discharge_rate=0.01,
         ),
     )
-    flexible = FlexibleLoad(name="process", max_increase=10.0, max_decrease=15.0, value_of_consumption=50.0)
+    flexible = FlexibleLoad(name="process", value_of_consumption=50.0)
     market = EnergyMarket(
         name="grid",
         max_trading_volume_per_step=150.0,
@@ -185,7 +192,7 @@ def _storage_and_market_system() -> EnergySystem:
         scenarios=Scenario(
             profiles=(
                 LoadProfile(load=site, values=STORAGE_LOAD),
-                LoadProfile(load=flexible, values=FLEXIBLE_BASE),
+                FlexibleLoadProfile(load=flexible, lower_bound=FLEXIBLE_LOWER_BOUND, upper_bound=FLEXIBLE_UPPER_BOUND),
                 PriceProfile(market=market, values=STORAGE_PRICES),
             ),
         ),

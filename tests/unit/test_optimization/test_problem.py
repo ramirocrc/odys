@@ -16,7 +16,7 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.exceptions import OdysError, OdysValidationError
-from odys.domain.profiles import LoadProfile, PriceProfile
+from odys.domain.profiles import FlexibleLoadProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations import FORMULATIONS, validate_entities_supported
@@ -35,10 +35,11 @@ from odys.parameters.dimensions import ModelDimension
 
 NUMBER_OF_STEPS = 2
 DEMAND = [10.0, 20.0]
-FLEXIBLE_BASE = [40.0, 50.0]
+FLEXIBLE_LOWER_BOUND = [40.0, 50.0]
+FLEXIBLE_UPPER_BOUND = [60.0, 70.0]
 GENERATOR = Generator(name="gen", nominal_power=500.0, variable_cost=1.0)
 FIXED_LOAD = FixedLoad(name="load")
-FLEXIBLE_LOAD = FlexibleLoad(name="flex", max_increase=5.0, max_decrease=5.0, value_of_consumption=40.0)
+FLEXIBLE_LOAD = FlexibleLoad(name="flex", value_of_consumption=40.0)
 BATTERY = Battery(capacity=10.0, max_charge_power=5.0, max_discharge_power=5.0)
 SOC_START = 0.5
 STORAGE = BatteryStorage(name="storage", battery=BATTERY)
@@ -58,17 +59,18 @@ class _UnsupportedHeatPump(Asset):
     """An asset type no formulation models."""
 
 
+def _load_profile(load: FixedLoad | FlexibleLoad) -> LoadProfile | FlexibleLoadProfile:
+    if isinstance(load, FixedLoad):
+        return LoadProfile(load=load, values=DEMAND)
+    return FlexibleLoadProfile(load=load, lower_bound=FLEXIBLE_LOWER_BOUND, upper_bound=FLEXIBLE_UPPER_BOUND)
+
+
 def _problem(*loads: FixedLoad | FlexibleLoad) -> OptimizationProblem:
     return EnergySystem(
         portfolio=AssetPortfolio([GENERATOR, *loads]),
         timestep=timedelta(hours=1),
         number_of_steps=NUMBER_OF_STEPS,
-        scenarios=Scenario(
-            profiles=tuple(
-                LoadProfile(load=load, values=DEMAND if isinstance(load, FixedLoad) else FLEXIBLE_BASE)
-                for load in loads
-            ),
-        ),
+        scenarios=Scenario(profiles=tuple(_load_profile(load) for load in loads)),
     ).build_problem()
 
 
@@ -126,7 +128,7 @@ def _problem_with_one_entity_of_each_type() -> OptimizationProblem:
         scenarios=Scenario(
             profiles=(
                 LoadProfile(load=FIXED_LOAD, values=DEMAND),
-                LoadProfile(load=FLEXIBLE_LOAD, values=FLEXIBLE_BASE),
+                _load_profile(FLEXIBLE_LOAD),
                 *(PriceProfile(market=market, values=DEMAND) for market in markets),
             ),
         ),

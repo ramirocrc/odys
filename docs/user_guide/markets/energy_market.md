@@ -104,7 +104,7 @@ scenario = Scenario(
 )
 ```
 
-The same price applies to buying and selling. Prices can be negative: then selling costs money and buying earns it, so the optimizer may buy just to get paid, as long as something on the site can absorb the power: a battery charging, a flexible load raising its demand, or a generator turning down. See the [objective contribution](../../formulation/markets.md#objective-contribution).
+The same price applies to buying and selling. Prices can be negative: then selling costs money and buying earns it, so the optimizer may buy just to get paid, as long as something on the site can absorb the power: a battery charging, a flexible load running higher, or a generator turning down. See the [objective contribution](../../formulation/markets.md#objective-contribution).
 
 ## Results
 
@@ -119,6 +119,7 @@ from odys import (
     Battery,
     EnergySystem,
     FlexibleLoad,
+    FlexibleLoadProfile,
     Generator,
     BatteryStorage,
     StorageInitialState,
@@ -126,7 +127,7 @@ from odys import (
 
 ccgt = Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0)
 wind = Generator(name="wind", nominal_power=80.0, variable_cost=0.0)
-process = FlexibleLoad(name="process", max_increase=20.0, max_decrease=10.0, value_of_consumption=60.0)
+process = FlexibleLoad(name="process", value_of_consumption=60.0)
 bess = BatteryStorage(
     name="bess",
     battery=Battery(
@@ -144,7 +145,7 @@ energy_system = EnergySystem(
     scenarios=Scenario(
         profiles=(
             LoadProfile(load=factory, values=[60, 90, 40, 70]),
-            LoadProfile(load=process, values=[30, 30, 30, 30]),
+            FlexibleLoadProfile(load=process, lower_bound=[20, 20, 20, 20], upper_bound=[50, 50, 50, 50]),
             AvailableCapacityProfile(generator=wind, values=[40, 10, 60, 30]),
             PriceProfile(market=day_ahead, values=[40, 75, 30, 65]),
         ),
@@ -169,8 +170,8 @@ time market
 
 The price now drives every asset. Print `result.generators`, `result.battery_storages` and `result.flexible_loads` the same way to see it:
 
-- **Steps 0 and 2, at 40 and 30 $/MWh:** buying is cheaper than the CCGT's 50 $/MWh, so the CCGT stays off and the site buys. The battery charges, and the process takes its full 20 MW extra, because power costs less than the 60 $/MWh its consumption is worth.
-- **Steps 1 and 3, at 75 and 65 $/MWh:** the CCGT runs at full output, the battery discharges at 25 MW, and the process cuts 10 MW, because the power is worth more on the market. The surplus is sold.
+- **Steps 0 and 2, at 40 and 30 $/MWh:** buying is cheaper than the CCGT's 50 $/MWh, so the CCGT stays off and the site buys. The battery charges, and the process runs at its upper bound, 50 MW, because power costs less than the 60 $/MWh its consumption is worth.
+- **Steps 1 and 3, at 75 and 65 $/MWh:** the CCGT runs at full output, the battery discharges at 25 MW, and the process drops to its lower bound, 20 MW, because the power is worth more on the market. The surplus is sold.
 
 The battery only tops up at step 0: half full, it already holds nearly enough for step 1. It ends the day empty, because nothing asks it to keep a charge (see [State of charge](../assets/battery.md#state-of-charge)).
 

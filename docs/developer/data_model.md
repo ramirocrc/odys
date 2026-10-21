@@ -65,8 +65,8 @@ classDiagram
     }
     class FixedLoad
     class FlexibleLoad {
-        +max_increase
-        +max_decrease
+        +min_load
+        +max_load
         +value_of_consumption
     }
     class EnergyMarket {
@@ -99,11 +99,21 @@ classDiagram
         <<abstract>>
         +entity_types: ClassVar
         +required: ClassVar
-        +values: tuple~float~
         +entity: EnergyEntity
+        +number_of_steps: int
+        +operating_values: tuple~float~
+    }
+    class SeriesProfile {
+        <<abstract>>
+        +values: tuple~float~
     }
     class LoadProfile {
-        +load: FixedLoad or FlexibleLoad
+        +load: FixedLoad
+    }
+    class FlexibleLoadProfile {
+        +load: FlexibleLoad
+        +lower_bound: tuple~float~
+        +upper_bound: tuple~float~
     }
     class AvailableCapacityProfile {
         +generator: Generator
@@ -192,11 +202,13 @@ classDiagram
     ElectricVehicle *-- "0..*" Trip
     EnergyMarket --> AllowedTradeDirection
     AssetPortfolio o-- "0..*" Asset
-    Profile <|-- LoadProfile
-    Profile <|-- AvailableCapacityProfile
-    Profile <|-- PriceProfile
+    Profile <|-- SeriesProfile
+    Profile <|-- FlexibleLoadProfile
+    SeriesProfile <|-- LoadProfile
+    SeriesProfile <|-- AvailableCapacityProfile
+    SeriesProfile <|-- PriceProfile
     LoadProfile --> FixedLoad
-    LoadProfile --> FlexibleLoad
+    FlexibleLoadProfile --> FlexibleLoad
     AvailableCapacityProfile --> Generator
     PriceProfile --> EnergyMarket
     Scenario *-- "0..*" Profile
@@ -237,7 +249,7 @@ classDiagram
         +timestep_hours: float
         +probabilities
         +variable_coords(coordinates)
-        +profiles(kind, entities, coordinates)
+        +profiles(kind, entities, coordinates, value)
         +conditions(kind, entities, coordinates, value)
     }
     class Coordinates {
@@ -422,8 +434,7 @@ classDiagram
         +net_volume
     }
     class FlexibleLoadDispatch {
-        +load_adjustment
-        +actual_load
+        +consumption
     }
     class OptimalDispatchResults {
         +solver_status: SolveStatus

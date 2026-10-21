@@ -11,7 +11,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.profiles import LoadProfile, PriceProfile
+from odys.domain.profiles import FlexibleLoadProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 
@@ -25,8 +25,8 @@ LOAD_PROFILE = [50.0, 100.0]
 MARKET_VOLUME = 200.0
 MARKET_PRICES = [30.0, 40.0]
 
-FLEXIBLE_BASE_PROFILE = [50.0, 50.0]
-FLEXIBLE_MAX_CHANGE = 10.0
+FLEXIBLE_LOWER_BOUND = [40.0, 40.0]
+FLEXIBLE_UPPER_BOUND = [60.0, 60.0]
 VALUE_OF_CONSUMPTION = 30.0
 
 
@@ -73,24 +73,23 @@ def market_serving_fixed_load() -> TimestepCase:
 
 
 def flexible_load_increasing_consumption() -> TimestepCase:
-    flexible_load = FlexibleLoad(
-        name="flex",
-        max_increase=FLEXIBLE_MAX_CHANGE,
-        max_decrease=FLEXIBLE_MAX_CHANGE,
-        value_of_consumption=VALUE_OF_CONSUMPTION,
+    flexible_load = FlexibleLoad(name="flex", value_of_consumption=VALUE_OF_CONSUMPTION)
+    flexible_range = FlexibleLoadProfile(
+        load=flexible_load,
+        lower_bound=FLEXIBLE_LOWER_BOUND,
+        upper_bound=FLEXIBLE_UPPER_BOUND,
     )
     energy_system = EnergySystem(
         portfolio=AssetPortfolio(
             [Generator(name="gen", nominal_power=GENERATOR_POWER, variable_cost=GENERATOR_COST), flexible_load],
         ),
         timestep=HALF_HOUR,
-        number_of_steps=len(FLEXIBLE_BASE_PROFILE),
-        scenarios=Scenario(profiles=(LoadProfile(load=flexible_load, values=FLEXIBLE_BASE_PROFILE),)),
+        number_of_steps=len(FLEXIBLE_UPPER_BOUND),
+        scenarios=Scenario(profiles=(flexible_range,)),
     )
     expected_objective = sum(
-        HALF_HOUR_IN_HOURS
-        * (FLEXIBLE_MAX_CHANGE * VALUE_OF_CONSUMPTION - (base + FLEXIBLE_MAX_CHANGE) * GENERATOR_COST)
-        for base in FLEXIBLE_BASE_PROFILE
+        HALF_HOUR_IN_HOURS * upper_bound * (VALUE_OF_CONSUMPTION - GENERATOR_COST)
+        for upper_bound in FLEXIBLE_UPPER_BOUND
     )
     return TimestepCase(energy_system=energy_system, expected_objective=expected_objective)
 

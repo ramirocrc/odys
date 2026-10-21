@@ -49,7 +49,7 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
         """
         super().__init__(markets, context)
         self.arrays = vectorize(MarketArrays, markets, self.coordinates)
-        self.prices = context.profiles(PriceProfile, markets, self.coordinates)
+        self.prices = context.profiles(PriceProfile, markets, self.coordinates, lambda profile: profile.values)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:

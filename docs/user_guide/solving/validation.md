@@ -15,9 +15,9 @@ Each check runs as early as it can: as soon as the objects it needs exist.
 **An object**, when you create it. Rules between the fields of one object raise an `OdysValidationError`:
 
 - a battery's `soc_min` is below its `soc_max`;
-- a flexible load has a lower and an upper limit, and its `min_load` is at most its `max_load`;
+- a flexible load's `min_load` is at most its `max_load`;
 - a trip ends after it starts, and a vehicle's trips don't overlap;
-- a profile's values fit the asset it references: an available capacity within the generator's `nominal_power`, a flexible load's base within its limits;
+- a profile's values fit the asset it references: an available capacity within the generator's `nominal_power`, a flexible load's range at least 0, with its lower bound at most its upper bound, and within its `min_load` and `max_load`;
 - an initial or final state fits its asset: a generator's `power` is 0 or between `min_power` and `nominal_power`, a battery's `soc` within its limits, and a trip that departs at the start fits in the starting charge;
 - a `GeneratorInitialState` has a `time_in_state` when the matching minimum time needs one;
 - an `Objective` has a `ProfitTerm`, and at most one term of each type.
@@ -28,7 +28,7 @@ Each check runs as early as it can: as soon as the objects it needs exist.
 
 - scenario probabilities add up to 1, and scenario names are unique;
 - every profile references an asset of the portfolio or one of the markets, and has one value per step;
-- every load has a `LoadProfile`, and every market a `PriceProfile`, in every scenario;
+- every fixed load has a `LoadProfile`, every flexible load a `FlexibleLoadProfile`, and every market a `PriceProfile`, in every scenario;
 - every condition references an asset of the portfolio, with at most one of each type per asset;
 - every storage and vehicle has an initial state, and so does every generator whose start matters (ramp limits, minimum up or down times, start-up or shut-down costs);
 - every duration is a whole number of steps, and every trip lies within the horizon;
