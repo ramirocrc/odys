@@ -7,6 +7,7 @@ import pytest
 from odys.domain.conditions import (
     ConditionSet,
     ElectricVehicleInitialState,
+    FlexibleLoadInitialState,
     GeneratorFinalState,
     GeneratorInitialState,
     StorageInitialState,
@@ -260,6 +261,21 @@ class TestValidateRequiredInitialConditionsPresent:
         conditions = ConditionSet(initial=(GeneratorInitialState(generator=ramping, power=INITIAL_POWER),))
 
         validate_required_initial_conditions_present(conditions, AssetPortfolio([ramping, load]))
+
+    def test_ramping_flexible_load_without_initial_state_is_rejected(self, flexible_load: FlexibleLoad) -> None:
+        ramping = flexible_load.model_copy(update={"ramp_up": RAMP_UP})
+
+        with pytest.raises(
+            OdysValidationError,
+            match="FlexibleLoad 'flex_load1' needs a FlexibleLoadInitialState because it has ramp_up set",
+        ):
+            validate_required_initial_conditions_present(ConditionSet(), AssetPortfolio([ramping]))
+
+    def test_switchable_flexible_load_with_initial_state_is_valid(self, flexible_load: FlexibleLoad) -> None:
+        switchable = flexible_load.model_copy(update={"commitment": Commitment(startup_cost=VALUE_OF_CONSUMPTION)})
+        conditions = ConditionSet(initial=(FlexibleLoadInitialState(load=switchable, power=0.0),))
+
+        validate_required_initial_conditions_present(conditions, AssetPortfolio([switchable]))
 
 
 class TestValidateConditionsFitTheHorizon:

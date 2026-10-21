@@ -9,8 +9,9 @@ from typing import Self
 from pydantic import Field, model_validator
 
 from odys.domain.entities.base import Asset
+from odys.domain.entities.commitment import Commitment
 from odys.domain.exceptions import OdysValidationError
-from odys.domain.horizon import OperatingConditions
+from odys.domain.horizon import Horizon, OperatingConditions
 
 
 class FlexibleLoad(Asset):
@@ -33,28 +34,58 @@ class FlexibleLoad(Asset):
     runs at its upper bound. When the marginal supply cost exceeds
     value_of_consumption, it runs at its lower bound.
 
-    The optional min_load and max_load are the load's physical limits: every
-    scenario's range must lie within them.
+    The optional min_load and max_load are the load's physical limits while it
+    runs: every scenario's range must lie within them.
+
+    An industrial process may also change only gradually (ramp_up, ramp_down)
+    and be switched off (commitment). Without a commitment the load always runs
+    within its range. With one, it is either off, consuming 0 MW, or running
+    within its range, and its commitment sets the minimum up and down times
+    and the cost of each start and stop. The ramp limits apply between two
+    running steps: a start can land anywhere in the range, and a stop drops
+    to 0.
     """
 
     min_load: float | None = Field(
         default=None,
         strict=True,
         ge=0,
-        description="Least the load can ever consume, in MW. Every lower bound must be at least this.",
+        description="Least the load can consume while running, in MW. Every lower bound must be at least this.",
     )
 
     max_load: float | None = Field(
         default=None,
         strict=True,
         gt=0,
-        description="Most the load can ever consume, in MW. Every upper bound must be at most this.",
+        description="Most the load can consume while running, in MW. Every upper bound must be at most this.",
     )
 
     value_of_consumption: float = Field(
         strict=True,
         ge=0,
         description="Economic value of consuming electricity in currency per MWh.",
+    )
+
+    ramp_up: float | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Largest increase in consumption between two running steps, in MW per hour. None means no limit.",
+    )
+
+    ramp_down: float | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Largest decrease in consumption between two running steps, in MW per hour. None means no limit.",
+    )
+
+    commitment: Commitment | None = Field(
+        default=None,
+        description=(
+            "How the load is switched on and off. None means it always runs within its range; "
+            "with a commitment it can be off, consuming 0 MW."
+        ),
     )
 
     @model_validator(mode="after")
@@ -65,7 +96,19 @@ class FlexibleLoad(Asset):
         return self
 
     def min_demand(self, conditions: OperatingConditions) -> tuple[float, ...]:
-        """Return the lower bound of the load's range when it has a profile, in MW."""
-        if conditions.profile_values is not None:
+        """Return the lower bound of the load's range when it has a profile and can't be switched off, in MW."""
+        if conditions.profile_values is not None and self.commitment is None:
             return conditions.profile_values
         return super().min_demand(conditions)
+
+    def validate_horizon(self, horizon: Horizon) -> None:
+        """Check that the minimum up and down times of the load's commitment span a whole number of timesteps.
+
+        Args:
+            horizon: The time grid of the optimization.
+
+        Raises:
+            OdysValidationError: If a minimum time is not a whole number of timesteps.
+        """
+        if self.commitment is not None:
+            self.commitment.validate_horizon(horizon, f"Flexible load '{self.name}'")
