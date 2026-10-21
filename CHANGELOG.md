@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-22
+
 ### Added
 
 - `Commitment`, exported from `odys`: minimum up and down times and start-up and shut-down costs, held by `Generator.commitment`.
