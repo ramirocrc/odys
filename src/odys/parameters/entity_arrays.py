@@ -35,10 +35,15 @@ class GeneratorArrays(EntityArrays):
     nominal_power: xr.DataArray
     variable_cost: xr.DataArray
     min_power: xr.DataArray
-    startup_cost: xr.DataArray
-    shutdown_cost: xr.DataArray
     ramp_up: xr.DataArray
     ramp_down: xr.DataArray
+
+
+class CommitmentArrays(EntityArrays):
+    """Commitment parameters along an entity dimension: the cost of each start and stop."""
+
+    startup_cost: xr.DataArray
+    shutdown_cost: xr.DataArray
 
 
 class GeneratorStateArrays(EntityArrays):
@@ -142,8 +147,8 @@ def generator_state_arrays(
         return xr.DataArray(values, dims=coordinates.dimension, coords=coordinates.dimension_coordinates_map)
 
     return GeneratorStateArrays(
-        min_up_steps=along_generators([steps(generator.min_up_time) for generator in generators]),
-        min_down_steps=along_generators([steps(generator.min_down_time) for generator in generators]),
+        min_up_steps=along_generators([steps(generator.commitment.min_up_time) for generator in generators]),
+        min_down_steps=along_generators([steps(generator.commitment.min_down_time) for generator in generators]),
         initial_power=context.conditions(
             GeneratorInitialState,
             generators,

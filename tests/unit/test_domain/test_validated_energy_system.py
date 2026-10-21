@@ -14,6 +14,7 @@ from odys.domain.conditions import GeneratorFinalState, GeneratorInitialState, S
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
@@ -602,7 +603,7 @@ def test_energy_system_rejects_a_min_up_time_that_is_not_a_whole_number_of_steps
     valid_demand_profile: list[float],
     testing_load: FixedLoad,
 ) -> None:
-    generator = testing_generator.model_copy(update={"min_up_time": timedelta(minutes=90)})
+    generator = testing_generator.model_copy(update={"commitment": Commitment(min_up_time=timedelta(minutes=90))})
 
     with pytest.raises(OdysValidationError, match="has min_up_time=1:30:00, which is not a whole number of timesteps"):
         EnergySystem(

@@ -6,6 +6,7 @@ from linopy.testing import assert_linequal
 from odys.domain.conditions import GeneratorInitialState, StorageFinalState, StorageInitialState
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -53,8 +54,7 @@ def generator_with_shutdown_cost() -> Generator:
         name="gen_with_shutdown_cost",
         nominal_power=STANDARD_NOMINAL_POWER,
         variable_cost=STANDARD_VARIABLE_COST,
-        startup_cost=STANDARD_STARTUP_COST,
-        shutdown_cost=STANDARD_SHUTDOWN_COST,
+        commitment=Commitment(startup_cost=STANDARD_STARTUP_COST, shutdown_cost=STANDARD_SHUTDOWN_COST),
     )
 
 
@@ -64,7 +64,7 @@ def generator_without_shutdown_cost() -> Generator:
         name="gen_without_shutdown_cost",
         nominal_power=STANDARD_NOMINAL_POWER,
         variable_cost=STANDARD_VARIABLE_COST,
-        startup_cost=STANDARD_STARTUP_COST,
+        commitment=Commitment(startup_cost=STANDARD_STARTUP_COST),
     )
 
 
@@ -141,8 +141,8 @@ class TestPerScenarioProfitDegradationCost:
         timestep_hours = TIMESTEP / timedelta(hours=1)
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
-            + generators.variables.startup * generators.arrays.startup_cost
-            + generators.variables.shutdown * generators.arrays.shutdown_cost
+            + generators.variables.startup * generators.commitment_arrays.startup_cost
+            + generators.variables.shutdown * generators.commitment_arrays.shutdown_cost
         ).sum([ModelDimension.Time, GeneratorFormulation.dimension]) - (
             (storages.variables.power_in + storages.variables.power_out)
             * timestep_hours
@@ -160,8 +160,8 @@ class TestPerScenarioProfitDegradationCost:
         assert generators is not None
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
-            + generators.variables.startup * generators.arrays.startup_cost
-            + generators.variables.shutdown * generators.arrays.shutdown_cost
+            + generators.variables.startup * generators.commitment_arrays.startup_cost
+            + generators.variables.shutdown * generators.commitment_arrays.shutdown_cost
         ).sum([ModelDimension.Time, GeneratorFormulation.dimension])
 
         assert_linequal(actual_profit, expected_profit)
@@ -187,8 +187,8 @@ class TestPerScenarioProfitShutdownCost:
         assert generators is not None
         expected_profit = -(
             generators.variables.power * generators.arrays.variable_cost
-            + generators.variables.startup * generators.arrays.startup_cost
-            + generators.variables.shutdown * generators.arrays.shutdown_cost
+            + generators.variables.startup * generators.commitment_arrays.startup_cost
+            + generators.variables.shutdown * generators.commitment_arrays.shutdown_cost
         ).sum([ModelDimension.Time, GeneratorFormulation.dimension])
 
         assert_linequal(actual_profit, expected_profit)

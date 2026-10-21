@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Commitment`, exported from `odys`: minimum up and down times and start-up and shut-down costs, held by `Generator.commitment`.
 - `FlexibleLoadProfile(load=..., lower_bound=..., upper_bound=...)`: the range a flexible load can consume in at each step, in MW, per scenario. Both bounds are at least 0, the lower one is at most the upper one, and they lie within the load's `min_load` and `max_load` when those are set; otherwise building it raises `OdysValidationError`.
 
 ### Changed
@@ -23,6 +24,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     # After
     process = FlexibleLoad(name="process", value_of_consumption=60.0)
     FlexibleLoadProfile(load=process, lower_bound=[20, 20, 20, 20], upper_bound=[50, 50, 50, 50])
+    ```
+
+- **Breaking:** a generator's minimum up and down times and its start-up and shut-down costs move into a `Commitment`, a value object for how an asset switches on and off. `Generator.commitment` defaults to `Commitment()`, which switches freely at no cost:
+
+    ```python
+    # Before
+    Generator(name="ccgt", nominal_power=100.0, variable_cost=50.0, min_up_time=timedelta(hours=4), startup_cost=500.0)
+
+    # After
+    Generator(
+        name="ccgt",
+        nominal_power=100.0,
+        variable_cost=50.0,
+        commitment=Commitment(min_up_time=timedelta(hours=4), startup_cost=500.0),
+    )
     ```
 
 - **Breaking:** `result.flexible_loads` has one series, `consumption`, replacing `load_adjustment` and `actual_load`. The linopy variable is `flexible_load_consumption` (it was `load_adjustment`), and the constraints are `flexible_load_lower_bound_constraint` and `flexible_load_upper_bound_constraint`.

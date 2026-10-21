@@ -11,6 +11,7 @@ import pytest
 
 from odys import (
     AssetPortfolio,
+    Commitment,
     EnergyMarket,
     EnergySystem,
     Generator,
@@ -52,12 +53,13 @@ REVENUE_PER_STEP_AT_NOMINAL = (HIGH_PRICE - VARIABLE_COST) * NOMINAL_POWER
 MARKET = EnergyMarket(name="market", max_trading_volume_per_step=1_000.0)
 
 
-def _generator(**parameters: float | timedelta) -> Generator:
+def _generator(commitment: Commitment | None = None, **parameters: float) -> Generator:
     return Generator.model_validate({
         "name": "gen",
         "nominal_power": NOMINAL_POWER,
         "variable_cost": VARIABLE_COST,
         "min_power": MIN_POWER,
+        "commitment": commitment or Commitment(),
         **parameters,
     })
 
@@ -91,7 +93,7 @@ def test_startup_cost_at_t0_is_paid_only_by_a_generator_that_was_off(
     startup_at_t0: float,
     startup_cost_paid: float,
 ) -> None:
-    generator = _generator(startup_cost=STARTUP_COST)
+    generator = _generator(Commitment(startup_cost=STARTUP_COST))
 
     result = _optimize(generator, HIGH_PRICES, GeneratorInitialState(generator=generator, power=initial_power))
 
@@ -102,7 +104,7 @@ def test_startup_cost_at_t0_is_paid_only_by_a_generator_that_was_off(
 
 
 def test_generator_that_was_on_pays_the_shutdown_cost_when_it_stops_at_t0() -> None:
-    generator = _generator(shutdown_cost=SHUTDOWN_COST)
+    generator = _generator(Commitment(shutdown_cost=SHUTDOWN_COST))
 
     result = _optimize(generator, ZERO_PRICES, GeneratorInitialState(generator=generator, power=RUNNING_POWER))
 
@@ -137,7 +139,7 @@ def test_generator_on_for_less_than_its_min_up_time_stays_on_until_it_is_reached
     expected_status: list[float],
 ) -> None:
     """Running loses money at zero prices, so the generator stops as soon as its minimum up time allows."""
-    generator = _generator(min_up_time=MIN_TIME)
+    generator = _generator(Commitment(min_up_time=MIN_TIME))
     initial_state = GeneratorInitialState(generator=generator, power=RUNNING_POWER, time_in_state=time_in_state)
 
     result = _optimize(generator, ZERO_PRICES, initial_state)
@@ -155,7 +157,7 @@ def test_generator_off_for_less_than_its_min_down_time_stays_off_until_it_is_rea
     expected_status: list[float],
 ) -> None:
     """Running earns money at high prices, so the generator starts as soon as its minimum down time allows."""
-    generator = _generator(min_down_time=MIN_TIME)
+    generator = _generator(Commitment(min_down_time=MIN_TIME))
     initial_state = GeneratorInitialState(generator=generator, power=0.0, time_in_state=time_in_state)
 
     result = _optimize(generator, HIGH_PRICES, initial_state)
@@ -165,7 +167,7 @@ def test_generator_off_for_less_than_its_min_down_time_stays_off_until_it_is_rea
 
 def test_generator_on_without_time_in_state_for_its_min_down_time_can_stop_at_t0() -> None:
     """The time in state is only needed for the minimum time of the state the generator starts in."""
-    generator = _generator(min_down_time=MIN_TIME)
+    generator = _generator(Commitment(min_down_time=MIN_TIME))
 
     result = _optimize(generator, ZERO_PRICES, GeneratorInitialState(generator=generator, power=RUNNING_POWER))
 

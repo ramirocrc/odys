@@ -24,6 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
 from odys.domain.exceptions import OdysValidationError
@@ -100,6 +101,32 @@ def _validate_generator_power(generator: Generator, power: float, condition: str
     raise OdysValidationError(msg)
 
 
+def _validate_time_in_state_given_with_min_time(
+    commitment: Commitment,
+    *,
+    is_on: bool,
+    time_in_state: timedelta | None,
+    subject: str,
+    entity_kind: str,
+) -> None:
+    min_time = commitment.min_up_time if is_on else commitment.min_down_time
+    if time_in_state is None and min_time is not None:
+        min_time_field = "min_up_time" if is_on else "min_down_time"
+        state = "on" if is_on else "off"
+        msg = f"{subject} starts {state} and the {entity_kind} has {min_time_field} set, so time_in_state is required."
+        raise OdysValidationError(msg)
+
+
+def _time_coupling_reason(ramp_up: float | None, ramp_down: float | None, commitment: Commitment | None) -> str | None:
+    ramps = {"ramp_up": ramp_up is not None, "ramp_down": ramp_down is not None}
+    set_fields = [field for field, is_set in ramps.items() if is_set]
+    if commitment is not None:
+        set_fields.extend(commitment.time_coupled_fields())
+    if not set_fields:
+        return None
+    return f"it has {', '.join(set_fields)} set"
+
+
 def _validate_soc_within_battery_limits(battery: Battery, soc: float, condition: str, asset_name: str) -> None:
     if battery.soc_min <= soc <= battery.soc_max:
         return
@@ -137,15 +164,13 @@ class GeneratorInitialState(InitialCondition):
 
     @model_validator(mode="after")
     def _validate_time_in_state_given_with_min_time(self) -> Self:
-        min_time = self.generator.min_up_time if self.is_on else self.generator.min_down_time
-        if self.time_in_state is None and min_time is not None:
-            min_time_field = "min_up_time" if self.is_on else "min_down_time"
-            state = "on" if self.is_on else "off"
-            msg = (
-                f"GeneratorInitialState for generator '{self.generator.name}' starts {state} and the generator "
-                f"has {min_time_field} set, so time_in_state is required."
-            )
-            raise OdysValidationError(msg)
+        _validate_time_in_state_given_with_min_time(
+            self.generator.commitment,
+            is_on=self.is_on,
+            time_in_state=self.time_in_state,
+            subject=f"{type(self).__name__} for generator '{self.generator.name}'",
+            entity_kind="generator",
+        )
         return self
 
     def validate_horizon(self, horizon: Horizon) -> None:
@@ -170,18 +195,7 @@ class GeneratorInitialState(InitialCondition):
         """Return why a generator needs an initial state: a parameter linking one timestep to the next is set."""
         if not isinstance(entity, Generator):
             return None
-        time_coupling = {
-            "ramp_up": entity.ramp_up is not None,
-            "ramp_down": entity.ramp_down is not None,
-            "min_up_time": entity.min_up_time is not None,
-            "min_down_time": entity.min_down_time is not None,
-            "startup_cost": entity.startup_cost > 0,
-            "shutdown_cost": entity.shutdown_cost > 0,
-        }
-        set_fields = [field for field, is_set in time_coupling.items() if is_set]
-        if not set_fields:
-            return None
-        return f"it has {', '.join(set_fields)} set"
+        return _time_coupling_reason(entity.ramp_up, entity.ramp_down, entity.commitment)
 
     @property
     def is_on(self) -> bool:

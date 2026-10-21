@@ -16,7 +16,7 @@ from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import FormulationInputs, VariableFormulation, time_shifted
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
-from odys.parameters.entity_arrays import GeneratorArrays, generator_state_arrays
+from odys.parameters.entity_arrays import CommitmentArrays, GeneratorArrays, generator_state_arrays
 from odys.parameters.vectorize import vectorize
 from odys.results.dispatch import GeneratorDispatch
 
@@ -54,6 +54,11 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
         """
         super().__init__(generators, context)
         self.arrays = vectorize(GeneratorArrays, generators, self.coordinates)
+        self.commitment_arrays = vectorize(
+            CommitmentArrays,
+            [generator.commitment for generator in generators],
+            self.coordinates,
+        )
         self.states = generator_state_arrays(generators, self.coordinates, context)
         self.is_initially_on = self.states.initial_power > 0
         self.available_capacity = context.profiles(
@@ -325,8 +330,8 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
         """Return minus the generation cost per scenario: variable cost per MWh plus startup and shutdown costs."""
         cost = (
             self.variables.power * self.context.timestep_hours * self.arrays.variable_cost
-            + self.variables.startup * self.arrays.startup_cost
-            + self.variables.shutdown * self.arrays.shutdown_cost
+            + self.variables.startup * self.commitment_arrays.startup_cost
+            + self.variables.shutdown * self.commitment_arrays.shutdown_cost
         )
         profit: linopy.LinearExpression = -cost.sum([TIME, GENERATOR])
         return profit

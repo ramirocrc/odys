@@ -29,10 +29,16 @@ classDiagram
         +min_power
         +ramp_up
         +ramp_down
+        +commitment: Commitment
+    }
+    class Commitment {
+        <<value object>>
         +min_up_time
         +min_down_time
         +startup_cost
         +shutdown_cost
+        +validate_horizon(horizon, owner)
+        +time_coupled_fields() tuple~str~
     }
     class Battery {
         <<value object>>
@@ -197,6 +203,7 @@ classDiagram
     Asset <|-- Charger
     Asset <|-- FixedLoad
     Asset <|-- FlexibleLoad
+    Generator *-- Commitment
     BatteryStorage *-- Battery
     ElectricVehicle *-- Battery
     ElectricVehicle *-- "0..*" Trip

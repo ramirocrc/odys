@@ -9,6 +9,7 @@ import xarray as xr
 from linopy.testing import assert_conequal, assert_linequal
 
 from odys.domain.conditions import GeneratorFinalState, GeneratorInitialState
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
@@ -47,10 +48,12 @@ def generator1() -> Generator:
         nominal_power=100.0,
         variable_cost=20.0,
         min_power=10.0,
-        min_up_time=timedelta(hours=GEN1_MIN_STEPS),
-        min_down_time=timedelta(hours=GEN1_MIN_STEPS),
         ramp_up=50.0,
         ramp_down=40.0,
+        commitment=Commitment(
+            min_up_time=timedelta(hours=GEN1_MIN_STEPS),
+            min_down_time=timedelta(hours=GEN1_MIN_STEPS),
+        ),
     )
 
 
@@ -62,10 +65,12 @@ def generator2() -> Generator:
         nominal_power=150.0,
         variable_cost=25.0,
         min_power=15.0,
-        min_up_time=timedelta(hours=GEN2_MIN_STEPS),
-        min_down_time=timedelta(hours=GEN2_MIN_STEPS),
         ramp_up=75.0,
         ramp_down=60.0,
+        commitment=Commitment(
+            min_up_time=timedelta(hours=GEN2_MIN_STEPS),
+            min_down_time=timedelta(hours=GEN2_MIN_STEPS),
+        ),
     )
 
 
@@ -599,8 +604,14 @@ class TestGeneratorFormulation:
     ) -> None:
         names = {"generator": [generator1.name, generator2.name]}
         variable_cost = xr.DataArray([generator1.variable_cost, generator2.variable_cost], coords=names)
-        startup_cost = xr.DataArray([generator1.startup_cost, generator2.startup_cost], coords=names)
-        shutdown_cost = xr.DataArray([generator1.shutdown_cost, generator2.shutdown_cost], coords=names)
+        startup_cost = xr.DataArray(
+            [generator1.commitment.startup_cost, generator2.commitment.startup_cost],
+            coords=names,
+        )
+        shutdown_cost = xr.DataArray(
+            [generator1.commitment.shutdown_cost, generator2.commitment.shutdown_cost],
+            coords=names,
+        )
 
         expected = -(
             linopy_model.variables["generator_power"] * HOURS_PER_STEP * variable_cost

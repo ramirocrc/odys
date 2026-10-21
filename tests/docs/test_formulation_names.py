@@ -19,6 +19,7 @@ from odys import (
     Battery,
     BatteryStorage,
     Charger,
+    Commitment,
     CVaRTerm,
     ElectricVehicle,
     ElectricVehicleFinalState,
@@ -107,13 +108,13 @@ def _reference_system() -> EnergySystem:
         nominal_power=GENERATOR_POWER,
         variable_cost=40.0,
         min_power=GENERATOR_MIN_POWER,
-        min_up_time=GENERATOR_MIN_UP_TIME,
+        commitment=Commitment(min_up_time=GENERATOR_MIN_UP_TIME),
     )
     peaker = Generator(
         name="peaker",
         nominal_power=PEAKER_POWER,
         variable_cost=90.0,
-        min_down_time=PEAKER_MIN_DOWN_TIME,
+        commitment=Commitment(min_down_time=PEAKER_MIN_DOWN_TIME),
     )
     storage = BatteryStorage(
         name="bess",
