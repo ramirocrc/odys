@@ -24,7 +24,7 @@ The horizon has no start date. Time labels count steps from the start of the run
 | Power                     | MW             | `nominal_power`, `max_charge_power`, load and capacity profiles |
 | Energy                    | MWh            | `capacity`, `energy_consumption`                                |
 | Prices and variable costs | currency / MWh | `variable_cost`, `value_of_consumption`, `PriceProfile`         |
-| Per-event costs           | currency       | `startup_cost`, `shutdown_cost`                                 |
+| Per-event costs           | currency       | `Commitment.startup_cost`, `Commitment.shutdown_cost`           |
 | State of charge           | fraction (0-1) | `soc`, `soc_min`, `soc_max`                                     |
 
 Profiles and decisions are powers, held for the whole step. The energy of a step is that power times the step length: 60 MW over a 15-minute step is 15 MWh. Prices and costs are per MWh, so odys multiplies them by the energy, and the currency is whatever your prices are in.

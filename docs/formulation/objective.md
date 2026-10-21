@@ -134,8 +134,8 @@ Read aloud: make the most money on average, but also keep the bad days from gett
 | $\zeta$ | `cvar_value_at_risk` | Variable | currency |
 | $\xi_s$ | `cvar_shortfall` | Variable | currency |
 | $c^{var}_g$ | `Generator.variable_cost` | Parameter | currency per MWh |
-| $c^{start}_g$ | `Generator.startup_cost` | Parameter | currency per start-up |
-| $c^{stop}_g$ | `Generator.shutdown_cost` | Parameter | currency per shut-down |
+| $c^{start}_g$ | `Generator.commitment.startup_cost` | Parameter | currency per start-up |
+| $c^{stop}_g$ | `Generator.commitment.shutdown_cost` | Parameter | currency per shut-down |
 | $c^{deg}_k$ | `Battery.degradation_cost` | Parameter | currency per MWh |
 | $c^{val}_l$ | `FlexibleLoad.value_of_consumption` | Parameter | currency per MWh |
 | $\lambda_{m,s,t}$ | `PriceProfile.values` | Parameter | currency per MWh |

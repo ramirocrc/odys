@@ -19,6 +19,7 @@ from odys.domain.entities.base import Asset
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
@@ -46,6 +47,7 @@ __all__ = [
     "BatteryStorage",
     "CVaRTerm",
     "Charger",
+    "Commitment",
     "ElectricVehicle",
     "ElectricVehicleFinalState",
     "ElectricVehicleInitialState",

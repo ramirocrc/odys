@@ -312,9 +312,9 @@ Read aloud: the fuel for every MWh, plus a fixed amount for every start and ever
 | $\varepsilon_g$ | $10^{-5}\, \overline{P}_g$, fixed in the code | Parameter | MW |
 | $A_{g,s,t}$ | `AvailableCapacityProfile.values` | Parameter | MW |
 | $\overline{R}^{up}_g$, $\overline{R}^{down}_g$ | `Generator.ramp_up`, `Generator.ramp_down` | Parameter | MW per step |
-| $L^{up}_g$, $L^{down}_g$ | `Generator.min_up_time`, `Generator.min_down_time`, in steps | Parameter | steps |
+| $L^{up}_g$, $L^{down}_g$ | `Generator.commitment.min_up_time`, `Generator.commitment.min_down_time`, in steps | Parameter | steps |
 | $c^{var}_g$ | `Generator.variable_cost` | Parameter | currency per MWh |
-| $c^{start}_g$, $c^{stop}_g$ | `Generator.startup_cost`, `Generator.shutdown_cost` | Parameter | currency per event |
+| $c^{start}_g$, $c^{stop}_g$ | `Generator.commitment.startup_cost`, `Generator.commitment.shutdown_cost` | Parameter | currency per event |
 | $P^{init}_g$ | `GeneratorInitialState.power` | Parameter | MW |
 | $N^{init}_g$ | `GeneratorInitialState.time_in_state`, in steps | Parameter | steps |
 | $P^{final}_g$ | `GeneratorFinalState.power` | Parameter | MW |

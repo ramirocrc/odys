@@ -14,6 +14,7 @@ from odys.domain.conditions import (
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
 from odys.domain.entities.charger import Charger
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.flexible_load import FlexibleLoad
@@ -268,7 +269,7 @@ class TestValidateConditionsFitTheHorizon:
             name="gen1",
             nominal_power=NOMINAL_POWER,
             variable_cost=VARIABLE_COST,
-            min_up_time=MIN_UP_TIME,
+            commitment=Commitment(min_up_time=MIN_UP_TIME),
         )
 
     def test_whole_steps_are_valid(self, generator_with_min_up_time: Generator) -> None:

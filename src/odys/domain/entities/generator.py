@@ -4,12 +4,10 @@ This module provides the Generator class for modeling electrical generators
 in energy system optimization problems.
 """
 
-from datetime import timedelta
-
 from pydantic import Field
 
 from odys.domain.entities.base import Asset
-from odys.domain.exceptions import OdysValidationError
+from odys.domain.entities.commitment import Commitment
 from odys.domain.horizon import Horizon, OperatingConditions
 
 
@@ -17,7 +15,9 @@ class Generator(Asset):
     """Represents a power generator in the energy system.
 
     This class models generators with various operational constraints
-    including nominal power, variable costs, ramp rates, and startup/shutdown costs.
+    including nominal power, variable costs and ramp rates. How it is switched
+    on and off (minimum up and down times, startup and shutdown costs) is its
+    `Commitment`.
     """
 
     nominal_power: float = Field(
@@ -46,20 +46,6 @@ class Generator(Asset):
         description="Ramp-down rate of the generator in MW per hour",
     )
 
-    min_up_time: timedelta | None = Field(
-        default=None,
-        strict=True,
-        gt=timedelta(0),
-        description="Minimum time the generator stays on once started. None means no minimum.",
-    )
-
-    min_down_time: timedelta | None = Field(
-        default=None,
-        strict=True,
-        gt=timedelta(0),
-        description="Minimum time the generator stays off once stopped. None means no minimum.",
-    )
-
     min_power: float = Field(
         default=0.0,
         strict=True,
@@ -67,18 +53,9 @@ class Generator(Asset):
         description="Minimum power output",
     )
 
-    startup_cost: float = Field(
-        default=0.0,
-        strict=True,
-        ge=0,
-        description="Startup cost of the generator, in currency per startup.",
-    )
-
-    shutdown_cost: float = Field(
-        default=0.0,
-        strict=True,
-        ge=0,
-        description="Shutdown cost of the generator, in currency per shutdown.",
+    commitment: Commitment = Field(
+        default_factory=Commitment,
+        description="How the generator is switched on and off: minimum up and down times, startup and shutdown costs.",
     )
 
     def max_supply(self, conditions: OperatingConditions) -> tuple[float, ...]:
@@ -96,10 +73,4 @@ class Generator(Asset):
         Raises:
             OdysValidationError: If a minimum time is not a whole number of timesteps.
         """
-        for field, duration in (("min_up_time", self.min_up_time), ("min_down_time", self.min_down_time)):
-            if duration is not None and not horizon.is_whole_steps(duration):
-                msg = (
-                    f"Generator '{self.name}' has {field}={duration}, "
-                    f"which is not a whole number of timesteps ({horizon.timestep})."
-                )
-                raise OdysValidationError(msg)
+        self.commitment.validate_horizon(horizon, f"Generator '{self.name}'")

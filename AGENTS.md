@@ -158,8 +158,8 @@ Enforced by import-linter (`[tool.importlinter]` in `pyproject.toml`, part of `j
 
 **Domain** (`src/odys/domain/`, golden file `entities/flexible_load.py`)
 
-- User-owned entities subclass `Asset`, external ones (markets) subclass `EnergyEntity` (`entities/base.py`); both already set `ConfigDict(frozen=True, extra="forbid")`. Value objects without a name (`Battery`, `Trip`) subclass `BaseModel` and must set the same config.
-- Prefer composition for shared physics: `BatteryStorage` and `ElectricVehicle` *have* a `Battery`; they don't inherit from a storage base class.
+- User-owned entities subclass `Asset`, external ones (markets) subclass `EnergyEntity` (`entities/base.py`); both already set `ConfigDict(frozen=True, extra="forbid")`. Value objects without a name (`Battery`, `Commitment`, `Trip`) subclass `BaseModel` and must set the same config.
+- Prefer composition for shared physics: `BatteryStorage` and `ElectricVehicle` *have* a `Battery`, and `Generator` *has* a `Commitment` (how it switches on and off); they don't inherit from a base class.
 - Constrain fields with pydantic `Field(strict=True, gt=..., ge=..., description=...)`. Descriptions state the unit (MW, MWh, currency per MWh).
 - Single-entity rules go in a `model_validator` on the entity; single-profile rules (values against the referenced entity) go in a `model_validator` on the profile; collection rules go on the collection (`AssetPortfolio`, `ScenarioSet`, `ConditionSet`). Rules that span entities and scenarios go in `validation.py` as one small generic function per invariant, called from `validate_energy_system_inputs`, and reach entities only through their capability queries (`max_supply`, `min_demand`, `max_energy_supply`, `validate_horizon`) and profile types only through `entity_types` / `required`. Never `isinstance`-dispatch on asset kinds there.
 - Raise `OdysValidationError`, never `ValueError`/`TypeError`.

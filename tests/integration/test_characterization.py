@@ -19,6 +19,7 @@ from odys import (
     AvailableCapacityProfile,
     Battery,
     BatteryStorage,
+    Commitment,
     EnergyMarket,
     EnergySystem,
     FixedLoad,
@@ -133,17 +134,14 @@ def _unit_commitment_system() -> EnergySystem:
         min_power=40.0,
         ramp_up=50.0,
         ramp_down=50.0,
-        min_up_time=timedelta(hours=3),
-        min_down_time=timedelta(hours=3),
-        startup_cost=300.0,
-        shutdown_cost=50.0,
+        commitment=Commitment(
+            min_up_time=timedelta(hours=3),
+            min_down_time=timedelta(hours=3),
+            startup_cost=300.0,
+            shutdown_cost=50.0,
+        ),
     )
-    peaker = Generator(
-        name="peaker",
-        nominal_power=120.0,
-        variable_cost=80.0,
-        startup_cost=10.0,
-    )
+    peaker = Generator(name="peaker", nominal_power=120.0, variable_cost=80.0, commitment=Commitment(startup_cost=10.0))
     demand = FixedLoad(name="demand")
     return EnergySystem(
         portfolio=AssetPortfolio([baseload, peaker, demand]),

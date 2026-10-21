@@ -16,6 +16,7 @@ from odys.domain.conditions import (
 )
 from odys.domain.entities.battery import Battery
 from odys.domain.entities.battery_storage import BatteryStorage
+from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.trip import Trip
@@ -104,7 +105,7 @@ def test_generator_initial_state_requires_time_in_state_with_the_matching_min_ti
     power: float,
     state: str,
 ) -> None:
-    generator = GENERATOR.model_copy(update={min_time_field: MIN_TIME})
+    generator = GENERATOR.model_copy(update={"commitment": Commitment.model_validate({min_time_field: MIN_TIME})})
 
     with pytest.raises(
         OdysValidationError,
@@ -122,13 +123,13 @@ def test_generator_initial_state_does_not_require_time_in_state_for_the_other_mi
     min_time_field: str,
     power: float,
 ) -> None:
-    generator = GENERATOR.model_copy(update={min_time_field: MIN_TIME})
+    generator = GENERATOR.model_copy(update={"commitment": Commitment.model_validate({min_time_field: MIN_TIME})})
 
     assert GeneratorInitialState(generator=generator, power=power).time_in_state is None
 
 
 def test_generator_initial_state_accepts_time_in_state() -> None:
-    generator = GENERATOR.model_copy(update={"min_up_time": MIN_TIME})
+    generator = GENERATOR.model_copy(update={"commitment": Commitment(min_up_time=MIN_TIME)})
 
     state = GeneratorInitialState(generator=generator, power=POWER_WITHIN_LIMITS, time_in_state=TIME_IN_STATE)
 
@@ -145,24 +146,28 @@ def test_generator_initial_state_is_optional_for_a_generator_without_time_coupli
 
 
 @pytest.mark.parametrize(
-    ("field", "value"),
+    ("field", "update"),
     [
-        ("ramp_up", 10.0),
-        ("ramp_down", 0.0),
-        ("min_up_time", MIN_TIME),
-        ("min_down_time", MIN_TIME),
-        ("startup_cost", 5.0),
-        ("shutdown_cost", 5.0),
+        ("ramp_up", {"ramp_up": 10.0}),
+        ("ramp_down", {"ramp_down": 0.0}),
+        ("min_up_time", {"commitment": Commitment(min_up_time=MIN_TIME)}),
+        ("min_down_time", {"commitment": Commitment(min_down_time=MIN_TIME)}),
+        ("startup_cost", {"commitment": Commitment(startup_cost=5.0)}),
+        ("shutdown_cost", {"commitment": Commitment(shutdown_cost=5.0)}),
     ],
+    ids=["ramp_up", "ramp_down", "min_up_time", "min_down_time", "startup_cost", "shutdown_cost"],
 )
-def test_generator_initial_state_is_required_for_a_time_coupled_generator(field: str, value: float | timedelta) -> None:
-    generator = PLAIN_GENERATOR.model_copy(update={field: value})
+def test_generator_initial_state_is_required_for_a_time_coupled_generator(
+    field: str,
+    update: dict[str, object],
+) -> None:
+    generator = PLAIN_GENERATOR.model_copy(update=update)
 
     assert GeneratorInitialState.required_for(generator) == f"it has {field} set"
 
 
 def test_generator_initial_state_required_reason_lists_every_time_coupling_field() -> None:
-    generator = PLAIN_GENERATOR.model_copy(update={"ramp_up": 10.0, "startup_cost": 5.0})
+    generator = PLAIN_GENERATOR.model_copy(update={"ramp_up": 10.0, "commitment": Commitment(startup_cost=5.0)})
 
     assert GeneratorInitialState.required_for(generator) == "it has ramp_up, startup_cost set"
 
