@@ -4,7 +4,8 @@ This module holds the rules that span entities and scenarios. Rules about a
 single entity or profile live on that object and run when it is built. The
 rules here treat every entity alike through its capability queries
 (`max_supply`, `min_demand`, `max_energy_supply`, `validate_horizon`) and
-every profile through its type's `entity_types` and `required` flags. A new
+every profile through its type's `entity_types` and `required` flags and its
+`number_of_steps` and `operating_values`. A new
 asset type is covered by overriding those queries (that the optimizer models
 it is checked against its formulations, in `odys.optimization.formulations`);
 a new profile type by adding it to `AnyProfile` and `PROFILE_TYPES` in
@@ -22,7 +23,7 @@ from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.domain.exceptions import OdysValidationError
 from odys.domain.horizon import Horizon, OperatingConditions
-from odys.domain.profiles import PROFILE_TYPES, LoadProfile, Profile
+from odys.domain.profiles import PROFILE_TYPES, FlexibleLoadProfile, LoadProfile, Profile
 from odys.domain.scenario import Scenario, ScenarioSet
 
 
@@ -233,10 +234,10 @@ def validate_profile_lengths(scenarios: Sequence[Scenario], horizon: Horizon) ->
     """
     for scenario in scenarios:
         for profile in scenario.profiles:
-            if len(profile.values) != horizon.number_of_steps:
+            if profile.number_of_steps != horizon.number_of_steps:
                 msg = (
                     f"Scenario '{scenario.name}': the {type(profile).__name__} for '{profile.entity.name}' "
-                    f"has {len(profile.values)} values, but the horizon has {horizon.number_of_steps} steps."
+                    f"has {profile.number_of_steps} values, but the horizon has {horizon.number_of_steps} steps."
                 )
                 raise OdysValidationError(msg)
 
@@ -252,14 +253,14 @@ def validate_has_load_or_market(scenario: Scenario, markets: Sequence[EnergyMark
         OdysValidationError: If the scenario has no load profile and there is no market.
 
     """
-    if not scenario.profiles_of(LoadProfile) and not markets:
+    if not scenario.profiles_of(LoadProfile) and not scenario.profiles_of(FlexibleLoadProfile) and not markets:
         msg = "Load profile is empty, there is nothing to balance."
         raise OdysValidationError(msg)
 
 
 def _operating_conditions(scenario: Scenario, entity: EnergyEntity, horizon: Horizon) -> OperatingConditions:
     profile = scenario.profile_for(entity)
-    profile_values = tuple(profile.values) if profile is not None else None
+    profile_values = profile.operating_values if profile is not None else None
     return OperatingConditions(horizon=horizon, profile_values=profile_values)
 
 

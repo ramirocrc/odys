@@ -1,6 +1,6 @@
 """Typed time-series profiles that scenarios attach to entities.
 
-A profile is one exogenous time series for one entity in one scenario.
+A profile is the exogenous time series of one entity in one scenario.
 Each profile type references the kind of entity it belongs to, so a
 profile cannot be attached to the wrong kind of asset or market.
 """
@@ -20,7 +20,7 @@ from odys.domain.exceptions import OdysValidationError
 
 
 class Profile(BaseModel, ABC):
-    """One exogenous time series for one entity, with one value per timestep.
+    """The exogenous time series of one entity, with one value per timestep in each series.
 
     Each profile type declares the entity types it applies to and whether
     every such entity needs one in every scenario.
@@ -30,6 +30,25 @@ class Profile(BaseModel, ABC):
 
     entity_types: ClassVar[tuple[type[EnergyEntity], ...]]
     required: ClassVar[bool]
+
+    @property
+    @abstractmethod
+    def entity(self) -> EnergyEntity:
+        """Return the entity this profile belongs to."""
+
+    @property
+    @abstractmethod
+    def number_of_steps(self) -> int:
+        """Return the number of timesteps the profile covers."""
+
+    @property
+    @abstractmethod
+    def operating_values(self) -> tuple[float, ...]:
+        """Return the values the entity's capability queries read, one per timestep."""
+
+
+class SeriesProfile(Profile, ABC):
+    """A profile with a single time series, `values`."""
 
     values: Sequence[float] = Field(
         min_length=1,
@@ -42,58 +61,116 @@ class Profile(BaseModel, ABC):
         return tuple(values)
 
     @property
-    @abstractmethod
-    def entity(self) -> EnergyEntity:
-        """Return the entity this profile belongs to."""
+    def number_of_steps(self) -> int:
+        """Return the number of values."""
+        return len(self.values)
+
+    @property
+    def operating_values(self) -> tuple[float, ...]:
+        """Return the values."""
+        return tuple(self.values)
 
 
-class LoadProfile(Profile):
-    """Power demand of a load, in MW per timestep.
+class LoadProfile(SeriesProfile):
+    """Power demand of a fixed load, in MW per timestep: the demand that must be met."""
 
-    For a `FixedLoad` this is the demand that must be met. For a
-    `FlexibleLoad` it is the base profile the optimizer can adjust.
-    """
-
-    entity_types: ClassVar[tuple[type[EnergyEntity], ...]] = (FixedLoad, FlexibleLoad)
+    entity_types: ClassVar[tuple[type[EnergyEntity], ...]] = (FixedLoad,)
     required: ClassVar[bool] = True
 
-    load: FixedLoad | FlexibleLoad
+    load: FixedLoad
+
+    @property
+    def entity(self) -> FixedLoad:
+        """Return the load this demand belongs to."""
+        return self.load
+
+
+class FlexibleLoadProfile(Profile):
+    """The range a flexible load may consume in, in MW per timestep.
+
+    At every step the optimizer chooses the load's consumption between
+    `lower_bound` and `upper_bound`. Both bounds are at least 0, the lower
+    one is at most the upper one, and they lie within the load's `min_load`
+    and `max_load` when those are set.
+    """
+
+    entity_types: ClassVar[tuple[type[EnergyEntity], ...]] = (FlexibleLoad,)
+    required: ClassVar[bool] = True
+
+    load: FlexibleLoad
+    lower_bound: Sequence[float] = Field(
+        min_length=1,
+        description="Least the load consumes at each timestep, in MW. Stored as a tuple.",
+    )
+    upper_bound: Sequence[float] = Field(
+        min_length=1,
+        description="Most the load consumes at each timestep, in MW. Stored as a tuple.",
+    )
+
+    @field_validator("lower_bound", "upper_bound", mode="after")
+    @staticmethod
+    def _store_bounds_as_tuples(bound: Sequence[float]) -> tuple[float, ...]:
+        return tuple(bound)
 
     @model_validator(mode="after")
-    def _validate_flexible_load_bounds_against_base_profile(self) -> Self:
-        if not isinstance(self.load, FlexibleLoad):
-            return self
-        load = self.load
-        for t, base_t in enumerate(self.values):
-            if load.min_load is not None and base_t < load.min_load:
+    def _validate_bounds_have_the_same_length(self) -> Self:
+        if len(self.lower_bound) != len(self.upper_bound):
+            msg = (
+                f"Flexible load '{self.load.name}' has {len(self.lower_bound)} lower bound values "
+                f"and {len(self.upper_bound)} upper bound values."
+            )
+            raise OdysValidationError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _validate_bounds_form_a_range(self) -> Self:
+        for t, (lower_t, upper_t) in enumerate(zip(self.lower_bound, self.upper_bound, strict=True)):
+            if lower_t < 0:
+                msg = f"Flexible load '{self.load.name}' has a negative lower bound ({lower_t}) at time index {t}."
+                raise OdysValidationError(msg)
+            if lower_t > upper_t:
                 msg = (
-                    f"Flexible load '{load.name}' has base profile value ({base_t}) "
-                    f"below min_load ({load.min_load}) at time index {t}."
+                    f"Flexible load '{self.load.name}' has a lower bound ({lower_t}) "
+                    f"above its upper bound ({upper_t}) at time index {t}."
                 )
                 raise OdysValidationError(msg)
-            if load.max_load is not None and base_t > load.max_load:
+        return self
+
+    @model_validator(mode="after")
+    def _validate_bounds_within_load_limits(self) -> Self:
+        min_load, max_load = self.load.min_load, self.load.max_load
+        for t, (lower_t, upper_t) in enumerate(zip(self.lower_bound, self.upper_bound, strict=True)):
+            if min_load is not None and lower_t < min_load:
                 msg = (
-                    f"Flexible load '{load.name}' has base profile value ({base_t}) "
-                    f"above max_load ({load.max_load}) at time index {t}."
+                    f"Flexible load '{self.load.name}' has a lower bound ({lower_t}) "
+                    f"below min_load ({min_load}) at time index {t}."
                 )
                 raise OdysValidationError(msg)
-            # min_load overrides max_decrease, so max_decrease only bounds the load when min_load is unset
-            if load.min_load is None and load.max_decrease is not None and load.max_decrease > base_t:
+            if max_load is not None and upper_t > max_load:
                 msg = (
-                    f"Flexible load '{load.name}' has max_decrease ({load.max_decrease}) "
-                    f"greater than the base profile value ({base_t}) at time index {t}. "
-                    "This would allow actual load to go negative."
+                    f"Flexible load '{self.load.name}' has an upper bound ({upper_t}) "
+                    f"above max_load ({max_load}) at time index {t}."
                 )
                 raise OdysValidationError(msg)
         return self
 
     @property
-    def entity(self) -> FixedLoad | FlexibleLoad:
-        """Return the load this demand belongs to."""
+    def entity(self) -> FlexibleLoad:
+        """Return the load this range belongs to."""
         return self.load
 
+    @property
+    def number_of_steps(self) -> int:
+        """Return the number of values in each bound."""
+        return len(self.lower_bound)
 
-class AvailableCapacityProfile(Profile):
+    @property
+    def operating_values(self) -> tuple[float, ...]:
+        """Return the lower bound: the least the load must consume at each timestep."""
+        return tuple(self.lower_bound)
+
+
+class AvailableCapacityProfile(SeriesProfile):
     """Available capacity of a generator, in MW per timestep.
 
     Each value must lie between 0 and the generator's nominal power. A
@@ -122,7 +199,7 @@ class AvailableCapacityProfile(Profile):
         return self.generator
 
 
-class PriceProfile(Profile):
+class PriceProfile(SeriesProfile):
     """Energy price of a market, in currency per MWh per timestep."""
 
     entity_types: ClassVar[tuple[type[EnergyEntity], ...]] = (EnergyMarket,)
@@ -136,5 +213,5 @@ class PriceProfile(Profile):
         return self.market
 
 
-AnyProfile = LoadProfile | AvailableCapacityProfile | PriceProfile
-PROFILE_TYPES: tuple[type[Profile], ...] = (LoadProfile, AvailableCapacityProfile, PriceProfile)
+AnyProfile = LoadProfile | FlexibleLoadProfile | AvailableCapacityProfile | PriceProfile
+PROFILE_TYPES: tuple[type[Profile], ...] = (LoadProfile, FlexibleLoadProfile, AvailableCapacityProfile, PriceProfile)

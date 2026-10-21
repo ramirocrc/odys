@@ -1,22 +1,21 @@
 """Flexible load buying from a market.
 
 This example shows how a flexible industrial consumer follows market prices.
-Instead of consuming a fixed amount regardless of cost, the optimizer adjusts
-demand up or down at each step, weighing the value of consumption against
-the market price.
+Instead of consuming a fixed amount regardless of cost, the optimizer sets
+the consumption at each step anywhere within the process's range, weighing
+the value of consumption against the market price.
 
 ## Assets
 
 - **market**: Buy-only electricity market with max 80 MW per timestep.
   Prices vary throughout the day from 30 to 90 $/MWh.
-- **industrial_process**: Flexible load with a base consumption of 60 MW.
-  Can increase up to 40 MW or decrease up to 20 MW from the base.
-  Each MWh consumed has an economic value of 70 $/MWh.
+- **industrial_process**: Flexible load that can run anywhere from 40 to
+  100 MW. Each MWh consumed has an economic value of 70 $/MWh.
 
 ## Problem
 
-We simulate 24 hourly periods. The industrial process has a baseline
-consumption of 60 MW, but the optimizer can adjust it within bounds.
+We simulate 24 hourly periods. At every step the optimizer chooses how much
+the industrial process consumes, between 40 and 100 MW.
 
 The decision compares the value of consumption (70 $/MWh) against the
 market price at each step:
@@ -34,9 +33,8 @@ Each step is decided on its own: nothing links one hour to the next.
 ## Understanding the Output
 
 The script prints:
-- Load adjustment over time (positive = increase, negative = decrease)
-- Actual consumption (base profile + adjustment)
-- Market purchases (matches actual consumption at each timestep)
+- Consumption of the process over time
+- Market purchases (matches the consumption at each timestep)
 """
 
 import logging
@@ -48,7 +46,7 @@ from odys import (
     EnergyMarket,
     EnergySystem,
     FlexibleLoad,
-    LoadProfile,
+    FlexibleLoadProfile,
     OptimalDispatchResults,
     PriceProfile,
     Scenario,
@@ -65,18 +63,13 @@ def run_demand_response() -> OptimalDispatchResults:
         allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
     )
 
-    industrial_process = FlexibleLoad(
-        name="industrial_process",
-        max_increase=40,
-        max_decrease=20,
-        value_of_consumption=70,
-    )
+    industrial_process = FlexibleLoad(name="industrial_process", value_of_consumption=70)
 
     portfolio = AssetPortfolio(assets=[industrial_process])
 
     scenario = Scenario(
         profiles=(
-            LoadProfile(load=industrial_process, values=24 * [60]),
+            FlexibleLoadProfile(load=industrial_process, lower_bound=24 * [40], upper_bound=24 * [100]),
             PriceProfile(
                 market=market,
                 values=[80, 75, 72, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 72, 80, 90, 85, 80, 75, 72],
@@ -100,11 +93,8 @@ if __name__ == "__main__":
     logging.getLogger("linopy").setLevel(logging.WARNING)
     result = run_demand_response()
 
-    logger.info("Load adjustment (MW)")
-    logger.info(result.flexible_loads.load_adjustment)
-
-    logger.info("Actual consumption (MW)")
-    logger.info(result.flexible_loads.actual_load)
+    logger.info("Consumption (MW)")
+    logger.info(result.flexible_loads.consumption)
 
     logger.info("Market purchases (MW)")
     logger.info(result.markets.buy_volume)

@@ -27,7 +27,7 @@ class FixedLoadFormulation(Formulation):
             context: The shared indexing of the problem.
         """
         super().__init__(fixed_loads, context)
-        self.demand = context.profiles(LoadProfile, fixed_loads, self.coordinates)
+        self.demand = context.profiles(LoadProfile, fixed_loads, self.coordinates, lambda profile: profile.values)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:

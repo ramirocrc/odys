@@ -4,12 +4,11 @@ from collections.abc import Sequence
 from typing import ClassVar, Self
 
 import linopy
-import numpy as np
 import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.flexible_load import FlexibleLoad
-from odys.domain.profiles import LoadProfile
+from odys.domain.profiles import FlexibleLoadProfile
 from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
@@ -27,15 +26,15 @@ class FlexibleLoadVariables(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
 
-    load_adjustment: linopy.Variable
+    consumption: linopy.Variable
 
 
 class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
-    """Flexible loads: a base demand the optimizer can raise or lower within bounds, for a value per MWh."""
+    """Flexible loads: demand the optimizer sets within a range at every step, for a value per MWh."""
 
     dimension = FLEXIBLE_LOAD
     entity_type = FlexibleLoad
-    variable_name: ClassVar[str] = "load_adjustment"
+    variable_name: ClassVar[str] = "flexible_load_consumption"
 
     def __init__(self, flexible_loads: Sequence[FlexibleLoad], context: ModelContext) -> None:
         """Initialize with the flexible loads of the system.
@@ -46,7 +45,18 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
         """
         super().__init__(flexible_loads, context)
         self.arrays = vectorize(FlexibleLoadArrays, flexible_loads, self.coordinates)
-        self.base_profiles = context.profiles(LoadProfile, flexible_loads, self.coordinates)
+        self.lower_bounds = context.profiles(
+            FlexibleLoadProfile,
+            flexible_loads,
+            self.coordinates,
+            lambda profile: profile.lower_bound,
+        )
+        self.upper_bounds = context.profiles(
+            FlexibleLoadProfile,
+            flexible_loads,
+            self.coordinates,
+            lambda profile: profile.upper_bound,
+        )
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
@@ -55,47 +65,43 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
         return cls(flexible_loads, inputs.context) if flexible_loads else None
 
     def _create_variables(self, model: linopy.Model) -> FlexibleLoadVariables:
-        """Add the load adjustment (MW, positive raises the load) per scenario, time and flexible load."""
+        """Add the consumption (MW) per scenario, time and flexible load."""
         return FlexibleLoadVariables(
-            load_adjustment=model.add_variables(
+            consumption=model.add_variables(
                 name=self.variable_name,
                 coords=self.context.variable_coords(self.coordinates),
-                lower=-np.inf,
+                lower=0,
             ),
         )
 
     @constraint
-    def _get_adjustment_lower_bound_constraint(self) -> ModelConstraint:
-        """The load stays at or above `min_load`, or when unset, decreases by at most `max_decrease`."""
-        lower_bound = (self.arrays.min_load - self.base_profiles).fillna(-self.arrays.max_decrease)
+    def _get_lower_bound_constraint(self) -> ModelConstraint:
+        """The load consumes at least the lower bound of its profile."""
         return ModelConstraint(
-            constraint=self.variables.load_adjustment >= lower_bound,
-            name="flexible_load_adjustment_lower_bound_constraint",
+            constraint=self.variables.consumption >= self.lower_bounds,
+            name="flexible_load_lower_bound_constraint",
         )
 
     @constraint
-    def _get_adjustment_upper_bound_constraint(self) -> ModelConstraint:
-        """The load stays at or below `max_load`, or when unset, increases by at most `max_increase`."""
-        upper_bound = (self.arrays.max_load - self.base_profiles).fillna(self.arrays.max_increase)
+    def _get_upper_bound_constraint(self) -> ModelConstraint:
+        """The load consumes at most the upper bound of its profile."""
         return ModelConstraint(
-            constraint=self.variables.load_adjustment <= upper_bound,
-            name="flexible_load_adjustment_upper_bound_constraint",
+            constraint=self.variables.consumption <= self.upper_bounds,
+            name="flexible_load_upper_bound_constraint",
         )
 
     def power_injection(self) -> linopy.LinearExpression:
-        """Return minus the adjusted demand (base profile plus adjustment), summed over flexible loads."""
-        adjustment = self.variables.load_adjustment.sum(FLEXIBLE_LOAD)
-        injection: linopy.LinearExpression = -adjustment - self.base_profiles.sum(FLEXIBLE_LOAD)
+        """Return minus the consumption, summed over flexible loads."""
+        injection: linopy.LinearExpression = -self.variables.consumption.sum(FLEXIBLE_LOAD)
         return injection
 
     def profit(self) -> linopy.LinearExpression:
-        """Return the value of the adjusted consumption per scenario, in currency (energy times value per MWh)."""
-        value = self.variables.load_adjustment * self.context.timestep_hours * self.arrays.value_of_consumption
+        """Return the value of the consumption per scenario, in currency (energy times value per MWh)."""
+        value = self.variables.consumption * self.context.timestep_hours * self.arrays.value_of_consumption
         profit: linopy.LinearExpression = value.sum([ModelDimension.Time, FLEXIBLE_LOAD])
         return profit
 
     def dispatch(self, solution: xr.Dataset) -> FlexibleLoadDispatch:
-        """Return the load adjustment and the actual load (base profile plus adjustment) of the flexible loads."""
-        load_adjustment = solution[self.variable_name]
-        data = xr.Dataset({"load_adjustment": load_adjustment, "actual_load": self.base_profiles + load_adjustment})
+        """Return the consumption of the flexible loads."""
+        data = xr.Dataset({"consumption": solution[self.variable_name]})
         return FlexibleLoadDispatch(data, FLEXIBLE_LOAD)

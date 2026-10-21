@@ -20,19 +20,19 @@ $$
 && \text{generator cost} \\
 & - \sum_{k \in \mathcal{K}} \sum_{t \in \mathcal{T}} c^{deg}_k \left(p^{ch}_{k,s,t} + p^{dis}_{k,s,t}\right) \Delta t
 && \text{battery wear} \\
-& + \sum_{l \in \mathcal{L}} \sum_{t \in \mathcal{T}} c^{val}_l\, p^{adj}_{l,s,t}\, \Delta t
+& + \sum_{l \in \mathcal{L}} \sum_{t \in \mathcal{T}} c^{val}_l\, d_{l,s,t}\, \Delta t
 && \text{flexible-load value}
 \end{aligned}
 $$
 
-Read aloud: what you sell minus what you buy, at that scenario's prices; minus what your generators cost to run, start and stop; minus what your batteries lose in wear; plus what shifting your flexible loads is worth.
+Read aloud: what you sell minus what you buy, at that scenario's prices; minus what your generators cost to run, start and stop; minus what your batteries lose in wear; plus what your flexible loads' consumption is worth.
 
 Each line belongs to one page:
 
 - **Market revenue**, on [Markets](markets.md#objective-contribution). Selling earns the price, buying pays it. With a negative price, it's the other way round.
 - **Generator cost**, on [Generators](generators.md#objective-contribution). Fuel is paid per MWh, start-ups and shut-downs per event.
 - **Battery wear**, on [Batteries](batteries.md#objective-contribution) and [Electric vehicles](electric_vehicles.md#objective-contribution). Every MWh in or out counts, so a full cycle pays twice.
-- **Flexible-load value**, on [Flexible loads](flexible_loads.md#objective-contribution). Using more is worth $c^{val}_l$ per MWh, and using less loses it.
+- **Flexible-load value**, on [Flexible loads](flexible_loads.md#objective-contribution). Every MWh they use is worth $c^{val}_l$.
 
 Fixed loads and chargers add nothing of their own. Serving a fixed demand still costs money, but that cost already shows up in the lines above: the energy you buy for it, or the fuel your generators burn.
 
@@ -50,7 +50,7 @@ flowchart LR
 
 **Good to know.**
 
-- Only the *adjustment* of a flexible load is valued, not its base consumption. The base consumption's value doesn't depend on any decision, so it's left out. That makes $\Pi_s$ a profit for decision-making, not the total welfare or the total cost of your site.
+- All of a flexible load's consumption is valued, including the part its lower bound forces. A fixed load's consumption is not valued at all. So $\Pi_s$ is a profit for decision-making, not the total welfare or the total cost of your site.
 - A trip's energy has no price of its own. It costs whatever it takes to charge the vehicle back up.
 
 ## Expected profit

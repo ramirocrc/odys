@@ -24,8 +24,6 @@ BATTERY_CAPACITY = 20.0
 MAX_DISCHARGE_POWER = 10.0
 MAX_TRADING_VOLUME = 50.0
 LOAD_VALUES = (30.0, 50.0, 70.0)
-MAX_DECREASE = 20.0
-MIN_LOAD = 25.0
 ZEROS = (0.0,) * NUMBER_OF_STEPS
 
 
@@ -42,14 +40,7 @@ STORAGE = BatteryStorage(name="storage", battery=_battery())
 ELECTRIC_VEHICLE = ElectricVehicle(name="ev", battery=_battery(), trips=())
 MARKET = EnergyMarket(name="market", max_trading_volume_per_step=MAX_TRADING_VOLUME)
 FIXED_LOAD = FixedLoad(name="load")
-FLEXIBLE_LOAD = FlexibleLoad(name="flex", max_increase=10.0, max_decrease=MAX_DECREASE, value_of_consumption=50.0)
-FLEXIBLE_LOAD_WITH_MIN_LOAD = FlexibleLoad(
-    name="flex_min",
-    max_increase=10.0,
-    max_decrease=MAX_DECREASE,
-    min_load=MIN_LOAD,
-    value_of_consumption=50.0,
-)
+FLEXIBLE_LOAD = FlexibleLoad(name="flex", value_of_consumption=50.0)
 CHARGER = Charger(name="charger", max_power=10.0)
 
 
@@ -80,16 +71,14 @@ def test_max_supply_of_generator_follows_its_available_capacity_profile() -> Non
     ("entity", "expected"),
     [
         (FIXED_LOAD, LOAD_VALUES),
-        (FLEXIBLE_LOAD, (10.0, 30.0, 50.0)),
-        (FLEXIBLE_LOAD_WITH_MIN_LOAD, (MIN_LOAD,) * NUMBER_OF_STEPS),
+        (FLEXIBLE_LOAD, LOAD_VALUES),
         (GENERATOR, ZEROS),
         (STORAGE, ZEROS),
         (MARKET, ZEROS),
     ],
     ids=[
         "fixed_load",
-        "flexible_load_reduced_by_max_decrease",
-        "flexible_load_min_load_overrides_max_decrease",
+        "flexible_load_lower_bound",
         "generator",
         "storage",
         "market",

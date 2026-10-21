@@ -12,11 +12,11 @@ Energy system components that can be included in an optimization portfolio.
 - ElectricVehicle (storage with trip schedules and charging constraints)
 - Charger (EV charging infrastructure with power limits)
 - FixedLoad (inelastic demand)
-- FlexibleLoad (adjustable demand with increase/decrease bounds)
+- FlexibleLoad (demand set within a per-step range from a `FlexibleLoadProfile`)
 - EnergyMarket (buy/sell with trade direction and volume limits)
 
 **Coming soon:**
-- [ ] FlexibleLoad enhancements (min/max load, ramp rate constraints)
+- [ ] FlexibleLoad enhancements (ramp rate constraints)
 - [ ] Charger efficiency enforcement (apply existing efficiency parameter in constraints)
 - [ ] ElectricVehicle temperature-dependent battery parameters (capacity, power, degradation)
 - [ ] Trip regenerative braking (energy recovery during braking phases)

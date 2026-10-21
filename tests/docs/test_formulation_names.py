@@ -27,6 +27,7 @@ from odys import (
     EnergySystem,
     FixedLoad,
     FlexibleLoad,
+    FlexibleLoadProfile,
     Generator,
     GeneratorFinalState,
     GeneratorInitialState,
@@ -54,7 +55,7 @@ DOCUMENTED_PAGES: dict[str, tuple[str, ...]] = {
         "ev_capacity_",
     ),
     "electric_vehicles.md": ("ev_driving_", "ev_min_soc_departure_", "charger_"),
-    "flexible_loads.md": ("flexible_load_", "load_adjustment"),
+    "flexible_loads.md": ("flexible_load_",),
     "generators.md": ("generator_", "available_capacity_"),
     "markets.md": ("market_",),
     "non_anticipativity.md": ("non_anticipativity_",),
@@ -125,12 +126,7 @@ def _reference_system() -> EnergySystem:
     )
     charger = Charger(name="depot", max_power=CHARGER_POWER)
     fixed_load = FixedLoad(name="site")
-    flexible_load = FlexibleLoad(
-        name="process",
-        max_increase=FLEXIBLE_RANGE,
-        max_decrease=FLEXIBLE_RANGE,
-        value_of_consumption=FLEXIBLE_VALUE,
-    )
+    flexible_load = FlexibleLoad(name="process", value_of_consumption=FLEXIBLE_VALUE)
     day_ahead = EnergyMarket(name="day_ahead", max_trading_volume_per_step=MARKET_VOLUME, stage_fixed=True)
     grid = EnergyMarket(
         name="grid",
@@ -143,7 +139,11 @@ def _reference_system() -> EnergySystem:
             probability=1 / len(SCENARIO_PRICES),
             profiles=(
                 LoadProfile(load=fixed_load, values=BASE_LOAD),
-                LoadProfile(load=flexible_load, values=BASE_LOAD),
+                FlexibleLoadProfile(
+                    load=flexible_load,
+                    lower_bound=[load - FLEXIBLE_RANGE for load in BASE_LOAD],
+                    upper_bound=[load + FLEXIBLE_RANGE for load in BASE_LOAD],
+                ),
                 PriceProfile(market=day_ahead, values=prices),
                 PriceProfile(market=grid, values=prices),
             ),
