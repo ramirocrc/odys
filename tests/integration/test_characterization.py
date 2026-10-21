@@ -58,10 +58,9 @@ RECORDED_EXAMPLE_OBJECTIVES = {
     "solar_storage": -37_090.625,
     # Re-recorded when the example market started selling too, and its prices equal to the ccgt cost (50) became 52.
     "make_or_buy": -68_680.0,
-    # Re-recorded when the example prices equal to the value of consumption (70) became 72, removing a tie.
-    # Re-recorded when flexible loads started valuing all of their consumption, not only the adjustment from a
-    # base profile: the dispatch is unchanged, and the old base (60 MW for 24 h at 70/MWh, 100,800) is now counted.
-    "demand_response": 21_960.0,
+    # Re-recorded when the example became a kiln with ramps and on/off, compared with an ideal kiln.
+    "demand_response_kiln": 31_320.0,
+    "demand_response_ideal": 36_600.0,
     # Re-recorded when ev_2 and ev_3 in the example got V2G discharge, so the vans compete for the chargers.
     "depot_charging": 9.99,
     # Re-recorded when the CVaR example's day-ahead and intraday prices started moving together
@@ -98,6 +97,15 @@ def _day_ahead_or_intraday_example_results() -> tuple[OptimalDispatchResults, Op
     return expected_profit, penalized_cvar
 
 
+def _demand_response_example_results() -> tuple[OptimalDispatchResults, OptimalDispatchResults]:
+    results = _run_example("demand_response", "run_demand_response")
+    assert isinstance(results, tuple)
+    kiln, ideal = results
+    assert isinstance(kiln, OptimalDispatchResults)
+    assert isinstance(ideal, OptimalDispatchResults)
+    return kiln, ideal
+
+
 def _assert_optimal_with_objective(result: OptimalDispatchResults, expected: float, *, rel: float) -> None:
     assert result.termination_condition == "optimal"
     assert result.objective_value == pytest.approx(expected, rel=rel)
@@ -105,7 +113,7 @@ def _assert_optimal_with_objective(result: OptimalDispatchResults, expected: flo
 
 @pytest.mark.parametrize(
     "module_name",
-    ["merit_order_dispatch", "solar_storage", "make_or_buy", "demand_response", "depot_charging"],
+    ["merit_order_dispatch", "solar_storage", "make_or_buy", "depot_charging"],
 )
 def test_example_objective_is_unchanged(module_name: str) -> None:
     result = _single_example_result(module_name)
@@ -124,6 +132,20 @@ def test_day_ahead_or_intraday_example_objectives_are_unchanged() -> None:
         RECORDED_EXAMPLE_OBJECTIVES["day_ahead_or_intraday_penalized_cvar"],
         rel=DEFAULT_MIP_GAP,
     )
+
+
+def test_demand_response_example_objectives_are_unchanged() -> None:
+    kiln, ideal = _demand_response_example_results()
+    _assert_optimal_with_objective(kiln, RECORDED_EXAMPLE_OBJECTIVES["demand_response_kiln"], rel=DEFAULT_MIP_GAP)
+    _assert_optimal_with_objective(ideal, RECORDED_EXAMPLE_OBJECTIVES["demand_response_ideal"], rel=DEFAULT_MIP_GAP)
+
+
+def test_demand_response_example_ideal_kiln_earns_at_least_the_real_one() -> None:
+    kiln, ideal = _demand_response_example_results()
+
+    assert kiln.objective_value is not None
+    assert ideal.objective_value is not None
+    assert kiln.objective_value <= ideal.objective_value
 
 
 def _unit_commitment_system() -> EnergySystem:

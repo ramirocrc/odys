@@ -127,7 +127,7 @@ time flexible_load
 
 Every MWh of the process is worth 60 $/MWh and the most expensive supply, the CCGT, costs 50 $/MWh, so the optimizer runs the process at its upper bound whenever it can. At step 1 the factory needs 90 MW and only 110 MW of supply is available, so the process drops to its lower bound instead.
 
-The [Industrial Demand Response](../../examples/demand_response.md) example follows a process through a full day of market prices.
+The [Industrial Demand Response](../../examples/demand_response.md) example plans a cement kiln with ramps and on/off through a full day of day-ahead prices.
 
 ## Ramp limits
 

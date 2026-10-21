@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Documentation: the Industrial Demand Response example models a cement kiln that buys at known day-ahead prices, with a minimum stable load, ramp limits, a minimum down time and a restart cost, and compares its plan with an ideal kiln to show what the physics costs.
 - **Breaking:** a `FlexibleLoad` takes its range from a `FlexibleLoadProfile` in every scenario instead of a base `LoadProfile` adjusted by `max_increase` / `max_decrease`, which are removed. `LoadProfile` is for fixed loads only. `min_load` and `max_load` stay, as optional limits every scenario's bounds must fit in. The optimizer decides the consumption itself:
 
     ```python

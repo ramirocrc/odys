@@ -1,51 +1,51 @@
-"""Flexible load buying from a market.
+"""A kiln buying its power at the day-ahead price.
 
-This example shows how a flexible industrial consumer follows market prices.
-Instead of consuming a fixed amount regardless of cost, the optimizer sets
-the consumption at each step anywhere within the process's range, weighing
-the value of consumption against the market price.
+This example plans one day of an industrial kiln that buys its power on a
+supply contract indexed to the day-ahead price. The plan is made once
+day-ahead has cleared on the day before, so every hourly price of the day is
+known. The kiln's physics links the hours together: it ramps slowly, can't
+run below its minimum stable load, and pays to restart once stopped.
 
 ## Assets
 
-- **market**: Buy-only electricity market with max 80 MW per timestep.
-  Prices vary throughout the day from 30 to 90 $/MWh.
-- **industrial_process**: Flexible load that can run anywhere from 40 to
-  100 MW. Each MWh consumed has an economic value of 70 $/MWh.
+- **supply**: Buy-only supply at the day-ahead price, capped at 100 MW by the
+  grid connection. Hourly prices range from 28 to 140 $/MWh.
+- **kiln**: Runs between 40 and 100 MW, or not at all. Each MWh it consumes
+  is worth 70 $/MWh. It ramps up by at most 20 MW per hour and down by at
+  most 30 MW per hour, stays off for at least 3 hours once stopped, and each
+  start costs 2,000. It is running at 40 MW at midnight.
 
-## Problem
-
-We simulate 24 hourly periods. At every step the optimizer chooses how much
-the industrial process consumes, between 40 and 100 MW.
-
-The decision compares the value of consumption (70 $/MWh) against the
-market price at each step:
-- When market price < 70 $/MWh: consuming more is profitable
-- When market price > 70 $/MWh: consuming less saves money
+The same day is also solved for an ideal kiln without ramps, minimum down
+time or start-up cost, to show what the physics costs.
 
 ## Expected Results
 
-- Steps 3-16 (price 30-65 $/MWh): consumption rises to 80 MW, the market
-  limit, although the process could take 100 MW.
-- Steps 0-2 and 17-23 (price 72-90 $/MWh): consumption drops to 40 MW.
+- Hours 0-2: the kiln ramps from 40 to 100 MW; the ideal kiln runs at 100 MW.
+- Hours 5-7: the kiln ramps down ahead of the morning peak and runs at its
+  40 MW floor through it, rather than stopping and paying to restart.
+- Hours 17-21: both stop for the evening peak.
+- Hours 22-23: the kiln restarts straight at 100 MW.
 
-Each step is decided on its own: nothing links one hour to the next.
+The kiln earns 31,320, the ideal kiln 36,600: the physics costs 5,280.
 
 ## Understanding the Output
 
-The script prints:
-- Consumption of the process over time
-- Market purchases (matches the consumption at each timestep)
+The script prints both kilns' consumption over the day and their objective
+values.
 """
 
 import logging
 from datetime import timedelta
+from typing import NamedTuple
 
 from odys import (
     AllowedTradeDirection,
     AssetPortfolio,
+    Commitment,
     EnergyMarket,
     EnergySystem,
     FlexibleLoad,
+    FlexibleLoadInitialState,
     FlexibleLoadProfile,
     OptimalDispatchResults,
     PriceProfile,
@@ -54,47 +54,68 @@ from odys import (
 
 logger = logging.getLogger(__name__)
 
+HOURS = 24
+DAY_AHEAD_PRICES = [52, 48, 45, 44, 46, 62, 88, 92, 66, 64, 62, 35, 30, 28, 32, 40, 60, 95, 120, 140, 130, 100, 60, 50]
+MIN_STABLE_LOAD = 40.0
+MAX_LOAD = 100.0
+VALUE_OF_CONSUMPTION = 70.0
 
-def run_demand_response() -> OptimalDispatchResults:
-    """Run the industrial demand response example and return the optimization results."""
-    market = EnergyMarket(
-        name="market",
-        max_trading_volume_per_step=80,
+
+class DemandResponseResults(NamedTuple):
+    """The plans of the real kiln and of an ideal kiln without ramps, minimum down time or start-up cost."""
+
+    kiln: OptimalDispatchResults
+    ideal: OptimalDispatchResults
+
+
+def _solve(kiln: FlexibleLoad, initial_conditions: tuple[FlexibleLoadInitialState, ...]) -> OptimalDispatchResults:
+    supply = EnergyMarket(
+        name="supply",
+        max_trading_volume_per_step=MAX_LOAD,
         allowed_trade_direction=AllowedTradeDirection.BUY_ONLY,
     )
 
-    industrial_process = FlexibleLoad(name="industrial_process", value_of_consumption=70)
-
-    portfolio = AssetPortfolio(assets=[industrial_process])
-
     scenario = Scenario(
         profiles=(
-            FlexibleLoadProfile(load=industrial_process, lower_bound=24 * [40], upper_bound=24 * [100]),
-            PriceProfile(
-                market=market,
-                values=[80, 75, 72, 65, 60, 55, 50, 45, 40, 35, 30, 35, 40, 45, 50, 55, 60, 72, 80, 90, 85, 80, 75, 72],
-            ),
+            FlexibleLoadProfile(load=kiln, lower_bound=HOURS * [MIN_STABLE_LOAD], upper_bound=HOURS * [MAX_LOAD]),
+            PriceProfile(market=supply, values=DAY_AHEAD_PRICES),
         ),
     )
 
     energy_system = EnergySystem(
-        portfolio=portfolio,
-        markets=market,
+        portfolio=AssetPortfolio(assets=[kiln]),
+        markets=supply,
         timestep=timedelta(hours=1),
-        number_of_steps=24,
+        number_of_steps=HOURS,
         scenarios=scenario,
+        initial_conditions=initial_conditions,
     )
 
     return energy_system.optimize()
 
 
+def run_demand_response() -> DemandResponseResults:
+    """Run the kiln example and return the plans of the real and the ideal kiln."""
+    kiln = FlexibleLoad(
+        name="kiln",
+        value_of_consumption=VALUE_OF_CONSUMPTION,
+        ramp_up=20.0,
+        ramp_down=30.0,
+        commitment=Commitment(min_down_time=timedelta(hours=3), startup_cost=2000.0),
+    )
+    ideal_kiln = FlexibleLoad(name="kiln", value_of_consumption=VALUE_OF_CONSUMPTION, commitment=Commitment())
+
+    return DemandResponseResults(
+        kiln=_solve(kiln, (FlexibleLoadInitialState(load=kiln, power=MIN_STABLE_LOAD),)),
+        ideal=_solve(ideal_kiln, ()),
+    )
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logging.getLogger("linopy").setLevel(logging.WARNING)
-    result = run_demand_response()
+    results = run_demand_response()
 
-    logger.info("Consumption (MW)")
-    logger.info(result.flexible_loads.consumption)
-
-    logger.info("Market purchases (MW)")
-    logger.info(result.markets.buy_volume)
+    for label, result in results._asdict().items():
+        logger.info("%s plan, objective %.0f", label, result.objective_value)
+        logger.info(result.flexible_loads.consumption)
