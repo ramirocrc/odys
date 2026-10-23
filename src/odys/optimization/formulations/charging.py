@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.charger import Charger
 from odys.domain.exceptions import OdysError
-from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
@@ -85,7 +84,15 @@ class ChargingFormulation(Formulation):
             assignment=model.add_variables(name=self.assignment_name, coords=coords, binary=True),
         )
 
-    @constraint
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the charger constraints: who plugs in where, never while driving, within the charger's rating."""
+        return [
+            self._get_charger_one_ev_per_charger_constraint(),
+            self._get_charger_one_charger_per_ev_constraint(),
+            self._get_charger_no_assignment_while_driving_constraint(),
+            self._get_charger_power_limit_constraint(),
+        ]
+
     def _get_charger_one_ev_per_charger_constraint(self) -> ModelConstraint:
         """Each charger serves at most one vehicle at a time."""
         return ModelConstraint(
@@ -93,7 +100,6 @@ class ChargingFormulation(Formulation):
             name="charger_one_ev_per_charger_constraint",
         )
 
-    @constraint
     def _get_charger_one_charger_per_ev_constraint(self) -> ModelConstraint:
         """Each vehicle is connected to at most one charger at a time."""
         return ModelConstraint(
@@ -101,7 +107,6 @@ class ChargingFormulation(Formulation):
             name="charger_one_charger_per_ev_constraint",
         )
 
-    @constraint
     def _get_charger_no_assignment_while_driving_constraint(self) -> ModelConstraint:
         """A driving vehicle cannot be assigned to a charger."""
         return ModelConstraint(
@@ -109,7 +114,6 @@ class ChargingFormulation(Formulation):
             name="charger_no_assignment_while_driving_constraint",
         )
 
-    @constraint
     def _get_charger_power_limit_constraint(self) -> ModelConstraint:
         """A vehicle's charging and discharging power is capped by its assigned charger's `max_power`.
 

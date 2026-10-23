@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.base import EnergyEntity
 from odys.domain.exceptions import OdysError
-from odys.optimization.constraints.constraints_group import ConstraintGroup
+from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.parameters.context import ModelContext
 from odys.parameters.coordinates import Coordinates
 from odys.parameters.dimensions import ModelDimension
@@ -22,13 +22,13 @@ EntityT = TypeVar("EntityT", bound=EnergyEntity)
 FormulationT = TypeVar("FormulationT", bound="Formulation")
 
 
-class Formulation(ConstraintGroup, ABC):
+class Formulation(ABC):
     """The optimization model of every entity of one type, vectorized along that type's dimension.
 
     A formulation owns, for its entity type: the parameter arrays, the decision
-    variables (added to the model when the formulation is built), the `@constraint`
-    methods (inherited discovery from `ConstraintGroup`), the net power it injects
-    into the power balance, its profit per scenario and its dispatch results. It is
+    variables (added to the model when the formulation is built), its constraints
+    (`constraints()`), the net power it injects into the power balance, its profit
+    per scenario and its dispatch results. It is
     built only when the system has at least one entity of its type, so its methods
     never check for absence. It belongs to the one model it was built into.
 
@@ -57,6 +57,10 @@ class Formulation(ConstraintGroup, ABC):
         Args:
             inputs: Every entity of the system, the shared indexing, the model, and the formulations built before.
         """
+
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the constraints of these entities, in the order they are added to the model. The default is none."""
+        return []
 
     @abstractmethod
     def power_injection(self) -> linopy.LinearExpression | xr.DataArray | None:

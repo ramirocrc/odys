@@ -255,7 +255,7 @@ classDiagram
 
 ## Parameters and optimization
 
-`OptimizationProblem.assemble` builds one `ModelContext`, one `linopy.Model` and every formulation whose entity type is present (`FORMULATIONS` order), then every objective term the objective holds (`OBJECTIVE_TERM_FORMULATIONS`). Each formulation and objective term adds its variables to the model when it is built. Each formulation vectorizes its entities into its `EntityArrays` subclass with `vectorize`, reads scenario profiles (`context.profiles`) and the run's initial and final conditions (`context.conditions`) through the context, owns its variables, constraints, power injection, profit and results view, and names its own entity axis. Once every variable exists, `assemble` adds every `ConstraintGroup`'s constraints and `PowerBalance`, and maximizes the sum of the objective-term expressions. API reference: [`odys.parameters`](api/parameters/index.md), [`odys.optimization`](api/optimization/index.md).
+`OptimizationProblem.assemble` builds one `ModelContext`, one `linopy.Model` and every formulation whose entity type is present (`FORMULATIONS` order), then every objective term the objective holds (`OBJECTIVE_TERM_FORMULATIONS`). Each formulation and objective term adds its variables to the model when it is built. Each formulation vectorizes its entities into its `EntityArrays` subclass with `vectorize`, reads scenario profiles (`context.profiles`) and the run's initial and final conditions (`context.conditions`) through the context, owns its variables, constraints, power injection, profit and results view, and names its own entity axis. Once every variable exists, `assemble` adds the `constraints()` of every formulation, `PowerBalance` and every objective term, and maximizes the sum of the objective-term expressions. API reference: [`odys.parameters`](api/parameters/index.md), [`odys.optimization`](api/optimization/index.md).
 
 ```mermaid
 classDiagram
@@ -284,10 +284,6 @@ classDiagram
     class EntityArrays {
         <<abstract>>
     }
-    class ConstraintGroup {
-        +collect_constraints()
-        +add_to_model(model)
-    }
     class FormulationInputs {
         +entities
         +context: ModelContext
@@ -301,6 +297,7 @@ classDiagram
         +dimension: ClassVar~str~
         +entity_type: ClassVar
         +build(inputs)
+        +constraints()
         +power_injection()
         +profit()
         +dispatch(solution) Dispatch
@@ -319,10 +316,13 @@ classDiagram
     }
     class CommitmentFormulation {
         +create_variables(model) CommitmentVariables
+        +constraints(variables)
         +previous_status(variables)
         +costs(variables, arrays)
     }
-    class PowerBalance
+    class PowerBalance {
+        +constraints()
+    }
     class ObjectiveTermInputs {
         +objective: Objective
         +context: ModelContext
@@ -332,6 +332,7 @@ classDiagram
     class ObjectiveTermFormulation {
         <<abstract>>
         +build(inputs)
+        +constraints()
         +expression()
     }
     class ProfitTermFormulation
@@ -348,9 +349,6 @@ classDiagram
 
     ModelContext --> Coordinates
     Coordinates ..> ModelDimension
-    ConstraintGroup <|-- Formulation
-    ConstraintGroup <|-- ObjectiveTermFormulation
-    ConstraintGroup <|-- PowerBalance
     Formulation <|-- FixedLoadFormulation
     Formulation <|-- GeneratorFormulation
     Formulation <|-- EnergyMarketFormulation
