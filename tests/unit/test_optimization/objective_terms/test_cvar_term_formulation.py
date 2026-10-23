@@ -7,10 +7,8 @@ import numpy as np
 import pytest
 from linopy.testing import assert_conequal, assert_linequal
 
-from odys.domain.exceptions import OdysError
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
 from odys.optimization.formulations.base import per_scenario_profit
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.objective_terms.base import ObjectiveTermInputs
 from odys.optimization.objective_terms.cvar import CVaRTermFormulation
 from odys.optimization.problem import OptimizationProblem
@@ -39,12 +37,17 @@ def problem(problem_with: ProblemWith) -> OptimizationProblem:
 
 @pytest.fixture
 def linopy_model(problem: OptimizationProblem) -> linopy.Model:
-    return build_model(problem)
+    return problem.model
 
 
 def test_cvar_term_build_returns_none_without_a_cvar_term(problem_with: ProblemWith) -> None:
     problem = problem_with(Objective())
-    inputs = ObjectiveTermInputs(objective=Objective(), context=problem.context, formulations=problem.formulations)
+    inputs = ObjectiveTermInputs(
+        objective=Objective(),
+        context=problem.context,
+        model=problem.model,
+        formulations=problem.formulations,
+    )
 
     assert CVaRTermFormulation.build(inputs) is None
 
@@ -80,7 +83,6 @@ def test_cvar_shortfall_constraint_is_value_at_risk_minus_scenario_profit(
     assert bool((actual.labels != -1).all())
 
 
-@pytest.mark.usefixtures("linopy_model")
 def test_cvar_expression_is_weighted_value_at_risk_less_tail_shortfall(problem: OptimizationProblem) -> None:
     variables = _cvar_term(problem).variables
     expected_shortfall = (problem.context.probabilities * variables.shortfall).sum(SCENARIOS)
@@ -88,17 +90,6 @@ def test_cvar_expression_is_weighted_value_at_risk_less_tail_shortfall(problem: 
     expected = CVAR_WEIGHT * (variables.value_at_risk - (1 / (1 - CONFIDENCE_LEVEL)) * expected_shortfall)
 
     assert_linequal(_cvar_term(problem).expression(), expected)
-
-
-def test_cvar_variables_raise_before_they_are_added(problem: OptimizationProblem) -> None:
-    with pytest.raises(OdysError, match="add_variables must run before its variables are used"):
-        _ = _cvar_term(problem).variables
-
-
-@pytest.mark.usefixtures("linopy_model")
-def test_cvar_term_belongs_to_one_model_only(problem: OptimizationProblem) -> None:
-    with pytest.raises(OdysError, match="already has variables; build a new problem for each model"):
-        _cvar_term(problem).add_variables(linopy.Model())
 
 
 @pytest.mark.parametrize(
@@ -111,7 +102,7 @@ def test_model_objective_is_the_profit_term_plus_the_cvar_term(
     terms: tuple[ProfitTerm | CVaRTerm, ...],
 ) -> None:
     problem = problem_with(Objective(terms=terms))
-    model = build_model(problem)
+    model = problem.model
     profit_term, cvar_term = problem.objective_terms
 
     assert model.objective.sense == "max"

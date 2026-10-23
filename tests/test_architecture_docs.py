@@ -43,7 +43,6 @@ CORE_PIPELINE_CLASSES = (
     "OptimizationProblem",
     "PowerBalance",
     "ConstraintGroup",
-    "VariableOwner",
     "SolveOutcome",
 )
 

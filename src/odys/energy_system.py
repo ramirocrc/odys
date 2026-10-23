@@ -21,7 +21,6 @@ from odys.domain.objective import Objective
 from odys.domain.scenario import Scenario, ScenarioSet
 from odys.domain.validation import validate_energy_system_inputs
 from odys.optimization.formulations import validate_entities_supported
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 from odys.results.optimization_results import OptimalDispatchResults
 from odys.solvers.solver import solve
@@ -121,7 +120,7 @@ class EnergySystem(BaseModel):
         return (*self.portfolio.assets.values(), *self.collection_of_markets)
 
     def build_problem(self) -> OptimizationProblem:
-        """Build the optimization problem of this energy system: one formulation per entity type and objective term."""
+        """Build the optimization problem of this energy system: its formulations and its model, ready for solving."""
         return OptimizationProblem.assemble(
             self._entities,
             self.horizon,
@@ -143,5 +142,5 @@ class EnergySystem(BaseModel):
 
         """
         problem = self.build_problem()
-        outcome = solve(build_model(problem), solver_config or SolverConfig())
+        outcome = solve(problem.model, solver_config or SolverConfig())
         return OptimalDispatchResults(outcome, problem.dispatches)

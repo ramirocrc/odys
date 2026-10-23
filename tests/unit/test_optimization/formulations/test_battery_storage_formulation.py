@@ -21,7 +21,6 @@ from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.battery_storage import BatteryStorageFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 
 logger = logging.getLogger(__name__)
@@ -248,7 +247,7 @@ class TestBatteryStorageConstraintsSubHourlyTimestep:
         energy_system_15min: EnergySystem,
     ) -> linopy.Model:
         problem = energy_system_15min.build_problem()
-        return build_model(problem)
+        return problem.model
 
     def test_soc_dynamics_with_15min_timestep(
         self,
@@ -352,7 +351,7 @@ class TestStorageSocEndOptional:
             initial_conditions=tuple(StorageInitialState(storage=storage, soc=SOC_START) for storage in storages),
             final_conditions=final_states,
         )
-        return build_model(energy_system.build_problem())
+        return energy_system.build_problem().model
 
     def test_constraint_covers_only_storages_with_soc_end(
         self,

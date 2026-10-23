@@ -137,11 +137,6 @@ nav = [
         ] },
         { "problem" = "developer/api/optimization/problem.md" },
         { "power_balance" = "developer/api/optimization/power_balance.md" },
-        { "variable_owner" = "developer/api/optimization/variable_owner.md" },
-        { "model" = [
-          { "Overview" = "developer/api/optimization/model/index.md" },
-          { "model_builder" = "developer/api/optimization/model/model_builder.md" },
-        ] },
       ] },
       { "solvers" = [
         { "Overview" = "developer/api/solvers/index.md" },

@@ -9,7 +9,7 @@ import xarray as xr
 from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
+from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.optimization.formulations.storage import StorageFormulation, StorageVariables
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
@@ -19,7 +19,7 @@ from odys.results.dispatch import ElectricVehicleDispatch
 EV = "ev"
 
 
-class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
+class ElectricVehicleFormulation(Formulation):
     """Electric vehicles: the shared battery model with trip energy drawn from the battery while driving.
 
     A vehicle cannot charge or discharge while driving and must reach its departure SOC
@@ -33,12 +33,18 @@ class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
     soc_name: ClassVar[str] = f"{EV}_soc"
     charge_mode_name: ClassVar[str] = f"{EV}_charge_mode"
 
-    def __init__(self, electric_vehicles: Sequence[ElectricVehicle], context: ModelContext) -> None:
+    def __init__(
+        self,
+        electric_vehicles: Sequence[ElectricVehicle],
+        context: ModelContext,
+        model: linopy.Model,
+    ) -> None:
         """Initialize with the electric vehicles of the system.
 
         Args:
             electric_vehicles: The electric vehicles, at least one.
             context: The shared indexing of the problem.
+            model: The model to add the variables to.
         """
         super().__init__(electric_vehicles, context)
         arrays = electric_vehicle_arrays(electric_vehicles, self.coordinates, context)
@@ -50,12 +56,13 @@ class ElectricVehicleFormulation(VariableFormulation[StorageVariables]):
             context,
             soc_drop=arrays.trips.trip_energy / arrays.battery.capacity,
         )
+        self.variables = self._create_variables(model)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
         """Return the formulation of the electric vehicles, or None if there are none."""
         electric_vehicles = inputs.of_type(ElectricVehicle)
-        return cls(electric_vehicles, inputs.context) if electric_vehicles else None
+        return cls(electric_vehicles, inputs.context, inputs.model) if electric_vehicles else None
 
     def _create_variables(self, model: linopy.Model) -> StorageVariables:
         """Add the battery variables of every electric vehicle."""

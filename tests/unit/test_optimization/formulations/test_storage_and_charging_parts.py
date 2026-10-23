@@ -22,7 +22,6 @@ from odys.energy_system import EnergySystem
 from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.optimization.formulations.charging import ChargingFormulation
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 
 NUMBER_OF_STEPS = 3
@@ -73,7 +72,7 @@ def optimization_problem() -> OptimizationProblem:
 
 @pytest.fixture
 def linopy_model(optimization_problem: OptimizationProblem) -> linopy.Model:
-    return build_model(optimization_problem)
+    return optimization_problem.model
 
 
 @pytest.fixture
@@ -145,7 +144,11 @@ def test_charging_uses_the_electric_vehicle_formulation(
 
 
 def test_charging_without_an_electric_vehicle_formulation_raises(optimization_problem: OptimizationProblem) -> None:
-    inputs = FormulationInputs(entities=(CHARGER,), context=optimization_problem.context)
+    inputs = FormulationInputs(
+        entities=(CHARGER,),
+        context=optimization_problem.context,
+        model=optimization_problem.model,
+    )
     with pytest.raises(OdysError, match="must be built after an ElectricVehicleFormulation"):
         ChargingFormulation.build(inputs)
 
@@ -157,6 +160,7 @@ def test_formulation_inputs_select_entities_and_built_formulations(
     inputs = FormulationInputs(
         entities=(GENERATOR, EV, CHARGER),
         context=optimization_problem.context,
+        model=optimization_problem.model,
         built=(electric_vehicles,),
     )
 
@@ -166,14 +170,16 @@ def test_formulation_inputs_select_entities_and_built_formulations(
 
 
 def test_soc_start_draws_the_energy_of_a_trip_departing_at_t0() -> None:
-    model = build_model(
+    model = (
         EnergySystem(
             portfolio=AssetPortfolio([GENERATOR, LOAD, EV, EV_LEAVING_AT_T0, CHARGER]),
             timestep=timedelta(hours=HOURS_PER_STEP),
             number_of_steps=NUMBER_OF_STEPS,
             scenarios=Scenario(profiles=(LoadProfile(load=LOAD, values=DEMAND),)),
             initial_conditions=(EV_STATE, EV_LEAVING_AT_T0_STATE),
-        ).build_problem(),
+        )
+        .build_problem()
+        .model
     )
     soc_start = model.constraints["ev_soc_start_constraint"]
 
