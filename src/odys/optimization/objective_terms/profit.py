@@ -18,7 +18,7 @@ class ProfitTermFormulation(ObjectiveTermFormulation):
 
         Args:
             term: The profit term of the objective.
-            inputs: The objective, the shared indexing, and the entity formulations.
+            inputs: The objective, the shared indexing, the model, and the entity formulations.
         """
         super().__init__(inputs)
         self.term = term

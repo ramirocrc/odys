@@ -1,8 +1,11 @@
-"""Everything needed to build the optimization model of one energy system."""
+"""The optimization model of one energy system, with the formulations that built it."""
 
 from collections.abc import Sequence
+from functools import reduce
+from operator import add
 from typing import Self, TypeVar
 
+import linopy
 import xarray as xr
 from pydantic import BaseModel, ConfigDict
 
@@ -15,6 +18,7 @@ from odys.optimization.formulations import FORMULATIONS
 from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.optimization.objective_terms import OBJECTIVE_TERM_FORMULATIONS
 from odys.optimization.objective_terms.base import ObjectiveTermFormulation, ObjectiveTermInputs
+from odys.optimization.power_balance import PowerBalance
 from odys.parameters.context import ModelContext
 from odys.results.dispatch import Dispatch
 
@@ -22,13 +26,11 @@ FormulationT = TypeVar("FormulationT", bound=Formulation)
 
 
 class OptimizationProblem(BaseModel):
-    """The input of the model builder for one energy system.
+    """The optimization model of one energy system, ready for solving, with the formulations that built it.
 
     It holds the shared indexing, one formulation per entity type present in the
-    system, and one formulation per objective term.
-    Formulations keep the variables of the model they are built into, so a
-    problem is built into one model only; call `EnergySystem.build_problem()`
-    again for another model.
+    system, one formulation per objective term, and the linopy model they were
+    built into. Call `EnergySystem.build_problem()` again for another model.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
@@ -36,6 +38,7 @@ class OptimizationProblem(BaseModel):
     context: ModelContext
     formulations: tuple[Formulation, ...]
     objective_terms: tuple[ObjectiveTermFormulation, ...]
+    model: linopy.Model
 
     @classmethod
     def assemble(
@@ -46,10 +49,11 @@ class OptimizationProblem(BaseModel):
         condition_set: ConditionSet,
         objective: Objective,
     ) -> Self:
-        """Build the shared indexing and the formulations of the entity types present and of the objective's terms.
+        """Build the model: every formulation and objective term with its variables, then the constraints and objective.
 
-        Entity formulations are built in `FORMULATIONS` order, each seeing the ones
-        built before it; objective terms in `OBJECTIVE_TERM_FORMULATIONS` order.
+        Entity formulations are built in `FORMULATIONS` order, each adding its variables
+        and seeing the ones built before it; objective terms in `OBJECTIVE_TERM_FORMULATIONS`
+        order. The constraints and the objective come after every variable.
 
         Args:
             entities: Every asset and market of the system.
@@ -59,21 +63,23 @@ class OptimizationProblem(BaseModel):
             objective: The objective to maximize.
 
         Returns:
-            The problem, ready for the model builder.
+            The problem, whose model is ready for solving.
         """
         context = ModelContext(horizon=horizon, scenario_set=scenario_set, condition_set=condition_set)
+        model = linopy.Model(force_dim_names=True)
         all_entities = tuple(entities)
         formulations: tuple[Formulation, ...] = ()
         for formulation_type in FORMULATIONS:
-            inputs = FormulationInputs(entities=all_entities, context=context, built=formulations)
+            inputs = FormulationInputs(entities=all_entities, context=context, model=model, built=formulations)
             formulation = formulation_type.build(inputs)
             if formulation is not None:
                 formulations = (*formulations, formulation)
-        term_inputs = ObjectiveTermInputs(objective=objective, context=context, formulations=formulations)
+        term_inputs = ObjectiveTermInputs(objective=objective, context=context, model=model, formulations=formulations)
         objective_terms = tuple(
             term for term_type in OBJECTIVE_TERM_FORMULATIONS if (term := term_type.build(term_inputs)) is not None
         )
-        return cls(context=context, formulations=formulations, objective_terms=objective_terms)
+        _add_constraints_and_objective(model, formulations, objective_terms)
+        return cls(context=context, formulations=formulations, objective_terms=objective_terms, model=model)
 
     def formulation_of(self, kind: type[FormulationT]) -> FormulationT | None:
         """Return the formulation of the given type, if the system has entities of that type.
@@ -96,3 +102,18 @@ class OptimizationProblem(BaseModel):
         return tuple(
             dispatch for formulation in self.formulations if (dispatch := formulation.dispatch(solution)) is not None
         )
+
+
+def _add_constraints_and_objective(
+    model: linopy.Model,
+    formulations: Sequence[Formulation],
+    objective_terms: Sequence[ObjectiveTermFormulation],
+) -> None:
+    """Add the constraints (entity formulations, the power balance, objective terms) and the maximized objective."""
+    for formulation in formulations:
+        formulation.add_to_model(model)
+    PowerBalance(formulations).add_to_model(model)
+    for term in objective_terms:
+        term.add_to_model(model)
+    objective: linopy.LinearExpression = reduce(add, (term.expression() for term in objective_terms))
+    model.add_objective(objective, sense="max")

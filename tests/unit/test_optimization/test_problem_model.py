@@ -11,13 +11,11 @@ from odys.domain.entities.electric_vehicle import ElectricVehicle
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.exceptions import OdysError
 from odys.domain.profiles import LoadProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.charging import ChargingFormulation
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.parameters.dimensions import ModelDimension
 
 logger = logging.getLogger(__name__)
@@ -79,11 +77,11 @@ def energy_system_sample(
     )
 
 
-def test_model_build_components(
+def test_problem_model_has_variables_constraints_and_objective(
     energy_system_sample: EnergySystem,
 ) -> None:
     problem = energy_system_sample.build_problem()
-    linopy_model = build_model(problem)
+    linopy_model = problem.model
 
     # Variables
     variable_names = set(linopy_model.variables)
@@ -109,7 +107,7 @@ def test_model_build_components(
     assert linopy_model.objective is not None
 
 
-def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
+def test_problem_model_with_ev_fleet_has_charger_assignment(load1: FixedLoad) -> None:
     demand_profile = [50, 80, 60]
     ev_names = ["ev1", "ev2"]
     charger_names = ["charger1"]
@@ -135,7 +133,7 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
         scenarios=Scenario(profiles=(LoadProfile(load=load1, values=demand_profile),)),
         initial_conditions=tuple(ElectricVehicleInitialState(vehicle=ev, soc=0.5) for ev in electric_vehicles),
     )
-    linopy_model = build_model(energy_system.build_problem())
+    linopy_model = energy_system.build_problem().model
 
     assert "charger_ev_assignment" in set(linopy_model.variables)
 
@@ -149,12 +147,3 @@ def test_model_build_with_ev_fleet(load1: FixedLoad) -> None:
     }
     assert list(assignment.coords[ChargingFormulation.dimension].values) == charger_names
     assert list(assignment.coords[ElectricVehicleFormulation.dimension].values) == ev_names
-
-
-def test_model_already_built(
-    energy_system_sample: EnergySystem,
-) -> None:
-    problem = energy_system_sample.build_problem()
-    build_model(problem)
-    with pytest.raises(OdysError, match="already has variables; build a new problem for each model"):
-        build_model(problem)

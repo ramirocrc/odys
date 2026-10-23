@@ -12,7 +12,7 @@ from odys.domain.entities.generator import Generator
 from odys.domain.profiles import AvailableCapacityProfile
 from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.formulations.base import FormulationInputs, VariableFormulation, time_shifted
+from odys.optimization.formulations.base import Formulation, FormulationInputs, time_shifted
 from odys.optimization.formulations.commitment import CommitmentFormulation, CommitmentVariables
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
@@ -33,7 +33,7 @@ class GeneratorVariables(BaseModel):
     commitment: CommitmentVariables
 
 
-class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
+class GeneratorFormulation(Formulation):
     """Generators: power limits, available capacity, startup and shutdown, minimum up and down time, ramping."""
 
     dimension = GENERATOR
@@ -43,12 +43,13 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
     startup_name: ClassVar[str] = f"{GENERATOR}_startup"
     shutdown_name: ClassVar[str] = f"{GENERATOR}_shutdown"
 
-    def __init__(self, generators: Sequence[Generator], context: ModelContext) -> None:
+    def __init__(self, generators: Sequence[Generator], context: ModelContext, model: linopy.Model) -> None:
         """Initialize with the generators of the system.
 
         Args:
             generators: The generators, at least one.
             context: The shared indexing of the problem.
+            model: The model to add the variables to.
         """
         super().__init__(generators, context)
         self.arrays = vectorize(GeneratorArrays, generators, self.coordinates)
@@ -66,12 +67,13 @@ class GeneratorFormulation(VariableFormulation[GeneratorVariables]):
             lambda profile: profile.values,
             default=np.inf,
         )
+        self.variables = self._create_variables(model)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
         """Return the formulation of the generators, or None if there are none."""
         generators = inputs.of_type(Generator)
-        return cls(generators, inputs.context) if generators else None
+        return cls(generators, inputs.context, inputs.model) if generators else None
 
     def _create_variables(self, model: linopy.Model) -> GeneratorVariables:
         """Add power (MW, non-negative) and the binary status, startup and shutdown indicators."""

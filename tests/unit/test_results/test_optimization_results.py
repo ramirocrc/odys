@@ -15,7 +15,6 @@ from odys.domain.exceptions import OdysNoResultsError, OdysSolverError
 from odys.domain.profiles import FlexibleLoadProfile, LoadProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
-from odys.optimization.model.model_builder import build_model
 from odys.parameters.dimensions import ModelDimension
 from odys.results.dispatch import Dispatch
 from odys.results.optimization_results import OptimalDispatchResults
@@ -261,7 +260,7 @@ def test_multi_scenario_flexible_consumption_follows_each_scenarios_upper_bound(
 
 def test_results_with_a_solution_build_the_dispatches_once_from_the_full_solution() -> None:
     problem = _two_scenario_flexible_system().build_problem()
-    outcome = solve(build_model(problem), SolverConfig())
+    outcome = solve(problem.model, SolverConfig())
     received: list[xr.Dataset] = []
 
     def record_dispatches(solution: xr.Dataset) -> tuple[Dispatch, ...]:
