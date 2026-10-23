@@ -2,7 +2,6 @@
 
 from datetime import timedelta
 
-import linopy
 import pytest
 import xarray as xr
 
@@ -14,6 +13,7 @@ from odys.domain.profiles import LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.fixed_load import FixedLoadFormulation
+from odys.optimization.formulations.generator import GeneratorFormulation
 from odys.optimization.problem import OptimizationProblem
 
 NUMBER_OF_STEPS = 2
@@ -39,13 +39,17 @@ def _problem(portfolio: AssetPortfolio, *scenarios: Scenario) -> OptimizationPro
 
 
 @pytest.fixture
-def formulation() -> FixedLoadFormulation:
+def problem() -> OptimizationProblem:
     profiles = (LoadProfile(load=SECOND, values=SECOND_LOAD), LoadProfile(load=FIRST, values=FIRST_LOAD))
-    problem = _problem(
+    return _problem(
         AssetPortfolio([GENERATOR, FIRST, SECOND]),
         Scenario(name="s1", probability=HALF, profiles=profiles),
         Scenario(name="s2", probability=HALF, profiles=profiles),
     )
+
+
+@pytest.fixture
+def formulation(problem: OptimizationProblem) -> FixedLoadFormulation:
     fixed_loads = problem.formulation_of(FixedLoadFormulation)
     assert fixed_loads is not None
     return fixed_loads
@@ -60,12 +64,18 @@ def test_fixed_load_power_injection_is_minus_the_demand_summed_over_loads(formul
     xr.testing.assert_allclose(formulation.power_injection(), -expected)
 
 
-def test_fixed_load_has_no_variables_constraints_or_profit(formulation: FixedLoadFormulation) -> None:
-    model = linopy.Model(force_dim_names=True)
+def test_fixed_load_has_no_variables_constraints_or_profit(
+    problem: OptimizationProblem,
+    formulation: FixedLoadFormulation,
+) -> None:
+    generator_variables = {
+        GeneratorFormulation.power_name,
+        GeneratorFormulation.status_name,
+        GeneratorFormulation.startup_name,
+        GeneratorFormulation.shutdown_name,
+    }
 
-    formulation.add_variables(model)
-
-    assert not model.variables
+    assert set(problem.model.variables) == generator_variables
     assert formulation.collect_constraints() == []
     assert formulation.profit() is None
 

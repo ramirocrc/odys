@@ -16,7 +16,6 @@ from odys.energy_system import EnergySystem
 from odys.optimization.formulations.base import per_scenario_profit
 from odys.optimization.formulations.battery_storage import BatteryStorageFormulation
 from odys.optimization.formulations.generator import GeneratorFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 from odys.parameters.dimensions import ModelDimension
 
@@ -112,9 +111,7 @@ def _built_problem(assets: list[Generator | BatteryStorage], load: FixedLoad) ->
             if isinstance(asset, BatteryStorage)
         ),
     )
-    problem = energy_system.build_problem()
-    build_model(problem)
-    return problem
+    return energy_system.build_problem()
 
 
 class TestPerScenarioProfitDegradationCost:

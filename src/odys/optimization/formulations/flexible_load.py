@@ -12,7 +12,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.profiles import FlexibleLoadProfile
 from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.formulations.base import FormulationInputs, VariableFormulation, time_shifted
+from odys.optimization.formulations.base import Formulation, FormulationInputs, time_shifted
 from odys.optimization.formulations.commitment import CommitmentFormulation, CommitmentVariables
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
@@ -33,7 +33,7 @@ class FlexibleLoadVariables(BaseModel):
     commitment: CommitmentVariables | None
 
 
-class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
+class FlexibleLoadFormulation(Formulation):
     """Flexible loads: demand the optimizer sets within a range at every step, for a value per MWh.
 
     A load can also ramp only so fast between two running steps, and, with a commitment, be switched off. The
@@ -48,12 +48,13 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
     startup_name: ClassVar[str] = f"{FLEXIBLE_LOAD}_startup"
     shutdown_name: ClassVar[str] = f"{FLEXIBLE_LOAD}_shutdown"
 
-    def __init__(self, flexible_loads: Sequence[FlexibleLoad], context: ModelContext) -> None:
+    def __init__(self, flexible_loads: Sequence[FlexibleLoad], context: ModelContext, model: linopy.Model) -> None:
         """Initialize with the flexible loads of the system.
 
         Args:
             flexible_loads: The flexible loads, at least one.
             context: The shared indexing of the problem.
+            model: The model to add the variables to.
         """
         super().__init__(flexible_loads, context)
         self.arrays = vectorize(FlexibleLoadArrays, flexible_loads, self.coordinates)
@@ -76,12 +77,13 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
             self.coordinates,
             lambda profile: profile.upper_bound,
         )
+        self.variables = self._create_variables(model)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
         """Return the formulation of the flexible loads, or None if there are none."""
         flexible_loads = inputs.of_type(FlexibleLoad)
-        return cls(flexible_loads, inputs.context) if flexible_loads else None
+        return cls(flexible_loads, inputs.context, inputs.model) if flexible_loads else None
 
     def _create_variables(self, model: linopy.Model) -> FlexibleLoadVariables:
         """Add the consumption (MW), and the on/off indicators when some flexible load has a commitment."""

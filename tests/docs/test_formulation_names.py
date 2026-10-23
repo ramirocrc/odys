@@ -42,7 +42,6 @@ from odys import (
     StorageInitialState,
     Trip,
 )
-from odys.optimization.model.model_builder import build_model
 
 FORMULATION_DIR = Path(__file__).parents[2] / "docs" / "formulation"
 
@@ -208,7 +207,7 @@ def _reference_system() -> EnergySystem:
 @pytest.fixture(scope="module")
 def model() -> linopy.Model:
     system = _reference_system()
-    return build_model(system.build_problem())
+    return system.build_problem().model
 
 
 def _model_names(model: linopy.Model) -> set[str]:

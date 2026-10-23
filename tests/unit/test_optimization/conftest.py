@@ -6,7 +6,6 @@ from linopy import Model
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.energy_system import EnergySystem
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 
 
@@ -62,4 +61,4 @@ def linopy_model(optimization_problem: OptimizationProblem) -> Model:
 
     Each test module must define its own `energy_system_sample` fixture.
     """
-    return build_model(optimization_problem)
+    return optimization_problem.model

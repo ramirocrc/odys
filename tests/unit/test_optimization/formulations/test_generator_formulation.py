@@ -13,12 +13,10 @@ from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.exceptions import OdysError
 from odys.domain.profiles import LoadProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.generator import GeneratorFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 
 logger = logging.getLogger(__name__)
@@ -338,7 +336,7 @@ class TestGeneratorFormulationWithInitialAndFinalStates:
             ),
             final_conditions=(GeneratorFinalState(generator=generator1, power=GEN1_FINAL_POWER),),
         )
-        return build_model(energy_system.build_problem())
+        return energy_system.build_problem().model
 
     @staticmethod
     def _along_generators(generator1: Generator, generator2: Generator, values: list[float]) -> xr.DataArray:
@@ -620,12 +618,6 @@ class TestGeneratorFormulation:
         ).sum(["time", "generator"])
         assert_linequal(formulation.profit(), expected)
 
-    def test_variables_before_add_variables_raise(self, optimization_problem: OptimizationProblem) -> None:
-        generators = optimization_problem.formulation_of(GeneratorFormulation)
-        assert generators is not None
-        with pytest.raises(OdysError, match=r"GeneratorFormulation\.add_variables must run before"):
-            _ = generators.variables
-
 
 HALF_HOUR_RAMP_UP = 40.0
 HALF_HOUR_RAMP_DOWN = 20.0
@@ -656,7 +648,7 @@ def test_ramp_limits_are_per_hour_scaled_by_the_step_length(constraint_name: str
         initial_conditions=(GeneratorInitialState(generator=generator, power=0.0),),
     )
 
-    actual_constraint = build_model(system.build_problem()).constraints[constraint_name]
+    actual_constraint = system.build_problem().model.constraints[constraint_name]
 
     assert bool((actual_constraint.rhs == ramp_per_hour * 0.5).all())
     _assert_no_masked_entries(actual_constraint)

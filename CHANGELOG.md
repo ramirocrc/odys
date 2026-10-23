@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Internal: each formulation and objective term adds its variables to the model when it is built, and `OptimizationProblem.assemble` builds the whole `linopy.Model`, held as `problem.model`. `EnergySystem.build_problem()` returns a problem whose model is ready for solving. Variable and constraint names, the model and every result are unchanged.
+
+### Removed
+
+- Internal: `VariableOwner`, `VariableFormulation`, `add_variables` and `odys.optimization.model.model_builder` (`build_model`).
+
 ## [0.3.1] - 2026-10-22
 
 ### Added

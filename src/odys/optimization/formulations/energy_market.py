@@ -11,7 +11,7 @@ from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.profiles import PriceProfile
 from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
+from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import MarketArrays
@@ -31,7 +31,7 @@ class EnergyMarketVariables(BaseModel):
     trade_mode: linopy.Variable
 
 
-class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
+class EnergyMarketFormulation(Formulation):
     """Energy markets: volume limits, buy-or-sell exclusivity, trade direction and non-anticipativity."""
 
     dimension = MARKET
@@ -40,22 +40,24 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
     buy_volume_name: ClassVar[str] = "market_buy_volume"
     trade_mode_name: ClassVar[str] = "market_trade_mode"
 
-    def __init__(self, markets: Sequence[EnergyMarket], context: ModelContext) -> None:
+    def __init__(self, markets: Sequence[EnergyMarket], context: ModelContext, model: linopy.Model) -> None:
         """Initialize with the energy markets of the system.
 
         Args:
             markets: The energy markets, at least one.
             context: The shared indexing of the problem.
+            model: The model to add the variables to.
         """
         super().__init__(markets, context)
         self.arrays = vectorize(MarketArrays, markets, self.coordinates)
         self.prices = context.profiles(PriceProfile, markets, self.coordinates, lambda profile: profile.values)
+        self.variables = self._create_variables(model)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
         """Return the formulation of the energy markets, or None if there are none."""
         markets = inputs.of_type(EnergyMarket)
-        return cls(markets, inputs.context) if markets else None
+        return cls(markets, inputs.context, inputs.model) if markets else None
 
     def _create_variables(self, model: linopy.Model) -> EnergyMarketVariables:
         """Add the sell and buy volumes (MW, non-negative) and the binary trade mode (1 = selling)."""

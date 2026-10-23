@@ -29,7 +29,7 @@ Mirror `formulations/flexible_load.py`. The asset needs no builder or power-bala
 
 - [ ] A `Formulation` subclass that names its axis with a module constant (`<ASSET> = "<asset>"`, then `dimension = <ASSET>`; it must differ from every other formulation's and from `scenario`/`time`, which `test_problem.py` checks) and sets `entity_type = <Asset>`, so `validate_entities_supported` accepts the asset.
 - [ ] A `build(inputs: FormulationInputs)` classmethod that picks its assets with `inputs.of_type(<Asset>)` (returns `None` when there are none; a formulation that depends on another reads it with `inputs.formulation_of(...)` and comes after it in `FORMULATIONS`), and an `__init__` that calls `super().__init__(assets, context)` (which builds `self.coordinates`) and vectorizes them (`vectorize(<Asset>Arrays, assets, self.coordinates)`).
-- [ ] If the asset has decision variables, subclass `VariableFormulation[<Asset>Variables]` with a frozen typed variables object and implement `_create_variables(model)` (use `self.context.variable_coords(self.coordinates)`); the base provides `variables` and the one-model guard. Keep each linopy variable name as a `ClassVar` constant (`<asset>_power_name`) for results.
+- [ ] If the asset has decision variables, declare a frozen typed `<Asset>Variables` object, take the model in `__init__` (`build` passes `inputs.model`) and end `__init__` with `self.variables = self._create_variables(model)` (use `self.context.variable_coords(self.coordinates)`). Keep each linopy variable name as a `ClassVar` constant (`<asset>_power_name`) for results.
 - [ ] One `@constraint` method per equation, returning `ModelConstraint` with a unique name ending in `_constraint`, reading only `self.arrays` and `self.variables`. Keep it vectorized. For SOC-style assets, compose `StorageFormulation` (`formulations/storage.py`) and delegate to its constraint methods, as `BatteryStorageFormulation` does.
 - [ ] `power_injection()` (net power into the bus, summed over the asset dimension; put variable terms before constants) and `profit()` (per scenario, energy terms multiplied by `context.timestep_hours`), or `None` when the asset has none.
 - [ ] Add the class to `FORMULATIONS` in `formulations/__init__.py`, and its module to the import-linter independence contract in `pyproject.toml` (a tool configuration change: say why in the PR).
@@ -44,7 +44,7 @@ Mirror `formulations/flexible_load.py`. The asset needs no builder or power-bala
 
 - [ ] `tests/unit/test_domain/entities/test_<asset>.py`: valid construction, every field constraint, and every validator (use `Model.model_validate({...})` for invalid input).
 - [ ] `tests/unit/test_optimization/parameters/test_<asset>_arrays.py`: shapes, coordinates, values.
-- [ ] `tests/unit/test_optimization/formulations/test_<asset>_formulation.py`: each constraint exists, has the right coefficients, and has no masked entries (`assert bool((c.labels != -1).all())`); power injection and profit (`assert_linequal`); variables before `add_variables` raise.
+- [ ] `tests/unit/test_optimization/formulations/test_<asset>_formulation.py`: each constraint exists, has the right coefficients, and has no masked entries (`assert bool((c.labels != -1).all())`); power injection and profit (`assert_linequal`).
 - [ ] `tests/integration/`: an end-to-end solve that checks dispatch against a hand-computed optimum.
 - [ ] `tests/unit/test_results/test_dispatch.py`: the new dispatch view (use test names prefixed with the asset, e.g. `test_<asset>_getitem`).
 

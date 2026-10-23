@@ -11,7 +11,7 @@ from odys.domain.entities.charger import Charger
 from odys.domain.exceptions import OdysError
 from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
+from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 from odys.parameters.context import ModelContext
 from odys.parameters.entity_arrays import ChargerArrays
@@ -30,7 +30,7 @@ class ChargingVariables(BaseModel):
     assignment: linopy.Variable
 
 
-class ChargingFormulation(VariableFormulation[ChargingVariables]):
+class ChargingFormulation(Formulation):
     """Chargers: assign electric vehicles to chargers and cap their power by the charger's rating.
 
     It couples to the `ElectricVehicleFormulation` it receives: the vehicles' power
@@ -46,6 +46,7 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
         self,
         chargers: Sequence[Charger],
         context: ModelContext,
+        model: linopy.Model,
         electric_vehicles: ElectricVehicleFormulation,
     ) -> None:
         """Initialize with the chargers of the system and the electric vehicles they serve.
@@ -53,11 +54,13 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
         Args:
             chargers: The chargers, at least one.
             context: The shared indexing of the problem.
+            model: The model to add the variables to.
             electric_vehicles: The formulation of the vehicles the chargers serve.
         """
         super().__init__(chargers, context)
         self.arrays = vectorize(ChargerArrays, chargers, self.coordinates)
         self.electric_vehicles = electric_vehicles
+        self.variables = self._create_variables(model)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
@@ -73,7 +76,7 @@ class ChargingFormulation(VariableFormulation[ChargingVariables]):
         if electric_vehicles is None:
             msg = "ChargingFormulation must be built after an ElectricVehicleFormulation."
             raise OdysError(msg)
-        return cls(chargers, inputs.context, electric_vehicles)
+        return cls(chargers, inputs.context, inputs.model, electric_vehicles)
 
     def _create_variables(self, model: linopy.Model) -> ChargingVariables:
         """Add the binary assignment of each vehicle to each charger, per scenario and time."""

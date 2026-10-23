@@ -8,7 +8,6 @@ from linopy.testing import assert_linequal
 
 from odys.domain.objective import CVaRTerm, Objective, ProfitTerm
 from odys.optimization.formulations.base import per_scenario_profit
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.objective_terms import OBJECTIVE_TERM_FORMULATIONS
 from odys.optimization.objective_terms.cvar import CVaRTermFormulation
 from odys.optimization.objective_terms.profit import ProfitTermFormulation
@@ -44,7 +43,6 @@ def test_every_objective_term_type_has_a_formulation(problem_with: ProblemWith) 
 @pytest.mark.parametrize("weight", [PROFIT_WEIGHT, 0.0], ids=["weighted", "zero_weight"])
 def test_profit_term_expression_is_weighted_expected_profit(problem_with: ProblemWith, weight: float) -> None:
     problem = problem_with(Objective(terms=(ProfitTerm(weight=weight),)))
-    build_model(problem)
 
     profit = per_scenario_profit(problem.formulations)
     expected_profit = (profit * problem.context.probabilities).sum(ModelDimension.Scenarios)
