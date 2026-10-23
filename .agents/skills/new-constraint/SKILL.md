@@ -1,6 +1,6 @@
 ---
 name: new-constraint
-description: Checklist for adding or changing a constraint (and any variable it needs) on an existing odys asset or in power balance. Use whenever the task is a new @constraint method, a new decision variable, or a change to constraint math. For a whole new asset type use add-asset instead.
+description: Checklist for adding or changing a constraint (and any variable it needs) on an existing odys asset or in power balance. Use whenever the task is a new constraint method, a new decision variable, or a change to constraint math. For a whole new asset type use add-asset instead.
 ---
 
 # Add or change a constraint
@@ -22,7 +22,7 @@ Before starting, confirm the math with the user: the constraint in equation form
 
 ## 3. Constraint
 
-- [ ] Add a `@constraint` method to the asset's formulation returning `ModelConstraint` (or `list[ModelConstraint]`); for battery physics add a `StorageFormulation` method and delegate to it from both storage formulations.
+- [ ] Add a private method to the asset's formulation returning `ModelConstraint` (or `list[ModelConstraint]`) and list it in its `constraints()` (spread a list with `*`); for battery physics add a `StorageFormulation` method and list it in the `constraints()` of both storage formulations.
 - [ ] Name it `<asset>_<what>_constraint`; it must be unique across the model.
 - [ ] Stay vectorized over xarray dimensions. Use `ModelDimension` for scenario and time and the formulation's dimension constant for its entity axis, never string literals.
 - [ ] If it changes power balance or profit, update the formulation's `power_injection()` / `profit()`.

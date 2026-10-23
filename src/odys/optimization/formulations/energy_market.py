@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.profiles import PriceProfile
-from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.parameters.context import ModelContext
@@ -68,7 +67,17 @@ class EnergyMarketFormulation(Formulation):
             trade_mode=model.add_variables(name=self.trade_mode_name, coords=coords, binary=True),
         )
 
-    @constraint
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the market constraints: volume limits, buy or sell, trade direction and non-anticipativity."""
+        return [
+            self._get_market_max_sell_volume_constraint(),
+            self._get_market_max_buy_volume_constraint(),
+            self._get_market_mutual_exclusivity_sell_constraint(),
+            self._get_market_mutual_exclusivity_buy_constraint(),
+            *self._get_trade_direction_constraints(),
+            *self._get_non_anticipativity_constraint(),
+        ]
+
     def _get_market_max_sell_volume_constraint(self) -> ModelConstraint:
         """Sales per step are limited by the market's maximum trading volume."""
         return ModelConstraint(
@@ -76,7 +85,6 @@ class EnergyMarketFormulation(Formulation):
             name="market_max_sell_volume_constraint",
         )
 
-    @constraint
     def _get_market_max_buy_volume_constraint(self) -> ModelConstraint:
         """Purchases per step are limited by the market's maximum trading volume."""
         return ModelConstraint(
@@ -84,7 +92,6 @@ class EnergyMarketFormulation(Formulation):
             name="market_max_buy_volume_constraint",
         )
 
-    @constraint
     def _get_market_mutual_exclusivity_sell_constraint(self) -> ModelConstraint:
         """Selling requires `trade_mode` = 1, so a market cannot buy and sell in the same step."""
         return ModelConstraint(
@@ -93,7 +100,6 @@ class EnergyMarketFormulation(Formulation):
             name="market_mutual_exclusivity_sell_constraint",
         )
 
-    @constraint
     def _get_market_mutual_exclusivity_buy_constraint(self) -> ModelConstraint:
         """Buying requires `trade_mode` = 0, the counterpart of the sell exclusivity constraint."""
         return ModelConstraint(
@@ -102,7 +108,6 @@ class EnergyMarketFormulation(Formulation):
             name="market_mutual_exclusivity_buy_constraint",
         )
 
-    @constraint
     def _get_trade_direction_constraints(self) -> list[ModelConstraint]:
         """Forbid selling on buy-only markets and buying on sell-only markets."""
         buy_only = self.arrays.allowed_trade_direction == AllowedTradeDirection.BUY_ONLY
@@ -118,7 +123,6 @@ class EnergyMarketFormulation(Formulation):
             ),
         ]
 
-    @constraint
     def _get_non_anticipativity_constraint(self) -> list[ModelConstraint]:
         """On stage-fixed markets, every variable takes its first scenario's value in all scenarios.
 

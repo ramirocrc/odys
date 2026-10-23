@@ -76,7 +76,7 @@ def test_fixed_load_has_no_variables_constraints_or_profit(
     }
 
     assert set(problem.model.variables) == generator_variables
-    assert formulation.collect_constraints() == []
+    assert formulation.constraints() == []
     assert formulation.profit() is None
 
 

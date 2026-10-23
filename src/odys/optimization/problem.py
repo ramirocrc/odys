@@ -110,10 +110,12 @@ def _add_constraints_and_objective(
     objective_terms: Sequence[ObjectiveTermFormulation],
 ) -> None:
     """Add the constraints (entity formulations, the power balance, objective terms) and the maximized objective."""
-    for formulation in formulations:
-        formulation.add_to_model(model)
-    PowerBalance(formulations).add_to_model(model)
-    for term in objective_terms:
-        term.add_to_model(model)
+    constraints = [
+        *(constraint for formulation in formulations for constraint in formulation.constraints()),
+        *PowerBalance(formulations).constraints(),
+        *(constraint for term in objective_terms for constraint in term.constraints()),
+    ]
+    for constraint in constraints:
+        model.add_constraints(constraint.constraint, name=constraint.name)
     objective: linopy.LinearExpression = reduce(add, (term.expression() for term in objective_terms))
     model.add_objective(objective, sense="max")

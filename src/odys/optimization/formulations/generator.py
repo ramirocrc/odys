@@ -10,7 +10,6 @@ from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.generator import Generator
 from odys.domain.profiles import AvailableCapacityProfile
-from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import Formulation, FormulationInputs, time_shifted
 from odys.optimization.formulations.commitment import CommitmentFormulation, CommitmentVariables
@@ -83,7 +82,22 @@ class GeneratorFormulation(Formulation):
             commitment=self.commitment.create_variables(model),
         )
 
-    @constraint
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the generator constraints.
+
+        Power and capacity limits, on/off logic, minimum output, ramps and the final output.
+        """
+        return [
+            self._get_generator_max_power_constraint(),
+            self._get_generator_status_constraint(),
+            *self.commitment.constraints(self.variables.commitment),
+            self._get_min_power_constraint(),
+            self._get_max_ramp_up_constraint(),
+            self._get_max_ramp_down_constraint(),
+            *self._get_final_power_constraint(),
+            self._get_available_capacity_constraint(),
+        ]
+
     def _get_generator_max_power_constraint(self) -> ModelConstraint:
         """Generator power limit constraint.
 
@@ -95,7 +109,6 @@ class GeneratorFormulation(Formulation):
             name="generator_max_power_constraint",
         )
 
-    @constraint
     def _get_generator_status_constraint(self) -> ModelConstraint:
         """When on, output is at least a small fraction (1e-5) of nominal power, so `status` = 1 means it produces."""
         epsilon = 1e-5 * self.arrays.nominal_power
@@ -104,57 +117,6 @@ class GeneratorFormulation(Formulation):
             name="generator_status_constraint",
         )
 
-    @constraint
-    def _get_generator_startup_lower_bound_constraint(self) -> ModelConstraint:
-        """Startup indicator active when turning generator on, from its initial status at t=0."""
-        return self.commitment.startup_lower_bound_constraint(self.variables.commitment)
-
-    @constraint
-    def _get_generator_startup_upper_bound_1_constraint(self) -> ModelConstraint:
-        """Startup indicator bounded by current status."""
-        return self.commitment.startup_upper_bound_1_constraint(self.variables.commitment)
-
-    @constraint
-    def _get_generator_startup_upper_bound_2_constraint(self) -> ModelConstraint:
-        """Startup indicator bounded by previous status."""
-        return self.commitment.startup_upper_bound_2_constraint(self.variables.commitment)
-
-    @constraint
-    def _get_generator_shutdown_lower_bound_constraint(self) -> ModelConstraint:
-        """Shutdown indicator active when turning generator off, from its initial status at t=0."""
-        return self.commitment.shutdown_lower_bound_constraint(self.variables.commitment)
-
-    @constraint
-    def _get_generator_shutdown_upper_bound_1_constraint(self) -> ModelConstraint:
-        """Shutdown indicator bounded by previous status."""
-        return self.commitment.shutdown_upper_bound_1_constraint(self.variables.commitment)
-
-    @constraint
-    def _get_generator_shutdown_upper_bound_2_constraint(self) -> ModelConstraint:
-        """Shutdown indicator bounded by current status."""
-        return self.commitment.shutdown_upper_bound_2_constraint(self.variables.commitment)
-
-    @constraint
-    def _get_min_uptime_constraint(self) -> list[ModelConstraint]:
-        """Once started, a generator stays on for its minimum up time, counting time on before the horizon."""
-        return self.commitment.min_uptime_constraints(self.variables.commitment)
-
-    @constraint
-    def _get_min_downtime_constraint(self) -> list[ModelConstraint]:
-        """Once stopped, a generator stays off for its minimum down time, counting time off before the horizon."""
-        return self.commitment.min_downtime_constraints(self.variables.commitment)
-
-    @constraint
-    def _get_initial_min_uptime_constraint(self) -> list[ModelConstraint]:
-        """A generator on for less than its minimum up time before the horizon does not shut down at t=0."""
-        return self.commitment.initial_min_uptime_constraint(self.variables.commitment)
-
-    @constraint
-    def _get_initial_min_downtime_constraint(self) -> list[ModelConstraint]:
-        """A generator off for less than its minimum down time before the horizon does not start at t=0."""
-        return self.commitment.initial_min_downtime_constraint(self.variables.commitment)
-
-    @constraint
     def _get_min_power_constraint(self) -> ModelConstraint:
         """When on, output is at least `min_power`."""
         return ModelConstraint(
@@ -162,7 +124,6 @@ class GeneratorFormulation(Formulation):
             name="generator_min_power_constraint",
         )
 
-    @constraint
     def _get_max_ramp_up_constraint(self) -> ModelConstraint:
         """Output rises by at most `ramp_up` per hour times the step length, from the initial power at t=0.
 
@@ -175,7 +136,6 @@ class GeneratorFormulation(Formulation):
             name="generator_max_ramp_up_constraint",
         )
 
-    @constraint
     def _get_max_ramp_down_constraint(self) -> ModelConstraint:
         """Output falls by at most `ramp_down` per hour times the step length, from the initial power at t=0.
 
@@ -188,7 +148,6 @@ class GeneratorFormulation(Formulation):
             name="generator_max_ramp_down_constraint",
         )
 
-    @constraint
     def _get_final_power_constraint(self) -> list[ModelConstraint]:
         """Output at the last step equals the final power, for the generators that have a final state."""
         has_final_power = self.states.final_power.notnull()
@@ -206,7 +165,6 @@ class GeneratorFormulation(Formulation):
             ),
         ]
 
-    @constraint
     def _get_available_capacity_constraint(self) -> ModelConstraint:
         """Power is capped by the scenario's available capacity profile (unbounded without one)."""
         return ModelConstraint(
