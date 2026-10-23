@@ -9,9 +9,8 @@ from pydantic import BaseModel, ConfigDict
 
 from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.profiles import PriceProfile
-from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.formulations.base import FormulationInputs, VariableFormulation
+from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
 from odys.parameters.entity_arrays import MarketArrays
@@ -31,7 +30,7 @@ class EnergyMarketVariables(BaseModel):
     trade_mode: linopy.Variable
 
 
-class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
+class EnergyMarketFormulation(Formulation):
     """Energy markets: volume limits, buy-or-sell exclusivity, trade direction and non-anticipativity."""
 
     dimension = MARKET
@@ -40,22 +39,24 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
     buy_volume_name: ClassVar[str] = "market_buy_volume"
     trade_mode_name: ClassVar[str] = "market_trade_mode"
 
-    def __init__(self, markets: Sequence[EnergyMarket], context: ModelContext) -> None:
+    def __init__(self, markets: Sequence[EnergyMarket], context: ModelContext, model: linopy.Model) -> None:
         """Initialize with the energy markets of the system.
 
         Args:
             markets: The energy markets, at least one.
             context: The shared indexing of the problem.
+            model: The model to add the variables to.
         """
         super().__init__(markets, context)
         self.arrays = vectorize(MarketArrays, markets, self.coordinates)
         self.prices = context.profiles(PriceProfile, markets, self.coordinates, lambda profile: profile.values)
+        self.variables = self._create_variables(model)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
         """Return the formulation of the energy markets, or None if there are none."""
         markets = inputs.of_type(EnergyMarket)
-        return cls(markets, inputs.context) if markets else None
+        return cls(markets, inputs.context, inputs.model) if markets else None
 
     def _create_variables(self, model: linopy.Model) -> EnergyMarketVariables:
         """Add the sell and buy volumes (MW, non-negative) and the binary trade mode (1 = selling)."""
@@ -66,7 +67,17 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
             trade_mode=model.add_variables(name=self.trade_mode_name, coords=coords, binary=True),
         )
 
-    @constraint
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the market constraints: volume limits, buy or sell, trade direction and non-anticipativity."""
+        return [
+            self._get_market_max_sell_volume_constraint(),
+            self._get_market_max_buy_volume_constraint(),
+            self._get_market_mutual_exclusivity_sell_constraint(),
+            self._get_market_mutual_exclusivity_buy_constraint(),
+            *self._get_trade_direction_constraints(),
+            *self._get_non_anticipativity_constraint(),
+        ]
+
     def _get_market_max_sell_volume_constraint(self) -> ModelConstraint:
         """Sales per step are limited by the market's maximum trading volume."""
         return ModelConstraint(
@@ -74,7 +85,6 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
             name="market_max_sell_volume_constraint",
         )
 
-    @constraint
     def _get_market_max_buy_volume_constraint(self) -> ModelConstraint:
         """Purchases per step are limited by the market's maximum trading volume."""
         return ModelConstraint(
@@ -82,7 +92,6 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
             name="market_max_buy_volume_constraint",
         )
 
-    @constraint
     def _get_market_mutual_exclusivity_sell_constraint(self) -> ModelConstraint:
         """Selling requires `trade_mode` = 1, so a market cannot buy and sell in the same step."""
         return ModelConstraint(
@@ -91,7 +100,6 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
             name="market_mutual_exclusivity_sell_constraint",
         )
 
-    @constraint
     def _get_market_mutual_exclusivity_buy_constraint(self) -> ModelConstraint:
         """Buying requires `trade_mode` = 0, the counterpart of the sell exclusivity constraint."""
         return ModelConstraint(
@@ -100,7 +108,6 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
             name="market_mutual_exclusivity_buy_constraint",
         )
 
-    @constraint
     def _get_trade_direction_constraints(self) -> list[ModelConstraint]:
         """Forbid selling on buy-only markets and buying on sell-only markets."""
         buy_only = self.arrays.allowed_trade_direction == AllowedTradeDirection.BUY_ONLY
@@ -116,7 +123,6 @@ class EnergyMarketFormulation(VariableFormulation[EnergyMarketVariables]):
             ),
         ]
 
-    @constraint
     def _get_non_anticipativity_constraint(self) -> list[ModelConstraint]:
         """On stage-fixed markets, every variable takes its first scenario's value in all scenarios.
 

@@ -29,7 +29,7 @@ Packages import only lower layers. import-linter enforces this (`[tool.importlin
 
 ```mermaid
 flowchart TD
-    ES["energy_system<br/>(composition root)"] --> OPT["optimization<br/>(formulations, objective terms, model builder)"]
+    ES["energy_system<br/>(composition root)"] --> OPT["optimization<br/>(formulations, objective terms, problem)"]
     OPT --> RES["results<br/>(Dispatch views, OptimalDispatchResults)"]
     RES --> SOL["solvers<br/>(SolverConfig, solve, SolveOutcome)"]
     SOL --> PAR["parameters<br/>(ModelContext, Coordinates, EntityArrays)"]

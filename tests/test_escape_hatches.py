@@ -41,8 +41,6 @@ SOURCE_ONLY_ESCAPE_HATCHES: dict[str, re.Pattern[str]] = {
 ALLOWED_ESCAPE_HATCHES: dict[tuple[str, str], int] = {
     ("tools/docs/generate_example_plots.py", "# pyrefly: ignore"): 6,
     ("src/odys/domain/entities/base.py", "# pyright: ignore"): 1,
-    ("src/odys/optimization/constraints/constraints_group.py", "# noqa"): 1,
-    ("src/odys/optimization/constraints/constraints_group.py", "typing.Any"): 2,
     ("src/odys/solvers/config_translators.py", "typing.Any"): 11,
     ("src/odys/solvers/solver_config.py", "typing.Any"): 2,
     ("tests/integration/test_ev_fleet_optimization.py", "# type: ignore"): 3,

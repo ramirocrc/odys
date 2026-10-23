@@ -15,7 +15,7 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.exceptions import OdysError, OdysValidationError
+from odys.domain.exceptions import OdysValidationError
 from odys.domain.profiles import FlexibleLoadProfile, LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
@@ -28,7 +28,6 @@ from odys.optimization.formulations.energy_market import EnergyMarketFormulation
 from odys.optimization.formulations.fixed_load import FixedLoadFormulation
 from odys.optimization.formulations.flexible_load import FlexibleLoadFormulation
 from odys.optimization.formulations.generator import GeneratorFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.objective_terms.profit import ProfitTermFormulation
 from odys.optimization.problem import OptimizationProblem
 from odys.parameters.dimensions import ModelDimension
@@ -107,14 +106,6 @@ def test_problem_holds_one_term_formulation_per_objective_term() -> None:
     problem = _problem(FIXED_LOAD)
 
     assert [type(term) for term in problem.objective_terms] == [ProfitTermFormulation]
-
-
-def test_problem_is_built_into_one_model_only() -> None:
-    problem = _problem(FLEXIBLE_LOAD)
-    build_model(problem)
-
-    with pytest.raises(OdysError, match="already has variables; build a new problem for each model"):
-        build_model(problem)
 
 
 def _problem_with_one_entity_of_each_type() -> OptimizationProblem:

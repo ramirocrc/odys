@@ -14,12 +14,10 @@ from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.exceptions import OdysError
 from odys.domain.profiles import FlexibleLoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.flexible_load import FlexibleLoadFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 
 logger = logging.getLogger(__name__)
@@ -87,7 +85,7 @@ def optimization_problem(energy_system_sample: EnergySystem) -> OptimizationProb
 
 @pytest.fixture
 def linopy_model(optimization_problem: OptimizationProblem) -> linopy.Model:
-    return build_model(optimization_problem)
+    return optimization_problem.model
 
 
 @pytest.fixture
@@ -131,12 +129,6 @@ class TestFlexibleLoadConstraints:
 
 
 class TestFlexibleLoadFormulation:
-    def test_variables_before_add_variables_raise(self, optimization_problem: OptimizationProblem) -> None:
-        flexible_loads = optimization_problem.formulation_of(FlexibleLoadFormulation)
-        assert flexible_loads is not None
-        with pytest.raises(OdysError, match="add_variables must run before its variables are used"):
-            _ = flexible_loads.variables
-
     def test_consumption_is_non_negative_over_scenario_time_and_load(
         self,
         formulation: FlexibleLoadFormulation,
@@ -227,7 +219,7 @@ class TestSwitchableRampingFlexibleLoad:
                 FlexibleLoadInitialState(load=kiln, power=KILN_INITIAL_POWER, time_in_state=timedelta(hours=2)),
             ),
         )
-        return build_model(system.build_problem())
+        return system.build_problem().model
 
     @staticmethod
     def _bounds(kiln: tuple[float, ...], pump: tuple[float, ...]) -> xr.DataArray:
@@ -322,7 +314,7 @@ def test_ramp_down_of_a_load_without_a_commitment_has_no_shutdown_term(market1: 
         ),
         initial_conditions=(FlexibleLoadInitialState(load=pump, power=KILN_INITIAL_POWER),),
     )
-    linopy_model = build_model(system.build_problem())
+    linopy_model = system.build_problem().model
     actual_constraint = linopy_model.constraints["flexible_load_max_ramp_down_constraint"]
     consumption = linopy_model.variables[FlexibleLoadFormulation.variable_name]
 
