@@ -7,7 +7,6 @@ import linopy
 import xarray as xr
 
 from odys.domain.entities.electric_vehicle import ElectricVehicle
-from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import Formulation, FormulationInputs
 from odys.optimization.formulations.storage import StorageFormulation, StorageVariables
@@ -68,47 +67,23 @@ class ElectricVehicleFormulation(Formulation):
         """Add the battery variables of every electric vehicle."""
         return self.storage.create_variables(model)
 
-    @constraint
-    def _get_ev_max_charge_constraint(self) -> ModelConstraint:
-        """Charging power is limited by `max_charge_power`, and only in charging mode."""
-        return self.storage.max_charge_constraint(self.variables)
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the constraints of the shared battery model, with driving and the SOC needed at departure."""
+        variables = self.variables
+        return [
+            self.storage.max_charge_constraint(variables),
+            self.storage.max_discharge_constraint(variables),
+            self.storage.soc_dynamics_constraint(variables),
+            self.storage.soc_start_constraint(variables),
+            *self.storage.soc_end_constraint(variables),
+            self.storage.soc_min_constraint(variables),
+            self.storage.soc_max_constraint(variables),
+            self.storage.capacity_constraint(variables),
+            self._get_ev_driving_constraint(),
+            self._get_ev_min_soc_departure_constraint(),
+            self.storage.net_power_constraint(variables),
+        ]
 
-    @constraint
-    def _get_ev_max_discharge_constraint(self) -> ModelConstraint:
-        """Discharging power is limited by `max_discharge_power`, and only outside charging mode."""
-        return self.storage.max_discharge_constraint(self.variables)
-
-    @constraint
-    def _get_ev_soc_dynamics_constraint(self) -> ModelConstraint:
-        """SOC follows self-discharge, charging, discharging and trip energy from step to step."""
-        return self.storage.soc_dynamics_constraint(self.variables)
-
-    @constraint
-    def _get_ev_soc_start_constraint(self) -> ModelConstraint:
-        """The SOC after the first step starts from the initial state of charge, less a trip departing at t=0."""
-        return self.storage.soc_start_constraint(self.variables)
-
-    @constraint
-    def _get_ev_soc_end_constraint(self) -> list[ModelConstraint]:
-        """The SOC at the last step equals the vehicle's final state of charge, where set."""
-        return self.storage.soc_end_constraint(self.variables)
-
-    @constraint
-    def _get_ev_soc_min_constraint(self) -> ModelConstraint:
-        """The SOC never falls below `soc_min`."""
-        return self.storage.soc_min_constraint(self.variables)
-
-    @constraint
-    def _get_ev_soc_max_constraint(self) -> ModelConstraint:
-        """The SOC never exceeds `soc_max`."""
-        return self.storage.soc_max_constraint(self.variables)
-
-    @constraint
-    def _get_ev_capacity_constraint(self) -> ModelConstraint:
-        """The SOC never exceeds a full battery."""
-        return self.storage.capacity_constraint(self.variables)
-
-    @constraint
     def _get_ev_driving_constraint(self) -> ModelConstraint:
         """A vehicle cannot charge or discharge while driving."""
         battery = self.storage.battery
@@ -118,7 +93,6 @@ class ElectricVehicleFormulation(Formulation):
             name="ev_driving_constraint",
         )
 
-    @constraint
     def _get_ev_min_soc_departure_constraint(self) -> ModelConstraint:
         """A vehicle reaches its departure SOC by the end of the step before the trip."""
         min_soc_before_departure = self.trips.min_soc_at_departure.shift({ModelDimension.Time: -1}, fill_value=0)
@@ -126,11 +100,6 @@ class ElectricVehicleFormulation(Formulation):
             constraint=self.variables.soc >= min_soc_before_departure,
             name="ev_min_soc_departure_constraint",
         )
-
-    @constraint
-    def _get_ev_net_power_constraint(self) -> ModelConstraint:
-        """Net power is charging minus discharging power."""
-        return self.storage.net_power_constraint(self.variables)
 
     def power_injection(self) -> linopy.LinearExpression:
         """Return discharging minus charging power (V2G minus charging), summed over the vehicles."""

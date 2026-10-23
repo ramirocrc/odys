@@ -10,7 +10,6 @@ from pydantic import BaseModel, ConfigDict
 from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.profiles import FlexibleLoadProfile
-from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import Formulation, FormulationInputs, time_shifted
 from odys.optimization.formulations.commitment import CommitmentFormulation, CommitmentVariables
@@ -96,7 +95,17 @@ class FlexibleLoadFormulation(Formulation):
             commitment=self.commitment.create_variables(model) if self._has_commitment else None,
         )
 
-    @constraint
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the flexible load constraints: consumption bounds, on/off logic and ramps."""
+        return [
+            self._get_lower_bound_constraint(),
+            self._get_upper_bound_constraint(),
+            *self._get_always_on_constraint(),
+            *self._get_commitment_constraints(),
+            *self._get_max_ramp_up_constraint(),
+            *self._get_max_ramp_down_constraint(),
+        ]
+
     def _get_lower_bound_constraint(self) -> ModelConstraint:
         """The load consumes at least the lower bound of its profile while it runs."""
         commitment = self.variables.commitment
@@ -106,7 +115,6 @@ class FlexibleLoadFormulation(Formulation):
             name="flexible_load_lower_bound_constraint",
         )
 
-    @constraint
     def _get_upper_bound_constraint(self) -> ModelConstraint:
         """The load consumes at most the upper bound of its profile while it runs, and nothing while it is off."""
         commitment = self.variables.commitment
@@ -116,7 +124,6 @@ class FlexibleLoadFormulation(Formulation):
             name="flexible_load_upper_bound_constraint",
         )
 
-    @constraint
     def _get_always_on_constraint(self) -> list[ModelConstraint]:
         """A load without a commitment is always on, when others have on/off indicators."""
         commitment = self.variables.commitment
@@ -126,27 +133,11 @@ class FlexibleLoadFormulation(Formulation):
         status = 1 * commitment.status.sel({FLEXIBLE_LOAD: always_on})
         return [ModelConstraint(constraint=status.to_constraint("=", 1), name="flexible_load_always_on_constraint")]
 
-    @constraint
     def _get_commitment_constraints(self) -> list[ModelConstraint]:
         """Starts and stops are counted from the initial status, and the minimum up and down times hold."""
         commitment = self.variables.commitment
-        if commitment is None:
-            return []
-        part = self.commitment
-        return [
-            part.startup_lower_bound_constraint(commitment),
-            part.startup_upper_bound_1_constraint(commitment),
-            part.startup_upper_bound_2_constraint(commitment),
-            part.shutdown_lower_bound_constraint(commitment),
-            part.shutdown_upper_bound_1_constraint(commitment),
-            part.shutdown_upper_bound_2_constraint(commitment),
-            *part.min_uptime_constraints(commitment),
-            *part.min_downtime_constraints(commitment),
-            *part.initial_min_uptime_constraint(commitment),
-            *part.initial_min_downtime_constraint(commitment),
-        ]
+        return [] if commitment is None else self.commitment.constraints(commitment)
 
-    @constraint
     def _get_max_ramp_up_constraint(self) -> list[ModelConstraint]:
         """Between two running steps, consumption rises by at most `ramp_up` per hour; a start lands anywhere."""
         has_ramp = self.arrays.ramp_up.notnull()
@@ -165,7 +156,6 @@ class FlexibleLoadFormulation(Formulation):
             ),
         ]
 
-    @constraint
     def _get_max_ramp_down_constraint(self) -> list[ModelConstraint]:
         """Between two running steps, consumption falls by at most `ramp_down` per hour; a stop drops to 0."""
         has_ramp = self.arrays.ramp_down.notnull()

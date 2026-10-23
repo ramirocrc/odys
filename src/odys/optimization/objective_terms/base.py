@@ -7,7 +7,7 @@ import linopy
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.objective import Objective
-from odys.optimization.constraints.constraints_group import ConstraintGroup
+from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import Formulation
 from odys.parameters.context import ModelContext
 
@@ -23,8 +23,8 @@ class ObjectiveTermInputs(BaseModel):
     formulations: tuple[Formulation, ...]
 
 
-class ObjectiveTermFormulation(ConstraintGroup, ABC):
-    """The optimization model of one objective term: its variables, its `@constraint` methods and its expression.
+class ObjectiveTermFormulation(ABC):
+    """The optimization model of one objective term: its variables, its constraints and its expression.
 
     It is built only when the objective has a term of its type, after the entity
     formulations, and adds its variables, if any, when built. Terms read the profit
@@ -48,6 +48,10 @@ class ObjectiveTermFormulation(ConstraintGroup, ABC):
         Args:
             inputs: The objective, the shared indexing, the model, and the entity formulations.
         """
+
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the constraints of this term, in the order they are added to the model. The default is none."""
+        return []
 
     @abstractmethod
     def expression(self) -> linopy.LinearExpression:

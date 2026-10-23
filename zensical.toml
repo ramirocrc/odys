@@ -113,7 +113,6 @@ nav = [
         { "Overview" = "developer/api/optimization/index.md" },
         { "constraints" = [
           { "Overview" = "developer/api/optimization/constraints/index.md" },
-          { "constraints_group" = "developer/api/optimization/constraints/constraints_group.md" },
           { "model_constraint" = "developer/api/optimization/constraints/model_constraint.md" },
         ] },
         { "formulations" = [

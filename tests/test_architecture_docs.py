@@ -42,7 +42,6 @@ CORE_PIPELINE_CLASSES = (
     "StorageFormulation",
     "OptimizationProblem",
     "PowerBalance",
-    "ConstraintGroup",
     "SolveOutcome",
 )
 

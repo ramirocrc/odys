@@ -7,7 +7,6 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict
 
 from odys.domain.objective import CVaRTerm
-from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import per_scenario_profit
 from odys.optimization.objective_terms.base import ObjectiveTermFormulation, ObjectiveTermInputs
@@ -60,7 +59,10 @@ class CVaRTermFormulation(ObjectiveTermFormulation):
             ),
         )
 
-    @constraint
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the shortfall constraint of every scenario."""
+        return [self._get_shortfall_constraint()]
+
     def _get_shortfall_constraint(self) -> ModelConstraint:
         """Each scenario's shortfall is at least the value at risk less that scenario's profit."""
         profit = per_scenario_profit(self.formulations)
