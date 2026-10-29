@@ -3,12 +3,14 @@
 The docs home page is a custom landing page rendered by a zensical template
 override. It follows design **C · Hero + chart** and its light counterpart,
 **C · Hero + chart (light)**, on the prototype canvas
-(<https://claude.ai/artifact/MMvA8pytifLrdhbSXf7sKM>). The layout, colours and
-buttons follow vuejs.org's home page.
+(<https://claude.ai/artifact/MMvA8pytifLrdhbSXf7sKM>), restyled in the brand's
+violet and mint.
 
-The page reads top to bottom: hero (title, lead, three buttons), a figure of
-price scenarios going in and one schedule coming out, a "Built on" strip, and
-six highlight boxes.
+The page reads top to bottom: hero (title and lead on the figure's left edge,
+the "Get started" button level with the lead on its right edge), a figure of
+price scenarios going in and one schedule coming out, then the highlights: a
+"Built on" line and six boxes. At 1440×900 the whole figure, schedule
+included, fits in the first screen.
 
 ## Decisions
 
@@ -20,9 +22,11 @@ six highlight boxes.
   themselves (`{{ super() }}`): zensical renders the `hero` block above the
   tabs, which would push the tabs below the page.
 - **Follows the light/dark toggle.** `home.css` maps a set of `--home-*`
-  variables to brand colours per scheme: vuejs.org's dark theme under
-  `slate`, its light theme under `default`. As on vuejs.org, the whole title
-  carries the gradient in dark mode and only "every future" in light mode.
+  variables to brand colours per scheme (`slate` and `default`). Mint is the
+  accent ("every future", the primary button, the highlights' arrows)
+  and violet the links and the schedule. The light scheme uses the darker
+  shades (mint-700, violet-500 to 700), so text, the primary button and the
+  figure's marks meet WCAG AA on white.
 - **Zensical's header, navigation tabs and footer are kept** exactly as on
   the docs pages, so search, the theme toggle and the site sections are one
   click away.
@@ -37,9 +41,9 @@ six highlight boxes.
 
 | Piece | File |
 |---|---|
-| Template (all static markup and copy, the figure's labels) | `overrides/home.html` |
+| Template (all static markup and copy) | `overrides/home.html` |
 | Styles | `docs/assets/stylesheets/home.css` |
-| Behaviour (figure lines and bars, copy button) | `docs/assets/javascripts/home.js` |
+| Behaviour (the whole figure) | `docs/assets/javascripts/home.js` |
 | Selects the template | `docs/index.md` (front matter only) |
 | The run behind the figure | `tools/docs/landing/snippets/stochastic.py` |
 | Its point-forecast baseline, used only by the tests | `tools/docs/landing/snippets/deterministic.py` |
@@ -75,19 +79,27 @@ forecast in `deterministic.py`, one of the twelve scenarios.
 ## Editing the page
 
 - **Copy, buttons, highlight boxes:** edit `overrides/home.html`.
-- **Figure labels:** the static `<text>` elements in the figure's `<svg>` in
-  `overrides/home.html`. The axis ticks and hour labels follow the data and
-  are drawn by `home.js`, whose geometry constants (top of the file) say which
-  template positions depend on them.
-- **Figure animation:** plays once when the figure scrolls into view: the price
-  lines draw in, the optimize step fades in, then the bars grow hour by hour.
-  The delays are constants at the top of `home.js`, the durations are in
-  `home.css`. With reduced motion the figure is drawn finished.
+- **Figure labels and layout:** `home.js` draws the whole figure at its
+  rendered width, one viewBox unit per CSS pixel, so its text keeps the sizes
+  in `home.css` on phones too. Its `WIDE` and `COMPACT` layouts (top of the
+  file, compact below 600px) hold the positions; the axis ticks and hour
+  labels follow the data, and each plot's unit (`PRICE_UNIT`,
+  `SCHEDULE_UNIT`) sits above its top tick. It redraws, finished, when the
+  figure is resized. Without JavaScript the figure is hidden and a
+  `<noscript>` note links to the guide; if the data cannot load, the figure
+  section is hidden.
+- **Figure animation:** plays once: the price lines draw in and the optimize
+  step fades in when the figure scrolls into view, and the bars grow hour by
+  hour once the schedule itself is in view (an invisible
+  `.odys-chart__schedule-area` that `home.js` watches), so they never grow
+  off-screen. The delays and thresholds are constants at the top of
+  `home.js`, the durations are in `home.css`. With reduced motion the figure
+  is drawn finished.
 - **Figure data:** edit the snippet, then run `just docs-assets` and
   `just test`.
-- **Breakpoints:** vuejs.org's: 960px and 794px (smaller title) and 576px
-  (phone layout). The highlight boxes wrap on their own (`auto-fit`, 240px
-  minimum).
+- **Breakpoints:** 960px (smaller title), 794px (smaller title and lead;
+  above it the lead and button share a row) and 576px (phone layout). The
+  highlight boxes wrap on their own (`auto-fit`, 240px minimum).
 
 ## Brand
 
@@ -100,18 +112,17 @@ or `rgb()` values in the landing files.
 |---|---|---|
 | `color` | `tools/docs/generate_brand.py`, which writes `brand.css` (git-ignored) | Every colour becomes `--odys-<name>`. `home.css` uses these variables. |
 | `scheme.light`, `scheme.dark` | `generate_brand.py` | Maps zensical's `--md-*` theme variables, so the docs follow the brand in both modes. |
-| `font` | `generate_brand.py` | The Google Fonts import plus `--odys-font-*` and `--md-text-font` / `--md-code-font`. `ui` (Inter) is vuejs.org's font, used for the landing page's buttons and figure labels. |
+| `font` | `generate_brand.py` | The Google Fonts import plus `--odys-font-*` and `--md-text-font` / `--md-code-font`. Mona Sans is the only text face; headings widen it with `font-stretch`, echoing the Michroma wordmark. |
 | `chart.roles`, `chart.chrome` | `tools/docs/generate_example_plots.py` | The example charts: a light and a dark value for every series role (solar, thermal, battery, …) and for text, gridlines, axes and background. |
 
-The colour scheme follows vuejs.org's light and dark themes, on the docs
-pages and the landing page alike: the `gray-*`, `green-*`, `blue-400` and
-`indigo-*` colours are Vue's. Vue's translucent text and divider colours are
-flattened onto its backgrounds, so every token stays an opaque hex value; the
-light muted grey (`gray-500`) is a shade darker than Vue's so it reaches 4.5:1
-on white. Links stay the brand violet. The accent is Vue's green in the dark
-scheme and the brand's darker `mint-700` in the light one, where Vue's green
-falls short of 4.5:1 on white. `bg`, `text`, `mint-400` and `mint-700` are
-the logo's colours (`tools/docs/generate_logo.py`).
+The colour scheme is built from the logo's colours (`bg`, `text`, `mint-400`,
+`mint-700`, see `tools/docs/generate_logo.py`), on the docs pages and the
+landing page alike. The logo's navy `bg` is the dark background and the light
+text colour; `text` is the dark text colour. Surfaces are tinted from the navy:
+`navy-*` for code blocks, buttons and dividers in the dark scheme, `mist-*` in
+the light one, and `slate-*` for muted text. Mint is the accent (`mint-400` on
+dark, the darker `mint-700` on white) and violet the links. Every text pair
+reaches 4.5:1 (`tests/docs/test_brand.py`).
 
 Chart colours follow energy conventions where they exist: solar is gold and
 thermal units are terracotta. Storage takes the brand violet, money (prices)
@@ -134,8 +145,7 @@ the iframe in dark mode.
   about 900px and phone widths, in light, dark and system mode. The page and
   its figure should follow the toggle; the header and tabs should look as on
   the docs pages.
-- The figure shows twelve price lines and the schedule's bars. The copy
-  button copies `pip install odys`. The highlight boxes drop to one column on
-  phones.
+- The figure shows twelve price lines and, under them, the schedule's bars.
+  The highlight boxes drop to one column on phones.
 - Spot-check docs pages (user guide, API reference) for unchanged styling.
 - `just docs-build` (strict), `just test` and `just check` pass.
