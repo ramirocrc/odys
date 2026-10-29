@@ -9,12 +9,11 @@ import linopy
 import xarray as xr
 
 from odys.domain.exceptions import OdysError
-from odys.optimization.constraints.constraints_group import ConstraintGroup, constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
 from odys.optimization.formulations.base import Formulation
 
 
-class PowerBalance(ConstraintGroup):
+class PowerBalance:
     """Builds the power balance from every entity type's net power injection.
 
     Every formulation contributes its `power_injection()`, in `FORMULATIONS` order;
@@ -25,9 +24,8 @@ class PowerBalance(ConstraintGroup):
         """Initialize with the formulations of the problem, whose variables are already added."""
         self.formulations = formulations
 
-    @constraint
-    def _get_power_balance_constraint(self) -> ModelConstraint:
-        """Net power into the bus equals zero: supply equals demand."""
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the power balance constraint: net power into the bus equals zero, so supply equals demand."""
         variable_injections: list[linopy.LinearExpression] = []
         fixed_injections: list[xr.DataArray] = []
         for formulation in self.formulations:
@@ -46,7 +44,9 @@ class PowerBalance(ConstraintGroup):
         net_injection: linopy.LinearExpression = reduce(add, variable_injections)
         if fixed_injections:
             net_injection += reduce(add, fixed_injections)
-        return ModelConstraint(
-            name="power_balance_constraint",
-            constraint=net_injection.to_constraint("=", 0),
-        )
+        return [
+            ModelConstraint(
+                name="power_balance_constraint",
+                constraint=net_injection.to_constraint("=", 0),
+            ),
+        ]

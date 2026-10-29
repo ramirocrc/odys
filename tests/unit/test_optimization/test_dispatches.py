@@ -29,7 +29,6 @@ from odys.optimization.formulations.charging import ChargingFormulation
 from odys.optimization.formulations.electric_vehicle import ElectricVehicleFormulation
 from odys.optimization.formulations.energy_market import EnergyMarketFormulation
 from odys.optimization.formulations.flexible_load import FlexibleLoadFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 from odys.results.dispatch import (
     BatteryStorageDispatch,
@@ -119,7 +118,7 @@ def solved_problem() -> tuple[OptimizationProblem, xr.Dataset]:
         final_conditions=(ElectricVehicleFinalState(vehicle=electric_vehicle, soc=EV_SOC_END),),
     )
     problem = system.build_problem()
-    outcome = solve(build_model(problem), SolverConfig())
+    outcome = solve(problem.model, SolverConfig())
     assert outcome.has_solution
     return problem, outcome.solution
 

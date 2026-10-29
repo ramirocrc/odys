@@ -110,4 +110,4 @@ Before the equations, a few words on how we write them. See [Notation and conven
 
 ---
 
-Built by [`odys.optimization.model.model_builder`](../developer/api/optimization/model/model_builder.md).
+Built by [`odys.optimization.problem`](../developer/api/optimization/problem.md).

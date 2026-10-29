@@ -18,7 +18,6 @@ from odys.domain.profiles import AvailableCapacityProfile, LoadProfile, PricePro
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.energy_market import EnergyMarketFormulation
-from odys.optimization.model.model_builder import build_model
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +122,7 @@ def linopy_model_with_non_anticipativity(
     energy_system_with_multiple_scenarios: EnergySystem,
 ) -> linopy.Model:
     problem = energy_system_with_multiple_scenarios.build_problem()
-    return build_model(problem)
+    return problem.model
 
 
 class TestPowerBalanceAndAvailableCapacity:

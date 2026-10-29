@@ -12,12 +12,10 @@ from odys.domain.entities.fixed_load import FixedLoad
 from odys.domain.entities.generator import Generator
 from odys.domain.entities.market import AllowedTradeDirection, EnergyMarket
 from odys.domain.entities.portfolio import AssetPortfolio
-from odys.domain.exceptions import OdysError
 from odys.domain.profiles import LoadProfile, PriceProfile
 from odys.domain.scenario import Scenario
 from odys.energy_system import EnergySystem
 from odys.optimization.formulations.energy_market import EnergyMarketFormulation
-from odys.optimization.model.model_builder import build_model
 from odys.optimization.problem import OptimizationProblem
 
 logger = logging.getLogger(__name__)
@@ -153,12 +151,12 @@ def problem_mixed_markets(energy_system_mixed_markets: EnergySystem) -> Optimiza
 
 @pytest.fixture
 def linopy_model_single_market(problem_single_market: OptimizationProblem) -> linopy.Model:
-    return build_model(problem_single_market)
+    return problem_single_market.model
 
 
 @pytest.fixture
 def linopy_model_mixed_markets(problem_mixed_markets: OptimizationProblem) -> linopy.Model:
-    return build_model(problem_mixed_markets)
+    return problem_mixed_markets.model
 
 
 class TestEnergyMarketVolumeConstraints:
@@ -292,7 +290,7 @@ class TestEnergyMarketConstraintsEdgeCases:
         )
 
         problem = energy_system.build_problem()
-        linopy_model = build_model(problem)
+        linopy_model = problem.model
 
         keys = set(linopy_model.constraints)
         market_constraints = [c for c in keys if "market" in str(c)]
@@ -342,9 +340,3 @@ class TestEnergyMarketFormulation:
             "market",
         ])
         assert_linequal(formulation.profit(), expected)
-
-    def test_variables_before_add_variables_raise(self, problem_single_market: OptimizationProblem) -> None:
-        markets = problem_single_market.formulation_of(EnergyMarketFormulation)
-        assert markets is not None
-        with pytest.raises(OdysError, match=r"EnergyMarketFormulation\.add_variables must run before"):
-            _ = markets.variables
