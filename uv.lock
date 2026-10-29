@@ -1328,6 +1328,7 @@ docs = [
     { name = "zensical" },
 ]
 vulnerability-fixes = [
+    { name = "filelock" },
     { name = "virtualenv" },
 ]
 
@@ -1369,7 +1370,10 @@ docs = [
     { name = "skia-pathops", specifier = ">=0.9.2" },
     { name = "zensical", specifier = ">=0.0.45" },
 ]
-vulnerability-fixes = [{ name = "virtualenv", specifier = ">=21.14.4" }]
+vulnerability-fixes = [
+    { name = "filelock", specifier = ">=4.2.1" },
+    { name = "virtualenv", specifier = ">=21.14.4" },
+]
 
 [[package]]
 name = "packaging"

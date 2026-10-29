@@ -75,7 +75,10 @@ docs = [
   "skia-pathops>=0.9.2",
   "zensical>=0.0.45",
 ]
-vulnerability-fixes = ["virtualenv>=21.14.4"]
+vulnerability-fixes = [
+  "filelock>=4.2.1",
+  "virtualenv>=21.14.4",
+]
 
 [build-system]
 requires = ["uv_build<0.13"]

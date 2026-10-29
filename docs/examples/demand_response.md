@@ -6,7 +6,7 @@ icon: fontawesome/solid/bolt
 
 ## Problem Description
 
-A cement kiln buys all its power on a supply contract indexed to the day-ahead (SDAC) price. Once day-ahead has cleared on the day before, the site knows every price of the next day, and plans the kiln's consumption against them. Each MWh the kiln consumes is worth 70 $/MWh to the site, and the grid connection carries at most 100 MW.
+A cement kiln buys all its power on a supply contract indexed to the day-ahead (SDAC) price. Once day-ahead has cleared on the day before, the site knows every price of the next day, and plans the kiln's consumption against them. Each MWh the kiln consumes is worth 70 $/MWh to the site, and the site buys at most 100 MW on the contract.
 
 A kiln isn't a dial you can turn freely. It runs between 40 and 100 MW, or not at all: below its minimum stable load it has to stop. It heats up slowly, by at most 20 MW an hour, and cools down by at most 30 MW an hour. Once stopped, it stays off for at least 3 hours, and each restart costs 2,000. At midnight it's running at 40 MW.
 
@@ -17,7 +17,7 @@ Day-ahead clears in 15-minute steps; to keep the tables short, this example uses
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"lineColor": "#95A5A6"}}}%%
 flowchart LR
-    Supply(["📈 Day-ahead indexed supply<br/>buy only · 100 MW connection<br/>28–140 \$/MWh"]) --> Bus(["⚡ Bus"])
+    Supply(["📈 Day-ahead indexed supply<br/>buy only · up to 100 MW<br/>28–140 \$/MWh"]) --> Bus(["⚡ Bus"])
     Bus --> Kiln(["🏭 Kiln<br/>40–100 MW or off · 70 \$/MWh<br/>+20 / −30 MW per hour<br/>off ≥ 3 h · 2,000 per start"])
     style Supply fill:none
     style Bus fill:none
@@ -30,7 +30,7 @@ flowchart LR
 
 ### 1. Define the supply and the kiln
 
-The supply is a buy-only [market](../user_guide/markets/energy_market.md#trade-direction) whose [volume limit](../user_guide/markets/energy_market.md#volume-limit) is the grid connection. The kiln is a [flexible load](../user_guide/assets/flexible_load.md) with [ramp limits](../user_guide/assets/flexible_load.md#ramp-limits) and a `Commitment` that lets it [switch on and off](../user_guide/assets/flexible_load.md#switching-on-and-off):
+The supply is a buy-only [market](../user_guide/markets/energy_market.md#trade-direction) with a [position limit](../user_guide/markets/energy_market.md#position-limit) of 100 MW. The kiln is a [flexible load](../user_guide/assets/flexible_load.md) with [ramp limits](../user_guide/assets/flexible_load.md#ramp-limits) and a `Commitment` that lets it [switch on and off](../user_guide/assets/flexible_load.md#switching-on-and-off):
 
 ```python
 from datetime import timedelta
