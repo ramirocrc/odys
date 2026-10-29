@@ -66,49 +66,64 @@ class CommitmentFormulation:
             shutdown=model.add_variables(name=self.name("shutdown"), coords=coords, binary=True),
         )
 
-    def startup_lower_bound_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
+    def constraints(self, variables: CommitmentVariables) -> list[ModelConstraint]:
+        """Return the on/off constraints: starts and stops from the initial status, minimum up and down times."""
+        return [
+            self._startup_lower_bound_constraint(variables),
+            self._startup_upper_bound_1_constraint(variables),
+            self._startup_upper_bound_2_constraint(variables),
+            self._shutdown_lower_bound_constraint(variables),
+            self._shutdown_upper_bound_1_constraint(variables),
+            self._shutdown_upper_bound_2_constraint(variables),
+            *self._min_uptime_constraints(variables),
+            *self._min_downtime_constraints(variables),
+            *self._initial_min_uptime_constraint(variables),
+            *self._initial_min_downtime_constraint(variables),
+        ]
+
+    def _startup_lower_bound_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
         """Startup indicator active when turning on, from the initial status at t=0."""
         return ModelConstraint(
             constraint=variables.startup >= variables.status - self.previous_status(variables),
             name=self.name("startup_lower_bound_constraint"),
         )
 
-    def startup_upper_bound_1_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
+    def _startup_upper_bound_1_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
         """Startup indicator bounded by current status."""
         return ModelConstraint(
             constraint=variables.startup <= variables.status,
             name=self.name("startup_upper_bound_1_constraint"),
         )
 
-    def startup_upper_bound_2_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
+    def _startup_upper_bound_2_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
         """Startup indicator bounded by previous status."""
         return ModelConstraint(
             constraint=variables.startup + self.previous_status(variables) <= 1.0,
             name=self.name("startup_upper_bound_2_constraint"),
         )
 
-    def shutdown_lower_bound_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
+    def _shutdown_lower_bound_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
         """Shutdown indicator active when turning off, from the initial status at t=0."""
         return ModelConstraint(
             constraint=variables.shutdown >= self.previous_status(variables) - variables.status,
             name=self.name("shutdown_lower_bound_constraint"),
         )
 
-    def shutdown_upper_bound_1_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
+    def _shutdown_upper_bound_1_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
         """Shutdown indicator bounded by previous status."""
         return ModelConstraint(
             constraint=variables.shutdown <= self.previous_status(variables),
             name=self.name("shutdown_upper_bound_1_constraint"),
         )
 
-    def shutdown_upper_bound_2_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
+    def _shutdown_upper_bound_2_constraint(self, variables: CommitmentVariables) -> ModelConstraint:
         """Shutdown indicator bounded by current status."""
         return ModelConstraint(
             constraint=variables.shutdown + variables.status <= 1.0,
             name=self.name("shutdown_upper_bound_2_constraint"),
         )
 
-    def min_uptime_constraints(self, variables: CommitmentVariables) -> list[ModelConstraint]:
+    def _min_uptime_constraints(self, variables: CommitmentVariables) -> list[ModelConstraint]:
         """Once started, an entity stays on for its minimum up time, counting time on before the horizon.
 
         One constraint per entity: the steps on in each window of `min_up_steps`, plus the steps on before
@@ -131,7 +146,7 @@ class CommitmentFormulation:
             )
         return constraints
 
-    def min_downtime_constraints(self, variables: CommitmentVariables) -> list[ModelConstraint]:
+    def _min_downtime_constraints(self, variables: CommitmentVariables) -> list[ModelConstraint]:
         """Once stopped, an entity stays off for its minimum down time, counting time off before the horizon.
 
         One constraint per entity: the steps off in each window of `min_down_steps`, plus the steps off before
@@ -152,13 +167,13 @@ class CommitmentFormulation:
             )
         return constraints
 
-    def initial_min_uptime_constraint(self, variables: CommitmentVariables) -> list[ModelConstraint]:
+    def _initial_min_uptime_constraint(self, variables: CommitmentVariables) -> list[ModelConstraint]:
         """An entity on for less than its minimum up time before the horizon does not shut down at t=0."""
         states = self.states
         still_up = states.initially_on & (states.initial_steps_in_state < states.min_up_steps)
         return self._no_change_at_first_step(variables.shutdown, still_up, self.name("initial_min_uptime"))
 
-    def initial_min_downtime_constraint(self, variables: CommitmentVariables) -> list[ModelConstraint]:
+    def _initial_min_downtime_constraint(self, variables: CommitmentVariables) -> list[ModelConstraint]:
         """An entity off for less than its minimum down time before the horizon does not start at t=0."""
         states = self.states
         still_down = ~states.initially_on & (states.initial_steps_in_state < states.min_down_steps)

@@ -18,8 +18,8 @@ Review the diff like a strict senior reviewer would, then fix what you find. Do 
 **Design and architecture**
 
 - [ ] Responsibilities sit in the right layer, and packages import only lower layers (`AGENTS.md`, "Architecture layers").
-- [ ] Validation happens at construction (pydantic validators, `domain/validation.py`), not inside the model builder or constraints.
-- [ ] Existing patterns are reused, not reinvented: `ConstraintGroup` + `@constraint`, typed `*Variables` objects created in `_create_variables` (`VariableOwner`), `Formulation` / `ObjectiveTermFormulation` and their registries, `*Arrays` + `vectorize`, `ModelContext`, a `Dispatch` subclass built by the formulation's `dispatch()`, `SolveOutcome.has_solution`.
+- [ ] Validation happens at construction (pydantic validators, `domain/validation.py`), not inside the formulations or constraints.
+- [ ] Existing patterns are reused, not reinvented: one `constraints()` method listing the constraints, typed `*Variables` objects created in `_create_variables` at the end of `__init__`, `Formulation` / `ObjectiveTermFormulation` and their registries, `*Arrays` + `vectorize`, `ModelContext`, a `Dispatch` subclass built by the formulation's `dispatch()`, `SolveOutcome.has_solution`.
 - [ ] No speculative abstractions: no new base class, protocol, registry, flag or parameter without two concrete users.
 - [ ] No duplication that should be one function, and no helper that exists for one call site and hurts readability.
 - [ ] Everything new in `__all__` is meant to be public, and no linopy or xarray internals leak into the public API (results excepted).

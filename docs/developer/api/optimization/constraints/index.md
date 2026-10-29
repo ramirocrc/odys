@@ -4,11 +4,10 @@ icon: lucide/arrow-up-circle
 
 # `odys.optimization.constraints`
 
-MILP constraint builders.
+`ModelConstraint`: a named linopy constraint, as every `constraints()` method returns it.
 
 ::: odys.optimization.constraints
 
 ## Modules
 
-- `constraints_group`
 - `model_constraint`

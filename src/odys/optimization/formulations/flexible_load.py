@@ -10,9 +10,8 @@ from pydantic import BaseModel, ConfigDict
 from odys.domain.entities.commitment import Commitment
 from odys.domain.entities.flexible_load import FlexibleLoad
 from odys.domain.profiles import FlexibleLoadProfile
-from odys.optimization.constraints.constraints_group import constraint
 from odys.optimization.constraints.model_constraint import ModelConstraint
-from odys.optimization.formulations.base import FormulationInputs, VariableFormulation, time_shifted
+from odys.optimization.formulations.base import Formulation, FormulationInputs, time_shifted
 from odys.optimization.formulations.commitment import CommitmentFormulation, CommitmentVariables
 from odys.parameters.context import ModelContext
 from odys.parameters.dimensions import ModelDimension
@@ -33,7 +32,7 @@ class FlexibleLoadVariables(BaseModel):
     commitment: CommitmentVariables | None
 
 
-class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
+class FlexibleLoadFormulation(Formulation):
     """Flexible loads: demand the optimizer sets within a range at every step, for a value per MWh.
 
     A load can also ramp only so fast between two running steps, and, with a commitment, be switched off. The
@@ -48,12 +47,13 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
     startup_name: ClassVar[str] = f"{FLEXIBLE_LOAD}_startup"
     shutdown_name: ClassVar[str] = f"{FLEXIBLE_LOAD}_shutdown"
 
-    def __init__(self, flexible_loads: Sequence[FlexibleLoad], context: ModelContext) -> None:
+    def __init__(self, flexible_loads: Sequence[FlexibleLoad], context: ModelContext, model: linopy.Model) -> None:
         """Initialize with the flexible loads of the system.
 
         Args:
             flexible_loads: The flexible loads, at least one.
             context: The shared indexing of the problem.
+            model: The model to add the variables to.
         """
         super().__init__(flexible_loads, context)
         self.arrays = vectorize(FlexibleLoadArrays, flexible_loads, self.coordinates)
@@ -76,12 +76,13 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
             self.coordinates,
             lambda profile: profile.upper_bound,
         )
+        self.variables = self._create_variables(model)
 
     @classmethod
     def build(cls, inputs: FormulationInputs) -> Self | None:
         """Return the formulation of the flexible loads, or None if there are none."""
         flexible_loads = inputs.of_type(FlexibleLoad)
-        return cls(flexible_loads, inputs.context) if flexible_loads else None
+        return cls(flexible_loads, inputs.context, inputs.model) if flexible_loads else None
 
     def _create_variables(self, model: linopy.Model) -> FlexibleLoadVariables:
         """Add the consumption (MW), and the on/off indicators when some flexible load has a commitment."""
@@ -94,7 +95,17 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
             commitment=self.commitment.create_variables(model) if self._has_commitment else None,
         )
 
-    @constraint
+    def constraints(self) -> list[ModelConstraint]:
+        """Return the flexible load constraints: consumption bounds, on/off logic and ramps."""
+        return [
+            self._get_lower_bound_constraint(),
+            self._get_upper_bound_constraint(),
+            *self._get_always_on_constraint(),
+            *self._get_commitment_constraints(),
+            *self._get_max_ramp_up_constraint(),
+            *self._get_max_ramp_down_constraint(),
+        ]
+
     def _get_lower_bound_constraint(self) -> ModelConstraint:
         """The load consumes at least the lower bound of its profile while it runs."""
         commitment = self.variables.commitment
@@ -104,7 +115,6 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
             name="flexible_load_lower_bound_constraint",
         )
 
-    @constraint
     def _get_upper_bound_constraint(self) -> ModelConstraint:
         """The load consumes at most the upper bound of its profile while it runs, and nothing while it is off."""
         commitment = self.variables.commitment
@@ -114,7 +124,6 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
             name="flexible_load_upper_bound_constraint",
         )
 
-    @constraint
     def _get_always_on_constraint(self) -> list[ModelConstraint]:
         """A load without a commitment is always on, when others have on/off indicators."""
         commitment = self.variables.commitment
@@ -124,27 +133,11 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
         status = 1 * commitment.status.sel({FLEXIBLE_LOAD: always_on})
         return [ModelConstraint(constraint=status.to_constraint("=", 1), name="flexible_load_always_on_constraint")]
 
-    @constraint
     def _get_commitment_constraints(self) -> list[ModelConstraint]:
         """Starts and stops are counted from the initial status, and the minimum up and down times hold."""
         commitment = self.variables.commitment
-        if commitment is None:
-            return []
-        part = self.commitment
-        return [
-            part.startup_lower_bound_constraint(commitment),
-            part.startup_upper_bound_1_constraint(commitment),
-            part.startup_upper_bound_2_constraint(commitment),
-            part.shutdown_lower_bound_constraint(commitment),
-            part.shutdown_upper_bound_1_constraint(commitment),
-            part.shutdown_upper_bound_2_constraint(commitment),
-            *part.min_uptime_constraints(commitment),
-            *part.min_downtime_constraints(commitment),
-            *part.initial_min_uptime_constraint(commitment),
-            *part.initial_min_downtime_constraint(commitment),
-        ]
+        return [] if commitment is None else self.commitment.constraints(commitment)
 
-    @constraint
     def _get_max_ramp_up_constraint(self) -> list[ModelConstraint]:
         """Between two running steps, consumption rises by at most `ramp_up` per hour; a start lands anywhere."""
         has_ramp = self.arrays.ramp_up.notnull()
@@ -163,7 +156,6 @@ class FlexibleLoadFormulation(VariableFormulation[FlexibleLoadVariables]):
             ),
         ]
 
-    @constraint
     def _get_max_ramp_down_constraint(self) -> list[ModelConstraint]:
         """Between two running steps, consumption falls by at most `ramp_down` per hour; a stop drops to 0."""
         has_ramp = self.arrays.ramp_down.notnull()
