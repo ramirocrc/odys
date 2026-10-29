@@ -10,7 +10,7 @@ Each example solves one planning problem end to end: it states the problem, walk
 | ------- | ------------ | ---- |
 | [Merit-Order Dispatch](merit_order_dispatch.md) | How much of a constant load can solar cover, and how much gas is left? | Generators, a fixed load, available capacity |
 | [Storing Solar for the Evening](solar_storage.md) | How much midday solar is worth storing for the evening, with losses? | Battery storage, initial and final state |
-| [Industrial Demand Response](demand_response.md) | When should a kiln that ramps slowly run high, run low or stop, at known day-ahead prices? | A flexible load with ramp limits and on/off, a buy-only market with a volume limit |
+| [Industrial Demand Response](demand_response.md) | When should a kiln that ramps slowly run high, run low or stop, at known day-ahead prices? | A flexible load with ramp limits and on/off, a buy-only market with a position limit |
 | [Make or Buy](make_or_buy.md) | When should a CCGT produce, buy instead, or run flat out to sell? | A buy-and-sell market |
 | [Day-Ahead or Intraday](day_ahead_or_intraday.md) | How much to commit day-ahead, when a bad outcome weighs more than a good one? | Scenarios, a stage-fixed market, a CVaR term |
 | [Depot Charging with V2G](depot_charging.md) | When should three vans charge and sell back, when they share two chargers? | Electric vehicles, trips, chargers, V2G |

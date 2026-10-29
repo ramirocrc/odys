@@ -8,8 +8,8 @@ run below its minimum stable load, and pays to restart once stopped.
 
 ## Assets
 
-- **supply**: Buy-only supply at the day-ahead price, capped at 100 MW by the
-  grid connection. Hourly prices range from 28 to 140 $/MWh.
+- **supply**: Buy-only supply at the day-ahead price, with a position limit of
+  100 MW. Hourly prices range from 28 to 140 $/MWh.
 - **kiln**: Runs between 40 and 100 MW, or not at all. Each MWh it consumes
   is worth 70 $/MWh. It ramps up by at most 20 MW per hour and down by at
   most 30 MW per hour, stays off for at least 3 hours once stopped, and each

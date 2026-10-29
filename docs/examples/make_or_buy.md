@@ -102,7 +102,7 @@ At each step, the optimizer compares the price with the CCGT's cost:
 - **Steps 0 to 6 and 14 to 23** (52 to 90 $/MWh): the market pays more than the CCGT costs, so the CCGT runs at its full 100 MW. It serves the 70 MW load and sells the other 30 MW.
 - **Steps 7 to 13** (30 to 45 $/MWh): buying is cheaper than producing, so the CCGT is off and the site buys the whole 70 MW.
 
-Over the day, the CCGT produces 1,700 MWh at a cost of 85,000. The site sells 510 MWh for 35,220 and buys 490 MWh for 18,900, so `result.objective_value` is −68,680. The site sells only 30 MW because the CCGT is capped at 100 MW; the market's 100 MW volume limit never binds. Selling earns 9,720 of that: without it, the site would only choose between producing and buying, at −78,400. The trades are in `result.markets`, where `net_volume` is negative when the site buys; see [Results](../user_guide/markets/energy_market.md#results) on the EnergyMarket page.
+Over the day, the CCGT produces 1,700 MWh at a cost of 85,000. The site sells 510 MWh for 35,220 and buys 490 MWh for 18,900, so `result.objective_value` is −68,680. The site sells only 30 MW because the CCGT is capped at 100 MW; the market's 100 MW position limit never binds. Selling earns 9,720 of that: without it, the site would only choose between producing and buying, at −78,400. The trades are in `result.markets`, where `net_volume` is negative when the site buys; see [Results](../user_guide/markets/energy_market.md#results) on the EnergyMarket page.
 
 ## Discussion
 
