@@ -28,13 +28,15 @@ By default, a market can buy and sell, but goes only one way at each step: in a 
 | Field                         | Type                    | Required | Default        | Description                                                                         |
 | ----------------------------- | ----------------------- | -------- | -------------- | ----------------------------------------------------------------------------------- |
 | `name`                        | `str`                   | Yes      | -              | Unique name of the market                                                           |
-| `max_trading_volume_per_step` | `float`                 | Yes      | -              | Most power bought or sold at each step, above 0 (MW); the energy is this times the step length |
+| `max_trading_volume_per_step` | `float`                 | Yes      | -              | Position limit: the most power bought or sold at each step, above 0 (MW); the energy is this times the step length |
 | `allowed_trade_direction`     | `AllowedTradeDirection` | No       | `BUY_AND_SELL` | Which way it trades: `BUY_ONLY`, `SELL_ONLY` or `BUY_AND_SELL`                      |
 | `stage_fixed`                 | `bool`                  | No       | `False`        | If `True`, the trades are the same in every scenario                                |
 
-## Volume limit
+## Position limit
 
-`max_trading_volume_per_step` is your limit, not the market's: how much you're willing or able to trade per step, such as the rating of your grid connection or the most you'd bid. Set it to what you'd really trade, because the optimizer uses all of it when the price is right.
+`max_trading_volume_per_step` is your position limit on the market: the most you buy or sell on it at each step. It's your limit, not the market's. Set it to the position you'd really take, because the optimizer uses all of it when the price is right.
+
+Each market has its own limit. With several markets, the site can buy up to the sum of their limits at the same step.
 
 The limit is a power, in MW, held for the whole step: with 15-minute steps, a 100 MW limit trades at most 25 MWh per step. See [M-1](../../formulation/markets.md#m-1).
 
@@ -70,7 +72,7 @@ intraday = EnergyMarket(name="intraday", max_trading_volume_per_step=50.0)
 markets = [day_ahead, intraday]  # EnergySystem(markets=markets, ...)
 ```
 
-Each market has its own price, and the optimizer trades on whichever pays best at each step. When two markets have different prices at the same step, it also buys on the cheaper one and sells on the dearer one, up to the smaller of the two limits. With a single scenario, both prices are taken as known, so the plan books that spread as certain. If that isn't a trade you'd make, set the limits to what you'd really trade, or make one of the markets one-way. See [M-1](../../formulation/markets.md#m-1).
+Each market has its own price, and the optimizer trades on whichever pays best at each step. When two markets have different prices at the same step, it also buys on the cheaper one and sells on the dearer one, up to the smaller of the two limits. With a single scenario, both prices are taken as known, so the plan books that spread as certain. If that isn't a trade you'd make, set the position limits to what you'd really take, or make one of the markets one-way. See [M-1](../../formulation/markets.md#m-1).
 
 ## Stage-fixed markets
 
@@ -184,7 +186,7 @@ The [Make or Buy example](../../examples/make_or_buy.md) buys from a market inst
 
 ## How it's modelled
 
-A market has a buy volume, a sell volume and a trade mode at every step, in every scenario. The rules are on the [Markets](../../formulation/markets.md) formulation page: the volume limit ([M-1](../../formulation/markets.md#m-1)), one direction per step ([M-2](../../formulation/markets.md#m-2)) and one-way markets ([M-3](../../formulation/markets.md#m-3)). Stage-fixed markets add [NA-1](../../formulation/non_anticipativity.md#na-1). Buying supplies the [power balance](../../formulation/power_balance.md#pb-1) and selling draws from it, and the trading revenue enters the [objective](../../formulation/markets.md#objective-contribution).
+A market has a buy volume, a sell volume and a trade mode at every step, in every scenario. The rules are on the [Markets](../../formulation/markets.md) formulation page: the position limit ([M-1](../../formulation/markets.md#m-1)), one direction per step ([M-2](../../formulation/markets.md#m-2)) and one-way markets ([M-3](../../formulation/markets.md#m-3)). Stage-fixed markets add [NA-1](../../formulation/non_anticipativity.md#na-1). Buying supplies the [power balance](../../formulation/power_balance.md#pb-1) and selling draws from it, and the trading revenue enters the [objective](../../formulation/markets.md#objective-contribution).
 
 ## Next steps
 

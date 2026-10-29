@@ -96,7 +96,7 @@ $$
 where $\Pi_s$ is the [profit of scenario $s$](objective.md#profit-per-scenario), and the second term is there only with a `CVaRTerm` ([Objective](objective.md#combined-objective)). It does so subject to:
 
 - **Power balance:** [PB-1](power_balance.md#pb-1) supply meets demand.
-- **Markets:** [M-1](markets.md#m-1) volume cap, [M-2](markets.md#m-2) buy or sell, [M-3](markets.md#m-3) trade direction.
+- **Markets:** [M-1](markets.md#m-1) position limit, [M-2](markets.md#m-2) buy or sell, [M-3](markets.md#m-3) trade direction.
 - **Non-anticipativity:** [NA-1](non_anticipativity.md#na-1) stage-fixed trades are the same in every scenario.
 - **Generators:** [G-1](generators.md#g-1) rating, [G-2](generators.md#g-2) on means producing, [G-3](generators.md#g-3) minimum output, [G-4](generators.md#g-4) available capacity, [G-5](generators.md#g-5) start-ups, [G-6](generators.md#g-6) shut-downs, [G-7](generators.md#g-7) ramps, [G-8](generators.md#g-8) minimum up time, [G-9](generators.md#g-9) minimum down time, [G-10](generators.md#g-10) final output.
 - **Batteries:** [B-1](batteries.md#b-1) charging, [B-2](batteries.md#b-2) discharging, [B-3](batteries.md#b-3) state of charge, [B-4](batteries.md#b-4) final charge, [B-5](batteries.md#b-5) charge limits, [B-6](batteries.md#b-6) at most full, [B-7](batteries.md#b-7) net power.

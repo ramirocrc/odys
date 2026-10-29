@@ -6,7 +6,7 @@ icon: lucide/arrow-left-right
 
 How do I buy and sell? A market is your link to the outside world. When your own assets can't cover your demand, you buy the rest; when they make more than you need, or when prices are good, you sell. odys takes the market's price as given: your trades never move it.
 
-This page covers every `EnergyMarket`. Each market adds the same few rules: a limit you set on how much you trade per step, one direction per step, and, for some markets, only one direction at all.
+This page covers every `EnergyMarket`. Each market adds the same few rules: a position limit you set on how much you trade per step, one direction per step, and, for some markets, only one direction at all.
 
 ## Sets and indices
 
@@ -30,13 +30,13 @@ For each market, scenario and step, odys decides three things:
 
 The trades are power, held for the whole step, so the energy you trade in step $t$ is $p^{buy}_{m,s,t}\,\Delta t$ or $p^{sell}_{m,s,t}\,\Delta t$.
 
-You also give each market one number, its volume cap $\overline{V}_m$ (`max_trading_volume_per_step`, always above 0): how much you're willing to trade on it per step. It's your choice, not a property of the market. Today, the cap is in MW as well: the most energy you can trade in a step is $\overline{V}_m\,\Delta t$.
+You also give each market one number, its position limit, or cap, $\overline{V}_m$ (`max_trading_volume_per_step`, always above 0): the most you buy or sell on it at each step. It's your choice, not a property of the market. Today, the cap is in MW as well: the most energy you can trade in a step is $\overline{V}_m\,\Delta t$.
 
 ## Constraints
 
-### M-1 · Trades stay within the volume limit {#m-1}
+### M-1 · Trades stay within the position limit {#m-1}
 
-In every step, you buy or sell at most the volume you're willing to trade on that market.
+In every step, you buy or sell at most your position limit on that market.
 
 $$
 p^{buy}_{m,s,t} \le \overline{V}_m, \qquad p^{sell}_{m,s,t} \le \overline{V}_m \qquad \forall m \in \mathcal{M},\ s \in \mathcal{S},\ t \in \mathcal{T}
@@ -44,12 +44,13 @@ $$
 
 Read aloud: whatever you trade at a step, in either direction, stays below the limit you set for that market.
 
-**Why it looks like this.** odys is a price-taker: whatever you trade, the price stays the same. Without a limit, that breaks down as soon as two markets have different prices at the same step. The optimizer would buy an endless amount on the cheaper market and sell it on the more expensive one, and the profit would have no upper bound. The cap is where you say how much you're actually willing to trade, so the plan stays one you could carry out.
+**Why it looks like this.** odys is a price-taker: whatever you trade, the price stays the same. Without a limit, that breaks down as soon as two markets have different prices at the same step. The optimizer would buy an endless amount on the cheaper market and sell it on the more expensive one, and the profit would have no upper bound. The cap is the largest position you'd take on the market, so the plan stays one you could carry out.
 
 **Good to know.**
 
 - [M-2](#m-2) already implies M-1: with $y^{trade}_{m,s,t} \in \{0, 1\}$, M-2 caps each direction at $\overline{V}_m$ or at 0. So M-1 never binds on its own ([#144](https://github.com/ramirocrc/odys/issues/144)).
-- The cap bounds trading, but doesn't remove arbitrage. When two markets have different prices at a step, the optimizer still buys on one and sells on the other, up to the smaller of the two caps. If you don't want that, set the caps to what you'd really trade, or make a market buy-only or sell-only ([M-3](#m-3)).
+- The cap bounds trading, but doesn't remove arbitrage. When two markets have different prices at a step, the optimizer still buys on one and sells on the other, up to the smaller of the two caps. If you don't want that, set the caps to the positions you'd really take, or make a market buy-only or sell-only ([M-3](#m-3)).
+- Each cap limits one market, and nothing limits the site's total net purchase or sale across markets. With caps of 150 MW and 50 MW on two markets, the site can buy 200 MW at the same step ([#194](https://github.com/ramirocrc/odys/issues/194)).
 - The cap is a power, in MW, although it's called a volume. Markets clear energy per delivery period, so a cap in MWh per step would be more natural ([#146](https://github.com/ramirocrc/odys/issues/146)).
 
 `Added: always · Binds: never on its own (M-2 implies it) · Names: market_max_buy_volume_constraint, market_max_sell_volume_constraint`
