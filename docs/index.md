@@ -1,5 +1,5 @@
 ---
-title: Odys
+title: Energy portfolio optimization under uncertainty
 icon: lucide/home
 template: home.html
 hide:

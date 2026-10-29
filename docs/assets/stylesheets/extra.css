@@ -1,17 +1,3 @@
-[data-md-component="announce"] {
-  background: linear-gradient(90deg, #da814a, #f5a623);
-  transition: all 250ms;
-}
-
-[data-md-component="announce"]:hover {
-  opacity: 0.8;
-}
-
-[data-md-component="announce"] a {
-  color: #ffffff !important;
-  text-decoration: none;
-}
-
 /* The logo is the full wordmark, so it replaces the site name in the header. */
 .md-header__button.md-logo img,
 .md-nav__button.md-logo img {
@@ -31,6 +17,18 @@
 
 .md-header__title .md-header__topic:first-child {
   visibility: hidden;
+}
+
+/* With the site name hidden, the theme's narrow header (it drops the logo below 1220px) would
+   show no name at all, so the wordmark stays, after the menu button. */
+@media screen and (max-width: 76.234375em) {
+  .md-header__button.md-logo {
+    display: inline-block;
+  }
+
+  .md-header__button[for="__drawer"] {
+    order: -1;
+  }
 }
 
 .mermaid {

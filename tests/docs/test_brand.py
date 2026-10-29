@@ -24,10 +24,34 @@ LANDING_FILES = [
     ROOT / "docs" / "assets" / "javascripts" / "home.js",
     ROOT / "overrides" / "home.html",
 ]
+HOME_CSS = ROOT / "docs" / "assets" / "stylesheets" / "home.css"
+# Brand scheme name -> the zensical scheme home.css maps its --home-* colours under.
+HOME_SCHEMES = {"light": "default", "dark": "slate"}
+HOME_VARIABLE = re.compile(r"--home-([a-z-]+): var\(--odys-([a-z0-9-]+)\);")
 HEX_COLOR = re.compile(r"^#[0-9a-f]{6}$")
 WCAG_AA_TEXT = 4.5
 WCAG_AA_GRAPHICS = 3.0
 SRGB_LINEAR_THRESHOLD = 0.03928
+
+# (text, background) --home-* pairs that carry readable text on the landing page.
+HOME_TEXT_PAIRS = [
+    ("text", "bg"),
+    ("muted", "bg"),
+    ("link", "bg"),
+    ("link-hover", "bg"),
+    ("accent", "bg"),
+    ("primary-text", "primary"),
+    ("button-text", "button"),
+    ("button-text", "button-hover"),
+    ("input", "bg"),
+    ("sell", "bg"),
+]
+# (mark, background) --home-* pairs for the landing figure's marks that carry meaning.
+HOME_GRAPHIC_PAIRS = [
+    ("axis", "bg"),
+    ("sell", "bg"),
+    ("buy", "bg"),
+]
 
 # (text role, background role) pairs that carry readable text in the docs theme.
 TEXT_PAIRS = [
@@ -163,3 +187,26 @@ def test_landing_page_only_uses_defined_brand_variables(path: Path) -> None:
     used |= {f"--odys-{name}" for name in re.findall(r'token\("([a-z0-9-]+)"\)', path.read_text())}
 
     assert used <= defined
+
+
+def _home_colors(scheme: str) -> dict[str, str]:
+    """The landing page's --home-* colours for one scheme that are a plain brand colour, as hex."""
+    selector = f'[data-md-color-scheme="{HOME_SCHEMES[scheme]}"]:has(.odys-home) {{'
+    block = HOME_CSS.read_text().split(selector, 1)[1].split("}", 1)[0]
+    return {name: COLORS[token] for name, token in HOME_VARIABLE.findall(block)}
+
+
+@pytest.mark.parametrize("scheme", HOME_SCHEMES)
+@pytest.mark.parametrize(("text", "background"), HOME_TEXT_PAIRS)
+def test_landing_page_text_meets_wcag_aa(scheme: str, text: str, background: str) -> None:
+    colors = _home_colors(scheme)
+
+    assert _contrast(colors[text], colors[background]) >= WCAG_AA_TEXT
+
+
+@pytest.mark.parametrize("scheme", HOME_SCHEMES)
+@pytest.mark.parametrize(("mark", "background"), HOME_GRAPHIC_PAIRS)
+def test_landing_figure_marks_are_visible_on_the_page(scheme: str, mark: str, background: str) -> None:
+    colors = _home_colors(scheme)
+
+    assert _contrast(colors[mark], colors[background]) >= WCAG_AA_GRAPHICS
