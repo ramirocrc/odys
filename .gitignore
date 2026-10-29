@@ -73,3 +73,6 @@ CLAUDE.md
 
 # Claude Code (local only)
 .claude/
+
+# Impeccable design critiques (local only)
+.impeccable/

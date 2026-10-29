@@ -1,47 +1,55 @@
-/* Landing page (design "C · Hero + chart"). Loaded only by overrides/home.html.
+/* Landing page. Loaded only by overrides/home.html.
    Colours and fonts come from brand.css (generated from tools/docs/brand/tokens.json).
-   The page follows the light/dark toggle: each scheme maps the --home-* variables
-   below to the colours of vuejs.org's light and dark themes. Zensical's header,
-   navigation tabs and footer are kept as on every docs page. */
+   The page follows the light/dark toggle: each scheme maps the --home-* variables below
+   to the logo's navy, mint and the brand violet, in shades that meet WCAG AA on each
+   background. Zensical's header, navigation tabs and footer are kept as on every docs page. */
 
 /* ---- Colour schemes ---- */
 
 [data-md-color-scheme="slate"]:has(.odys-home) {
-  --home-bg: var(--odys-gray-900);
-  --home-text: var(--odys-gray-200);
-  --home-muted: var(--odys-gray-400);
-  --home-divider: var(--odys-gray-750);
+  --home-bg: var(--odys-bg);
+  --home-text: var(--odys-text);
+  --home-muted: var(--odys-slate-400);
+  --home-divider: var(--odys-navy-800);
   --home-link: var(--odys-violet-300);
   --home-link-hover: var(--odys-violet-200);
-  --home-primary-text: var(--odys-indigo-900);
-  --home-primary-hover: var(--odys-green-400);
-  --home-button: var(--odys-gray-800);
-  --home-button-hover: var(--odys-gray-700);
-  --home-button-text: var(--odys-indigo-200);
-  --home-grid: var(--odys-gray-800);
-  --home-axis: var(--odys-gray-600);
+  --home-accent: var(--odys-mint-400);
+  --home-primary: var(--odys-mint-400);
+  --home-primary-text: var(--odys-bg);
+  --home-primary-hover: color-mix(in srgb, var(--odys-mint-400) 80%, var(--odys-paper));
+  --home-button: var(--odys-navy-900);
+  --home-button-hover: var(--odys-navy-850);
+  --home-button-text: var(--odys-violet-200);
+  --home-selection: color-mix(in srgb, var(--odys-violet-500) 24%, transparent);
+  --home-grid: var(--odys-navy-900);
+  --home-axis: var(--odys-slate-500);
   --home-input: var(--odys-mint-400);
+  --home-input-opacity: 0.45;
   --home-sell: var(--odys-violet-300);
   --home-buy: var(--odys-violet-500);
 }
 
 [data-md-color-scheme="default"]:has(.odys-home) {
   --home-bg: var(--odys-paper);
-  --home-text: var(--odys-indigo-900);
-  --home-muted: var(--odys-gray-500);
-  --home-divider: var(--odys-gray-100);
+  --home-text: var(--odys-bg);
+  --home-muted: var(--odys-slate-500);
+  --home-divider: var(--odys-mist-100);
   --home-link: var(--odys-violet-600);
   --home-link-hover: var(--odys-violet-700);
+  --home-accent: var(--odys-mint-700);
+  --home-primary: var(--odys-mint-700);
   --home-primary-text: var(--odys-paper);
-  --home-primary-hover: color-mix(in srgb, var(--odys-green-500) 88%, var(--odys-indigo-900));
-  --home-button: var(--odys-gray-50);
-  --home-button-hover: var(--odys-gray-150);
-  --home-button-text: var(--odys-indigo-600);
-  --home-grid: var(--odys-gray-100);
-  --home-axis: var(--odys-gray-300);
+  --home-primary-hover: color-mix(in srgb, var(--odys-mint-700) 80%, var(--odys-bg));
+  --home-button: var(--odys-mist-50);
+  --home-button-hover: var(--odys-mist-150);
+  --home-button-text: var(--odys-violet-700);
+  --home-selection: color-mix(in srgb, var(--odys-violet-500) 14%, transparent);
+  --home-grid: var(--odys-mist-100);
+  --home-axis: var(--odys-slate-500);
   --home-input: var(--odys-mint-700);
-  --home-sell: var(--odys-violet-600);
-  --home-buy: var(--odys-violet-300);
+  --home-input-opacity: 0.7;
+  --home-sell: var(--odys-violet-700);
+  --home-buy: var(--odys-violet-500);
 }
 
 body:has(.odys-home) {
@@ -66,6 +74,10 @@ body:has(.odys-home) .md-header--shadow {
   line-height: 1.5;
 }
 
+.odys-home ::selection {
+  background: var(--home-selection);
+}
+
 .odys-home a {
   color: var(--home-link);
   text-decoration: none;
@@ -75,53 +87,59 @@ body:has(.odys-home) .md-header--shadow {
   color: var(--home-link-hover);
 }
 
+.odys-home a:focus-visible,
+.odys-home .odys-action:focus-visible {
+  outline: 2px solid var(--home-link);
+  outline-offset: 3px;
+}
+
 /* ---- Hero ---- */
 
 .odys-hero {
-  max-width: 960px;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 96px 32px 64px;
-  text-align: center;
+  padding: 48px 24px 32px;
 }
 
-/* Like vuejs.org: the whole title carries the gradient in the dark scheme, only the
-   accent in the light one. */
+/* Headings are set wide, like the docs' page titles, echoing the Michroma wordmark. */
+.odys-hero__title,
+.odys-figure__title,
+.odys-highlight h2 {
+  font-stretch: 115%;
+}
+
 .odys-hero__title {
   margin: 0;
   color: var(--home-text);
-  font-size: 76px;
-  font-weight: 900;
-  line-height: 1.25;
-  letter-spacing: -1.5px;
+  font-size: 60px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
-[data-md-color-scheme="slate"] .odys-hero__title,
-[data-md-color-scheme="default"] .odys-hero__accent {
-  background: linear-gradient(315deg, var(--odys-green-400) 25%, var(--odys-blue-400));
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+.odys-hero__accent {
+  color: var(--home-accent);
 }
 
 .odys-hero__lead {
   max-width: 620px;
-  margin: 24px auto 40px;
+  margin: 24px 0 40px;
   color: var(--home-muted);
   font-size: 22px;
+  text-wrap: pretty;
 }
 
-/* ---- Hero actions: vuejs.org's buttons ---- */
+/* ---- Actions ---- */
 
 .odys-actions {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 18px;
 }
 
 .odys-home .odys-action {
-  position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   min-height: 44px;
   padding: 8px 18px;
@@ -129,7 +147,7 @@ body:has(.odys-home) .md-header--shadow {
   border-radius: 8px;
   background: var(--home-button);
   color: var(--home-button-text);
-  font: 500 16px var(--odys-font-ui);
+  font: 500 16px var(--odys-font-sans);
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -141,7 +159,7 @@ body:has(.odys-home) .md-header--shadow {
 
 .odys-home .odys-action--primary,
 .odys-home .odys-action--primary:hover {
-  background: var(--odys-green-500);
+  background: var(--home-primary);
   color: var(--home-primary-text);
   font-weight: 600;
 }
@@ -167,52 +185,12 @@ body:has(.odys-home) .md-header--shadow {
   stroke-width: 3;
 }
 
-.odys-action .odys-action__mark {
-  fill: currentcolor;
-  stroke: none;
-}
-
-.odys-home .odys-action--install {
-  font-family: var(--odys-font-mono);
-  font-size: 15px;
-}
-
-.odys-action__prompt {
-  color: var(--home-muted);
-}
-
-.odys-action__icon-done,
-.odys-action--install[data-copied="true"] .odys-action__icon-copy {
-  display: none;
-}
-
-.odys-action--install[data-copied="true"] .odys-action__icon-done {
-  display: block;
-  color: var(--home-input);
-}
-
-/* Announced to screen readers; shown only when copying fails. */
-.odys-action__state {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  translate: -50% 0;
-  color: var(--home-muted);
-  font: 400 12px var(--odys-font-sans);
-  white-space: nowrap;
-  clip-path: inset(50%);
-}
-
-.odys-action--install[data-copied="false"] .odys-action__state {
-  clip-path: none;
-}
-
 /* ---- Figure: price scenarios in, one schedule out ---- */
 
 .odys-figure {
   max-width: 1040px;
   margin: 0 auto;
-  padding: 0 24px 96px;
+  padding: 0 24px 80px;
 }
 
 .odys-figure figure {
@@ -227,7 +205,7 @@ body:has(.odys-home) .md-header--shadow {
 
 .odys-chart__label {
   fill: var(--home-muted);
-  font: 500 13px var(--odys-font-ui);
+  font: 500 13px var(--odys-font-sans);
 }
 
 .odys-chart__tag {
@@ -275,7 +253,7 @@ body:has(.odys-home) .md-header--shadow {
   fill: none;
   stroke: var(--home-input);
   stroke-width: 1.6;
-  stroke-opacity: 0.45;
+  stroke-opacity: var(--home-input-opacity);
   stroke-linejoin: round;
 }
 
@@ -287,8 +265,9 @@ body:has(.odys-home) .md-header--shadow {
   fill: var(--home-buy);
 }
 
-/* Animation: home.js adds --animate (start hidden) and, once the figure is in view, --play.
-   The per-line and per-bar delays are set inline by home.js. */
+/* Animation: home.js adds --animate (start hidden), --play once the figure is in view and
+   --play-schedule once the schedule is. The per-line and per-bar delays are set inline by
+   home.js; the bars' start time is --bars-start. */
 
 .odys-chart--animate .odys-chart__price {
   stroke-dasharray: 1;
@@ -302,6 +281,12 @@ body:has(.odys-home) .md-header--shadow {
 .odys-chart--animate .odys-chart__bar {
   transform: scaleY(0);
   transform-box: fill-box;
+}
+
+/* The area home.js watches to start the bars; it draws nothing. */
+.odys-chart__schedule-area {
+  fill: none;
+  pointer-events: none;
 }
 
 .odys-chart__bar.odys-chart__sell {
@@ -320,7 +305,7 @@ body:has(.odys-home) .md-header--shadow {
   animation: odys-fade 0.5s ease-out 1.4s forwards;
 }
 
-.odys-chart--play .odys-chart__bar {
+.odys-chart--play-schedule .odys-chart__bar {
   animation: odys-grow 0.45s cubic-bezier(0.3, 0.6, 0.3, 1) forwards;
 }
 
@@ -341,7 +326,6 @@ body:has(.odys-home) .md-header--shadow {
   flex-direction: column;
   gap: 6px;
   margin-top: 20px;
-  text-align: center;
 }
 
 .odys-figure__title {
@@ -356,64 +340,94 @@ body:has(.odys-home) .md-header--shadow {
 
 .odys-noscript {
   color: var(--home-muted);
-  text-align: center;
 }
 
-/* ---- Built-on strip ---- */
+/* ---- Highlights, opened by the "Built on" line ---- */
 
-.odys-builton {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 0 24px 96px;
-}
-
-.odys-builton__label {
-  color: var(--home-muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.odys-builton__names {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px 40px;
-  color: var(--home-button-text);
-  font-size: 20px;
-  font-weight: 600;
-}
-
-/* ---- Highlights: vuejs.org's feature boxes ---- */
-
+/* The section below the figure keeps its 992px content width and left edge, so every block
+   starts on the same line as the title and the chart. */
 .odys-highlights {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 42px 32px 96px;
+  gap: 8px 48px;
+  max-width: 992px;
+  margin: 0 max(24px, (100% - 992px) / 2);
+  padding: 0 0 96px;
   border-top: 1px solid var(--home-divider);
 }
 
+.odys-builton {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 28px 0 8px;
+  color: var(--home-muted);
+  font-size: 17px;
+  text-wrap: pretty;
+}
+
+.odys-builton strong {
+  color: var(--home-text);
+  font-weight: 600;
+}
+
+/* The title's link covers the whole card, so the description is clickable too. */
 .odys-highlight {
-  padding: 28px 36px;
-  border-radius: 8px;
+  position: relative;
+  padding: 24px 0;
+}
+
+.odys-highlight h2 a::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+}
+
+/* The whole card is the link, so the focus ring goes around the card. */
+.odys-home .odys-highlight h2 a:focus-visible {
+  outline: none;
+}
+
+.odys-highlight:has(a:focus-visible) {
+  outline: 2px solid var(--home-link);
+  outline-offset: 8px;
+  border-radius: 4px;
 }
 
 .odys-highlight h2 {
   margin: 0 0 0.75em;
-  color: var(--home-text);
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.4px;
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.3;
 }
 
-.odys-highlight h2::first-letter {
-  color: var(--odys-green-500);
+.odys-home .odys-highlight h2 a {
+  color: var(--home-text);
+}
+
+.odys-home .odys-highlight h2 a:hover {
+  color: var(--home-link);
+}
+
+.odys-highlight__end {
+  white-space: nowrap;
+}
+
+.odys-highlight__arrow {
+  width: 0.7em;
+  height: 0.7em;
+  margin-left: 0.3em;
+  fill: none;
+  stroke: var(--home-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: 0.05em;
+  transition: translate 0.2s;
+}
+
+.odys-highlight h2 a:hover .odys-highlight__arrow {
+  stroke: currentcolor;
+  translate: 3px 0;
 }
 
 .odys-highlight p {
@@ -421,14 +435,20 @@ body:has(.odys-home) .md-header--shadow {
   color: var(--home-muted);
   font-size: 15px;
   line-height: 1.6;
+  text-wrap: pretty;
 }
 
-/* ---- Narrower screens, at vuejs.org's breakpoints ---- */
+/* ---- Narrower screens ---- */
 
 @media (width <= 960px) {
   .odys-hero__title {
-    font-size: 64px;
-    letter-spacing: -0.5px;
+    font-size: 56px;
+  }
+}
+
+@media (width <= 794px) {
+  .odys-hero__title {
+    font-size: 42px;
   }
 
   .odys-hero__lead {
@@ -437,15 +457,27 @@ body:has(.odys-home) .md-header--shadow {
   }
 }
 
-@media (width <= 794px) {
-  .odys-hero__title {
-    font-size: 48px;
+/* The hero shares the figure's left edge. On wider screens the subtitle and the button share
+   one row as wide as the figure, the button level with the chart's right edge. */
+@media (width > 794px) {
+  .odys-hero__intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 64px;
+    margin-top: 32px;
+  }
+
+  .odys-hero__lead {
+    max-width: 40em;
+    margin: 0;
+    font-size: 20px;
   }
 }
 
 @media (width <= 576px) {
   .odys-hero {
-    padding: 56px 16px 48px;
+    padding: 40px 16px 32px;
   }
 
   .odys-hero__lead {
@@ -454,23 +486,20 @@ body:has(.odys-home) .md-header--shadow {
   }
 
   .odys-figure {
-    padding: 0 16px 64px;
+    padding: 0 16px 56px;
   }
 
   .odys-builton {
-    padding: 0 16px 64px;
-  }
-
-  .odys-builton__names {
-    gap: 8px 24px;
-    font-size: 18px;
+    padding-top: 20px;
+    font-size: 16px;
   }
 
   .odys-highlights {
-    padding: 24px 16px 64px;
+    margin: 0 16px;
+    padding: 0 0 64px;
   }
 
   .odys-highlight {
-    padding: 20px 8px;
+    padding: 20px 0;
   }
 }

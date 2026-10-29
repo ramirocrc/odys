@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Documentation: the docs and the landing page follow the Odys brand instead of vuejs.org's colour scheme. The dark mode background is the logo's navy, text and surfaces are navy-tinted, mint is the accent in both modes, and Mona Sans is the only text face (Inter is no longer loaded). On the landing page, the headings are set in wide Mona Sans like the docs' page titles; the headline now says decisions are planned against every future (Odys maximizes expected profit across scenarios, it does not guarantee each one); the hero keeps only the Get started button (the `pip install odys` copy button and the GitHub button are removed); "Built on" is a line above the highlights, whose titles link to the docs page behind each claim; and the figure labels its units (€/MWh, MW), stays readable on phones and fits in the first screen at 1440×900. The header shows the logo on narrow screens, and the unused announcement-bar styling is removed.
+
 ## [0.3.1] - 2026-10-22
 
 ### Added
